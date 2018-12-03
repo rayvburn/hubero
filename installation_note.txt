@@ -1,0 +1,7 @@
+## Gazebo8
+sudo apt-get install ros-kinetic-gazebo8*
+
+## Compilation order may be crucial
+catkin build actor_sim_srv
+catkin build actor_sim_utils
+catkin build actor_plugin_social

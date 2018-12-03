@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+
+<launch>
+    
+    <!-- ====================== default values for parameters ================================== -->
+    <arg name="world_file"  default="$(find actor_sim_utils)/worlds/cafe_world_primitive.world"/>
+    <arg name="gui" default="true"/>
+    <arg name="rviz" default="false"/>
+
+    <!-- ========================= start Gazebo Server ========================================= -->
+    <node name="gazebo" pkg="gazebo_ros" type="gzserver" output="screen"
+        args="$(arg world_file)" />
+
+    <!-- =============================== start rViz ============================================ -->
+    <group if="$(arg rviz)">
+    	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find actor_sim_utils)/rviz/tf_show.rviz"/>
+    </group>
+    
+    <!-- ========================= start Gazebo Client ========================================= -->
+    <group if="$(arg gui)">
+        <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" respawn="false" output="screen"/>
+    </group>
+
+</launch>
