@@ -1,9 +1,11 @@
 ## References
 [onlytailei/gym_ped_sim](https://github.com/onlytailei/gym_ped_sim)
+
 [srl-freiburg/pedsim_ros](https://github.com/srl-freiburg/pedsim_ros)    
+
 [social force model](http://vision.cse.psu.edu/courses/Tracking/vlpr12/HelbingSocialForceModel95.pdf)
 
-### =================================================================================================
+### ==========================================================
 
 # A ros gazebo plugin for pedestrians
 
