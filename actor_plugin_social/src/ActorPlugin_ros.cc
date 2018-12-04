@@ -39,7 +39,7 @@
 using namespace gazebo;
 GZ_REGISTER_MODEL_PLUGIN(ActorPlugin)
 
-#define WALKING_ANIMATION "walking"
+#define ACTOR_ANIMATION "walking"
 
 /////////////////////////////////////////////////////////////////////
 
@@ -57,6 +57,19 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	this->start_location = this->actor->WorldPose().Pos();
 	this->connections.push_back(event::Events::ConnectWorldUpdateBegin(
         std::bind(&ActorPlugin::OnUpdate, this, std::placeholders::_1)));
+
+	/*
+	// TODO: select friends among present actors (social force, attraction factor)
+	P(friend_present) = 0.15
+
+	for ( actorIteration() ) {
+		random_number = rand(0,1);
+		if ( random_number < P(friend_present) ) {
+			friends_vector.push_back( current_actor->getName() )
+		}
+	}
+
+	*/
 
 	// set initial speed from above
 	this->velocity = 1.0;
@@ -92,15 +105,15 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	}
 
 	auto skelAnims = this->actor->SkeletonAnimations();
-	if ( skelAnims.find(WALKING_ANIMATION) == skelAnims.end() ) {
+	if ( skelAnims.find(ACTOR_ANIMATION) == skelAnims.end() ) {
 
-		gzerr << "Skeleton animation " << WALKING_ANIMATION << " not found.\n";
+		gzerr << "Skeleton animation " << ACTOR_ANIMATION << " not found.\n";
 
 	} else {
 
 		// Create custom trajectory
 		this->trajectory_info.reset(new physics::TrajectoryInfo());
-		this->trajectory_info->type = WALKING_ANIMATION;
+		this->trajectory_info->type = ACTOR_ANIMATION;
 		this->trajectory_info->duration = 1.0;
 		this->actor->SetCustomTrajectory(this->trajectory_info);
 
