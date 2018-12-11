@@ -32,6 +32,7 @@
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/physics/physics.hh>
 #include <gazebo/util/system.hh>
+#include <SocialForceModel.h>
 
 #include <actor_sim_srv/SetPose.h>
 #include <actor_sim_srv/GetVel.h>
@@ -65,7 +66,7 @@ namespace gazebo
 
       ignition::math::Vector3d CallActorVelClient(std::string) const;
 
-      void CallPublisher(ignition::math::Vector3d, ignition::math::Vector3d, ignition::math::Vector3d, double);
+      void PublishActorInfo(ignition::math::Vector3d, ignition::math::Vector3d, ignition::math::Vector3d, double);
 
       /// \brief Helper function to choose a new target location
       void ChooseNewTarget();

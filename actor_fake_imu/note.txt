@@ -1,0 +1,5 @@
+The problem with attaching an IMU to a ceratin actor link is described here:
+http://answers.gazebosim.org/question/21338/attaching-a-sensor-to-a-particular-link-of-an-animated-actor/
+
+Because of above, "IMU readings" are based on links poses which Gazebo shares
+Artificial noise is added to produced sensor_msgs/IMU messages

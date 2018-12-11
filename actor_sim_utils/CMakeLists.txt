@@ -11,6 +11,9 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     rospy
     std_msgs
+    gazebo_msgs # debugging link states
+    geometry_msgs # debugging link states
+    tf # debugging link states
     actor_sim_srv
     )
 
@@ -106,7 +109,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES actor_services
-#  CATKIN_DEPENDS other_catkin_pkg
+  CATKIN_DEPENDS gazebo_msgs geometry_msgs 
 #  DEPENDS system_lib
 )
 
@@ -116,7 +119,7 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-# include_directories(include)
+include_directories(${catkin_INCLUDE_DIRS})
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -147,6 +150,9 @@ catkin_package(
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+
+add_executable(debug_link_states src/debug_link_states.cpp)
+target_link_libraries(debug_link_states ${catkin_LIBRARIES})
 
 #############
 ## Install ##

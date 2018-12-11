@@ -168,23 +168,25 @@ ignition::math::Vector3d ActorPlugin::SocialForce(ignition::math::Pose3d &_pose,
 
 	for(unsigned int i = 0; i < this->world->ModelCount(); i++) {
 
-		physics::ModelPtr currentAgent = this->world->ModelByIndex(i);
+		physics::ModelPtr current_agent = this->world->ModelByIndex(i);
 
-		if ((!currentAgent->HasType(physics::Base::EntityType::ACTOR)) &&
-			(currentAgent->GetName()!=this->tb3_name)) {
+		/* TURTLEBOT3 DEPRECATED HERE
+		if ((!current_agent->HasType(physics::Base::EntityType::ACTOR)) &&
+			(current_agent->GetName()!=this->tb3_name)) {
 
 			continue;
 		}
 
-		if ( (!tb3_as_actor) && (currentAgent->GetName()==this->tb3_name) ) {
+		if ( (!tb3_as_actor) && (current_agent->GetName()==this->tb3_name) ) {
+			continue;
+		}
+		*/
+		
+		if (current_agent == this->actor) {
 			continue;
 		}
 
-		if (currentAgent == this->actor) {
-			continue;
-		}
-
-		ignition::math::Vector3d currentPose = currentAgent->WorldPose().Pos();
+		ignition::math::Vector3d currentPose = current_agent->WorldPose().Pos();
 		double distance = currentPose.Distance(_pose.Pos());
 
 		if (distance > neighbor_range) {
@@ -202,7 +204,7 @@ ignition::math::Vector3d ActorPlugin::SocialForce(ignition::math::Pose3d &_pose,
 			continue;
 		}
 
-		ignition::math::Vector3d other_vel = CallActorVelClient(currentAgent->GetName());
+		ignition::math::Vector3d other_vel = CallActorVelClient(current_agent->GetName());
 		ignition::math::Vector3d velDiff = _velocity - other_vel;
 
 		//if (this->actor->GetName()=="actor0"){
@@ -298,7 +300,9 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	ignition::math::Vector3d rpy = pose.Rot().Euler();
 
 	// Get the desired force to waypoint: "I want to go there at full speed!"
-	ignition::math::Vector3d desiredForce = pos.Normalize() * this->v_max;
+	ignition::math::Vector3d desiredForce = pos.Normalize() * this->v_max;	// desired acceleration term
+	// @CITATION relaxation times we used τ α = 0.5s. Smaller values of τ α
+
 	ignition::math::Vector3d socialForce_ = SocialForce(pose, this->velocity);
 	//ignition::math::Vector3d obstacleForce = ObstacleForce(pose);
 
@@ -342,7 +346,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
 	double distanceTraveled = (pose.Pos() - this->actor->WorldPose().Pos()).Length();
 
-	CallPublisher(a, pos.Normalize(), socialForce_, new_yaw.Radian());
+	PublishActorInfo(a, pos.Normalize(), socialForce_, new_yaw.Radian());
 	this->actor->SetWorldPose(pose, false, false);
 	this->actor->SetScriptTime( this->actor->ScriptTime() + (distanceTraveled * this->animation_factor) );
 	this->last_update = _info.simTime;
@@ -442,7 +446,7 @@ void ActorPlugin::QueueThread() {
 
 /////////////////////////////////////////////////////////////////////
 
-void ActorPlugin::CallPublisher(ignition::math::Vector3d af_, ignition::math::Vector3d pos_,
+void ActorPlugin::PublishActorInfo(ignition::math::Vector3d af_, ignition::math::Vector3d pos_,
     ignition::math::Vector3d sf_, double yaw_)
 {
 

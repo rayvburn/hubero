@@ -43,8 +43,15 @@
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>std_msgs</build_depend>
+  <build_depend>gazebo_msgs</build_depend> <!-- debugging link states -->
+  <build_depend>geometry_msgs</build_depend> <!-- debugging link states -->
+  <build_depend>tf</build_depend> <!-- debugging link states -->
   <build_depend>actor_sim_srv</build_depend>
+
   <run_depend>actor_sim_srv</run_depend>
+  <run_depend>gazebo_msgs</run_depend> <!-- debugging link states -->
+  <run_depend>geometry_msgs</run_depend> <!-- debugging link states -->
+  <run_depend>tf</run_depend> <!-- debugging link states -->
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
