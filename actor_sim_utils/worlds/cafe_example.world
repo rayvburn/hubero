@@ -81,12 +81,12 @@
       <pose>0 1 1.25 0 0 0</pose>
       <skin>
         <!-- <filename>walk.dae</filename>  -->
-        <filename>stand.dae</filename>
+        <filename>walk.dae</filename>
         <scale>1.0</scale>
       </skin>
       <animation name="walking">
         <!-- <filename>walk.dae</filename>  -->
-        <filename>stand.dae</filename>
+        <filename>walk.dae</filename>
         <scale>1.000000</scale>
         <interpolate_x>true</interpolate_x>
       </animation>

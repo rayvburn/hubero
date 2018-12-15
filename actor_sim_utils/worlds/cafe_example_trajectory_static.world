@@ -88,7 +88,18 @@
       <script>
         <trajectory id="0" type="walking">
 
-		  <!-- ====== ROLL CHECK ====== -->
+          <!-- ====== STATIC CHECK ====== 
+          <waypoint>
+            <time>0</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>
+          <waypoint>
+            <time>10</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>
+		  -->
+		  
+		  <!-- ====== ROLL CHECK ====== 
           <waypoint>
             <time>0</time>
             <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
@@ -113,7 +124,7 @@
             <time>28</time>
             <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
           </waypoint>
-            
+    	  -->
 
 		  <!-- ====== PITCH CHECK ====== 
           <waypoint>
@@ -169,6 +180,75 @@
           </waypoint>   
           -->              
 		  
+		  <!-- ======= ALL CHECK ========= -->
+		  <!-- ROLL --> <!-- -->
+          <waypoint>
+            <time>0</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>10</time>
+            <pose>0 0 0.2 +0.5 0.0 -0.0</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>20</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>
+          
+          <waypoint>
+            <time>30</time>
+            <pose>0 0 0.2 -0.5 0.0 +0.0</pose>
+          </waypoint>  
+
+          <waypoint>
+            <time>40</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>
+		  
+          <!-- PITCH --> <!-- -->
+          <waypoint>
+            <time>50</time>
+            <pose>0 0 0.2 +0.0 +0.5 -0.0</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>60</time>
+            <pose>0 0 0.2 +0.0 +0.0 -0.0</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>70</time>
+            <pose>0 0 0.2 +0.0 -0.5 -0.0</pose>
+          </waypoint>
+          
+          <waypoint>
+            <time>80</time>
+            <pose>0 0 0.2 -0.0 +0.0 +0.0</pose>
+          </waypoint>  
+		  
+		  <!-- YAW --> <!-- -->
+          <waypoint>
+            <time>90</time>
+            <pose>0 0 0.2 +0.0 0.0 +0.5</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>100</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>110</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.5</pose>
+          </waypoint>     
+
+          <waypoint>
+            <time>120</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>                          
+          
 
         </trajectory>
       </script>
