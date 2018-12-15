@@ -27,3 +27,6 @@ add_library(${PROJECT_NAME} src/actor_joints_to_imu.cpp)
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${roscpp_LIBRARIES})
 
+add_executable(actor_joints_to_imu src/actor_joints_to_imu.cpp)
+target_link_libraries(actor_joints_to_imu ${catkin_LIBRARIES})
+

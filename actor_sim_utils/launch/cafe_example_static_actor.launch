@@ -3,7 +3,7 @@
 <launch>
     
     <!-- ====================== default values for parameters ================================== -->
-    <arg name="world_file"  default="$(find actor_sim_utils)/worlds/cafe_example.world"/>
+    <arg name="world_file"  default="$(find actor_sim_utils)/worlds/cafe_example_trajectory_static.world"/>
     <arg name="gui" default="true"/>
     <arg name="rviz" default="false"/>
 

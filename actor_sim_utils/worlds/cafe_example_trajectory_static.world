@@ -78,31 +78,100 @@
          change their destination. The <target_weight> can be used to
          tune the vector field used by the ActorPlugin to control the Actor. -->
     <actor name="actor1">
-      <pose>0 1 1.25 0 0 0</pose>
       <skin>
-        <!-- <filename>walk.dae</filename>  -->
         <filename>stand.dae</filename>
-        <scale>1.0</scale>
       </skin>
       <animation name="walking">
-        <!-- <filename>walk.dae</filename>  -->
         <filename>stand.dae</filename>
-        <scale>1.000000</scale>
-        <interpolate_x>true</interpolate_x>
       </animation>
 
-      <plugin name="actor1_plugin" filename="libActorPlugin.so">
-        <target>0 -5 1.2138</target>
-        <target_weight>1.15</target_weight>
-        <obstacle_weight>1.8</obstacle_weight>
-        <animation_factor>5.1</animation_factor>
-        <!-- Usage: Modify the set of models that the vector field should
-             ignore when moving the actor -->
-        <ignore_obstacles>
-          <model>cafe</model>
-          <model>ground_plane</model>
-        </ignore_obstacles>
-      </plugin>
+      <script>
+        <trajectory id="0" type="walking">
+
+		  <!-- ====== ROLL CHECK ====== -->
+          <waypoint>
+            <time>0</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>7</time>
+            <pose>0 0 0.2 +0.4 0.0 -0.0</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>14</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>
+          
+          <waypoint>
+            <time>21</time>
+            <pose>0 0 0.2 -0.4 0.0 -0.0</pose>
+          </waypoint>  
+
+          <waypoint>
+            <time>28</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>
+            
+
+		  <!-- ====== PITCH CHECK ====== 
+          <waypoint>
+            <time>0</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>7</time>
+            <pose>0 0 0.2 +0.0 0.4 -0.0</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>14</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>
+          
+          <waypoint>
+            <time>21</time>
+            <pose>0 0 0.2 -0.0 -0.4 -0.0</pose>
+          </waypoint>  
+
+          <waypoint>
+            <time>28</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>
+          -->
+
+          <!-- ======YAW CHECK ====== 
+          <waypoint>
+            <time>0</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>7</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.4</pose>
+          </waypoint>
+
+          <waypoint>
+            <time>14</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>
+          
+          <waypoint>
+            <time>21</time>
+            <pose>0 0 0.2 -0.0 0.0 +0.4</pose>
+          </waypoint>  
+
+          <waypoint>
+            <time>28</time>
+            <pose>0 0 0.2 +0.0 0.0 -0.0</pose>
+          </waypoint>   
+          -->              
+		  
+
+        </trajectory>
+      </script>
     </actor>
 
     <actor name="actor2">
