@@ -8,6 +8,8 @@
 #ifndef INCLUDE_SOCIALFORCEMODEL_H_
 #define INCLUDE_SOCIALFORCEMODEL_H_
 
+// #define SFM_HOMOGENOUS_POPULATION
+
 #include <SocialForceModelUtils.h>
 #include <ignition/math.hh> // ?? needed still
 
@@ -32,21 +34,73 @@ class SocialForceModel {
 public:
 
 	SocialForceModel();
-	double GetSocialForce();
+
+	ignition::math::Vector3d GetInternalAcceleration(const ignition::math::Pose3d &_actor_pose,
+						  	  	  	  	    		 const ignition::math::Vector3d &_actor_vel,
+													 const ignition::math::Pose3d &_actor_target,
+													 ignition::math::Vector3d *_n_alpha);
+
+	ignition::math::Vector3d GetInteractionComponent(const ignition::math::Pose3d &_actor_pose,
+						  	  	  	  	    const ignition::math::Vector3d &_actor_vel,
+											const ignition::math::Pose3d &_actor_target,
+											const ignition::math::Vector3d &_n_alpha,
+											const SFMObjectType &_object_type,
+											const ignition::math::Pose3d &_object_pose,
+											const ignition::math::Vector3d &_object_vel,
+											const ignition::math::Box &_object_bb = ignition::math::Box()); // gazebo::math::Box is deprecated (Gazebo 8.0 and above)
+
 	virtual ~SocialForceModel();
 
 private:
 
 	void 	SetParameterValues(void);
-	double 	GetInternalAcceleration(SFMObjectType _type);
-	double 	GetRepulsion(SFMObjectType _type);
-	double 	GetAttraction(SFMObjectType _type);
+/*
+	ignition::math::Vector3d GetInternalAcceleration(const ignition::math::Pose3d &_actor_pose,
+													 const ignition::math::Vector3d &_actor_vel,
+													 const ignition::math::Pose3d &_actor_target);
+*/
+	ignition::math::Vector3d GetActorsInteraction(
+			const ignition::math::Pose3d &_actor_pose,
+			const ignition::math::Pose3d &_actor_target,
+			const ignition::math::Vector3d &_n_alpha, 					// actor's normal (based on velocity vector)
+			const ignition::math::Vector3d &_n_beta, 					// other actor's normal
+			const ignition::math::Vector3d &_d_alpha_beta, 				// vector between objects poses
+			const double &_v_rel);
+
+	double GetVelocitiesAngle(const ignition::math::Vector3d &_n_alpha,
+												const ignition::math::Vector3d &_n_beta,
+												double *angle_alpha,
+												double *angle_beta);
+
+	uint8_t GetBetaRelativeLocation(
+			const ignition::math::Vector3d &_n_alpha,
+			const ignition::math::Vector3d &_d_alpha_beta);
+
+			//const ignition::math::Pose3d &_actor_pose,
+			//const ignition::math::Pose3d &_actor_target,
+			//const ignition::math::Vector3d &_n_beta,
+			//const double &_angle_alpha,
+			//const double &_angle_beta
+
+
+	ignition::math::Vector3d GetPerpendicularToNormal(
+			const ignition::math::Vector3d &_n_alpha,
+			const uint8_t &_beta_rel_location);
+
+
+/*
+	ignition::math::Vector3d GetStaticObjectInteraction(const ignition::math::Pose3d &_actor_pose,
+												  	    const SFMObjectType &_type);
+*/
 
 	float relaxation_time;
 	float speed_desired;
 	float speed_max;
+	float fov;
 
-	// Rudloff et al. (2011) model's parameters based on  S. Seer et al. (2014)
+#ifndef SFM_HOMOGENOUS_POPULATION
+
+	/* Model C -> Rudloff et al. (2011) model's parameters based on  S. Seer et al. (2014) */
 	float An;
 	float Bn;
 	float Cn;
@@ -56,8 +110,10 @@ private:
 	float Aw;
 	float Bw;
 
+#else
 	/* setting parameters static will create a population of actors moving in the same way */
-	/*
+
+	// TODO: make all actors share the same param values
 	static float An;
 	static float Bn;
 	static float Cn;
@@ -66,7 +122,8 @@ private:
 	static float Cp;
 	static float Aw;
 	static float Bw;
-	*/
+
+#endif
 
 };
 

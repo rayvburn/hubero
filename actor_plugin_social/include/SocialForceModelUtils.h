@@ -21,7 +21,8 @@ namespace SocialForceModel {
 const uint DB_NOT_FOUND = 65535;
 
 enum SFMObjectType {
-	SFM_STATIC_REPULSIVE = 0,
+	SFM_ANOTHER_ACTOR = 0,
+	SFM_STATIC_REPULSIVE,
 	SFM_DYNAMIC_REPULSIVE,
 	SFM_STATIC_ATTRACTIVE,
 	SFM_DYNAMIC_ATTRACTIVE
@@ -34,6 +35,7 @@ struct SFMObject {
 };
 
 std::string GetDBNameFromGazeboModelName(const std::string &_gazebo_name);
+//  		GetObjectType(std::string) // search the vector
 double 		GetDistanceToNearestPoint(const ignition::math::Pose3d &_pose, const gazebo::math::Box &_bb);
 
 

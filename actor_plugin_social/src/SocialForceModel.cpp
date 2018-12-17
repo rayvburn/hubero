@@ -9,11 +9,15 @@
 
 namespace SocialForceModel {
 
+#define SFM_RIGHT_SIDE 0
+#define SFM_LEFT_SIDE  1
+#define SFM_BEHIND     2
+
 // ------------------------------------------------------------------- //
 
 SocialForceModel::SocialForceModel():
 
-	speed_max(1.5) {
+	fov(1.40), speed_max(1.50) {
 
 	SetParameterValues();
 
@@ -29,7 +33,47 @@ SocialForceModel::SocialForceModel():
 
 // ------------------------------------------------------------------- //
 
-double SocialForceModel::GetSocialForce() {
+ignition::math::Vector3d SocialForceModel::GetInternalAcceleration(
+		const ignition::math::Pose3d &_actor_pose,
+		const ignition::math::Vector3d &_actor_vel,
+		const ignition::math::Pose3d &_actor_target,
+		ignition::math::Vector3d *_n_alpha) 			// internal acceleration is a first step in SF calculations, n_alpha is useful later on (until actor's pose change)
+{
+
+	// TODO: a lot of allocations here, could it be solved?
+	ignition::math::Vector3d to_goal_vector = (_actor_target.Pos() - _actor_pose.Pos());
+	ignition::math::Vector3d to_goal_direction = to_goal_vector.Normalize();
+	ignition::math::Vector3d ideal_vel_vector = speed_desired * to_goal_direction;
+	_n_alpha = &ideal_vel_vector;
+	ignition::math::Vector3d f_alpha = (1/relaxation_time) * (ideal_vel_vector - _actor_vel);
+	return f_alpha;
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
+		const ignition::math::Pose3d &_actor_pose,
+		const ignition::math::Vector3d &_actor_vel,
+		const ignition::math::Pose3d &_actor_target,
+		const ignition::math::Vector3d &_n_alpha,
+		const SFMObjectType &_object_type,
+		const ignition::math::Pose3d &_object_pose,
+		const ignition::math::Vector3d &_object_vel,
+		const ignition::math::Box &_object_bb)
+
+{
+
+	// calculations for beta object
+	ignition::math::Vector3d d_alpha_beta = (_object_pose.Pos() - _actor_pose.Pos());
+	ignition::math::Vector3d n_beta = _object_vel;
+	n_beta.Normalize();
+	double v_rel = _actor_vel.SquaredLength() + _object_vel.SquaredLength();
+
+	ignition::math::Vector3d f_alpha_beta = GetActorsInteraction(_actor_pose, _actor_target, _n_alpha, n_beta, d_alpha_beta, v_rel);
+
+	return f_alpha_beta;
+
 
 	/* Algorithm INPUTS are:
 	 * - dt
@@ -52,8 +96,6 @@ double SocialForceModel::GetSocialForce() {
 	 *		- current actor's pose
 	 *
 	 */
-
-	return 0.00;
 
 }
 
@@ -90,16 +132,134 @@ void SocialForceModel::SetParameterValues() {
 
 // ------------------------------------------------------------------- //
 
-/* DEPRECATED
-ignition::math::Vector3d SocialForceModel::CalculateNumGradient(ignition::math::Vector3d &_vector) {
+ignition::math::Vector3d SocialForceModel::GetActorsInteraction(
+		const ignition::math::Pose3d &_actor_pose,
+		const ignition::math::Pose3d &_actor_target,
+		const ignition::math::Vector3d &_n_alpha, 		// actor's normal (based on velocity vector)
+		const ignition::math::Vector3d &_n_beta, 		// other actor's normal
+		const ignition::math::Vector3d &_d_alpha_beta, 	// vector between objects poses
+		const double &_v_rel)							// relative speed
+{
 
-	// Vector3D is just for convenience (to avoid conversion)
-	// for 2 dimensional vectors numerical gradient is just a difference (y-x)
-	ignition::math::Vector3d num_gradient(_vector.Y()-_vector.X(), _vector.Y()-_vector.X(), 0.0);
-	return num_gradient;
+	// TODO: only 6 closest actors taken into consideration?
+	ignition::math::Vector3d f_alpha_beta = {0.0F , 0.0F , 0.0F};
+
+	/* Force is zeroed in 2 cases:
+	 * 	- distance between actors is bigger than 5 meters
+	 * 	- the other actor is more than 0.5 m behind */
+	double d_alpha_beta_length = _d_alpha_beta.Length();
+	if ( d_alpha_beta_length > 5.0 ) {
+		return f_alpha_beta;
+	}
+
+	uint8_t beta_rel_location = GetBetaRelativeLocation(_n_alpha, _d_alpha_beta); // beta location relative to alpha, FOV considered
+
+	if ( beta_rel_location == SFM_BEHIND && d_alpha_beta_length > 0.5 ) {
+		return f_alpha_beta;
+	}
+
+	double angle_alpha, angle_beta = 0.00F;
+	double theta_alpha_beta = GetVelocitiesAngle(_n_alpha, _n_beta, &angle_alpha, &angle_beta); // angle between velocity of pedestrian α and the displacement of pedestrian β
+
+	ignition::math::Vector3d p_alpha = GetPerpendicularToNormal(_n_alpha, beta_rel_location); 	// actor's perpendicular (based on velocity vector)
+	double exp_normal = ((-Bn * theta_alpha_beta * theta_alpha_beta)/_v_rel) - Cn * d_alpha_beta_length;
+	double exp_perpendicular = ((-Bp * theta_alpha_beta)/_v_rel) - Cp * d_alpha_beta_length;
+	f_alpha_beta = _n_alpha * An * exp(exp_normal) + p_alpha * Ap * exp(exp_perpendicular);
+
+	return f_alpha_beta;
 
 }
-*/
+
+// ------------------------------------------------------------------- //
+
+double SocialForceModel::GetVelocitiesAngle(const ignition::math::Vector3d &_n_alpha,
+											const ignition::math::Vector3d &_n_beta,
+											double *angle_alpha,
+											double *angle_beta)
+
+{
+
+	*angle_alpha = atan2(_n_alpha.X(), _n_alpha.Y());
+	*angle_beta  = atan2(_n_beta.X(),  _n_beta.Y());
+	ignition::math::Angle phi_alpha_beta = *angle_alpha - *angle_beta;
+	phi_alpha_beta.Normalize();
+	return (phi_alpha_beta.Radian());
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Vector3d SocialForceModel::GetPerpendicularToNormal(
+
+		const ignition::math::Vector3d &_n_alpha,
+		const uint8_t &_beta_rel_location)
+
+{
+
+	/* Depending on which side beta is on relative to n_alpha, the p_alpha (perpendicular vector)
+	 * will point to direction opposite to the side where beta is */
+
+	if ( _beta_rel_location == SFM_RIGHT_SIDE ) {
+		return (_n_alpha.Perpendicular());
+	}
+
+	ignition::math::Vector3d n_perp;
+
+	// inverse-perpendicular vector calculations based on ignition library
+    static const double sqrZero = 1e-06 * 1e-06;
+    ignition::math::Vector3d to_cross = {1, 0, 0};
+    n_perp = _n_alpha.Cross(to_cross);
+
+    // Check the length of the vector
+    if (n_perp.SquaredLength() < sqrZero)
+    {
+    	to_cross = {0, -1, 0};
+    	n_perp = n_perp.Cross(to_cross);
+    }
+
+	return n_perp;
+
+}
+
+// ------------------------------------------------------------------- //
+
+uint8_t SocialForceModel::GetBetaRelativeLocation(
+		const ignition::math::Vector3d &_n_alpha,
+		const ignition::math::Vector3d &_d_alpha_beta)
+{
+
+	/* Normalize d_alpha_beta to calculate the angle between n_alpha
+	 * and d_alpha_beta - this will tell on which side beta is relative
+	 * to alpha */
+
+	uint8_t rel_loc = 0;
+
+	ignition::math::Vector3d d_alpha_beta_norm = _d_alpha_beta;
+	d_alpha_beta_norm.Normalize();
+
+	// https://stackoverflow.com/questions/14066933/direct-way-of-computing-clockwise-angle-between-2-vectors
+	double dot_product = _n_alpha.X()*d_alpha_beta_norm.X() + _n_alpha.Y()*d_alpha_beta_norm.Y(); 	// dot = x1*x2 + y1*y2
+	double determinant = _n_alpha.X()*d_alpha_beta_norm.Y() - _n_alpha.Y()*d_alpha_beta_norm.X(); 	// det = x1*y2 - y1*x2
+	ignition::math::Angle angle = atan2(determinant, dot_product); 												// angle = atan2(det, dot)
+	angle.Normalize();
+
+	// angle bigger than FOV -> out of sight -> beta is behind the current actor (alpha)
+	if ( abs(angle.Radian()) > fov) {
+		rel_loc = SFM_BEHIND;
+		return rel_loc;
+	}
+
+	// TODO: debugging needed here, sign is very important
+	// assuming angle is pointing FROM d_alpha_beta TO n_alpha
+	if ( angle.Radian() >= 0.0F ) {
+		rel_loc = SFM_RIGHT_SIDE;
+	} else {
+		rel_loc = SFM_LEFT_SIDE;
+	}
+
+	return rel_loc;
+
+}
 
 // ------------------------------------------------------------------- //
 
