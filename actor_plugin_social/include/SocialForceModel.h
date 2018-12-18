@@ -49,6 +49,13 @@ public:
 											const ignition::math::Vector3d &_object_vel,
 											const ignition::math::Box &_object_bb = ignition::math::Box()); // gazebo::math::Box is deprecated (Gazebo 8.0 and above)
 
+	ignition::math::Pose3d GetNewPose(
+			const ignition::math::Pose3d &_actor_pose,
+			const ignition::math::Vector3d &_actor_vel,
+			const double &_dt,
+			const ignition::math::Vector3d &_internal_acc,
+			const std::vector<ignition::math::Vector3d> &_interactions_vector);
+
 	virtual ~SocialForceModel();
 
 private:
@@ -97,6 +104,7 @@ private:
 	float speed_desired;
 	float speed_max;
 	float fov;
+	float yaw_max_delta;
 
 #ifndef SFM_HOMOGENOUS_POPULATION
 

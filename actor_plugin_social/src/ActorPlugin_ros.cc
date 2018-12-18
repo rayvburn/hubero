@@ -34,6 +34,9 @@
 #include <ros/console.h> //roslogging
 #include "ActorPlugin.hh"
 
+#include <SocialForceModel.h>
+#include <SocialForceModelUtils.h>
+
 /////////////////////////////////////////////////////////////////////
 
 using namespace gazebo;
@@ -257,7 +260,6 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
 	// TODO: algorithm as follows:
 	/*
-	* 
 	if ( targetReached() ) {
 
 		// select next animation and behavior
@@ -282,12 +284,8 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 		}
 
 	}
-
-	*
-	*
-	*
-	*
 	*/
+
 
 	// Time delta
 	double dt = (_info.simTime - this->last_update).Double();

@@ -17,7 +17,7 @@ namespace SocialForceModel {
 
 SocialForceModel::SocialForceModel():
 
-	fov(1.40), speed_max(1.50) {
+	fov(1.40), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0) {
 
 	SetParameterValues();
 
@@ -96,6 +96,56 @@ ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
 	 *		- current actor's pose
 	 *
 	 */
+
+}
+
+ignition::math::Pose3d SocialForceModel::GetNewPose(
+			const ignition::math::Pose3d &_actor_pose,
+			const ignition::math::Vector3d &_actor_vel,
+			const double &_dt,
+			const ignition::math::Vector3d &_internal_acc,
+			const std::vector<ignition::math::Vector3d> &_interactions_vector)
+{
+
+	ignition::math::Pose3d new_pose;
+	ignition::math::Vector3d interaction_sum = {0.0F , 0.0F , 0.0F};
+
+	for ( uint i = 0; i < _interactions_vector.size(); i++ ) {
+		// get the cumulative vector expressed as a sum of single interactions
+		interaction_sum += _interactions_vector[i];
+	}
+
+	ignition::math::Vector3d result_acc = _internal_acc + interaction_sum;
+	ignition::math::Vector3d result_vel = _actor_vel + result_acc * _dt;
+
+	if ( result_vel.Length() > speed_max ) {
+		/* if calculated speed is bigger than max speed -> perform normalization
+		// leave velocity direction as is, shorten the vector to max possible */
+		result_vel = result_vel.Normalize() * speed_max;
+	}
+
+	/* Now consider the yaw angle of an actor - it is crucial to make him face his
+	 * current movement direction */
+	ignition::math::Vector3d actor_rpy_initial = _actor_pose.Rot().Euler();
+	ignition::math::Angle yaw_new = atan2( result_vel.X(), result_vel.Y() );
+	ignition::math::Angle yaw_delta = M_PI/2.0F - yaw_new.Radian() - actor_rpy_initial.Z(); // HalfPi - theta(t=i+1) - theta(t=i)
+	yaw_delta.Normalize();
+
+	// avoid big yaw changes, force smooth rotations; truncate to max
+	if ( abs( yaw_delta.Radian() ) > yaw_max_delta ) {
+		(yaw_delta < 0) ? (yaw_delta = -yaw_max_delta) : (yaw_delta = +yaw_max_delta);
+	}
+
+	// calculate x and y velocity components based on new yaw angle
+
+	// set new rotation in the pose vector
+
+	// force pose.Z() according to current 'stance'
+
+
+	// new_pose = _actor_pose
+
+	return new_pose;
 
 }
 
