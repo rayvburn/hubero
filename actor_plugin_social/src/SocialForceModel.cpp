@@ -413,25 +413,57 @@ ignition::math::Vector3d SocialForceModel::GetPerpendicularToNormal(
 	/* Depending on which side beta is on relative to n_alpha, the p_alpha (perpendicular vector)
 	 * will point to direction opposite to the side where beta is */
 
+	/*
+	ignition::math::Vector3d p_alpha;
 	if ( _beta_rel_location == SFM_RIGHT_SIDE ) {
-		return (_n_alpha.Perpendicular());
+		p_alpha = _n_alpha.Perpendicular();
+		// return (_n_alpha.Perpendicular());
+	} else if ( _beta_rel_location == SFM_LEFT_SIDE ) {
+
+		// ignition::math::Vector3d p_alpha;
+
+		// inverse-perpendicular vector calculations based on ignition library
+		static const double sqr_zero = 1e-06 * 1e-06;
+		ignition::math::Vector3d to_cross = {0, 0, 1}; // TODO: -1?
+		p_alpha = _n_alpha.Cross(to_cross);
+
+		// Check the length of the vector
+		if (p_alpha.SquaredLength() < sqr_zero)
+		{
+
+			to_cross = {0, -1, 0};
+			p_alpha = p_alpha.Cross(to_cross);
+			std::cout << "GetPerpendicularToNormal(): " << "\t TOO SHORT! " << std::endl;
+
+		}
+	}
+	*/
+
+	ignition::math::Vector3d p_alpha;
+	static const double sqr_zero = 1e-06 * 1e-06;
+	ignition::math::Vector3d to_cross;
+
+	if ( _beta_rel_location == SFM_LEFT_SIDE ) {
+		to_cross.Set(0.0, 0.0,  1.0);
+	} else if ( _beta_rel_location == SFM_RIGHT_SIDE ) {
+		to_cross.Set(0.0, 0.0, -1.0);
 	}
 
-	ignition::math::Vector3d n_perp;
+	p_alpha = _n_alpha.Cross(to_cross);
 
-	// inverse-perpendicular vector calculations based on ignition library
-    static const double sqrZero = 1e-06 * 1e-06;
-    ignition::math::Vector3d to_cross = {1, 0, 0}; // TODO: -1?
-    n_perp = _n_alpha.Cross(to_cross);
+	// Check the length of the vector
+	if (p_alpha.SquaredLength() < sqr_zero) {
 
-    // Check the length of the vector
-    if (n_perp.SquaredLength() < sqrZero)
-    {
-    	to_cross = {0, -1, 0};
-    	n_perp = n_perp.Cross(to_cross);
-    }
+		// this should not happen
+		to_cross = {0, -1, 0};
+		p_alpha = p_alpha.Cross(to_cross);
+		std::cout << "GetPerpendicularToNormal(): " << "\t TOO SHORT! " << std::endl;
 
-	return n_perp;
+	}
+
+    std::cout << "GetPerpendicularToNormal(): " << "  x: " << p_alpha.X() << "  y: " << p_alpha.Y() << "  z: " << p_alpha.Z() << std::endl;
+
+	return p_alpha;
 
 }
 

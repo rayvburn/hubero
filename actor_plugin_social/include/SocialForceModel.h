@@ -77,6 +77,12 @@ public:
 			const ignition::math::Vector3d &_d_alpha_beta);
 
 	bool IsOutOfFOV(const double &_angle_relative);
+
+	ignition::math::Vector3d GetPerpendicularToNormal(
+			const ignition::math::Vector3d &_n_alpha,
+			const uint8_t &_beta_rel_location);
+
+
 	virtual ~SocialForceModel();
 
 private:
@@ -113,9 +119,7 @@ private:
 			//const double &_angle_beta
 
 
-	ignition::math::Vector3d GetPerpendicularToNormal(
-			const ignition::math::Vector3d &_n_alpha,
-			const uint8_t &_beta_rel_location);
+
 
 
 /*

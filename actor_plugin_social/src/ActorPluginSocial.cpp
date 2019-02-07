@@ -173,6 +173,8 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
   ignition::math::Vector3d pos = this->target - pose.Pos();
   ignition::math::Vector3d rpy = pose.Rot().Euler();
 
+	// modelcount
+	// model by index
   	// -----------------------------------------------------------------------
 
     // when speed is 0 then there is no way of calculating the angle THETA_alpha_beta (0 vector length)
@@ -241,7 +243,11 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 													pose_actor2, vel_actor2, &object_yaw );
 
 			ignition::math::Vector3d d_alpha_beta = pose_actor2.Pos() - pose.Pos();
-			sfm.GetBetaRelativeLocation(actor_yaw, d_alpha_beta);
+			uint8_t beta_rel_loc = sfm.GetBetaRelativeLocation(actor_yaw, d_alpha_beta);
+
+			if ( beta_rel_loc != 2) {
+				ignition::math::Vector3d p_alpha = sfm.GetPerpendicularToNormal(n_alpha, beta_rel_loc);
+			}
 
 			print_time = _info.simTime;
 
