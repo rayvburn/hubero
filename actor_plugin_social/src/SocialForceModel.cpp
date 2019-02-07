@@ -6,18 +6,21 @@
  */
 
 #include <SocialForceModel.h>
+#include <cmath>
 
 namespace SocialForceModel {
 
 #define SFM_RIGHT_SIDE 0
 #define SFM_LEFT_SIDE  1
 #define SFM_BEHIND     2
+// #define THETA_ALPHA_BETA_CONSIDER_ZERO_VELOCITY
+// #define BETA_REL_LOCATION_BASED_ON_NORMAL
 
 // ------------------------------------------------------------------- //
 
 SocialForceModel::SocialForceModel():
 
-	fov(1.40), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0) {
+	fov(1.40), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(80) {
 
 	SetParameterValues();
 
@@ -36,19 +39,106 @@ SocialForceModel::SocialForceModel():
 ignition::math::Vector3d SocialForceModel::GetInternalAcceleration(
 		const ignition::math::Pose3d &_actor_pose,
 		const ignition::math::Vector3d &_actor_vel,
-		const ignition::math::Pose3d &_actor_target,
-		ignition::math::Vector3d *_n_alpha) 			// internal acceleration is a first step in SF calculations, n_alpha is useful later on (until actor's pose change)
+		const ignition::math::Pose3d &_actor_target)
 {
+
+	// internal acceleration is a first step in SF calculations, n_alpha is useful later on and in this stage
 
 	// TODO: a lot of allocations here, could it be solved?
 	ignition::math::Vector3d to_goal_vector = (_actor_target.Pos() - _actor_pose.Pos());
 	ignition::math::Vector3d to_goal_direction = to_goal_vector.Normalize();
 	ignition::math::Vector3d ideal_vel_vector = speed_desired * to_goal_direction;
-	_n_alpha = &ideal_vel_vector;
-	ignition::math::Vector3d f_alpha = (1/relaxation_time) * (ideal_vel_vector - _actor_vel);
+	ignition::math::Vector3d f_alpha = mass_person * (1/relaxation_time) * (ideal_vel_vector - _actor_vel);
+
 	return f_alpha;
 
 }
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Vector3d SocialForceModel::GetNormalToAlphaDirection(const ignition::math::Pose3d &_actor_pose) {
+
+	// when speed is 0 then there is no way of calculating the angle THETA_alpha_beta (0 vector length)
+	// better way is calculating normal based on actor's yaw than velocity vector
+
+	// std::cout << "BEFORE -- n_alpha: " << *_n_alpha << "  _actor_vel: " << _actor_vel << std::endl;
+
+	ignition::math::Vector3d rpy = _actor_pose.Rot().Euler();
+
+	ignition::math::Angle yaw_norm;
+	yaw_norm.Radian(rpy.Z());
+	yaw_norm.Normalize();
+	yaw_norm -= yaw_norm.Pi; // opposite pointing
+	yaw_norm.Normalize();
+
+	ignition::math::Vector3d n_alpha;
+	n_alpha.X(+sin(yaw_norm.Radian()));
+	n_alpha.Y(-cos(yaw_norm.Radian())); // TODO: why there is a need to negate the value? is it start-pose-dependent?
+	n_alpha.Z(0.0); // in-plane movement only at the moment
+	n_alpha.Normalize();
+
+	return n_alpha;
+
+}
+
+
+#ifdef DEBUG_TF
+
+	/*
+	// actor's pose
+	actor_current_pose = _actor_pose; // current = before update
+	double yaw = atan2(_actor_pose.Pos().Y(), _actor_pose.Pos().X());
+	actor_current_pose.Set(_actor_pose.Pos(), ignition::math::Vector3d(0.0, 0.0, yaw));
+
+	tf_stamped.header.frame_id = "map";
+	tf_stamped.child_frame_id = "actor1_base";
+
+	tf_stamped.transform.translation.x = actor_current_pose.Pos().X();
+	tf_stamped.transform.translation.y = actor_current_pose.Pos().Y();
+	tf_stamped.transform.translation.z = actor_current_pose.Pos().Z();
+
+	tf_stamped.transform.rotation.x = actor_current_pose.Rot().X();
+	tf_stamped.transform.rotation.y = actor_current_pose.Rot().Y();
+	tf_stamped.transform.rotation.z = actor_current_pose.Rot().Z();
+	tf_stamped.transform.rotation.w = actor_current_pose.Rot().W();
+
+	tf_broadcaster.sendTransform(tf_stamped);
+
+	// actor's normal
+	ignition::math::Vector3d rpy_actor = actor_current_pose.Rot().Euler();
+	double yaw_normal = atan2(_n_alpha->Y(), _n_alpha->X());
+	rpy_actor.Z(yaw_normal);
+
+	tf2::Matrix3x3 quat;
+	tf2::Quaternion tf_quat;
+	tf_quat.setX(actor_current_pose.Rot().X());
+	tf_quat.setY(actor_current_pose.Rot().Y());
+	tf_quat.setZ(actor_current_pose.Rot().Z());
+	tf_quat.setW(actor_current_pose.Rot().W());
+
+	quat.setRotation(tf_quat);
+	double roll, pitch, yawq;
+	quat.getRPY(roll, pitch,yawq);
+
+	//std::cout << "yaw: " << rpy_actor.X() << "  yaw_n: " << yaw_normal << std::endl;
+	//std::cout << "yaw: " << yawq << "  yaw_n: " << yaw_normal << std::endl;
+
+	actor_current_pose.Set(_actor_pose.Pos(), ignition::math::Vector3d(0.0, 0.0, yaw_normal));
+
+	tf_stamped.header.frame_id = "map";
+	tf_stamped.child_frame_id = "actor1_normal";
+
+	tf_stamped.transform.rotation.x = actor_current_pose.Rot().X();
+	tf_stamped.transform.rotation.y = actor_current_pose.Rot().Y();
+	tf_stamped.transform.rotation.z = actor_current_pose.Rot().Z();
+	tf_stamped.transform.rotation.w = actor_current_pose.Rot().W();
+
+	tf_broadcaster.sendTransform(tf_stamped);
+	*/
+
+#endif
+
+
 
 // ------------------------------------------------------------------- //
 
@@ -222,6 +312,80 @@ ignition::math::Vector3d SocialForceModel::GetActorsInteraction(
 
 // ------------------------------------------------------------------- //
 
+// dynamic objects interaction
+double SocialForceModel::GetAngleBetweenObjectsVelocities(
+		const ignition::math::Pose3d &_actor_pose,
+		const ignition::math::Vector3d &_actor_vel,
+		ignition::math::Angle *_actor_yaw,					// alpha's yaw - will be calculated and saved for further work
+		const ignition::math::Pose3d &_object_pose,
+		const ignition::math::Vector3d &_object_vel,
+		ignition::math::Angle *_object_yaw)					// beta's yaw - will be calculated and saved for further work
+{
+
+	// only on-plane movement considered
+
+	std::cout << "GetAngleBetweenObjectsVelocities(): ";
+
+#ifdef THETA_ALPHA_BETA_CONSIDER_ZERO_VELOCITY
+
+	// check if objects are moving
+	float actor_speed = _actor_vel.X()*_actor_vel.X() + _actor_vel.Y()*_actor_vel.Y();
+	if ( actor_speed < 1e-3 ) {
+		std::cout << " ACTOR'S SPEED is close to 0! " << std::endl;
+		return 0.0;
+	}
+
+	float object_speed = _object_vel.X()*_object_vel.X() + _object_vel.Y()*_object_vel.Y();
+	if ( object_speed < 1e-3 ) {
+		std::cout << " OBJECT'S SPEED is close to 0! " << std::endl;
+		return 0.0;
+	}
+
+	//actor_speed  = sqrt(actor_speed);
+	//object_speed = sqrt(object_speed);
+
+	// velocities are not 0 so calculate the angle between those 2 vectors
+
+#endif
+
+	ignition::math::Vector3d rpy_actor = _actor_pose.Rot().Euler();
+	ignition::math::Vector3d rpy_object = _object_pose.Rot().Euler();
+
+	/*
+	ignition::math::Angle yaw_actor;
+	ignition::math::Angle yaw_object;
+
+	yaw_actor.Radian(rpy_actor.Z());
+	yaw_actor.Normalize();
+
+	yaw_object.Radian(rpy_object.Z());
+	yaw_object.Normalize();
+
+	ignition::math::Angle yaw_diff = yaw_object - yaw_actor;
+	yaw_diff.Normalize();
+
+	std::cout << "\t yaw_actor: " << yaw_actor.Radian() << "  yaw_object: " << yaw_object.Radian() << "  yaw_diff: " << yaw_diff.Radian() << std::endl;
+
+	return yaw_diff.Radian();
+	*/
+
+	_actor_yaw->Radian(rpy_actor.Z());
+	_actor_yaw->Normalize();
+
+	_object_yaw->Radian(rpy_object.Z());
+	_object_yaw->Normalize();
+
+	ignition::math::Angle yaw_diff = *_object_yaw - *_actor_yaw;
+	yaw_diff.Normalize();
+
+	std::cout << "\t yaw_actor: " << _actor_yaw->Radian() << "  yaw_object: " << _object_yaw->Radian() << "  yaw_diff: " << yaw_diff.Radian() << std::endl;
+
+	return yaw_diff.Radian();
+
+}
+
+// interaction between dynamic and static object
+
 double SocialForceModel::GetVelocitiesAngle(const ignition::math::Vector3d &_n_alpha,
 											const ignition::math::Vector3d &_n_beta,
 											double *angle_alpha,
@@ -257,7 +421,7 @@ ignition::math::Vector3d SocialForceModel::GetPerpendicularToNormal(
 
 	// inverse-perpendicular vector calculations based on ignition library
     static const double sqrZero = 1e-06 * 1e-06;
-    ignition::math::Vector3d to_cross = {1, 0, 0};
+    ignition::math::Vector3d to_cross = {1, 0, 0}; // TODO: -1?
     n_perp = _n_alpha.Cross(to_cross);
 
     // Check the length of the vector
@@ -274,6 +438,56 @@ ignition::math::Vector3d SocialForceModel::GetPerpendicularToNormal(
 // ------------------------------------------------------------------- //
 
 uint8_t SocialForceModel::GetBetaRelativeLocation(
+		const ignition::math::Angle &_actor_yaw,
+		const ignition::math::Vector3d &_d_alpha_beta)
+{
+
+	uint8_t rel_loc = 0;
+	ignition::math::Angle angle_relative; 		// relative to actor's (alpha) direction
+	ignition::math::Angle angle_d_alpha_beta;	// stores yaw of d_alpha_beta
+
+	ignition::math::Vector3d d_alpha_beta_norm = _d_alpha_beta;
+	d_alpha_beta_norm.Normalize();
+
+	// when normalized vector used with atan2 then division by euclidean distance not needed
+	angle_d_alpha_beta.Radian( atan2(d_alpha_beta_norm.X(), d_alpha_beta_norm.Y()) );
+	angle_d_alpha_beta.Normalize();
+
+	angle_relative = _actor_yaw + angle_d_alpha_beta;
+	angle_relative.Normalize();
+
+	std::cout << "\t\t\t\t\t GetBetaRelativeLocation() " << "ACTOR yaw: " << _actor_yaw.Radian() << "  ANGLE d_alpha_beta: " << angle_d_alpha_beta.Radian() << "  ANGLE sum: " << angle_relative.Radian();
+	std::string txt_dbg;
+
+	// consider FOV
+	if ( IsOutOfFOV(angle_relative.Radian() ) ) {
+		rel_loc = SFM_BEHIND;
+		txt_dbg = "BEHIND";
+	} else if ( angle_relative.Radian() <= 0.0 ) {
+		rel_loc = SFM_RIGHT_SIDE;
+		txt_dbg = "RIGHT";
+	} else if ( angle_relative.Radian() > 0.0 ) {
+		rel_loc = SFM_LEFT_SIDE;
+		txt_dbg = "LEFT";
+	}
+
+	std::cout << "  " << txt_dbg << std::endl;
+
+	return rel_loc;
+
+}
+
+bool SocialForceModel::IsOutOfFOV(const double &_angle_relative) {
+
+	if ( abs(_angle_relative) <= fov ) {
+		return true;
+	}
+
+	return false;
+
+}
+
+uint8_t SocialForceModel::GetBetaRelativeLocation(
 		const ignition::math::Vector3d &_n_alpha,
 		const ignition::math::Vector3d &_d_alpha_beta)
 {
@@ -287,6 +501,7 @@ uint8_t SocialForceModel::GetBetaRelativeLocation(
 	ignition::math::Vector3d d_alpha_beta_norm = _d_alpha_beta;
 	d_alpha_beta_norm.Normalize();
 
+	/*
 	// https://stackoverflow.com/questions/14066933/direct-way-of-computing-clockwise-angle-between-2-vectors
 	double dot_product = _n_alpha.X()*d_alpha_beta_norm.X() + _n_alpha.Y()*d_alpha_beta_norm.Y(); 	// dot = x1*x2 + y1*y2
 	double determinant = _n_alpha.X()*d_alpha_beta_norm.Y() - _n_alpha.Y()*d_alpha_beta_norm.X(); 	// det = x1*y2 - y1*x2
@@ -306,6 +521,9 @@ uint8_t SocialForceModel::GetBetaRelativeLocation(
 	} else {
 		rel_loc = SFM_LEFT_SIDE;
 	}
+
+	return rel_loc;
+	*/
 
 	return rel_loc;
 

@@ -2,6 +2,8 @@
 
 <launch>
     
+    <env name="GAZEBO_PLUGIN_PATH" value="$(find actor_plugin_social)/lib:$(optenv GAZEBO_PLUGIN_PATH)"/>
+    
     <!-- ====================== default values for parameters ================================== -->
     <arg name="world_file"  default="$(find actor_sim_utils)/worlds/cafe_example.world"/>
     <arg name="gui" default="true"/>

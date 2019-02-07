@@ -20,7 +20,7 @@ link_directories(${GAZEBO_LIBRARY_DIRS})
 list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
-add_library(actor_plugin_social SHARED src/ActorPlugin_ros.cc)
+add_library(actor_plugin_social SHARED include/ActorPluginSocial.h src/ActorPluginSocial.cpp)
 add_library(social_force_model include/SocialForceModel.h src/SocialForceModel.cpp)
 add_library(social_force_model_utils include/SocialForceModelUtils.h src/SocialForceModelUtils.cpp)
 target_link_libraries(actor_plugin_social social_force_model social_force_model_utils ${GAZEBO_LIBRARIES}  ${roscpp_LIBRARIES} ${tf_LIBRARIES})

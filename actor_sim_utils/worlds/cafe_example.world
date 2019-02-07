@@ -8,7 +8,7 @@
       </camera>
     </gui>
     <light name="sun" type="directional">
-      <cast_shadows>1</cast_shadows>
+      <cast_shadows>0</cast_shadows> <!-- shadows disabled! -->
       <pose>0 0 10 0 -0 0</pose>
       <diffuse>0.8 0.8 0.8 1</diffuse>
       <specular>0.2 0.2 0.2 1</specular>
@@ -91,7 +91,7 @@
         <interpolate_x>true</interpolate_x>
       </animation>
 
-      <plugin name="actor1_plugin" filename="libActorPlugin.so">
+      <plugin name="actor1_plugin" filename="libactor_plugin_social.so">
         <target>0 -5 1.2138</target>
         <target_weight>1.15</target_weight>
         <obstacle_weight>1.8</obstacle_weight>
@@ -116,7 +116,7 @@
         <scale>1.000000</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
-      <plugin name="actor2_plugin" filename="libActorPlugin.so">
+      <plugin name="actor2_plugin" filename="libactor_plugin_social.so">
         <target>3 2 1.24</target>
         <target_weight>1.15</target_weight>
         <obstacle_weight>1.8</obstacle_weight>
