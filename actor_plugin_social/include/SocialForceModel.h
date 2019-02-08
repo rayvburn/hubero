@@ -9,9 +9,12 @@
 #define INCLUDE_SOCIALFORCEMODEL_H_
 
 // #define SFM_HOMOGENOUS_POPULATION
-#define DEBUG_TF
+// #define DEBUG_TF
 
 #include <SocialForceModelUtils.h>
+// #include <gazebo/physics/World.hh>
+#include <gazebo-8/gazebo/physics/World.hh>
+#include <gazebo-8/gazebo/physics/Model.hh>
 #include <ignition/math.hh> 		// is it still needed??
 
 #ifdef DEBUG_TF
@@ -45,31 +48,30 @@ public:
 
 	ignition::math::Vector3d GetInternalAcceleration(		const ignition::math::Pose3d &_actor_pose,
 			const ignition::math::Vector3d &_actor_vel,
-			const ignition::math::Pose3d &_actor_target);
+			const ignition::math::Vector3d &_actor_target);
 
-	ignition::math::Vector3d GetInteractionComponent(const ignition::math::Pose3d 	&_actor_pose,
-						  	  	  	  	    const ignition::math::Vector3d 			&_actor_vel,
-											const ignition::math::Pose3d 			&_actor_target,
-											const ignition::math::Vector3d 			&_n_alpha,
-											const SFMObjectType 					&_object_type,
-											const ignition::math::Pose3d 			&_object_pose,
-											const ignition::math::Vector3d 			&_object_vel,
-											const ignition::math::Box 				&_object_bb = ignition::math::Box()); // gazebo::math::Box is deprecated (Gazebo 8.0 and above)
-
-	ignition::math::Pose3d GetNewPose(
+	ignition::math::Vector3d GetInteractionComponent(
 			const ignition::math::Pose3d &_actor_pose,
 			const ignition::math::Vector3d &_actor_vel,
+			// const ignition::math::Pose3d &_actor_target,
+			// const ignition::math::Vector3d &_n_alpha,
+			// const SFMObjectType &_object_type,
+			const ignition::math::Pose3d &_object_pose,
+			const ignition::math::Vector3d &_object_vel
+			//const ignition::math::Box &_object_bb = ignition::math::Box()); // gazebo::math::Box is deprecated (Gazebo 8.0 and above))
+	);
+
+	ignition::math::Pose3d GetNewPose(			const ignition::math::Pose3d &_actor_pose,
+			const ignition::math::Vector3d &_actor_vel,
+			const ignition::math::Vector3d &_social_force,
 			const double &_dt,
-			const ignition::math::Vector3d &_internal_acc,
-			const std::vector<ignition::math::Vector3d> &_interactions_vector);
+			const uint8_t &_stance);
 
 	ignition::math::Vector3d GetNormalToAlphaDirection(const ignition::math::Pose3d &_actor_pose);
 
-	double GetAngleBetweenObjectsVelocities(const ignition::math::Pose3d &_actor_pose,
-			const ignition::math::Vector3d &_actor_vel,
+	double GetAngleBetweenObjectsVelocities(		const ignition::math::Pose3d &_actor_pose,
 			ignition::math::Angle *_actor_yaw,
 			const ignition::math::Pose3d &_object_pose,
-			const ignition::math::Vector3d &_object_vel,
 			ignition::math::Angle *_object_yaw);
 
 	uint8_t GetBetaRelativeLocation(
@@ -83,34 +85,29 @@ public:
 			const uint8_t &_beta_rel_location);
 
 
+	double GetRelativeSpeed(const ignition::math::Vector3d &_actor_velocity,
+							const ignition::math::Vector3d &_object_velocity);
+
+	ignition::math::Vector3d GetObjectsInteractionForce(		const ignition::math::Pose3d &_actor_pose,
+			const ignition::math::Vector3d &_actor_velocity,
+			const ignition::math::Pose3d &_object_pose,
+			const ignition::math::Vector3d &_object_velocity,
+			const ignition::math::Vector3d &_n_alpha, 		// actor's normal (based on velocity vector)
+			const ignition::math::Vector3d &_d_alpha_beta );
+
+	ignition::math::Vector3d GetSocialForce(
+		const gazebo::physics::WorldPtr _world_ptr,
+		const std::string _actor_name,
+		const ignition::math::Pose3d _actor_pose,
+		const ignition::math::Vector3d _actor_velocity,
+		const ignition::math::Vector3d _actor_target);
+
+
 	virtual ~SocialForceModel();
 
 private:
 
 	void 	SetParameterValues(void);
-
-/*
-	ignition::math::Vector3d GetInternalAcceleration(const ignition::math::Pose3d &_actor_pose,
-													 const ignition::math::Vector3d &_actor_vel,
-													 const ignition::math::Pose3d &_actor_target);
-*/
-
-	ignition::math::Vector3d GetActorsInteraction(
-			const ignition::math::Pose3d &_actor_pose,
-			const ignition::math::Pose3d &_actor_target,
-			const ignition::math::Vector3d &_n_alpha, 					// actor's normal (based on velocity vector)
-			const ignition::math::Vector3d &_n_beta, 					// other actor's normal
-			const ignition::math::Vector3d &_d_alpha_beta, 				// vector between objects poses
-			const double &_v_rel);
-
-	double GetVelocitiesAngle(const ignition::math::Vector3d &_n_alpha,
-												const ignition::math::Vector3d &_n_beta,
-												double *angle_alpha,
-												double *angle_beta);
-
-	uint8_t GetBetaRelativeLocation(
-			const ignition::math::Vector3d &_n_alpha,
-			const ignition::math::Vector3d &_d_alpha_beta);
 
 			//const ignition::math::Pose3d &_actor_pose,
 			//const ignition::math::Pose3d &_actor_target,
@@ -118,14 +115,6 @@ private:
 			//const double &_angle_alpha,
 			//const double &_angle_beta
 
-
-
-
-
-/*
-	ignition::math::Vector3d GetStaticObjectInteraction(const ignition::math::Pose3d &_actor_pose,
-												  	    const SFMObjectType &_type);
-*/
 
 	float relaxation_time;
 	float speed_desired;

@@ -173,6 +173,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
   ignition::math::Vector3d pos = this->target - pose.Pos();
   ignition::math::Vector3d rpy = pose.Rot().Euler();
 
+
 	// modelcount
 	// model by index
   	// -----------------------------------------------------------------------
@@ -193,6 +194,8 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
   	bool vel_calc = false;
     vel_calc = CalculateVelocity(pose.Pos(), dt);
+    this->actor->SetLinearVel(this->velocity_actual);
+    this->world->ModelByName(this->actor->GetName())->SetLinearVel(this->velocity_actual);
 
 	ignition::math::Vector3d n_alpha;
 	ignition::math::Pose3d target_pose;
@@ -227,7 +230,8 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
 			std::cout << " \t\t\t\t\t\t\t\t\t motion dir yaw: " << rpy.Z() << " motion dir yaw_inv: " << yaw_inv << std::endl;
 			// sfm.GetInternalAcceleration(pose, this->velocity_actual, target_pose, &n_alpha, this->actor->GetName());
-			sfm.GetInternalAcceleration(pose, this->velocity_actual, target_pose);
+			//sfm.GetInternalAcceleration(pose, this->velocity_actual, target_pose);
+			sfm.GetInternalAcceleration(pose, this->velocity_actual, target_pose.Pos());
 
 			n_alpha = sfm.GetNormalToAlphaDirection(pose);
 			std::cout << "AFTER  -- n_alpha: " << n_alpha << std::endl;
@@ -239,8 +243,9 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 			*/
 			ignition::math::Angle actor_yaw, object_yaw;
 
-			sfm.GetAngleBetweenObjectsVelocities(	pose, this->velocity_actual, &actor_yaw,
-													pose_actor2, vel_actor2, &object_yaw );
+			//sfm.GetAngleBetweenObjectsVelocities(	pose, this->velocity_actual, &actor_yaw,
+			//										pose_actor2, vel_actor2, &object_yaw );
+			sfm.GetAngleBetweenObjectsVelocities(pose, &actor_yaw, pose_actor2, &object_yaw);
 
 			ignition::math::Vector3d d_alpha_beta = pose_actor2.Pos() - pose.Pos();
 			uint8_t beta_rel_loc = sfm.GetBetaRelativeLocation(actor_yaw, d_alpha_beta);
@@ -248,6 +253,10 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 			if ( beta_rel_loc != 2) {
 				ignition::math::Vector3d p_alpha = sfm.GetPerpendicularToNormal(n_alpha, beta_rel_loc);
 			}
+
+			ignition::math::Vector3d sf = sfm.GetSocialForce(this->world, this->actor->GetName(), pose, this->velocity_actual, target_pose.Pos());
+
+			std::cout << "force: " << sf << std::endl;
 
 			print_time = _info.simTime;
 
