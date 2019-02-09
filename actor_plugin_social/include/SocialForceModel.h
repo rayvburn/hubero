@@ -46,6 +46,10 @@ public:
 
 	SocialForceModel();
 
+	void Init(const unsigned short int _mass_person,
+			  const float _desired_force_factor,
+			  const float _interaction_force_factor);
+
 	ignition::math::Vector3d GetInternalAcceleration(		const ignition::math::Pose3d &_actor_pose,
 			const ignition::math::Vector3d &_actor_vel,
 			const ignition::math::Vector3d &_actor_target);
@@ -69,7 +73,8 @@ public:
 
 	ignition::math::Vector3d GetNormalToAlphaDirection(const ignition::math::Pose3d &_actor_pose);
 
-	double GetAngleBetweenObjectsVelocities(		const ignition::math::Pose3d &_actor_pose,
+	double GetAngleBetweenObjectsVelocities(
+			const ignition::math::Pose3d &_actor_pose,
 			ignition::math::Angle *_actor_yaw,
 			const ignition::math::Pose3d &_object_pose,
 			ignition::math::Angle *_object_yaw);
@@ -88,7 +93,8 @@ public:
 	double GetRelativeSpeed(const ignition::math::Vector3d &_actor_velocity,
 							const ignition::math::Vector3d &_object_velocity);
 
-	ignition::math::Vector3d GetObjectsInteractionForce(		const ignition::math::Pose3d &_actor_pose,
+	ignition::math::Vector3d GetObjectsInteractionForce(
+			const ignition::math::Pose3d &_actor_pose,
 			const ignition::math::Vector3d &_actor_velocity,
 			const ignition::math::Pose3d &_object_pose,
 			const ignition::math::Vector3d &_object_velocity,
@@ -122,6 +128,8 @@ private:
 	float fov;
 	float yaw_max_delta;
 	unsigned short int mass_person; 		// to evaluate if helpful
+	float desired_force_factor;
+	float interaction_force_factor;
 
 #ifdef DEBUG_TF
 	ignition::math::Pose3d actor_current_pose;	// needed to reference the tf to

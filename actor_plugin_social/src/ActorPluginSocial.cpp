@@ -254,9 +254,18 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 				ignition::math::Vector3d p_alpha = sfm.GetPerpendicularToNormal(n_alpha, beta_rel_loc);
 			}
 
-			ignition::math::Vector3d sf = sfm.GetSocialForce(this->world, this->actor->GetName(), pose, this->velocity_actual, target_pose.Pos());
+			std::cout << "======================  SOCIAL_FORCE_CALC  =======================" << std::endl;
+			ignition::math::Vector3d sf = sfm.GetSocialForce(this->world,
+															 this->actor->GetName(),
+															 pose,
+															 this->velocity_actual,
+															 target_pose.Pos());
+			std::cout << " TOTAL force: " << sf << std::endl;
 
-			std::cout << "force: " << sf << std::endl;
+			std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;
+			ignition::math::Pose3d new_pose = sfm.GetNewPose(pose, this->velocity_actual, sf, dt, 0);
+			std::cout << " NEW pose: " << new_pose << std::endl;
+			std::cout << std::endl << std::endl;
 
 			print_time = _info.simTime;
 
