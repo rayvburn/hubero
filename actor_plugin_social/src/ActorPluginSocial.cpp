@@ -87,6 +87,9 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	last_pos_actor = this->actor->WorldPose().Pos();
 	std::cout << " -------- SET POSE! -------- " << last_pos_actor << std::endl;
 
+	// force initial velocity
+	// this->actor->SetLinearVel(ignition::math::Vector3d(1.0, 0.0, 0.0));
+
 }
 
 /////////////////////////////////////////////////
@@ -191,7 +194,6 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
     n_alpha_experiment.Z(0.0); // in-plane movement only now
 
 
-
   	bool vel_calc = false;
     vel_calc = CalculateVelocity(pose.Pos(), dt);
     this->actor->SetLinearVel(this->velocity_actual);
@@ -208,51 +210,55 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	if ( this->actor->GetName() == "actor2" ) {
 		pose_actor2 = pose;
 		vel_actor2 = this->velocity_actual;
+		this->actor->SetLinearVel(this->velocity_actual);
 	}
 	// *********
 
 	static common::Time print_time;
+	static ignition::math::Pose3d new_pose = pose;
+
 	if ( (_info.simTime - print_time).Double() > 0.2 ) {
 
 		if ( this->actor->GetName() == "actor1" ) {
 
-			/*
-			if ( vel_calc ) {
-				std::cout << " oooooo VELOCITY calculated oooooo " << " x: " << this->velocity_actual.X() << " y: " << this->velocity_actual.Y() << " z: " << this->velocity_actual.Z() << std::endl;
-			}
 
-			std::cout << std::setprecision(5) << "pose_cur: " << pose.Pos(); // << std::endl;
-			std::cout << std::setprecision(5) << "\t pose_last: " << last_pos_actor;
-			std::cout << std::setprecision(5) << "\t velocity: " << velocity_actual; // << std::endl;
-			std::cout << std::setprecision(5) << "\t dt: " << dt;
-			std::cout << std::endl;
-			*/
+			//if ( vel_calc ) {
+			//	std::cout << " oooooo VELOCITY calculated oooooo " << " x: " << this->velocity_actual.X() << " y: " << this->velocity_actual.Y() << " z: " << this->velocity_actual.Z() << std::endl;
+			//}
 
-			std::cout << " \t\t\t\t\t\t\t\t\t motion dir yaw: " << rpy.Z() << " motion dir yaw_inv: " << yaw_inv << std::endl;
+			//std::cout << std::setprecision(5) << "pose_cur: " << pose.Pos(); // << std::endl;
+			//std::cout << std::setprecision(5) << "\t pose_last: " << last_pos_actor;
+			//std::cout << std::setprecision(5) << "\t velocity: " << velocity_actual; // << std::endl;
+			//std::cout << std::setprecision(5) << "\t dt: " << dt;
+			//std::cout << std::endl;
+
+
+			std::cout << "--------------------------------------------------------------------------------------------------------------" << std::endl;
+			std::cout << " \t motion dir YAW: " << rpy.Z() << "\t motion dir YAW_'INV': " << yaw_inv;
 			// sfm.GetInternalAcceleration(pose, this->velocity_actual, target_pose, &n_alpha, this->actor->GetName());
 			//sfm.GetInternalAcceleration(pose, this->velocity_actual, target_pose);
 			sfm.GetInternalAcceleration(pose, this->velocity_actual, target_pose.Pos());
 
 			n_alpha = sfm.GetNormalToAlphaDirection(pose);
-			std::cout << "AFTER  -- n_alpha: " << n_alpha << std::endl;
+			std::cout << "\t AFTER  -- n_alpha: " << n_alpha << std::endl;
 
-			/*
-			sfm.GetAngleBetweenObjectsVelocities(	pose, this->velocity_actual,
-													ignition::math::Pose3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-													ignition::math::Vector3d(0.8, 0.8, 0.0) );
-			*/
+
+			//sfm.GetAngleBetweenObjectsVelocities(	pose, this->velocity_actual,
+			//										ignition::math::Pose3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+			//										ignition::math::Vector3d(0.8, 0.8, 0.0) );
+
 			ignition::math::Angle actor_yaw, object_yaw;
 
 			//sfm.GetAngleBetweenObjectsVelocities(	pose, this->velocity_actual, &actor_yaw,
 			//										pose_actor2, vel_actor2, &object_yaw );
-			sfm.GetAngleBetweenObjectsVelocities(pose, &actor_yaw, pose_actor2, &object_yaw);
+//			sfm.GetAngleBetweenObjectsVelocities(pose, &actor_yaw, pose_actor2, &object_yaw);
 
-			ignition::math::Vector3d d_alpha_beta = pose_actor2.Pos() - pose.Pos();
-			uint8_t beta_rel_loc = sfm.GetBetaRelativeLocation(actor_yaw, d_alpha_beta);
+//			ignition::math::Vector3d d_alpha_beta = pose_actor2.Pos() - pose.Pos();
+//			uint8_t beta_rel_loc = sfm.GetBetaRelativeLocation(actor_yaw, d_alpha_beta);
 
-			if ( beta_rel_loc != 2) {
-				ignition::math::Vector3d p_alpha = sfm.GetPerpendicularToNormal(n_alpha, beta_rel_loc);
-			}
+//			if ( beta_rel_loc != 2) {
+//				ignition::math::Vector3d p_alpha = sfm.GetPerpendicularToNormal(n_alpha, beta_rel_loc);
+//			}
 
 			std::cout << "======================  SOCIAL_FORCE_CALC  =======================" << std::endl;
 			ignition::math::Vector3d sf = sfm.GetSocialForce(this->world,
@@ -263,10 +269,10 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 			std::cout << " TOTAL force: " << sf << std::endl;
 
 			std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;
-			ignition::math::Pose3d new_pose = sfm.GetNewPose(pose, this->velocity_actual, sf, dt, 0);
-			std::cout << " NEW pose: " << new_pose << std::endl;
+			new_pose = sfm.GetNewPose(pose, this->velocity_actual, sf, dt, 0);
+			std::cout << "\t NEW pose: " << new_pose << std::endl;
 			std::cout << std::endl << std::endl;
-
+			this->actor->SetWorldPose(new_pose, false, false);
 			print_time = _info.simTime;
 
 		}
@@ -275,6 +281,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
 	// save the position of the actor to calculate velocity in the next step
 	last_pos_actor = pose.Pos();
+	return;
 
 
 	// -----------------------------------------------------------------------
@@ -321,7 +328,9 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
   double distanceTraveled = (pose.Pos() -
       this->actor->WorldPose().Pos()).Length();
 
-  this->actor->SetWorldPose(pose, false, false);
+  // this->actor->SetWorldPose(pose, false, false);
+  this->actor->SetWorldPose(new_pose, false, false);
+
   this->actor->SetScriptTime(this->actor->ScriptTime() +
     (distanceTraveled * this->animationFactor));
   this->lastUpdate = _info.simTime;
