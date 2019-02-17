@@ -54,6 +54,8 @@ public:
 			const ignition::math::Vector3d &_actor_vel,
 			const ignition::math::Vector3d &_actor_target);
 
+	inline double GetYawFromPose(const ignition::math::Pose3d &_actor_pose);
+
 	ignition::math::Vector3d GetInteractionComponent(
 			const ignition::math::Pose3d &_actor_pose,
 			const ignition::math::Vector3d &_actor_vel,
@@ -107,7 +109,10 @@ public:
 		const ignition::math::Pose3d _actor_pose,
 		const ignition::math::Vector3d _actor_velocity,
 		const ignition::math::Vector3d _actor_target);
+//		const std::map<std::string, unsigned int>  _map_actor_name_id,
+//		const std::vector<ignition::math::Vector3d> _actors_velocities);
 
+	unsigned int GetActorID(const std::string _name, const std::map<std::string, unsigned int> _map);
 
 	virtual ~SocialForceModel();
 

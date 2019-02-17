@@ -42,6 +42,10 @@ namespace gazebo
     // Documentation Unherited.
     public: virtual void Reset();
 
+    public: virtual ignition::math::Vector3d GetActorLinearVel();
+
+    public: void TestSimActor(void);
+
     /// \brief Function that is called every update cycle.
     /// \param[in] _info Timing information
     private: void OnUpdate(const common::UpdateInfo &_info);
@@ -54,6 +58,9 @@ namespace gazebo
     /// \param[in] _pos Direction vector that should be adjusted according
     /// to nearby obstacles.
     private: void HandleObstacles(ignition::math::Vector3d &_pos);
+
+    /// \brief Pointer to the model.
+    private: physics::ModelPtr model; 								// ?? nothing earned with model use instead of actor - could be deleted...
 
     /// \brief Pointer to the parent actor.
     private: physics::ActorPtr actor;
@@ -93,6 +100,26 @@ namespace gazebo
     private: physics::TrajectoryInfoPtr trajectoryInfo;
 
     // ----------------------------------------------------------
+
+    /// \brief Method that assigns an ID for the actor that is invoked by (must be called for each actor)
+    private: static unsigned int InitActorInfo(const std::string &_name);
+
+    /// \brief Actor's ID for indexing the lin_vels_vector (see below)
+    private: unsigned int actor_id;
+
+    /// \brief Linear velocity of the actor
+    private: static std::vector<ignition::math::Vector3d> lin_vels_vector;
+
+    private: static void SetActorsLinearVel(const unsigned int &_id, const ignition::math::Vector3d &_vel);
+
+//    private: static std::map<std::string, unsigned int> map_of_names;
+
+
+
+
+
+    /// \brief Linear velocity of the actor
+    private: ignition::math::Vector3d linear_velocity; 	// ??????????????????
 
     /// \brief Last actor location
     private: ignition::math::Vector3d last_pos_actor;
