@@ -27,6 +27,9 @@
 
 #include "SocialForceModel.h"
 
+//static std::vector<ignition::math::Vector3d> lin_vels_vector;
+//static std::map<std::string, unsigned int> map_of_names;
+
 namespace gazebo
 {
   class GAZEBO_VISIBLE ActorPlugin : public ModelPlugin
@@ -102,17 +105,14 @@ namespace gazebo
     // ----------------------------------------------------------
 
     /// \brief Method that assigns an ID for the actor that is invoked by (must be called for each actor)
-    private: static unsigned int InitActorInfo(const std::string &_name);
+    private: unsigned int InitActorInfo(const std::string &_name);
 
     /// \brief Actor's ID for indexing the lin_vels_vector (see below)
     private: unsigned int actor_id;
 
-    /// \brief Linear velocity of the actor
-    private: static std::vector<ignition::math::Vector3d> lin_vels_vector;
-
     private: static void SetActorsLinearVel(const unsigned int &_id, const ignition::math::Vector3d &_vel);
 
-//    private: static std::map<std::string, unsigned int> map_of_names;
+
 
 
 

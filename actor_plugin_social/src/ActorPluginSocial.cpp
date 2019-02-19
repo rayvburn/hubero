@@ -29,9 +29,32 @@ GZ_REGISTER_MODEL_PLUGIN(ActorPlugin)
 
 #define WALKING_ANIMATION "walking"
 
+
+// ==========================================================================================
+// ========================= CRASH / BUG / FAIL (?) note ====================================
+// ==========================================================================================
+/* static std::vector creates some crash (couldn't find anything wrong in .log)				=
+ * every operation on the vector (even try of printing the address) causes:					=
+ * 		o  	actor's pose calculation is completely different compared to the one			=
+ * 			presented in the plugin's code,													=
+ *		o	no std::cout debug info is printed (even placed in the plugin's constructor)	=
+ *		o 	pure declaration of the vector does not do any harm								=
+ * As a workaround there is a global vector of the same type in class' .cpp file			=
+ * Below was in the header:																	=
+ * //	private: static std::vector<ignition::math::Vector3d> lin_vels_vector;				=
+ *///																						=
+/* static std::map - same as above															=
+	 * // 	private: static std::map<std::string, unsigned int> map_of_names; *///			=
+// ==========================================================================================
+std::vector<ignition::math::Vector3d> lin_vels_vector;
+std::map<std::string, unsigned int> map_of_names;
+
+
+
 /////////////////////////////////////////////////
 ActorPlugin::ActorPlugin()
 {
+	std::cout << "CONSTRUCTOR HERE, hello" << std::endl;
 }
 
 /////////////////////////////////////////////////
@@ -39,6 +62,7 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
 
 	std::cout << "ACTOR PLUGIN::LOAD!" << std::endl;
+//	std::cout << "LOAD()   lin vels address" << &lin_vels_vector << std::endl;
   this->sdf = _sdf;
   this->model = _model;
 
@@ -112,6 +136,11 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
 	actor_id = this->InitActorInfo(this->actor->GetName());
 	std::cout << " -------- ACTOR ID -------- " << actor_id << std::endl;
+
+	// WARNING: HARD-CODED target coord
+	if ( this->actor->GetName() == "actor1" ) {
+		this->target.Y(3.50);
+	}
 
 	// force initial velocity
 	// this->actor->SetLinearVel(ignition::math::Vector3d(1.0, 0.0, 0.0));
@@ -194,17 +223,25 @@ void ActorPlugin::HandleObstacles(ignition::math::Vector3d &_pos)
 /////////////////////////////////////////////////
 
 unsigned int ActorPlugin::InitActorInfo(const std::string &_name) {
-	static unsigned int id = 0;
-//	map_of_names.insert(std::make_pair(_name, id));
-	lin_vels_vector.push_back(ignition::math::Vector3d(1.0, 1.0, 1.0));
-	return id++;
-	return 0;
+
+//	ignition::math::Vector3d vel(0.0, 0.0, 0.0);
+
+	// to check if the vector is shared between objects
+//    std::cout << "InitActorInfo()   lin vels address" << &lin_vels_vector << std::endl;
+//	lin_vels_vector.push_back(vel);
+	lin_vels_vector.emplace_back(1.0, 1.0, 0.0);
+	std::cout << "\tlin vels vector[ ]: " << lin_vels_vector[lin_vels_vector.size()-1] << std::endl;
+
+	unsigned int id = static_cast<unsigned int>(lin_vels_vector.size() - 1);
+	map_of_names.insert(std::make_pair(_name, id));
+	return id;
 }
 
 /////////////////////////////////////////////////
 
 void ActorPlugin::SetActorsLinearVel(const unsigned int &_id, const ignition::math::Vector3d &_vel) {
 //	lin_vels_vector[_id] = _vel;
+	lin_vels_vector.at(_id) = _vel;
 }
 
 // - - - - - - - -- - - - - -- - -
@@ -231,7 +268,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 			Print_Set(true);
 			print_time = _info.simTime;
 			std::cout << "************************ ACTOR1 *****************************" << std::endl;
-			std::cout << "**** INITIAL pose: " << this->actor->WorldPose() << "\t\t actor1 velocity: \t" << this->velocity_actual << std::endl;
+			std::cout << "**** INITIAL pose: " << this->actor->WorldPose() << "\t\t actor1 velocity: \t" << this->velocity_actual << "\t target: " << this->target << std::endl;
 		}
 	} else {
 		print_info = false;
@@ -245,11 +282,20 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
 
   	CalculateVelocity(pose.Pos(), dt);
+
   	/* Setting the linear velocity for actor or actor's model HAS NO EFFECT, don't know why,
   	 * couldn't find source files on disk and based on bitbucket's Gazebo sources all seems
   	 * to be fine (32 joints detected so link pointer is not NULL)
   	 * Thus a workaround with static std::vector that stores all actor's velocities */
+
+  	// below causes no movement for both actors, only rotation
   	SetActorsLinearVel(this->actor_id, this->velocity_actual);
+
+//  	if ( this->actor->GetName() == "actor1" ) {
+//  		SetActorsLinearVel(this->actor_id, ignition::math::Vector3d(1.0,1.0,0.0));
+//  	} else if ( this->actor->GetName() == "actor2" ) {
+//  		SetActorsLinearVel(this->actor_id, ignition::math::Vector3d(2.0,2.0,0.0));
+//  	}
 
   	/*
   	this->actor->SetEnabled(true);
@@ -277,15 +323,20 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 													 this->actor->GetName(),
 													 pose,
 													 this->velocity_actual,
-													 this->target);
-//													 map_of_names,
-//													 lin_vels_vector);
+													 this->target, // );
+													 map_of_names,
+													 lin_vels_vector);
 	if ( print_info ) {
 		std::cout << "\t TOTAL force: " << sf << std::endl;
+		std::cout << "\t\t\t Vels vector: ";
+		for ( int i = 0; i < lin_vels_vector.size(); i++ ) {
+			std::cout << "\t" << lin_vels_vector[i];
+		}
+		std::cout << std::endl;
 		std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;
 	}
 
-	ignition::math::Pose3d new_pose = sfm.GetNewPose(pose, this->velocity_actual, sf, dt, 0);
+	ignition::math::Pose3d new_pose = sfm.GetNewPose(pose, this->velocity_actual, -sf, dt, 0);
 
 	if ( print_info ) {
 		std::cout << "\t NEW pose: " << new_pose;
@@ -568,6 +619,7 @@ bool ActorPlugin::CalculateVelocity(const ignition::math::Vector3d &_pos, const 
 	const unsigned int SPEED_LIMIT = 15;
 	double temp_x, temp_y, temp_z = 0.0;
 
+	// std::cout << " Calc vel! " << std::endl;
 	if ( (temp_x = (_pos.X() - this->last_pos_actor.X())/_dt) > SPEED_LIMIT ) {
 		if ( print_info ) {
 			std::cout << " oooooo VELOCITY SHOOTOUT X oooooo " << std::endl;

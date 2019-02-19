@@ -1,0 +1,18 @@
+TODO: service to switch to teleop control
+TODO: after reaching target - let the actor rest for a while and then choose a new goal, rotate and go in this new direction
+TODO: local minimae check - if for a few seconds actor hasnt moved then choose a new goal
+TODOs from notebook
+
+
+current tasks:
+o 	sf sign changed to - (is it good, debug)
+o 	chooseNewTarget not triggered after reaching?
+
+
+
+
+move all properties of the actor from .world file to .yaml config!
+
+objects database:
+ignore: ground_plane
+		sun

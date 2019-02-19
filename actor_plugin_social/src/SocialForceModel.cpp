@@ -25,6 +25,7 @@ namespace SocialForceModel {
 #define DEBUG_REL_SPEED
 #define DEBUG_NEW_POSE
 
+#define ACTOR_ID_NOT_FOUND	255u
 // - - - - - - - - - - - - - - - - -
 
 #include "print_info.h"
@@ -33,7 +34,11 @@ static int print_counter = 0;
 
 // ------------------------------------------------------------------- //
 
+// TODO: add references to arguments to avoid copy
+
 SocialForceModel::SocialForceModel():
+
+		// TODO: note that IT IS REQUIRED TO NAME ALL ACTORS "actor..."
 
 	fov(1.80), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
 	desired_force_factor(100.0), interaction_force_factor(200.0) {
@@ -62,12 +67,40 @@ void SocialForceModel::Init(const unsigned short int _mass_person, const float _
 
 unsigned int SocialForceModel::GetActorID(const std::string _name, const std::map<std::string, unsigned int> _map) {
 
-//	std::map<std::string, unsigned int>::const_iterator it;
-//	it = _map.find(_name);
-//	if ( it != _map.end() ) {
+	std::map<std::string, unsigned int>::const_iterator it;
+	it = _map.find(_name);
+	if ( it != _map.end() ) {
 //		std::cout << "GetActorID - " << it->first << "\t id: " << it->second << std::endl;
-//	}
-	return 0;
+	} else {
+		return ACTOR_ID_NOT_FOUND;
+	}
+	return it->second;
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool SocialForceModel::IsActor(const std::string &_name) {
+
+	std::size_t found_pos = _name.find("actor");
+	if ( found_pos != std::string::npos ) {
+		return true;
+	}
+	return false;
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Vector3d SocialForceModel::GetActorVelocity(const gazebo::physics::ModelPtr &_model_ptr,
+		const std::map<std::string, unsigned int>  _map,
+		const std::vector<ignition::math::Vector3d> _actors_velocities) {
+
+	unsigned int actor_id = this->GetActorID(_model_ptr->GetName(), _map);
+	if ( actor_id == ACTOR_ID_NOT_FOUND ) {
+		return ignition::math::Vector3d(0.0, 0.0, 0.0);
+	}
+	return _actors_velocities[actor_id];
 
 }
 
@@ -78,12 +111,15 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	const std::string _actor_name,
 	const ignition::math::Pose3d _actor_pose,
 	const ignition::math::Vector3d _actor_velocity,
-	const ignition::math::Vector3d _actor_target)
-//	const std::map<std::string, unsigned int>  _map_actor_name_id,
-//	const std::vector<ignition::math::Vector3d> _actors_velocities)
+	const ignition::math::Vector3d _actor_target, // )
+	const std::map<std::string, unsigned int>  _map_actor_name_id,
+	const std::vector<ignition::math::Vector3d> _actors_velocities)
 {
 
-	//this->GetActorID(_actor_name, _map_actor_name_id);
+//	unsigned int actor_id = this->GetActorID(_actor_name, _map_actor_name_id);
+//	if ( actor_id == ACTOR_ID_NOT_FOUND ) {
+//		return ignition::math::Vector3d(0.0, 0.0, 0.0);
+//	}
 
 	// easier to debug
 	if ( _actor_name == "actor1" ) {
@@ -103,17 +139,18 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	ignition::math::Vector3d f_alpha_beta(0.0, 0.0, 0.0);
 	ignition::math::Vector3d f_ab_single(0.0, 0.0, 0.0);
 
-	// TODO: add f_alpha and f_alpha_beta coefficients
-
+	/* model_vel contains model's velocity (world's object or actor) - for the actor this is set differently
+	 * it was impossible to set actor's linear velocity by setting it by the model's class method */
+	ignition::math::Vector3d model_vel;
 
 	gazebo::physics::ModelPtr model_ptr;
+	/*
 	for ( unsigned int i = 0; i < _world_ptr->ModelCount(); i++ ) {
 
 		model_ptr = _world_ptr->ModelByIndex(i);
 
 		if ( model_ptr->GetName() == _actor_name ) {
 			// do not calculate social force for itself
-//			std::cout << "ACTOR1 self-velocity: " << model_ptr->WorldLinearVel() << std::endl;
 			continue;
 		}
 
@@ -121,14 +158,20 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
 		}
 
+		if ( this->IsActor(model_ptr->GetName()) ) {
+			model_vel = GetActorVelocity(model_ptr, _map_actor_name_id, _actors_velocities);
+		} else {
+			model_vel = model_ptr->WorldLinearVel();
+		}
+
 		// what if velocity is actually non-zero but Gazebo sees 0?
 		f_ab_single += this->GetInteractionComponent(	_actor_pose,
 														_actor_velocity,
 														model_ptr->WorldPose(),
-														model_ptr->WorldLinearVel());
+														model_vel);
 		f_alpha_beta += f_ab_single;
 		if ( print_info ) {
-			std::cout << " model's name: " << model_ptr->GetName() << "  pose: " << model_ptr->WorldPose() << "  lin vel: " << model_ptr->WorldLinearVel() << "  force: " << f_ab_single << std::endl;
+			std::cout << " model's name: " << model_ptr->GetName() << "  pose: " << model_ptr->WorldPose() << "  lin vel: " << model_vel << "  force: " << f_ab_single << std::endl;
 		}
 
 	}
@@ -136,7 +179,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	if ( print_info ) {
 		std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
 	}
-	/**/
+	*/
 	return (desired_force_factor * f_alpha + interaction_force_factor * f_alpha_beta);
 
 

@@ -108,11 +108,17 @@ public:
 		const std::string _actor_name,
 		const ignition::math::Pose3d _actor_pose,
 		const ignition::math::Vector3d _actor_velocity,
-		const ignition::math::Vector3d _actor_target);
-//		const std::map<std::string, unsigned int>  _map_actor_name_id,
-//		const std::vector<ignition::math::Vector3d> _actors_velocities);
+		const ignition::math::Vector3d _actor_target, // );
+		const std::map<std::string, unsigned int>  _map_actor_name_id,
+		const std::vector<ignition::math::Vector3d> _actors_velocities);
 
 	unsigned int GetActorID(const std::string _name, const std::map<std::string, unsigned int> _map);
+
+	bool IsActor(const std::string &_name);
+
+	ignition::math::Vector3d GetActorVelocity(const gazebo::physics::ModelPtr &_model_ptr,
+			const std::map<std::string, unsigned int>  _map,
+			const std::vector<ignition::math::Vector3d> _actors_velocities);
 
 	virtual ~SocialForceModel();
 
