@@ -139,7 +139,7 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
 	// WARNING: HARD-CODED target coord
 	if ( this->actor->GetName() == "actor1" ) {
-		this->target.Y(3.50);
+		this->target.Y(-3.50);
 	}
 
 	// force initial velocity
@@ -280,7 +280,6 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
   	ignition::math::Vector3d to_target_vector = this->target - pose.Pos();
   	ignition::math::Vector3d rpy = pose.Rot().Euler();
 
-
   	CalculateVelocity(pose.Pos(), dt);
 
   	/* Setting the linear velocity for actor or actor's model HAS NO EFFECT, don't know why,
@@ -336,7 +335,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 		std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;
 	}
 
-	ignition::math::Pose3d new_pose = sfm.GetNewPose(pose, this->velocity_actual, -sf, dt, 0);
+	ignition::math::Pose3d new_pose = sfm.GetNewPose(pose, this->velocity_actual, sf, dt, 0);
 
 	if ( print_info ) {
 		std::cout << "\t NEW pose: " << new_pose;

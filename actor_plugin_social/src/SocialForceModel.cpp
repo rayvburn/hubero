@@ -8,6 +8,19 @@
 #include <SocialForceModel.h>
 #include <cmath>
 
+/* Uncommenting hangs debug messages and makes 2 actors move the same way -
+ * just like adding the `static` function to ActorPlugin class */
+// #define GRID_MAP_VISUALIZATION
+
+#ifdef GRID_MAP_VISUALIZATION
+
+#include <grid_map_core/GridMap.hpp>
+#include <grid_map_ros/grid_map_ros.hpp>
+
+#endif
+
+// ----------------------------------------
+
 namespace SocialForceModel {
 
 #define SFM_RIGHT_SIDE 0
@@ -32,6 +45,21 @@ namespace SocialForceModel {
 static bool print_info = false;
 static int print_counter = 0;
 
+
+
+// ------------------------------------------------------------------- //
+
+#ifdef GRID_MAP_VISUALIZATION
+
+#define MAP_BOUND_X     3.0f
+#define MAP_BOUND_Y     2.0f
+#define MAP_RESOLUTION  0.1f
+
+// Create grid map
+static grid_map::GridMap gridmap({"layer"});
+
+#endif
+
 // ------------------------------------------------------------------- //
 
 // TODO: add references to arguments to avoid copy
@@ -52,6 +80,12 @@ SocialForceModel::SocialForceModel():
 	 * - direction weight
 	 * - max speed
 	 */
+
+#ifdef GRID_MAP_VISUALIZATION
+	gridmap.setFrameId("map");
+	gridmap.setGeometry(grid_map::Length(1.0, 1.0), 0.1);
+	gridmap["layer"].setRandom();
+#endif
 
 }
 
@@ -428,17 +462,26 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	/// Smooth rotation
 	ignition::math::Angle yaw_new;
 	if (std::abs(yaw_delta.Radian()) > IGN_DTOR(10)) {
-		yaw_new.Radian(_actor_pose.Rot().Euler().Z() + yaw_delta.Radian() * 0.001);
-		recalculate_vel = true;
+      yaw_new.Radian(_actor_pose.Rot().Euler().Z() + yaw_delta.Radian() * 0.001);
+      if ( print_info ) {
+          std::cout << "\n\n\n\tSMOOTHING ROTATION\tyaw_initial: " << _actor_pose.Rot().Euler().Z() << "\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << "\n\n\n" << std::endl;
+      }
+      recalculate_vel = true;
 	} else {
-		yaw_new.Radian(_actor_pose.Rot().Euler().Z() + yaw_delta.Radian());
-	}
+      yaw_new.Radian(_actor_pose.Rot().Euler().Z() + yaw_delta.Radian());
+      if ( print_info ) {
+          std::cout << "\n\tNORMAL ROTATION\tyaw_initial: " << _actor_pose.Rot().Euler().Z() << "\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << '\n' << std::endl;
+      }
+  }
 
 	/// Recalculate velocity vectors if yaw was truncated
 	if ( recalculate_vel ) {
 		// TODO: debug sign of a sine/cosine
 		result_vel.X(+sin(yaw_new.Radian())*result_vel.SquaredLength());
 		result_vel.Y(+cos(yaw_new.Radian())*result_vel.SquaredLength());
+		if ( print_info ) {
+		    std::cout << "\n\tSMOOTHING ROTATION - RECALCULATED VEL\tx: " << result_vel.X() << "\ty: " << result_vel.Y() << '\n' << std::endl;
+		}
 	}
 
 	// Set new pose values
@@ -616,7 +659,7 @@ double SocialForceModel::GetRelativeSpeed(
 // ============================================================================
 
 inline double SocialForceModel::GetYawFromPose(const ignition::math::Pose3d &_actor_pose) {
-	return _actor_pose.Rot().Euler().Z();
+	return _actor_pose.Rot().Yaw();
 }
 
 // ============================================================================

@@ -7,6 +7,7 @@ TODOs from notebook
 current tasks:
 o 	sf sign changed to - (is it good, debug)
 o 	chooseNewTarget not triggered after reaching?
+o 	create gridmap for visualization
 
 
 
