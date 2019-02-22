@@ -32,6 +32,13 @@
 
 namespace gazebo
 {
+
+typedef enum {
+	ACTOR_STANCE_WALK = 0,
+	ACTOR_STANCE_STAND,
+	ACTOR_STANCE_LIE,
+} ActorStance;
+
   class GAZEBO_VISIBLE ActorPlugin : public ModelPlugin
   {
     /// \brief Constructor
@@ -44,10 +51,6 @@ namespace gazebo
 
     // Documentation Unherited.
     public: virtual void Reset();
-
-    public: virtual ignition::math::Vector3d GetActorLinearVel();
-
-    public: void TestSimActor(void);
 
     /// \brief Function that is called every update cycle.
     /// \param[in] _info Timing information
@@ -63,7 +66,7 @@ namespace gazebo
     private: void HandleObstacles(ignition::math::Vector3d &_pos);
 
     /// \brief Pointer to the model.
-    private: physics::ModelPtr model; 								// ?? nothing earned with model use instead of actor - could be deleted...
+    private: physics::ModelPtr model;
 
     /// \brief Pointer to the parent actor.
     private: physics::ActorPtr actor;
@@ -104,6 +107,9 @@ namespace gazebo
 
     // ----------------------------------------------------------
 
+    /// \brief TODO
+    private: bool ReadSDF();
+
     /// \brief Method that assigns an ID for the actor that is invoked by (must be called for each actor)
     private: unsigned int InitActorInfo(const std::string &_name);
 
@@ -121,14 +127,28 @@ namespace gazebo
     /// \brief Linear velocity of the actor
     private: ignition::math::Vector3d linear_velocity; 	// ??????????????????
 
-    /// \brief Last actor location
-    private: ignition::math::Vector3d last_pos_actor;
+    /// \brief Pose of the actor
+    private: ignition::math::Pose3d pose_actor;	// raw pose value has the offset
+
+    /// \brief Helper function that considers the offset of the actor's yaw and a roll
+    /// 	   offset depending on current stance
+    private: ignition::math::Vector3d UpdateActorOrientation();
+    private: ignition::math::Vector3d UpdateActorOrientation(const ignition::math::Pose3d &_pose);
+//    private: inline void RestoreYawGazeboInPose();
+    private: inline void SetActorPose(const ignition::math::Pose3d &_pose);
+
+    /// \brief Type of current stance of the actor
+    private: ActorStance stance_actor;
+
+
+    /// \brief Last actor's pose
+    private: ignition::math::Pose3d last_pose_actor;
 
     /// \brief Actual velocity of the actor
     private: ignition::math::Vector3d velocity_actual;
 
     /// \brief Helper function to calculate the velocity (if it is allowable)
-    /// allowable in terms of immediate jumps which are not permitted
+    /// 	   allowable in terms of immediate jumps which are not permitted
     private: bool CalculateVelocity(const ignition::math::Vector3d &_pos, const double &_dt);
 
     /// \brief Social Force Model interface object

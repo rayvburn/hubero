@@ -67,8 +67,11 @@ public:
 			//const ignition::math::Box &_object_bb = ignition::math::Box()); // gazebo::math::Box is deprecated (Gazebo 8.0 and above))
 	);
 
-	ignition::math::Pose3d GetNewPose(			const ignition::math::Pose3d &_actor_pose,
+	ignition::math::Pose3d GetNewPose(
+			const ignition::math::Pose3d &_actor_pose,
+			const ignition::math::Pose3d &_actor_last_pose,
 			const ignition::math::Vector3d &_actor_vel,
+			const ignition::math::Vector3d &_actor_target,
 			const ignition::math::Vector3d &_social_force,
 			const double &_dt,
 			const uint8_t &_stance);
@@ -94,6 +97,10 @@ public:
 
 	double GetRelativeSpeed(const ignition::math::Vector3d &_actor_velocity,
 							const ignition::math::Vector3d &_object_velocity);
+
+	bool IsActorFacingTheTarget(const ignition::math::Angle _yaw,
+								const ignition::math::Vector3d _target);
+
 
 	ignition::math::Vector3d GetObjectsInteractionForce(
 			const ignition::math::Pose3d &_actor_pose,

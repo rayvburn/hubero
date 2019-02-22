@@ -37,6 +37,7 @@ namespace SocialForceModel {
 #define DEBUG_INTERACTION_FORCE
 #define DEBUG_REL_SPEED
 #define DEBUG_NEW_POSE
+#define DEBUG_ACTOR_FACING_TARGET
 
 #define ACTOR_ID_NOT_FOUND	255u
 // - - - - - - - - - - - - - - - - -
@@ -45,6 +46,7 @@ namespace SocialForceModel {
 static bool print_info = false;
 static int print_counter = 0;
 
+#define NEW_YAW_BASE
 
 
 // ------------------------------------------------------------------- //
@@ -259,10 +261,10 @@ ignition::math::Vector3d SocialForceModel::GetNormalToAlphaDirection(const ignit
 		// std::cout << "BEFORE -- n_alpha: " << *_n_alpha << "  _actor_vel: " << _actor_vel << std::endl;
 //	}
 
-	ignition::math::Vector3d rpy = _actor_pose.Rot().Euler();
+	// ignition::math::Vector3d rpy = _actor_pose.Rot().Euler();
 
-	ignition::math::Angle yaw_norm;
-	yaw_norm.Radian(rpy.Z());
+	ignition::math::Angle yaw_norm(_actor_pose.Rot().Euler().Z());
+	// yaw_norm.Radian(rpy.Z());
 	yaw_norm.Normalize();
 	yaw_norm -= yaw_norm.Pi; // opposite pointing
 	yaw_norm.Normalize();
@@ -391,9 +393,13 @@ ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
 
 }
 
+// ------------------------------------------------------------------- //
+
 ignition::math::Pose3d SocialForceModel::GetNewPose(
 			const ignition::math::Pose3d &_actor_pose,
+			const ignition::math::Pose3d &_actor_last_pose,
 			const ignition::math::Vector3d &_actor_vel,
+			const ignition::math::Vector3d &_actor_target,
 			const ignition::math::Vector3d &_social_force,
 			const double &_dt,
 			const uint8_t &_stance)
@@ -425,6 +431,7 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 
 	}
 
+	// temporary vector caused by social-force-based displacements
 	ignition::math::Vector3d new_position(_actor_pose.Pos().X() + result_vel.X() * _dt,
 										  _actor_pose.Pos().Y() + result_vel.Y() * _dt,
 										  _actor_pose.Pos().Z());
@@ -455,24 +462,82 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	ignition::math::Vector3d new_orientation((IGN_PI/2), 0, yaw_new.Radian());
 */
 
+
 	/// Total yaw is expressed as ((IGN_PI / 2) + yaw_angle) where yaw is the angle between x axis line and velocity vector
+	// #ifdef NEW_YAW_BASE
 	ignition::math::Angle yaw_delta = atan2(new_position.Y(), new_position.X()) + (IGN_PI / 2) - _actor_pose.Rot().Euler().Z();
 	yaw_delta.Normalize();
 
 	/// Smooth rotation
 	ignition::math::Angle yaw_new;
 	if (std::abs(yaw_delta.Radian()) > IGN_DTOR(10)) {
+
       yaw_new.Radian(_actor_pose.Rot().Euler().Z() + yaw_delta.Radian() * 0.001);
       if ( print_info ) {
           std::cout << "\n\n\n\tSMOOTHING ROTATION\tyaw_initial: " << _actor_pose.Rot().Euler().Z() << "\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << "\n\n\n" << std::endl;
       }
       recalculate_vel = true;
+
 	} else {
-      yaw_new.Radian(_actor_pose.Rot().Euler().Z() + yaw_delta.Radian());
-      if ( print_info ) {
-          std::cout << "\n\tNORMAL ROTATION\tyaw_initial: " << _actor_pose.Rot().Euler().Z() << "\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << '\n' << std::endl;
-      }
-  }
+
+	  yaw_new.Radian(_actor_pose.Rot().Euler().Z() + yaw_delta.Radian());
+	  if ( print_info ) {
+		  std::cout << "\n\tNORMAL ROTATION\tyaw_initial: " << _actor_pose.Rot().Euler().Z() << "\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << '\n' << std::endl;
+	  }
+
+	}
+
+	/* TODO: debug
+	// if the actor's yaw angle is such that he faces opposite direction to his target - make him rotate in place first
+	if ( IsActorFacingTheTarget(yaw_new, _actor_target) ) {
+
+		// ok - don't rotate in place
+		#ifdef DEBUG_ACTOR_FACING_TARGET
+		if ( print_info ) {
+			std::cout << "\tYES!" << std::endl;
+		}
+		#endif
+
+	} else {
+
+		// rotate in place condition
+		recalculate_vel = false;
+
+		// TODO: circular motion - swing around
+		result_vel.X(0.0);
+		result_vel.Y(0.0);
+
+		// check if delta is non-zero (to artificially force actor's rotation)
+		short int sign = 0;
+
+		if ( std::abs(yaw_delta.Radian()) <= 1e-03 ) {
+
+			// the sign of the trend must be determined (or just use yaw_delta's sign (?)
+			if ( GetYawFromPose(_actor_pose) - GetYawFromPose(_actor_last_pose) < 0 ) {
+				sign = -1;
+			} else {
+				sign = +1;
+			}
+			yaw_new.Radian(sign * 1.001f * GetYawFromPose(_actor_last_pose)); 	// speed up the rotation a bit
+
+		} else {
+
+			yaw_new.Radian(0.001 * yaw_delta.Radian() + yaw_new.Radian()); 		// speed up the rotation a bit
+
+
+		}
+
+		// yaw_new.Radian(sign * 1.01f * GetYawFromPose(_actor_last_pose)); // speed up the rotation a bit
+		yaw_new.Normalize();
+
+		#ifdef DEBUG_ACTOR_FACING_TARGET
+		if ( print_info ) {
+			std::cout << "\tNO!" << "\tyaw_calc: " << yaw_new << "\tsign: " << sign << std::endl;
+		}
+		#endif
+
+	}
+	*/
 
 	/// Recalculate velocity vectors if yaw was truncated
 	if ( recalculate_vel ) {
@@ -589,6 +654,51 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 
 // ------------------------------------------------------------------- //
 
+// overload?
+//ignition::math::Pose3d SocialForceModel::GetNewPose(
+//			const ignition::math::Pose3d &_actor_pose,
+//			const ignition::math::Vector3d &_actor_vel,
+//			const ignition::math::Vector3d &_actor_target,
+//			const ignition::math::Vector3d &_social_force,
+//			const double &_dt,
+//			const uint8_t &_stance)
+//{
+//
+//}
+
+// ------------------------------------------------------------------- //
+
+bool SocialForceModel::IsActorFacingTheTarget(	const ignition::math::Angle _yaw,
+												const ignition::math::Vector3d _target)
+{
+
+	ignition::math::Angle yaw_target( std::atan2( _target.X(), _target.Y() ) );
+	yaw_target.Normalize();
+
+	ignition::math::Angle yaw_result( yaw_target.Radian() - _yaw.Radian() );
+	yaw_result.Normalize();
+
+#ifdef DEBUG_ACTOR_FACING_TARGET
+	if ( print_info ) {
+		std::cout << "\n\tIsActorFacingTheTarget()\tyaw_actor: " << _yaw.Radian() << "\tyaw_target: " << yaw_target.Radian() << "\tyaw_result: " << yaw_result.Radian();
+	}
+#endif
+
+	/* The threshold angle is taken - 0-(TH) degs should be considered as well as (180-TH)-180 */
+	const unsigned short int THRESHOLD_ANGLE = 25;
+	if ( 	std::abs(yaw_result.Radian()) <= IGN_DTOR(THRESHOLD_ANGLE) ||
+			std::abs(yaw_result.Radian()) >= IGN_DTOR(180-THRESHOLD_ANGLE) )
+	{
+		return true;
+	} else {
+		return false;
+	}
+
+
+}
+
+// ------------------------------------------------------------------- //
+
 void SocialForceModel::SetParameterValues() {
 
 	/* Invoking this function to each actor will create a population in which there are
@@ -659,7 +769,11 @@ double SocialForceModel::GetRelativeSpeed(
 // ============================================================================
 
 inline double SocialForceModel::GetYawFromPose(const ignition::math::Pose3d &_actor_pose) {
-	return _actor_pose.Rot().Yaw();
+	// the actor's offset yaw is considered
+	// return (_actor_pose.Rot().Yaw() + (IGN_PI / 2));
+
+	// when offset already considered
+	return (_actor_pose.Rot().Yaw());
 }
 
 // ============================================================================

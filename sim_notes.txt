@@ -5,6 +5,7 @@ TODOs from notebook
 
 
 current tasks:
+o 	yaw angle - check calculations in notebook (yaw 0 is actually aligned with y axis directed to negative values (not along X axis!))
 o 	sf sign changed to - (is it good, debug)
 o 	chooseNewTarget not triggered after reaching?
 o 	create gridmap for visualization

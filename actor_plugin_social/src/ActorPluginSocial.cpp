@@ -63,55 +63,18 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
 	std::cout << "ACTOR PLUGIN::LOAD!" << std::endl;
 //	std::cout << "LOAD()   lin vels address" << &lin_vels_vector << std::endl;
-  this->sdf = _sdf;
-  this->model = _model;
 
-  this->actor = boost::dynamic_pointer_cast<physics::Actor>(_model);
-  // this->model = boost::dynamic_pointer_cast<physics::Model>(this->actor);
+	this->sdf = _sdf;
+	this->model = _model;
+	this->actor = boost::dynamic_pointer_cast<physics::Actor>(_model);
+	this->world = this->actor->GetWorld();
+	this->connections.push_back(event::Events::ConnectWorldUpdateBegin(
+		  std::bind(&ActorPlugin::OnUpdate, this, std::placeholders::_1)));
+	this->Reset();
 
-  this->world = this->actor->GetWorld();
+	if ( this->ReadSDF() ) { /* TODO: Exception Handling */ }
 
-  this->connections.push_back(event::Events::ConnectWorldUpdateBegin(
-          std::bind(&ActorPlugin::OnUpdate, this, std::placeholders::_1)));
-
-  this->Reset();
-
-  // Read in the target weight
-  if (_sdf->HasElement("target_weight"))
-    this->targetWeight = _sdf->Get<double>("target_weight");
-  else
-    this->targetWeight = 1.15;
-
-  // Read in the obstacle weight
-  if (_sdf->HasElement("obstacle_weight"))
-    this->obstacleWeight = _sdf->Get<double>("obstacle_weight");
-  else
-    this->obstacleWeight = 1.5;
-
-  // Read in the animation factor (applied in the OnUpdate function).
-  if (_sdf->HasElement("animation_factor"))
-    this->animationFactor = _sdf->Get<double>("animation_factor");
-  else
-    this->animationFactor = 4.5;
-
-  // Add our own name to models we should ignore when avoiding obstacles.
-  this->ignoreModels.push_back(this->actor->GetName());
-
-  // Read in the other obstacles to ignore
-  if (_sdf->HasElement("ignore_obstacles"))
-  {
-    sdf::ElementPtr modelElem =
-      _sdf->GetElement("ignore_obstacles")->GetElement("model");
-    while (modelElem)
-    {
-      this->ignoreModels.push_back(modelElem->Get<std::string>());
-      modelElem = modelElem->GetNextElement("model");
-    }
-  }
-
-  	// correct the rotation to align face with x axis if yaw = 0 and stand up (with roll 0 actor is lying)
-
-    /* */
+	// - - - - - - - - - - - - - - - - - - - - - -  - - - -- - - -- - - -- -  -- -
     std::cout << "LOADED POSE: " << this->actor->WorldPose() << std::endl;
 
   	ignition::math::Vector3d init_orient = this->actor->WorldPose().Rot().Euler();
@@ -127,12 +90,12 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	this->actor->SetWorldPose(init_pose, false, false);
 	std::cout << " -------- SET WorldPose() actor! -------- " << init_pose << std::endl;
 
-	// conversions between euler and quaternion will finally produce the result that converges to 0... above is deprecated, yaw will be set in each OnUpdate()
+	// conversions between Euler and Quaternion will finally produce the result that converges to 0...
+	// above is deprecated, yaw will be set in each OnUpdate()
 
-
-    // Set last_pos_actor to prevent velocity shootout
-	last_pos_actor = this->actor->WorldPose().Pos();
-	std::cout << " -------- SET last_pos_actor! -------- " << last_pos_actor << std::endl;
+	// Set last_pos_actor to prevent velocity shootout
+	last_pose_actor.Pos() = this->actor->WorldPose().Pos();
+	std::cout << " -------- SET last_pos_actor! -------- " << last_pose_actor.Pos() << std::endl;
 
 	actor_id = this->InitActorInfo(this->actor->GetName());
 	std::cout << " -------- ACTOR ID -------- " << actor_id << std::endl;
@@ -141,9 +104,6 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	if ( this->actor->GetName() == "actor1" ) {
 		this->target.Y(-3.50);
 	}
-
-	// force initial velocity
-	// this->actor->SetLinearVel(ignition::math::Vector3d(1.0, 0.0, 0.0));
 
 }
 
@@ -169,6 +129,8 @@ void ActorPlugin::Reset()
     this->trajectoryInfo.reset(new physics::TrajectoryInfo());
     this->trajectoryInfo->type = WALKING_ANIMATION;
     this->trajectoryInfo->duration = 1.0;
+
+    stance_actor = ACTOR_STANCE_WALK;
 
     this->actor->SetCustomTrajectory(this->trajectoryInfo);
   }
@@ -244,16 +206,6 @@ void ActorPlugin::SetActorsLinearVel(const unsigned int &_id, const ignition::ma
 	lin_vels_vector.at(_id) = _vel;
 }
 
-// - - - - - - - -- - - - - -- - -
-ignition::math::Vector3d ActorPlugin::GetActorLinearVel() {
-	std::cout << "HELLO, INTERNAL WORLD LINEAR VEL! \n" << std::endl;
-	return linear_velocity;
-}
-
-void ActorPlugin::TestSimActor(void) {
-
-}
-
 /////////////////////////////////////////////////
 void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 {
@@ -267,7 +219,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 			print_info = true;
 			Print_Set(true);
 			print_time = _info.simTime;
-			std::cout << "************************ ACTOR1 *****************************" << std::endl;
+			std::cout << "**************************************************** ACTOR1 ***********************************************" << std::endl;
 			std::cout << "**** INITIAL pose: " << this->actor->WorldPose() << "\t\t actor1 velocity: \t" << this->velocity_actual << "\t target: " << this->target << std::endl;
 		}
 	} else {
@@ -276,11 +228,17 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
   	// OnUpdate algorithm
   	double dt = (_info.simTime - this->lastUpdate).Double();
-  	ignition::math::Pose3d pose = this->actor->WorldPose();
-  	ignition::math::Vector3d to_target_vector = this->target - pose.Pos();
-  	ignition::math::Vector3d rpy = pose.Rot().Euler();
+  	// ignition::math::Pose3d pose = this->actor->WorldPose();
 
-  	CalculateVelocity(pose.Pos(), dt);
+  	// TODO: avoid the copy?
+  	this->SetActorPose(this->actor->WorldPose());
+
+  	ignition::math::Vector3d to_target_vector = this->target - this->pose_actor.Pos();
+
+  	// ignition::math::Vector3d rpy = pose.Rot().Euler();
+  	ignition::math::Vector3d rpy = this->UpdateActorOrientation();
+
+  	CalculateVelocity(this->pose_actor.Pos(), dt);
 
   	/* Setting the linear velocity for actor or actor's model HAS NO EFFECT, don't know why,
   	 * couldn't find source files on disk and based on bitbucket's Gazebo sources all seems
@@ -318,33 +276,38 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 //	std::cout << "AFTER  SetLinearVel()  " << this->world->ModelByName(this->actor->GetName())->WorldLinearVel() << std::endl;
 	*/
 
+  	this->actor->SetLinearVel(this->velocity_actual);
+
 	ignition::math::Vector3d sf = sfm.GetSocialForce(this->world,
 													 this->actor->GetName(),
-													 pose,
+													 this->pose_actor,
 													 this->velocity_actual,
 													 this->target, // );
 													 map_of_names,
 													 lin_vels_vector);
 	if ( print_info ) {
 		std::cout << "\t TOTAL force: " << sf << std::endl;
-		std::cout << "\t\t\t Vels vector: ";
-		for ( int i = 0; i < lin_vels_vector.size(); i++ ) {
-			std::cout << "\t" << lin_vels_vector[i];
-		}
-		std::cout << std::endl;
+//		std::cout << "\t\t\t Vels vector: ";
+//		for ( int i = 0; i < lin_vels_vector.size(); i++ ) {
+//			std::cout << "\t" << lin_vels_vector[i];
+//		}
+//		std::cout << std::endl;
 		std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;
 	}
 
-	ignition::math::Pose3d new_pose = sfm.GetNewPose(pose, this->velocity_actual, sf, dt, 0);
+	ignition::math::Pose3d new_pose = sfm.GetNewPose(	this->pose_actor,
+														this->last_pose_actor,
+														this->velocity_actual,
+														this->target,
+														sf,
+														dt,
+														0);
 
 	if ( print_info ) {
 		std::cout << "\t NEW pose: " << new_pose;
-		std::cout << "\t\t distance to TARGET: " << (this->target - pose.Pos()).Length() << std::endl;
+		std::cout << "\t\t distance to TARGET: " << (this->target - this->pose_actor.Pos()).Length() << std::endl;
 		std::cout << std::endl << std::endl;
 	}
-
-  	// save last position to calculate velocity
-  	last_pos_actor = this->actor->WorldPose().Pos();
 
 	//
 	double to_target_distance = to_target_vector.Length();
@@ -358,7 +321,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 		if ( print_info ) {
 			std::cout << " \t new: " << this->target << std::endl;
 		}
-		to_target_vector = this->target - pose.Pos();
+		to_target_vector = this->target - this->pose_actor.Pos();
 	}
 
 	// depending on the current stance SET the ROLL and PITCH angles properly
@@ -383,6 +346,9 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
 	print_info = false;
 	Print_Set(false);
+
+  	// save last position to calculate velocity
+	last_pose_actor = this->actor->WorldPose();
 
 	//// "pos"  was the vector from current location to target before
 	//// ignition::math::Vector3d pos = this->target - pose.Pos();
@@ -611,6 +577,8 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
   */
 }
 
+// ===============================================================================================
+
 bool ActorPlugin::CalculateVelocity(const ignition::math::Vector3d &_pos, const double &_dt) {
 
   	/// calculate actor's velocity vector or leave the last velocity
@@ -619,21 +587,21 @@ bool ActorPlugin::CalculateVelocity(const ignition::math::Vector3d &_pos, const 
 	double temp_x, temp_y, temp_z = 0.0;
 
 	// std::cout << " Calc vel! " << std::endl;
-	if ( (temp_x = (_pos.X() - this->last_pos_actor.X())/_dt) > SPEED_LIMIT ) {
+	if ( (temp_x = (_pos.X() - this->last_pose_actor.Pos().X())/_dt) > SPEED_LIMIT ) {
 		if ( print_info ) {
 			std::cout << " oooooo VELOCITY SHOOTOUT X oooooo " << std::endl;
 		}
 		return false;
 	}
 
-	if ( (temp_y = (_pos.Y() - this->last_pos_actor.Y())/_dt) > SPEED_LIMIT ) {
+	if ( (temp_y = (_pos.Y() - this->last_pose_actor.Pos().Y())/_dt) > SPEED_LIMIT ) {
 		if ( print_info ) {
 			std::cout << " oooooo VELOCITY SHOOTOUT Y oooooo " << std::endl;
 		}
 		return false;
 	}
 
-	if ( (temp_z = (_pos.Z() - this->last_pos_actor.Z())/_dt) > SPEED_LIMIT ) {
+	if ( (temp_z = (_pos.Z() - this->last_pose_actor.Pos().Z())/_dt) > SPEED_LIMIT ) {
 		if ( print_info ) {
 			std::cout << " oooooo VELOCITY SHOOTOUT Z oooooo " << std::endl;
 		}
@@ -647,3 +615,97 @@ bool ActorPlugin::CalculateVelocity(const ignition::math::Vector3d &_pos, const 
 	return true;
 
 }
+
+// ===============================================================================================
+
+bool ActorPlugin::ReadSDF() {
+
+	  // Read in the target weight
+	  if (this->sdf ->HasElement("target_weight"))
+	    this->targetWeight = this->sdf ->Get<double>("target_weight");
+	  else
+	    this->targetWeight = 1.15;
+
+	  // Read in the obstacle weight
+	  if (this->sdf ->HasElement("obstacle_weight"))
+	    this->obstacleWeight = this->sdf ->Get<double>("obstacle_weight");
+	  else
+	    this->obstacleWeight = 1.5;
+
+	  // Read in the animation factor (applied in the OnUpdate function).
+	  if (this->sdf ->HasElement("animation_factor"))
+	    this->animationFactor = this->sdf ->Get<double>("animation_factor");
+	  else
+	    this->animationFactor = 4.5;
+
+	  // Add our own name to models we should ignore when avoiding obstacles.
+	  this->ignoreModels.push_back(this->actor->GetName());
+
+	  // Read in the other obstacles to ignore
+	  if (this->sdf ->HasElement("ignore_obstacles"))
+	  {
+	    sdf::ElementPtr modelElem =
+	    		this->sdf ->GetElement("ignore_obstacles")->GetElement("model");
+	    while (modelElem)
+	    {
+	      this->ignoreModels.push_back(modelElem->Get<std::string>());
+	      modelElem = modelElem->GetNextElement("model");
+	    }
+	  }
+
+	  return true;
+
+}
+
+// ===============================================================================================
+
+inline void ActorPlugin::SetActorPose(const ignition::math::Pose3d &_pose) {
+
+	this->pose_actor = _pose;
+
+}
+
+// ===============================================================================================
+
+ignition::math::Vector3d ActorPlugin::UpdateActorOrientation(const ignition::math::Pose3d &_pose) {
+
+	this->SetActorPose(_pose);
+	return (this->UpdateActorOrientation());
+
+}
+
+// ===============================================================================================
+
+ignition::math::Vector3d ActorPlugin::UpdateActorOrientation() {
+
+	/* Corrects the rotation to align face with x axis if yaw = 0
+	 * and stand up (with roll 0 actor is lying) */
+
+	ignition::math::Vector3d rpy = this->pose_actor.Rot().Euler();
+
+	switch (stance_actor) {
+
+		// Yaw alignment with X-axis DEPRECATED //
+		case(ACTOR_STANCE_WALK):
+				rpy.X(1.5707);
+//				rpy.Z() += IGN_DTOR(90);
+				break;
+		case(ACTOR_STANCE_STAND):
+				rpy.X(1.5707);
+//				rpy.Z() += IGN_DTOR(90);
+				break;
+		case(ACTOR_STANCE_LIE):
+				rpy.X(0.0000);
+//				rpy.Z() += IGN_DTOR(90);
+				break;
+
+	}
+
+	return rpy;
+}
+
+// ===============================================================================================
+
+//inline void ActorPlugin::RestoreYawGazeboInPose() {
+//	this->pose_actor.Rot().Euler().Z() -= IGN_DTOR(90);
+//}
