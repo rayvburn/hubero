@@ -86,8 +86,11 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   	init_pose.Set(init_position,
 				  ignition::math::Quaterniond(init_orient.X() + IGN_PI/2,
 											  init_orient.Y(),
-											  init_orient.Z() + 1.5707));
-	this->actor->SetWorldPose(init_pose, false, false);
+											  // init_orient.Z() + 1.5707));
+											  init_orient.Z()));
+
+	// WARNING: initial pose changed!
+  	this->actor->SetWorldPose(init_pose, false, false);
 	std::cout << " -------- SET WorldPose() actor! -------- " << init_pose << std::endl;
 
 	// conversions between Euler and Quaternion will finally produce the result that converges to 0...
@@ -105,13 +108,15 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 		this->target.Y(-3.50);
 	}
 
+	prev_state_actor = ACTOR_STATE_MOVE_AROUND;
+
 }
 
 /////////////////////////////////////////////////
 void ActorPlugin::Reset()
 {
   this->velocity_desired = 0.8;
-  this->lastUpdate = 0;
+  this->last_update = 0;
 
   if (this->sdf && this->sdf->HasElement("target"))
     this->target = this->sdf->Get<ignition::math::Vector3d>("target");
@@ -210,6 +215,44 @@ void ActorPlugin::SetActorsLinearVel(const unsigned int &_id, const ignition::ma
 void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 {
 
+	bool to_start = true;
+	if (_info.simTime.Double() < 8.0f ) {
+		static int last_sec = 0;
+		int curr_sec = static_cast<int>(_info.simTime.Double());
+		if ( curr_sec != last_sec ) {
+			std::cout << curr_sec << "\tWAITING..." << std::endl;
+			last_sec = curr_sec;
+		}
+		to_start = false;
+	}
+
+	if ( !to_start ) {
+		return;
+	};
+
+	state_actor = ACTOR_STATE_ALIGN_TARGET;
+
+	switch(state_actor) {
+
+	case(ACTOR_STATE_ALIGN_TARGET):
+			// std::cout << "\tACTOR_STATE_ALIGN_TARGET" << std::endl;
+			ActorStateAlignTargetHandler(_info);
+			break;
+	case(ACTOR_STATE_MOVE_AROUND):
+			std::cout << "\tACTOR_STATE_MOVE_AROUND" << std::endl;
+			ActorStateMoveAroundHandler(_info);
+			break;
+	case(ACTOR_STATE_FOLLOW_OBJECT):
+			std::cout << "\tACTOR_STATE_FOLLOW_OBJECT" << std::endl;
+			ActorStateFollowObjectHandler(_info);
+			break;
+	case(ACTOR_STATE_TELEOPERATION):
+			std::cout << "\tACTOR_STATE_TELEOPERATION" << std::endl;
+			ActorStateTeleoperationHandler(_info);
+			break;
+	}
+
+
 	// debugging purposes
 
   	static common::Time print_time;
@@ -226,8 +269,10 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 		print_info = false;
 	}
 
+  	return;
+
   	// OnUpdate algorithm
-  	double dt = (_info.simTime - this->lastUpdate).Double();
+  	double dt = (_info.simTime - this->last_update).Double();
   	// ignition::math::Pose3d pose = this->actor->WorldPose();
 
   	// TODO: avoid the copy?
@@ -341,8 +386,8 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	this->actor->SetWorldPose(new_pose, false, false);
 
 	// update script time to set proper animation speed
-	this->actor->SetScriptTime(this->actor->ScriptTime() + (distanceTraveled * this->animationFactor));
-	this->lastUpdate = _info.simTime;
+	this->actor->SetScriptTime(this->actor->ScriptTime() + (distanceTraveled * this->animation_factor));
+	this->last_update = _info.simTime;
 
 	print_info = false;
 	Print_Set(false);
@@ -634,9 +679,9 @@ bool ActorPlugin::ReadSDF() {
 
 	  // Read in the animation factor (applied in the OnUpdate function).
 	  if (this->sdf ->HasElement("animation_factor"))
-	    this->animationFactor = this->sdf ->Get<double>("animation_factor");
+	    this->animation_factor = this->sdf ->Get<double>("animation_factor");
 	  else
-	    this->animationFactor = 4.5;
+	    this->animation_factor = 4.5;
 
 	  // Add our own name to models we should ignore when avoiding obstacles.
 	  this->ignoreModels.push_back(this->actor->GetName());
@@ -654,6 +699,63 @@ bool ActorPlugin::ReadSDF() {
 	  }
 
 	  return true;
+
+}
+
+// ===============================================================================================
+
+bool ActorPlugin::AlignToTargetDirection() {
+
+	// calculate the yaw angle actor need to rotate around world's Z axis
+	ignition::math::Angle yaw_target(std::atan2( this->target.X(), this->target.Y() ));
+	yaw_target.Normalize();
+
+	double yaw_current = this->pose_actor.Rot().Yaw();
+//	ignition::math::Angle yaw_result( yaw_target.Radian() - yaw_current );
+	ignition::math::Angle yaw_result( yaw_current - yaw_target.Radian() );
+	yaw_result.Normalize();
+
+	// smooth the rotation if too big
+	ignition::math::Vector3d rpy = this->pose_actor.Rot().Euler();
+
+	if ( yaw_result.Radian() > IGN_DTOR(10) ) {
+//		this->pose_actor.Rot().Euler().Z(yaw_current + yaw_result.Radian() * 0.0001);
+		rpy.Z(yaw_current + yaw_result.Radian() * 0.001);
+	} else {
+//		this->pose_actor.Rot().Euler().Z(yaw_current + yaw_result.Radian());
+		rpy.Z(yaw_current + yaw_result.Radian());
+	}
+
+	//
+	static int ctr = 0;
+	if ( ctr++ == 500 ) {
+		std::cout << "\nyaw_current: " << yaw_current << "\tyaw_target: " << yaw_target.Radian() << "\tyaw_result: " << yaw_result.Radian() << std::endl << std::endl;
+		ctr = 0;
+	}
+
+
+	// update the local copy of pose
+	this->pose_actor.Set(this->pose_actor.Pos(), rpy);
+
+	// update the global pose
+	this->actor->SetWorldPose(this->pose_actor, false, false);
+
+	/* Update script time to set proper animation speed
+	 * forced 0 distance travelled to avoid actor oscillations */
+	this->actor->SetScriptTime(this->actor->ScriptTime() + (0.0f * this->animation_factor));
+
+	// debug info
+	print_info = false;
+	Print_Set(false);
+
+	// save last position to calculate velocity
+	last_pose_actor = this->actor->WorldPose();
+
+	// return true if the yaw_result is small enough, otherwise return false
+	if ( abs(yaw_result.Radian() < IGN_DTOR(15)) || abs(yaw_result.Radian() > IGN_DTOR(180 - 15)) ) {
+		return true;
+	}
+	return false;
 
 }
 
@@ -709,3 +811,72 @@ ignition::math::Vector3d ActorPlugin::UpdateActorOrientation() {
 //inline void ActorPlugin::RestoreYawGazeboInPose() {
 //	this->pose_actor.Rot().Euler().Z() -= IGN_DTOR(90);
 //}
+
+// ===============================================================================================
+
+void ActorPlugin::ActorStateAlignTargetHandler(const common::UpdateInfo &_info) {
+
+	static unsigned long int counter = 0;
+	if ( this->actor->GetName() == "actor1" ) {
+		if ( counter++ == 250 ) {
+			std::cout << "GOT INTO ActorStateAlignTargetHandler()\tpose: " << this->pose_actor << std::endl;
+			counter = 0;
+		}
+	}
+
+	this->SetActorPose(this->actor->WorldPose());
+	ignition::math::Vector3d rpy = this->UpdateActorOrientation();
+	this->pose_actor.Rot().Euler().X(rpy.X());
+	this->pose_actor.Rot().Euler().Y(rpy.Y());
+	this->pose_actor.Rot().Euler().Z(rpy.Z());
+
+	double dt = (_info.simTime - this->last_update).Double();
+	CalculateVelocity(this->pose_actor.Pos(), dt);
+
+	SetActorsLinearVel(this->actor_id, this->velocity_actual);
+	this->actor->SetLinearVel(this->velocity_actual);
+
+	if ( this->AlignToTargetDirection() ) {
+
+		// aligned - switch to previous state
+		state_actor = prev_state_actor;
+//		static int internal_counter = 0;
+		if ( this->actor->GetName() == "actor1" ) {
+//			if ( internal_counter++ == 3 ) {
+				std::cout << std::endl;
+				std::cout << std::endl;
+				std::cout << "\t\tALIGNED!" << std::endl;
+				std::cout << std::endl;
+				std::cout << std::endl;
+//				internal_counter == 0;
+//			}
+		}
+
+	}
+
+	// udpdate time
+	this->last_update = _info.simTime;
+
+  	// save last position to calculate velocity
+	last_pose_actor = this->actor->WorldPose();
+
+	if ( this->actor->GetName() == "actor1" ) {
+		if ( counter == 0 ) {
+			std::cout << "OUTTA ActorStateAlignTargetHandler()\tpose1: " << this->pose_actor << "\tpose2: " << this->actor->WorldPose() << "\tlast_pose: " << last_pose_actor << std::endl;
+		}
+	}
+
+
+}
+
+void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
+
+}
+
+void ActorPlugin::ActorStateFollowObjectHandler(const common::UpdateInfo &_info) {
+
+}
+
+void ActorPlugin::ActorStateTeleoperationHandler(const common::UpdateInfo &_info) {
+
+}

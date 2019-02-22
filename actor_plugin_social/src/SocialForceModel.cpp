@@ -465,7 +465,19 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 
 	/// Total yaw is expressed as ((IGN_PI / 2) + yaw_angle) where yaw is the angle between x axis line and velocity vector
 	// #ifdef NEW_YAW_BASE
+
+	// 1st method - seems like adding 90 deg solves the issue with swapping X and Y?
 	ignition::math::Angle yaw_delta = atan2(new_position.Y(), new_position.X()) + (IGN_PI / 2) - _actor_pose.Rot().Euler().Z();
+
+	/*
+	// 2nd method??
+	// Theta1 (initial): _actor_pose.Rot().Euler().Z()
+	// Theta2 (new)	   :  atan2(new_position.X(), new_position.Y())
+	ignition::math::Angle yaw_delta = _actor_pose.Rot().Euler().Z() - atan2(new_position.Y(), new_position.X());
+	ignition::math::Angle yaw_2 = atan2(new_position.Y(), new_position.X()); // debug only //
+	yaw_2.Normalize();
+	*/
+
 	yaw_delta.Normalize();
 
 	/// Smooth rotation
@@ -474,7 +486,7 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 
       yaw_new.Radian(_actor_pose.Rot().Euler().Z() + yaw_delta.Radian() * 0.001);
       if ( print_info ) {
-          std::cout << "\n\n\n\tSMOOTHING ROTATION\tyaw_initial: " << _actor_pose.Rot().Euler().Z() << "\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << "\n\n\n" << std::endl;
+          std::cout << "\n\n\n\tSMOOTHING ROTATION\tyaw_initial: " << _actor_pose.Rot().Euler().Z() << /*"\tyaw_2: " << yaw_2.Radian() << */"\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << "\n\n\n" << std::endl;
       }
       recalculate_vel = true;
 
@@ -482,7 +494,7 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 
 	  yaw_new.Radian(_actor_pose.Rot().Euler().Z() + yaw_delta.Radian());
 	  if ( print_info ) {
-		  std::cout << "\n\tNORMAL ROTATION\tyaw_initial: " << _actor_pose.Rot().Euler().Z() << "\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << '\n' << std::endl;
+		  std::cout << "\n\tNORMAL ROTATION\tyaw_initial: " << _actor_pose.Rot().Euler().Z() << /*"\tyaw_2: " << yaw_2.Radian() << */"\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << '\n' << std::endl;
 	  }
 
 	}
@@ -544,6 +556,11 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 		// TODO: debug sign of a sine/cosine
 		result_vel.X(+sin(yaw_new.Radian())*result_vel.SquaredLength());
 		result_vel.Y(+cos(yaw_new.Radian())*result_vel.SquaredLength());
+		/*
+		// 2nd method of yaw_delta calculation
+		result_vel.X(+cos(yaw_new.Radian())*result_vel.SquaredLength());
+		result_vel.Y(+sin(yaw_new.Radian())*result_vel.SquaredLength());
+		*/
 		if ( print_info ) {
 		    std::cout << "\n\tSMOOTHING ROTATION - RECALCULATED VEL\tx: " << result_vel.X() << "\ty: " << result_vel.Y() << '\n' << std::endl;
 		}

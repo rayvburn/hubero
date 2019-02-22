@@ -1,3 +1,4 @@
+TODO: service 'stand `pose`' or 'lie `pose`' (pose as a target and stance change after reaching it)
 TODO: service to switch to teleop control
 TODO: after reaching target - let the actor rest for a while and then choose a new goal, rotate and go in this new direction
 TODO: local minimae check - if for a few seconds actor hasnt moved then choose a new goal

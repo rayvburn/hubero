@@ -33,11 +33,24 @@
 namespace gazebo
 {
 
+// -------------------------
+
 typedef enum {
 	ACTOR_STANCE_WALK = 0,
 	ACTOR_STANCE_STAND,
 	ACTOR_STANCE_LIE,
 } ActorStance;
+
+// -------------------------
+
+typedef enum {
+	ACTOR_STATE_ALIGN_TARGET = 0,
+	ACTOR_STATE_MOVE_AROUND,
+	ACTOR_STATE_FOLLOW_OBJECT,
+	ACTOR_STATE_TELEOPERATION,
+} ActorState;
+
+// -------------------------
 
   class GAZEBO_VISIBLE ActorPlugin : public ModelPlugin
   {
@@ -94,10 +107,10 @@ typedef enum {
 
     /// \brief Time scaling factor. Used to coordinate translational motion
     /// with the actor's walking animation.
-    private: double animationFactor = 1.0;
+    private: double animation_factor = 1.0;
 
     /// \brief Time of the last update.
-    private: common::Time lastUpdate;
+    private: common::Time last_update;
 
     /// \brief List of models to ignore. Used for vector field
     private: std::vector<std::string> ignoreModels;
@@ -139,6 +152,19 @@ typedef enum {
 
     /// \brief Type of current stance of the actor
     private: ActorStance stance_actor;
+
+    /// \brief Current state of the actor
+    private: ActorState state_actor;
+    private: ActorState prev_state_actor;
+
+    private: bool AlignToTargetDirection();
+
+
+    // handlers for each state
+    private: void ActorStateAlignTargetHandler	(const common::UpdateInfo &_info);
+    private: void ActorStateMoveAroundHandler	(const common::UpdateInfo &_info);
+    private: void ActorStateFollowObjectHandler	(const common::UpdateInfo &_info);
+    private: void ActorStateTeleoperationHandler(const common::UpdateInfo &_info);
 
 
     /// \brief Last actor's pose
