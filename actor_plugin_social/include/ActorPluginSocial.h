@@ -167,6 +167,13 @@ typedef enum {
     private: void ActorStateTeleoperationHandler(const common::UpdateInfo &_info);
 
 
+
+    private: double PrepareForUpdate(const common::UpdateInfo &_info);
+    private: void ApplyUpdate(const common::UpdateInfo &_info, const double &_dist_traveled);
+
+
+
+
     /// \brief Last actor's pose
     private: ignition::math::Pose3d last_pose_actor;
 

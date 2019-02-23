@@ -725,23 +725,12 @@ bool ActorPlugin::AlignToTargetDirection() {
 	ignition::math::Angle yaw_target(std::atan2( this->target.Y(), this->target.X() ) + 1.5707);
 	yaw_target.Normalize();
 
-	double yaw_current = this->pose_actor.Rot().Yaw();
-//	ignition::math::Angle yaw_result( yaw_target.Radian() - yaw_current );
-	ignition::math::Angle yaw_diff( yaw_current - yaw_target.Radian() );
+	double yaw_start = this->pose_actor.Rot().Yaw();
+	ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );
 	yaw_diff.Normalize();
 
-	// debug angle
-	static unsigned int ctr = 0;
-	if ( this->actor->GetName() == "actor1" ) {
-		if ( ctr++ == 20 ) {
-			std::cout << "\ttarget: " << this->target << "\tyaw_current: " << yaw_current << "\tyaw_target: " << yaw_target.Radian() << "\tyaw_diff: " << yaw_diff.Radian() << std::endl;
-			ctr = 0;
-		}
-
-	}
-
 	/*
-	// choose the right rotation direction
+	// choose the right rotation direction (but the direction already calculated properly)
 	if ( std::fabs(yaw_diff.Radian()) > (IGN_PI/2) ) {
 
 		if ( yaw_diff.Radian() >= 1e-06 ) {
@@ -762,90 +751,37 @@ bool ActorPlugin::AlignToTargetDirection() {
 	*/
 
 	// smooth the rotation if too big
-	ignition::math::Vector3d rpy = this->pose_actor.Rot().Euler();
-
-	/*
-	if ( yaw_diff.Radian() > IGN_DTOR(10) ) {
-//		this->pose_actor.Rot().Euler().Z(yaw_current + yaw_result.Radian() * 0.0001);
-//		rpy.Z(yaw_current + yaw_result.Radian() * 0.0001);
-		yaw_diff.Radian(yaw_diff.Radian() * 0.0001);
-	} else {
-//		this->pose_actor.Rot().Euler().Z(yaw_current + yaw_result.Radian());
-		yaw_diff.Radian(yaw_diff.Radian() * 0.1);
-	}
-	*/
-
 	static const double YAW_INCREMENT = 0.001;
 	short int sign = -1;
+	ignition::math::Vector3d rpy = this->pose_actor.Rot().Euler();
 
 	// check the sign of the diff - the movement should be performed in the OPPOSITE direction to yaw_diff angle
 	if ( yaw_diff.Radian() < 0.0f ) {
 		sign = +1;
 	}
-//	if ( this->actor->GetName() == "actor1" ) {
-//		std::cout << "sign: " << sign << std::endl;
-//	}
-	// save the change to tell if actor is aligned or not
+
+	// save the change to tell if actor is already aligned or not
 	double angle_change = 0.0;
 
 	// consider the difference (increment or decrement)
 	if ( std::fabs(yaw_diff.Radian()) < YAW_INCREMENT ) {
 		angle_change = static_cast<double>(sign) * yaw_diff.Radian();
-		if ( this->actor->GetName() == "actor1" ) {
-//			std::cout << "yaw_diff SMALLER THAN yaw_increment\t\tangle change: " << angle_change << std::endl;
-//			std::cout << "yaw_diff: " << yaw_diff.Radian() << "\tfabs(yaw_diff): " << fabs(yaw_diff.Radian()) << "\tYAW_INCREMENT: " << YAW_INCREMENT << std::endl;
-		}
 	} else {
 		angle_change = static_cast<double>(sign) * YAW_INCREMENT;
-		if ( this->actor->GetName() == "actor1" ) {
-//			std::cout << "yaw_diff BIGGER OR EQUAT TO yaw_increment\t\tangle change: " << angle_change << std::endl;
-//			std::cout << "YAW_INCREMENT: " << YAW_INCREMENT << std::endl;
-		}
 	}
 
-	ignition::math::Angle yaw_result(yaw_current + angle_change);
+	ignition::math::Angle yaw_result(yaw_start + angle_change);
 	yaw_result.Normalize();
 	rpy.Z(yaw_result.Radian());
-
-	//
-//	static int ctr = 0;
-//	if ( ctr++ == 500 ) {
-//	if ( this->actor->GetName() == "actor1" ) {
-//		std::cout << "\nyaw_current: " << yaw_current << "\tyaw_target: " << yaw_target.Radian() << "\tyaw_diff: " << yaw_diff.Radian() << "\tyaw_incremented: " << rpy.Z() << std::endl << std::endl;
-//	}
-//		ctr = 0;
-//	}
-
 
 	// update the local copy of pose
 	this->pose_actor.Set(this->pose_actor.Pos(), rpy);
 
-	// update the global pose
-	this->actor->SetWorldPose(this->pose_actor, false, false);
-
-	/* Update script time to set proper animation speed
-	 * forced 0 distance travelled to avoid actor oscillations */
-	this->actor->SetScriptTime(this->actor->ScriptTime() + (0.0f * this->animation_factor));
-
-	// debug info
-	print_info = false;
-	Print_Set(false);
-
-	// save last position to calculate velocity
-	last_pose_actor = this->actor->WorldPose();
-
-	// return true if the yaw_result is small enough, otherwise return false
-//	if ( abs(yaw_result.Radian() < IGN_DTOR(15)) || abs(yaw_result.Radian() > IGN_DTOR(180 - 15)) ) {
-	// abs seems to allow aligning with the target axis but actor could face opposite direction
-//	if ( yaw_result.Radian() < IGN_DTOR(15) || yaw_result.Radian() > IGN_DTOR(180 - 15) ) {
+	// return true if the yaw_diff is small enough, otherwise return false
 	yaw_diff.Radian(yaw_diff.Radian() - angle_change);
 	yaw_diff.Normalize();
 
-	if ( this->actor->GetName() == "actor1" ) {
-//		std::cout << "\nyaw_current: " << yaw_current << "\tyaw_target: " << yaw_target.Radian() << "\tangle_change: " << angle_change << "\tyaw_diff_increm: " << yaw_diff.Radian() << "\tyaw_result: " << rpy.Z() << std::endl << std::endl;
-	}
-
-	if ( fabs(yaw_diff.Radian()) < IGN_DTOR(10) ) {
+	if ( std::fabs(yaw_diff.Radian()) < IGN_DTOR(10) ) {
 		return true;
 	}
 	return false;
@@ -901,27 +837,16 @@ ignition::math::Vector3d ActorPlugin::UpdateActorOrientation() {
 
 // ===============================================================================================
 
-//inline void ActorPlugin::RestoreYawGazeboInPose() {
-//	this->pose_actor.Rot().Euler().Z() -= IGN_DTOR(90);
-//}
-
-// ===============================================================================================
-
-void ActorPlugin::ActorStateAlignTargetHandler(const common::UpdateInfo &_info) {
-
-	static unsigned long int counter = 0;
-	if ( this->actor->GetName() == "actor1" ) {
-		if ( counter++ == 10 ) {
-			std::cout << "GOT INTO ActorStateAlignTargetHandler()\n\tpose: " << this->pose_actor << std::endl;
-			counter = 0;
-		}
-	}
+double ActorPlugin::PrepareForUpdate(const common::UpdateInfo &_info) {
 
 	this->SetActorPose(this->actor->WorldPose());
-	ignition::math::Vector3d rpy = this->UpdateActorOrientation();
-	this->pose_actor.Rot().Euler().X(rpy.X());
-	this->pose_actor.Rot().Euler().Y(rpy.Y());
-	this->pose_actor.Rot().Euler().Z(rpy.Z());
+
+//	ignition::math::Vector3d rpy = this->UpdateActorOrientation();
+//	this->pose_actor.Rot().Euler().X(rpy.X());
+//	this->pose_actor.Rot().Euler().Y(rpy.Y());
+//	this->pose_actor.Rot().Euler().Z(rpy.Z());
+
+	this->pose_actor.Rot().Euler(this->UpdateActorOrientation());
 
 	double dt = (_info.simTime - this->last_update).Double();
 	CalculateVelocity(this->pose_actor.Pos(), dt);
@@ -929,23 +854,20 @@ void ActorPlugin::ActorStateAlignTargetHandler(const common::UpdateInfo &_info) 
 	SetActorsLinearVel(this->actor_id, this->velocity_actual);
 	this->actor->SetLinearVel(this->velocity_actual);
 
-	if ( this->AlignToTargetDirection() ) {
+	// dt is helpful for further calculations
+	return dt;
 
-		// aligned - switch to previous state
-		state_actor = ACTOR_STATE_MOVE_AROUND;
-//		static int internal_counter = 0;
-		if ( this->actor->GetName() == "actor1" ) {
-//			if ( internal_counter++ == 3 ) {
-				std::cout << std::endl;
-				std::cout << std::endl;
-				std::cout << "\t\tALIGNED!" << std::endl;
-				std::cout << std::endl;
-				std::cout << std::endl;
-//				internal_counter == 0;
-//			}
-		}
+}
 
-	}
+// ===============================================================================================
+
+void ActorPlugin::ApplyUpdate(const common::UpdateInfo &_info, const double &_dist_traveled) {
+
+	// update the global pose
+	this->actor->SetWorldPose(this->pose_actor, false, false);
+
+	// Update script time to set proper animation speed
+	this->actor->SetScriptTime(this->actor->ScriptTime() + (_dist_traveled * this->animation_factor));
 
 	// udpdate time
 	this->last_update = _info.simTime;
@@ -953,24 +875,103 @@ void ActorPlugin::ActorStateAlignTargetHandler(const common::UpdateInfo &_info) 
   	// save last position to calculate velocity
 	last_pose_actor = this->actor->WorldPose();
 
-	if ( this->actor->GetName() == "actor1" ) {
-		if ( counter == 0 ) {
-			//std::cout << "OUTTA ActorStateAlignTargetHandler()\tpose1: " << this->pose_actor << "\tpose2: " << this->actor->WorldPose() << "\tlast_pose: " << last_pose_actor << std::endl;
-			std::cout << "OUTTA ActorStateAlignTargetHandler()\n\n" << std::endl;
-		}
-	}
-
+	// debug info
+	print_info = false;
+	Print_Set(false);
 
 }
+
+// ===============================================================================================
+
+void ActorPlugin::ActorStateAlignTargetHandler(const common::UpdateInfo &_info) {
+
+	this->PrepareForUpdate(_info);
+
+	// if aligned - switch to a certain state
+	if ( this->AlignToTargetDirection() ) {
+		state_actor = ACTOR_STATE_MOVE_AROUND;
+	}
+
+	/* forced close-to-zero distance traveled to avoid actor oscillations;
+	 * of course 0.0 linear distance is traveled when pure rotation is performed */
+	this->ApplyUpdate(_info, 0.0007);
+
+}
+
+// ===============================================================================================
 
 void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 
+	// Social Force Model
+	double dt = this->PrepareForUpdate(_info);
+
+	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	ignition::math::Vector3d sf = sfm.GetSocialForce(this->world,
+													 this->actor->GetName(),
+													 this->pose_actor,
+													 this->velocity_actual,
+													 this->target, // );
+													 map_of_names,
+													 lin_vels_vector);
+	if ( print_info ) {
+		std::cout << "\t TOTAL force: " << sf << std::endl;
+//		std::cout << "\t\t\t Vels vector: ";
+//		for ( int i = 0; i < lin_vels_vector.size(); i++ ) {
+//			std::cout << "\t" << lin_vels_vector[i];
+//		}
+//		std::cout << std::endl;
+		std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;
+	}
+
+	ignition::math::Pose3d new_pose = sfm.GetNewPose(	this->pose_actor,
+														this->last_pose_actor,
+														this->velocity_actual,
+														this->target,
+														sf,
+														dt,
+														0);
+
+	if ( print_info ) {
+		std::cout << "\t NEW pose: " << new_pose;
+		std::cout << "\t\t distance to TARGET: " << (this->target - this->pose_actor.Pos()).Length() << std::endl;
+		std::cout << std::endl << std::endl;
+	}
+
+	// calculate a distance to a target
+	double to_target_distance = (this->target - this->pose_actor.Pos()).Length();
+
+	// choose a new target position if the actor has reached its current target
+	if (to_target_distance < 0.3) {
+
+		this->ChooseNewTarget();
+		// after setting new target, first let's rotate to its direction
+		state_actor = ACTOR_STATE_ALIGN_TARGET;
+
+	}
+
+	// make sure the actor won't go out of bounds TODO: YAML config
+	new_pose.Pos().X( std::max(-3.0,  std::min( 3.5, new_pose.Pos().X() ) ) );
+	new_pose.Pos().Y( std::max(-10.0, std::min( 2.0, new_pose.Pos().Y() ) ) );
+
+	// object info update
+	double dist_traveled = (new_pose.Pos() - this->actor->WorldPose().Pos()).Length();
+
+	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	this->ApplyUpdate(_info, dist_traveled);
+
 }
+
+// ===============================================================================================
 
 void ActorPlugin::ActorStateFollowObjectHandler(const common::UpdateInfo &_info) {
 
 }
 
+// ===============================================================================================
+
 void ActorPlugin::ActorStateTeleoperationHandler(const common::UpdateInfo &_info) {
 
 }
+
+// ===============================================================================================
