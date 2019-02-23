@@ -16,6 +16,7 @@
 */
 
 #include <functional>
+#include <tgmath.h>		// fabs()
 
 #include <ignition/math.hh>
 #include "gazebo/physics/physics.hh"
@@ -105,7 +106,8 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
 	// WARNING: HARD-CODED target coord
 	if ( this->actor->GetName() == "actor1" ) {
-		this->target.Y(-3.50);
+		this->target.X(-5.00);
+		this->target.Y(+5.00);
 	}
 
 	prev_state_actor = ACTOR_STATE_MOVE_AROUND;
@@ -224,24 +226,36 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 			last_sec = curr_sec;
 		}
 		to_start = false;
+		state_actor = ACTOR_STATE_ALIGN_TARGET;
 	}
 
 	if ( !to_start ) {
 		return;
 	};
 
-	state_actor = ACTOR_STATE_ALIGN_TARGET;
 
 	switch(state_actor) {
 
 	case(ACTOR_STATE_ALIGN_TARGET):
-			// std::cout << "\tACTOR_STATE_ALIGN_TARGET" << std::endl;
+
+			if ( prev_state_actor != ACTOR_STATE_ALIGN_TARGET ) {
+				std::cout << "\tACTOR_STATE_ALIGN_TARGET" << std::endl;
+				prev_state_actor =  ACTOR_STATE_ALIGN_TARGET;
+			}
+
 			ActorStateAlignTargetHandler(_info);
 			break;
+
 	case(ACTOR_STATE_MOVE_AROUND):
-			std::cout << "\tACTOR_STATE_MOVE_AROUND" << std::endl;
+
+			if ( prev_state_actor != ACTOR_STATE_MOVE_AROUND ) {
+				std::cout << "\tACTOR_STATE_MOVE_AROUND" << std::endl;
+				prev_state_actor =  ACTOR_STATE_MOVE_AROUND;
+			}
+
 			ActorStateMoveAroundHandler(_info);
 			break;
+
 	case(ACTOR_STATE_FOLLOW_OBJECT):
 			std::cout << "\tACTOR_STATE_FOLLOW_OBJECT" << std::endl;
 			ActorStateFollowObjectHandler(_info);
@@ -707,31 +721,100 @@ bool ActorPlugin::ReadSDF() {
 bool ActorPlugin::AlignToTargetDirection() {
 
 	// calculate the yaw angle actor need to rotate around world's Z axis
-	ignition::math::Angle yaw_target(std::atan2( this->target.X(), this->target.Y() ));
+	// NOTE: +90 deg because actor's coordinate system is rotated 90 deg counter clockwise
+	ignition::math::Angle yaw_target(std::atan2( this->target.Y(), this->target.X() ) + 1.5707);
 	yaw_target.Normalize();
 
 	double yaw_current = this->pose_actor.Rot().Yaw();
 //	ignition::math::Angle yaw_result( yaw_target.Radian() - yaw_current );
-	ignition::math::Angle yaw_result( yaw_current - yaw_target.Radian() );
-	yaw_result.Normalize();
+	ignition::math::Angle yaw_diff( yaw_current - yaw_target.Radian() );
+	yaw_diff.Normalize();
+
+	// debug angle
+	static unsigned int ctr = 0;
+	if ( this->actor->GetName() == "actor1" ) {
+		if ( ctr++ == 20 ) {
+			std::cout << "\ttarget: " << this->target << "\tyaw_current: " << yaw_current << "\tyaw_target: " << yaw_target.Radian() << "\tyaw_diff: " << yaw_diff.Radian() << std::endl;
+			ctr = 0;
+		}
+
+	}
+
+	/*
+	// choose the right rotation direction
+	if ( std::fabs(yaw_diff.Radian()) > (IGN_PI/2) ) {
+
+		if ( yaw_diff.Radian() >= 1e-06 ) {
+			// positive value
+			yaw_diff.Radian( -(IGN_PI - yaw_diff.Radian() ));
+		} else {
+			// negative value
+			yaw_diff.Radian( IGN_PI - std::fabs(yaw_diff.Radian() ));
+		}
+
+		if ( this->actor->GetName() == "actor1" ) {
+			//if ( ctr == 0 ) {
+				std::cout << "\tyaw_diff_changed: " << yaw_diff.Radian() << std::endl;
+			//}
+		}
+
+	}
+	*/
 
 	// smooth the rotation if too big
 	ignition::math::Vector3d rpy = this->pose_actor.Rot().Euler();
 
-	if ( yaw_result.Radian() > IGN_DTOR(10) ) {
+	/*
+	if ( yaw_diff.Radian() > IGN_DTOR(10) ) {
 //		this->pose_actor.Rot().Euler().Z(yaw_current + yaw_result.Radian() * 0.0001);
-		rpy.Z(yaw_current + yaw_result.Radian() * 0.001);
+//		rpy.Z(yaw_current + yaw_result.Radian() * 0.0001);
+		yaw_diff.Radian(yaw_diff.Radian() * 0.0001);
 	} else {
 //		this->pose_actor.Rot().Euler().Z(yaw_current + yaw_result.Radian());
-		rpy.Z(yaw_current + yaw_result.Radian());
+		yaw_diff.Radian(yaw_diff.Radian() * 0.1);
+	}
+	*/
+
+	static const double YAW_INCREMENT = 0.001;
+	short int sign = -1;
+
+	// check the sign of the diff - the movement should be performed in the OPPOSITE direction to yaw_diff angle
+	if ( yaw_diff.Radian() < 0.0f ) {
+		sign = +1;
+	}
+//	if ( this->actor->GetName() == "actor1" ) {
+//		std::cout << "sign: " << sign << std::endl;
+//	}
+	// save the change to tell if actor is aligned or not
+	double angle_change = 0.0;
+
+	// consider the difference (increment or decrement)
+	if ( std::fabs(yaw_diff.Radian()) < YAW_INCREMENT ) {
+		angle_change = static_cast<double>(sign) * yaw_diff.Radian();
+		if ( this->actor->GetName() == "actor1" ) {
+//			std::cout << "yaw_diff SMALLER THAN yaw_increment\t\tangle change: " << angle_change << std::endl;
+//			std::cout << "yaw_diff: " << yaw_diff.Radian() << "\tfabs(yaw_diff): " << fabs(yaw_diff.Radian()) << "\tYAW_INCREMENT: " << YAW_INCREMENT << std::endl;
+		}
+	} else {
+		angle_change = static_cast<double>(sign) * YAW_INCREMENT;
+		if ( this->actor->GetName() == "actor1" ) {
+//			std::cout << "yaw_diff BIGGER OR EQUAT TO yaw_increment\t\tangle change: " << angle_change << std::endl;
+//			std::cout << "YAW_INCREMENT: " << YAW_INCREMENT << std::endl;
+		}
 	}
 
+	ignition::math::Angle yaw_result(yaw_current + angle_change);
+	yaw_result.Normalize();
+	rpy.Z(yaw_result.Radian());
+
 	//
-	static int ctr = 0;
-	if ( ctr++ == 500 ) {
-		std::cout << "\nyaw_current: " << yaw_current << "\tyaw_target: " << yaw_target.Radian() << "\tyaw_result: " << yaw_result.Radian() << std::endl << std::endl;
-		ctr = 0;
-	}
+//	static int ctr = 0;
+//	if ( ctr++ == 500 ) {
+//	if ( this->actor->GetName() == "actor1" ) {
+//		std::cout << "\nyaw_current: " << yaw_current << "\tyaw_target: " << yaw_target.Radian() << "\tyaw_diff: " << yaw_diff.Radian() << "\tyaw_incremented: " << rpy.Z() << std::endl << std::endl;
+//	}
+//		ctr = 0;
+//	}
 
 
 	// update the local copy of pose
@@ -752,7 +835,17 @@ bool ActorPlugin::AlignToTargetDirection() {
 	last_pose_actor = this->actor->WorldPose();
 
 	// return true if the yaw_result is small enough, otherwise return false
-	if ( abs(yaw_result.Radian() < IGN_DTOR(15)) || abs(yaw_result.Radian() > IGN_DTOR(180 - 15)) ) {
+//	if ( abs(yaw_result.Radian() < IGN_DTOR(15)) || abs(yaw_result.Radian() > IGN_DTOR(180 - 15)) ) {
+	// abs seems to allow aligning with the target axis but actor could face opposite direction
+//	if ( yaw_result.Radian() < IGN_DTOR(15) || yaw_result.Radian() > IGN_DTOR(180 - 15) ) {
+	yaw_diff.Radian(yaw_diff.Radian() - angle_change);
+	yaw_diff.Normalize();
+
+	if ( this->actor->GetName() == "actor1" ) {
+//		std::cout << "\nyaw_current: " << yaw_current << "\tyaw_target: " << yaw_target.Radian() << "\tangle_change: " << angle_change << "\tyaw_diff_increm: " << yaw_diff.Radian() << "\tyaw_result: " << rpy.Z() << std::endl << std::endl;
+	}
+
+	if ( fabs(yaw_diff.Radian()) < IGN_DTOR(10) ) {
 		return true;
 	}
 	return false;
@@ -818,8 +911,8 @@ void ActorPlugin::ActorStateAlignTargetHandler(const common::UpdateInfo &_info) 
 
 	static unsigned long int counter = 0;
 	if ( this->actor->GetName() == "actor1" ) {
-		if ( counter++ == 250 ) {
-			std::cout << "GOT INTO ActorStateAlignTargetHandler()\tpose: " << this->pose_actor << std::endl;
+		if ( counter++ == 10 ) {
+			std::cout << "GOT INTO ActorStateAlignTargetHandler()\n\tpose: " << this->pose_actor << std::endl;
 			counter = 0;
 		}
 	}
@@ -839,7 +932,7 @@ void ActorPlugin::ActorStateAlignTargetHandler(const common::UpdateInfo &_info) 
 	if ( this->AlignToTargetDirection() ) {
 
 		// aligned - switch to previous state
-		state_actor = prev_state_actor;
+		state_actor = ACTOR_STATE_MOVE_AROUND;
 //		static int internal_counter = 0;
 		if ( this->actor->GetName() == "actor1" ) {
 //			if ( internal_counter++ == 3 ) {
@@ -862,7 +955,8 @@ void ActorPlugin::ActorStateAlignTargetHandler(const common::UpdateInfo &_info) 
 
 	if ( this->actor->GetName() == "actor1" ) {
 		if ( counter == 0 ) {
-			std::cout << "OUTTA ActorStateAlignTargetHandler()\tpose1: " << this->pose_actor << "\tpose2: " << this->actor->WorldPose() << "\tlast_pose: " << last_pose_actor << std::endl;
+			//std::cout << "OUTTA ActorStateAlignTargetHandler()\tpose1: " << this->pose_actor << "\tpose2: " << this->actor->WorldPose() << "\tlast_pose: " << last_pose_actor << std::endl;
+			std::cout << "OUTTA ActorStateAlignTargetHandler()\n\n" << std::endl;
 		}
 	}
 
