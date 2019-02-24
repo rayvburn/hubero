@@ -157,7 +157,7 @@ typedef enum {
     private: ActorState state_actor;
     private: ActorState prev_state_actor;
 
-    private: bool AlignToTargetDirection();
+    private: bool AlignToTargetDirection(ignition::math::Vector3d *_rpy);
 
 
     // handlers for each state

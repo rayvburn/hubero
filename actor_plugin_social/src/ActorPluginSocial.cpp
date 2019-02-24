@@ -718,7 +718,7 @@ bool ActorPlugin::ReadSDF() {
 
 // ===============================================================================================
 
-bool ActorPlugin::AlignToTargetDirection() {
+bool ActorPlugin::AlignToTargetDirection(ignition::math::Vector3d *_rpy) {
 
 	// calculate the yaw angle actor need to rotate around world's Z axis
 	// NOTE: +90 deg because actor's coordinate system is rotated 90 deg counter clockwise
@@ -753,7 +753,7 @@ bool ActorPlugin::AlignToTargetDirection() {
 	// smooth the rotation if too big
 	static const double YAW_INCREMENT = 0.001;
 	short int sign = -1;
-	ignition::math::Vector3d rpy = this->pose_actor.Rot().Euler();
+//	ignition::math::Vector3d rpy = this->pose_actor.Rot().Euler();
 
 	// check the sign of the diff - the movement should be performed in the OPPOSITE direction to yaw_diff angle
 	if ( yaw_diff.Radian() < 0.0f ) {
@@ -772,10 +772,7 @@ bool ActorPlugin::AlignToTargetDirection() {
 
 	ignition::math::Angle yaw_result(yaw_start + angle_change);
 	yaw_result.Normalize();
-	rpy.Z(yaw_result.Radian());
-
-	// update the local copy of pose
-	this->pose_actor.Set(this->pose_actor.Pos(), rpy);
+	_rpy->Z(yaw_result.Radian());
 
 	// return true if the yaw_diff is small enough, otherwise return false
 	yaw_diff.Radian(yaw_diff.Radian() - angle_change);
@@ -887,10 +884,18 @@ void ActorPlugin::ActorStateAlignTargetHandler(const common::UpdateInfo &_info) 
 
 	this->PrepareForUpdate(_info);
 
-	// if aligned - switch to a certain state
-	if ( this->AlignToTargetDirection() ) {
+	// copy the actor's current rotation to local variable
+	ignition::math::Vector3d new_rpy = this->pose_actor.Rot().Euler();
+
+	/* if already aligned - switch to a certain state, otherwise proceed to the next
+	 * rotation procedure */
+	if ( this->AlignToTargetDirection(&new_rpy) ) {
 		state_actor = ACTOR_STATE_MOVE_AROUND;
 	}
+
+	// update the local copy of the actor's pose
+//	this->pose_actor.Set(this->pose_actor.Pos(), new_rpy);
+	this->SetActorPose(ignition::math::Pose3d(this->pose_actor.Pos(), ignition::math::Quaterniond(new_rpy)));
 
 	/* forced close-to-zero distance traveled to avoid actor oscillations;
 	 * of course 0.0 linear distance is traveled when pure rotation is performed */
