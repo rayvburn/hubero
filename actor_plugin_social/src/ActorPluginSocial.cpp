@@ -106,8 +106,8 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
 	// WARNING: HARD-CODED target coord
 	if ( this->actor->GetName() == "actor1" ) {
-		this->target.X(-5.00);
-		this->target.Y(+5.00);
+		this->target.X(+2.00);
+		this->target.Y(-4.00);
 	}
 
 	prev_state_actor = ACTOR_STATE_MOVE_AROUND;
@@ -910,9 +910,10 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 													 this->actor->GetName(),
 													 this->pose_actor,
 													 this->velocity_actual,
-													 this->target, // );
+													 this->target,
 													 map_of_names,
 													 lin_vels_vector);
+
 	if ( print_info ) {
 		std::cout << "\t TOTAL force: " << sf << std::endl;
 //		std::cout << "\t\t\t Vels vector: ";
@@ -955,6 +956,9 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 
 	// object info update
 	double dist_traveled = (new_pose.Pos() - this->actor->WorldPose().Pos()).Length();
+
+	// update the local copy of the actor's pose
+	this->SetActorPose(new_pose);
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 

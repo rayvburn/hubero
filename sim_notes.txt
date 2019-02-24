@@ -1,4 +1,5 @@
 TODO: service 'stand `pose`' or 'lie `pose`' (pose as a target and stance change after reaching it)
+TODO: Actor Helper class that stores all Set etc methods as well as velocity vector and map
 TODO: service to switch to teleop control
 TODO: after reaching target - let the actor rest for a while and then choose a new goal, rotate and go in this new direction
 TODO: local minimae check - if for a few seconds actor hasnt moved then choose a new goal
@@ -6,9 +7,8 @@ TODOs from notebook
 
 
 current tasks:
+o 	check vel length etc. WHY actor moves so slow?
 o 	yaw angle - check calculations in notebook (yaw 0 is actually aligned with y axis directed to negative values (not along X axis!))
-o 	sf sign changed to - (is it good, debug)
-o 	chooseNewTarget not triggered after reaching?
 o 	create gridmap for visualization
 
 
