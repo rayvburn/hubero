@@ -30,7 +30,6 @@ GZ_REGISTER_MODEL_PLUGIN(ActorPlugin)
 
 #define WALKING_ANIMATION "walking"
 
-
 // ==========================================================================================
 // ========================= CRASH / BUG / FAIL (?) note ====================================
 // ==========================================================================================
@@ -722,11 +721,19 @@ bool ActorPlugin::AlignToTargetDirection(ignition::math::Vector3d *_rpy) {
 
 	// calculate the yaw angle actor need to rotate around world's Z axis
 	// NOTE: +90 deg because actor's coordinate system is rotated 90 deg counter clockwise
-	ignition::math::Angle yaw_target(std::atan2( this->target.Y(), this->target.X() ) + 1.5707);
+	// V1 ------------------------------------------------------------------------------------------------------
+//	ignition::math::Angle yaw_target(std::atan2( this->target.Y(), this->target.X() ) + (IGN_PI/2) );
+	// V2 ------------------------------------------------------------------------------------------------------
+	// yaw target expressed as an angle that depends on current IDEAL_TO_TARGET vector
+	ignition::math::Vector3d to_target_vector = this->target - this->pose_actor.Pos();							// in world coord. system
+	to_target_vector.Normalize();
+	ignition::math::Angle yaw_target(std::atan2( to_target_vector.Y(), to_target_vector.X() ) + (IGN_PI/2) );	// +90 deg transforms the angle from actor's coord. system to the world's one
+	//    ------------------------------------------------------------------------------------------------------
 	yaw_target.Normalize();
 
 	double yaw_start = this->pose_actor.Rot().Yaw();
-	ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );
+	//ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );
+	ignition::math::Angle yaw_diff( yaw_target.Radian() - yaw_start );
 	yaw_diff.Normalize();
 
 	/*
@@ -752,12 +759,22 @@ bool ActorPlugin::AlignToTargetDirection(ignition::math::Vector3d *_rpy) {
 
 	// smooth the rotation if too big
 	static const double YAW_INCREMENT = 0.001;
+#define IVERT_SIGN
+
+#ifndef IVERT_SIGN
 	short int sign = -1;
+#else
+	short int sign = +1;
+#endif
 //	ignition::math::Vector3d rpy = this->pose_actor.Rot().Euler();
 
 	// check the sign of the diff - the movement should be performed in the OPPOSITE direction to yaw_diff angle
 	if ( yaw_diff.Radian() < 0.0f ) {
+#ifndef IVERT_SIGN
 		sign = +1;
+#else
+		sign = -1;
+#endif
 	}
 
 	// save the change to tell if actor is already aligned or not
@@ -890,6 +907,7 @@ void ActorPlugin::ActorStateAlignTargetHandler(const common::UpdateInfo &_info) 
 	/* if already aligned - switch to a certain state, otherwise proceed to the next
 	 * rotation procedure */
 	if ( this->AlignToTargetDirection(&new_rpy) ) {
+		std::cout << "\n\n\t\t\tALIGNED\n\n";
 		state_actor = ACTOR_STATE_MOVE_AROUND;
 	}
 

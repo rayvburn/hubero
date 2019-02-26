@@ -34,10 +34,10 @@ namespace SocialForceModel {
 // #define DEBUG_SFM_PARAMETERS
 // #define DEBUG_GEOMETRY_1 // angle correctes etc.
 #define DEBUG_GEOMETRY_2 // relative location
-#define DEBUG_INTERNAL_ACC
+// #define DEBUG_INTERNAL_ACC
 #define DEBUG_INTERACTION_FORCE
 #define DEBUG_REL_SPEED
-#define DEBUG_NEW_POSE
+// #define DEBUG_NEW_POSE
 #define DEBUG_ACTOR_FACING_TARGET
 
 #define ACTOR_ID_NOT_FOUND	255u
@@ -230,8 +230,6 @@ ignition::math::Vector3d SocialForceModel::GetInternalAcceleration(
 		const ignition::math::Vector3d &_actor_target)
 {
 
-	// internal acceleration is a first step in SF calculations, n_alpha is useful later on and in this stage
-
 	// TODO: a lot of allocations here
 	ignition::math::Vector3d to_goal_vector = (_actor_target - _actor_pose.Pos());
 	ignition::math::Vector3d to_goal_direction = to_goal_vector.Normalize();
@@ -240,11 +238,15 @@ ignition::math::Vector3d SocialForceModel::GetInternalAcceleration(
 
 #ifdef DEBUG_INTERNAL_ACC
 	if ( print_info ) {
+		std::cout << std::endl;
+		std::cout << "---------------------------------------------------------------------------------\n";
 		std::cout << "GetInternalAcceleration(): ";
-		std::cout << "   actor_pos: " << _actor_pose.Pos();
-		std::cout << "   target: " << _actor_target << "   to_goal_direction: " << to_goal_direction;
-		std::cout << "   ideal_vel_vector: " << ideal_vel_vector;
-		std::cout << "   f_alpha: " << f_alpha << std::endl;
+		std::cout << "\tactor_pos: " << _actor_pose.Pos();
+		std::cout << "\ttarget: " << _actor_target << "   to_goal_direction: " << to_goal_direction;
+		std::cout << "\n\t\t\t\tideal_vel_vector: " << ideal_vel_vector;
+		std::cout << "\tf_alpha: " << f_alpha;
+		std::cout << std::endl;
+		std::cout << std::endl;
 	}
 #endif
 
@@ -416,7 +418,7 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 #ifdef DEBUG_NEW_POSE
 	if ( print_info ) {
 		std::cout << "GetNewPose(): ";
-		std::cout << "\t result_vel: " << result_vel;
+		std::cout << "\tresult_vel: " << result_vel;
 	}
 #endif
 
@@ -440,7 +442,7 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 
 #ifdef DEBUG_NEW_POSE
 	if ( print_info ) {
-		std::cout << "\nPOSITION1 \t orig: " << _actor_pose.Pos() << "\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << "\tnew_position: " << new_position << std::endl;
+		std::cout << "\nPOSITION1 \torig: " << _actor_pose.Pos() << "\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << "\tnew_position: " << new_position << std::endl;
 	}
 #endif
 
@@ -464,26 +466,30 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	ignition::math::Vector3d new_orientation((IGN_PI/2), 0, yaw_new.Radian());
 */
 
-
+// ---------------------------------------------------
 	/// Total yaw is expressed as ((IGN_PI / 2) + yaw_angle) where yaw is the angle between x axis line and velocity vector
 	// #ifdef NEW_YAW_BASE
 
-	// 1st method - seems like adding 90 deg solves the issue with swapping X and Y?
-	ignition::math::Angle yaw_delta(atan2(new_position.Y(), new_position.X()) + (IGN_PI / 2) - _actor_pose.Rot().Euler().Z());
-
+	// NOTE: coordinate systems of the actor and the world are orientated differently (actor's one rotated 90 deg CCW)
+	// V2a
 	/*
-	// 2nd method??
-	// Theta1 (initial): _actor_pose.Rot().Euler().Z()
-	// Theta2 (new)	   :  atan2(new_position.X(), new_position.Y())
-	ignition::math::Angle yaw_delta = _actor_pose.Rot().Euler().Z() - atan2(new_position.Y(), new_position.X());
-	ignition::math::Angle yaw_2 = atan2(new_position.Y(), new_position.X()); // debug only //
-	yaw_2.Normalize();
-	*/
+//	ignition::math::Angle yaw_delta(std::atan2(new_position.Y(), new_position.X()) + (IGN_PI / 2) - _actor_pose.Rot().Euler().Z());
+	ignition::math::Angle yaw_delta(std::atan2(result_vel.Y(), result_vel.X()) + (IGN_PI / 2) - _actor_pose.Rot().Euler().Z());
 
 	yaw_delta.Normalize();
+	*/
+
+	// V2b
+	ignition::math::Angle yaw_target(std::atan2(result_vel.Y(), result_vel.X()) + (IGN_PI/2));
+	yaw_target.Normalize();
+
+	double yaw_start = _actor_pose.Rot().Yaw();
+	ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );
+	yaw_diff.Normalize();
+
 
 	// ----------------------------------------------
-
+	// V1
 	/// Smooth rotation
 //	ignition::math::Angle yaw_new;
 //	if (std::fabs(yaw_delta.Radian()) > IGN_DTOR(10)) {
@@ -504,13 +510,19 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 //	}
 
 	// ----------------------------------------------
-
+	// V2a
+	/*
 	// check the sign of the diff - the movement should be performed in the OPPOSITE direction to yaw_diff angle
-	ignition::math::Angle yaw_new;
-	static const double YAW_INCREMENT = 0.001;
-	short int sign = -1;
+	static const double YAW_INCREMENT = 0.001; // 0.001; - OK - smooth
+//	short int sign = -1;
+//	if ( yaw_delta.Radian() < 0.0f ) {
+//		sign = +1;
+//	}
+
+	// inverted sign?
+	short int sign = +1;
 	if ( yaw_delta.Radian() < 0.0f ) {
-		sign = +1;
+		sign = -1;
 	}
 
 	// save the change to tell if actor is already aligned or not
@@ -522,8 +534,41 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	} else {
 		angle_change = static_cast<double>(sign) * YAW_INCREMENT;
 	}
+	*/
 
+	// V2b
+	// smooth the rotation if too big
+	static const double YAW_INCREMENT = 0.001;
+	short int sign = -1;
+//	ignition::math::Vector3d rpy = this->pose_actor.Rot().Euler();
+
+	// check the sign of the diff - the movement should be performed in the OPPOSITE direction to yaw_diff angle
+	if ( yaw_diff.Radian() < 0.0f ) {
+		sign = +1;
+	}
+
+	// save the change to tell if actor is already aligned or not
+	double angle_change = 0.0;
+
+	// consider the difference (increment or decrement)
+	if ( std::fabs(yaw_diff.Radian()) < YAW_INCREMENT ) {
+		angle_change = static_cast<double>(sign) * yaw_diff.Radian();
+	} else {
+		angle_change = static_cast<double>(sign) * YAW_INCREMENT;
+	}
+	// ---------------------------
+	ignition::math::Angle yaw_new;
 	yaw_new.Radian(_actor_pose.Rot().Euler().Z() + angle_change);
+	yaw_new.Normalize();
+
+	// debug
+	if ( print_info ) {
+		// yaw target expressed as a yaw of new coordinates
+//		std::cout << "\t\tyaw_start: " << _actor_pose.Rot().Euler().Z() << "\tyaw_target: " << std::atan2(new_position.Y(), new_position.X()) << "\tangle_change: " << angle_change << "\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << std::endl;
+
+// V2a	std::cout << "\t\tyaw_start: " << _actor_pose.Rot().Euler().Z() << "\tyaw_target: " << std::atan2(result_vel.Y(), result_vel.X()) << "\tangle_change: " << angle_change << "\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << std::endl;
+		std::cout << "\t\tyaw_start: " << _actor_pose.Rot().Euler().Z() << "\tyaw_target: " << yaw_target.Radian() << "\tangle_change: " << angle_change << "\tyaw_new: " << yaw_new.Radian() << std::endl;
+	}
 
 	// ----------------------------------------------
 
@@ -603,12 +648,13 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 				 1.2138,
 				 (IGN_PI/2),
 				 0,
-				 yaw_new.Radian());
+				 //yaw_new.Radian());
+				 _actor_pose.Rot().Yaw());	// WIP - testing AlignToTarget!
 
 #ifdef DEBUG_NEW_POSE
 	if ( print_info ) {
 //		std::cout << "\nPOSITION2 \t orig: " << _actor_pose.Pos() << " \t delta_x: " << result_vel.X() * _dt << "    delta_y: " << result_vel.Y() * _dt << std::endl;
-		std::cout << "\nPOSITION2 \t orig: " << _actor_pose.Pos() << "\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << "\tnew_position: " << new_pose.Pos() << std::endl;
+		std::cout << "\nPOSITION2 \torig: " << _actor_pose.Pos() << "\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << "\tnew_position: " << new_pose.Pos(); // << std::endl;
 	}
 #endif
 
@@ -621,6 +667,14 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 //														   new_orientation.Z()));
 
 //	new_pose.Set(new_position, _actor_pose.Rot());
+
+#ifdef DEBUG_NEW_POSE
+	if ( print_info ) {
+		std::cout << std::endl;
+		std::cout << "---------------------------------------------------------------------------------";
+		std::cout << std::endl;
+	}
+#endif
 
 	return new_pose;
 
@@ -1082,7 +1136,7 @@ uint8_t SocialForceModel::GetBetaRelativeLocation(
 	d_alpha_beta_norm.Normalize();
 
 	// when normalized vector used with atan2 then division by euclidean distance not needed
-	angle_d_alpha_beta.Radian( atan2(d_alpha_beta_norm.X(), d_alpha_beta_norm.Y()) );
+	angle_d_alpha_beta.Radian( std::atan2(d_alpha_beta_norm.X(), d_alpha_beta_norm.Y()) );
 	angle_d_alpha_beta.Normalize();
 
 	angle_relative = _actor_yaw + angle_d_alpha_beta;
