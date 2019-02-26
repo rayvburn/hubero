@@ -759,7 +759,7 @@ bool ActorPlugin::AlignToTargetDirection(ignition::math::Vector3d *_rpy) {
 
 	// smooth the rotation if too big
 	static const double YAW_INCREMENT = 0.001;
-#define IVERT_SIGN
+#define IVERT_SIGN // ok with that setting
 
 #ifndef IVERT_SIGN
 	short int sign = -1;

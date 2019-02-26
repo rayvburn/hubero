@@ -34,10 +34,10 @@ namespace SocialForceModel {
 // #define DEBUG_SFM_PARAMETERS
 // #define DEBUG_GEOMETRY_1 // angle correctes etc.
 #define DEBUG_GEOMETRY_2 // relative location
-// #define DEBUG_INTERNAL_ACC
+#define DEBUG_INTERNAL_ACC
 #define DEBUG_INTERACTION_FORCE
 #define DEBUG_REL_SPEED
-// #define DEBUG_NEW_POSE
+#define DEBUG_NEW_POSE
 #define DEBUG_ACTOR_FACING_TARGET
 
 #define ACTOR_ID_NOT_FOUND	255u
@@ -72,7 +72,7 @@ SocialForceModel::SocialForceModel():
 		// TODO: note that IT IS REQUIRED TO NAME ALL ACTORS "actor..."
 
 	fov(1.80), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
-	desired_force_factor(1300.0), interaction_force_factor(200.0) {
+	desired_force_factor(200.0), interaction_force_factor(100.0) {
 
 	SetParameterValues();
 
@@ -648,8 +648,8 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 				 1.2138,
 				 (IGN_PI/2),
 				 0,
-				 //yaw_new.Radian());
-				 _actor_pose.Rot().Yaw());	// WIP - testing AlignToTarget!
+				 yaw_new.Radian());
+//				 _actor_pose.Rot().Yaw());	// WIP - testing AlignToTarget!
 
 #ifdef DEBUG_NEW_POSE
 	if ( print_info ) {
