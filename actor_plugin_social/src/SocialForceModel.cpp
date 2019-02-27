@@ -34,7 +34,7 @@ namespace SocialForceModel {
 // #define DEBUG_SFM_PARAMETERS
 // #define DEBUG_GEOMETRY_1 // angle correctes etc.
 #define DEBUG_GEOMETRY_2 // relative location
-#define DEBUG_INTERNAL_ACC
+// #define DEBUG_INTERNAL_ACC
 #define DEBUG_INTERACTION_FORCE
 #define DEBUG_REL_SPEED
 #define DEBUG_NEW_POSE
@@ -72,7 +72,7 @@ SocialForceModel::SocialForceModel():
 		// TODO: note that IT IS REQUIRED TO NAME ALL ACTORS "actor..."
 
 	fov(1.80), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
-	desired_force_factor(200.0), interaction_force_factor(100.0) {
+	desired_force_factor(50.0), interaction_force_factor(300.0) {
 
 	SetParameterValues();
 
@@ -164,6 +164,8 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			std::cout << " -------------- PRINT_INFO triggered TRUE ------------------ " << std::endl;
 			print_info = true;
 			print_counter = 0;
+		} else {
+			print_info = false;
 		}
 	} else {
 		print_info = false;
@@ -181,7 +183,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	ignition::math::Vector3d model_vel;
 
 	gazebo::physics::ModelPtr model_ptr;
-	/*
+	/* */
 	for ( unsigned int i = 0; i < _world_ptr->ModelCount(); i++ ) {
 
 		model_ptr = _world_ptr->ModelByIndex(i);
@@ -202,7 +204,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		}
 
 		// what if velocity is actually non-zero but Gazebo sees 0?
-		f_ab_single += this->GetInteractionComponent(	_actor_pose,
+		f_ab_single = this->GetInteractionComponent(	_actor_pose,
 														_actor_velocity,
 														model_ptr->WorldPose(),
 														model_vel);
@@ -216,7 +218,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	if ( print_info ) {
 		std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
 	}
-	*/
+
 	return (desired_force_factor * f_alpha + interaction_force_factor * f_alpha_beta);
 
 
@@ -484,7 +486,8 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	yaw_target.Normalize();
 
 	double yaw_start = _actor_pose.Rot().Yaw();
-	ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );
+//	ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );
+	ignition::math::Angle yaw_diff( yaw_target.Radian() - yaw_start );
 	yaw_diff.Normalize();
 
 

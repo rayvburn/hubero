@@ -275,7 +275,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 			print_info = true;
 			Print_Set(true);
 			print_time = _info.simTime;
-			std::cout << "**************************************************** ACTOR1 ***********************************************" << std::endl;
+			std::cout << "\n\n**************************************************** ACTOR1 ***********************************************" << std::endl;
 			std::cout << "**** INITIAL pose: " << this->actor->WorldPose() << "\t\t actor1 velocity: \t" << this->velocity_actual << "\t target: " << this->target << std::endl;
 		}
 	} else {
@@ -283,6 +283,13 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	}
 
   	return;
+
+
+
+
+
+
+
 
   	// OnUpdate algorithm
   	double dt = (_info.simTime - this->last_update).Double();
@@ -877,6 +884,9 @@ double ActorPlugin::PrepareForUpdate(const common::UpdateInfo &_info) {
 
 void ActorPlugin::ApplyUpdate(const common::UpdateInfo &_info, const double &_dist_traveled) {
 
+  	// save last position to calculate velocity
+	last_pose_actor = this->actor->WorldPose();
+
 	// update the global pose
 	this->actor->SetWorldPose(this->pose_actor, false, false);
 
@@ -885,9 +895,6 @@ void ActorPlugin::ApplyUpdate(const common::UpdateInfo &_info, const double &_di
 
 	// udpdate time
 	this->last_update = _info.simTime;
-
-  	// save last position to calculate velocity
-	last_pose_actor = this->actor->WorldPose();
 
 	// debug info
 	print_info = false;
@@ -939,11 +946,12 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 
 	if ( print_info ) {
 		std::cout << "\t TOTAL force: " << sf << std::endl;
-//		std::cout << "\t\t\t Vels vector: ";
-//		for ( int i = 0; i < lin_vels_vector.size(); i++ ) {
-//			std::cout << "\t" << lin_vels_vector[i];
-//		}
-//		std::cout << std::endl;
+		std::cout << "\t lin_vels_vector: ";
+		for ( int i = 0; i < lin_vels_vector.size(); i++ ) {
+			std::cout << "\t" << lin_vels_vector[i];
+		}
+		std::cout << std::endl;
+
 		std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;
 	}
 

@@ -1,3 +1,4 @@
+TODO: ROS interface with actor's info (pose, vel, acc) etc. (ros::isInitialized, pass the pointer to the ActorPlugin class member)
 TODO: service 'stand `pose`' or 'lie `pose`' (pose as a target and stance change after reaching it)
 TODO: Actor Helper class that stores all Set etc methods as well as velocity vector and map
 TODO: service to switch to teleop control
@@ -7,8 +8,11 @@ TODOs from notebook
 
 
 current tasks:
+o 	GetBetaRelativeLocation() ACTOR yaw: 0.343  ANGLE d_alpha_beta: 2.75008  ANGLE sum: 3.09308  LEFT | instead of RIGHT
+o 	actor2 sometimes has non-zero lin vel while nearly stopped?
+o 	jumps
+o 	actors "collide" with tables (inflation/bounding box of a obstacle)
 o 	check vel length etc. WHY actor moves so slow?
-o 	yaw angle - check calculations in notebook (yaw 0 is actually aligned with y axis directed to negative values (not along X axis!))
 o 	create gridmap for visualization
 
 
