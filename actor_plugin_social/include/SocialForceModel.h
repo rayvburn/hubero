@@ -46,6 +46,10 @@ public:
 
 	SocialForceModel();
 
+	ignition::math::Angle GetYawTarget(
+			const ignition::math::Pose3d &_actor_pose,
+			const ignition::math::Vector3d &_sf_vel);
+
 	void Init(const unsigned short int _mass_person,
 			  const float _desired_force_factor,
 			  const float _interaction_force_factor);

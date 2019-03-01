@@ -414,6 +414,74 @@ ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
 
 // ------------------------------------------------------------------- //
 
+ignition::math::Angle SocialForceModel::GetYawTarget(
+		const ignition::math::Pose3d &_actor_pose,
+		const ignition::math::Vector3d &_sf_vel) {
+
+	// -----------------------------------------
+	// STEP 1
+	/* NOTE: coordinate systems of the actor and the world are orientated differently (actor's one rotated 90 deg CCW)
+	 * World's yaw is expressed as ((IGN_PI / 2) + local_yaw_angle) where world's yaw is the angle between the X-axis
+	 * and a velocity vector.
+	 * yaw_target converted to the actor coordinate system to tell the difference */
+	ignition::math::Angle yaw_target(std::atan2(_sf_vel.Y(), _sf_vel.X()) + (IGN_PI/2));
+	yaw_target.Normalize();
+
+	//double yaw_start = _actor_pose.Rot().Yaw();
+	double yaw_start = GetYawFromPose(_actor_pose);
+	ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );	// correct
+
+	/* With the below version there is such a debug info printed:
+	 * yaw_start: -2.761	yaw_target: 0.380506	angle_change: -0.001	yaw_new: -2.762
+	 * and NO FURTHER CHANGE - actor ends up with back facing the target
+	ignition::math::Angle yaw_diff( yaw_target.Radian() - yaw_start );
+	*/
+	yaw_diff.Normalize();
+
+	// -----------------------------------------
+	// STEP 2
+	// smooth the rotation if too big
+	static const double YAW_INCREMENT = 0.001;
+	short int sign = -1;
+
+	/* check the sign of the yaw_diff - the rotational movement should be performed
+	 * in the OPPOSITE direction to yaw_diff angle */
+	if ( yaw_diff.Radian() < 0.0f ) {
+		sign = +1;
+	}
+
+	// save the change to tell if actor is already aligned or not
+	double angle_change = 0.0;
+
+	// consider the difference (increment or decrement)
+	if ( std::fabs(yaw_diff.Radian()) < YAW_INCREMENT ) {
+		angle_change = static_cast<double>(sign) * yaw_diff.Radian();
+	} else {
+		angle_change = static_cast<double>(sign) * YAW_INCREMENT;
+	}
+
+	// -----------------------------------------
+	// STEP 3
+	ignition::math::Angle yaw_new;
+	// yaw_new.Radian(_actor_pose.Rot().Euler().Z() + angle_change);
+	yaw_new.Radian(yaw_start + angle_change);
+	yaw_new.Normalize();
+
+	// END
+
+	// ----------------------------------------------
+	// debug
+	if ( print_info ) {
+		std::cout << "\t\tyaw_start: " << _actor_pose.Rot().Euler().Z() << "\tyaw_target: " << yaw_target.Radian() << "\tangle_change: " << angle_change << "\tyaw_new: " << yaw_new.Radian() << std::endl;
+	}
+	// ----------------------------------------------
+
+	return yaw_new;
+
+}
+
+// ------------------------------------------------------------------- //
+
 ignition::math::Pose3d SocialForceModel::GetNewPose(
 			const ignition::math::Pose3d &_actor_pose,
 			const ignition::math::Pose3d &_actor_last_pose,
@@ -461,141 +529,62 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	}
 #endif
 
-/*
-	// to smooth the rotation
-	ignition::math::Angle yaw_vel_based(atan2( result_vel.X(), result_vel.Y() ));
-	// yaw_delta.Radian(yaw_delta.Radian() + (IGN_PI / 2));
-	yaw_vel_based.Normalize();
+	// -------------------------------------------------------------------------------------------------------------------
 
-	// yaw is expressed as ((IGN_PI / 2) + yaw_angle) where yaw_angle is between x axis line and velocity vector
-	if ( std::abs(_actor_pose.Rot().Euler().Z() - (IGN_PI / 2) - yaw_vel_based.Radian()) > IGN_DTOR(10) ) {
-		if ( print_info ) {
-			std::cout << "\t yaw TRUNCATED!: " << yaw_vel_based.Radian();
-		}
-		yaw_vel_based.Radian(yaw_vel_based.Radian() * 0.001);
-		recalculate_vel = true;
-	}
+	/* Consider the yaw angle of the actor - it is crucial to make him face his
+	 * current movement direction / current target */
+	ignition::math::Angle yaw_new = this->GetYawTarget(_actor_pose, result_vel);
 
-	ignition::math::Angle yaw_new(yaw_vel_based.Radian() + (IGN_PI/2));
-	// assuming standing pose when sf is calculated thus roll angle is set to half-pi (STANDING)
-	ignition::math::Vector3d new_orientation((IGN_PI/2), 0, yaw_new.Radian());
-*/
-
-// ---------------------------------------------------
-	/// Total yaw is expressed as ((IGN_PI / 2) + yaw_angle) where yaw is the angle between x axis line and velocity vector
-	// #ifdef NEW_YAW_BASE
-
-	// NOTE: coordinate systems of the actor and the world are orientated differently (actor's one rotated 90 deg CCW)
-	// V2a
-	/*
-//	ignition::math::Angle yaw_delta(std::atan2(new_position.Y(), new_position.X()) + (IGN_PI / 2) - _actor_pose.Rot().Euler().Z());
-	ignition::math::Angle yaw_delta(std::atan2(result_vel.Y(), result_vel.X()) + (IGN_PI / 2) - _actor_pose.Rot().Euler().Z());
-
-	yaw_delta.Normalize();
-	*/
-
-	// V2b
-	ignition::math::Angle yaw_target(std::atan2(result_vel.Y(), result_vel.X()) + (IGN_PI/2));
-	yaw_target.Normalize();
-
-	double yaw_start = _actor_pose.Rot().Yaw();
-	ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );	// correct
-
-	/* With the below version there is such a debug info:
-	 * yaw_start: -2.761	yaw_target: 0.380506	angle_change: -0.001	yaw_new: -2.762
-	 * and NO FURTHER CHANGE - actor ends up with back facing the target
-	 */
+	// make a method out of below (will be useful for looking at some attractive objects too)
+//	// -----------------------------------------
+//	// STEP 1
+//	/* NOTE: coordinate systems of the actor and the world are orientated differently (actor's one rotated 90 deg CCW)
+//	 * World's yaw is expressed as ((IGN_PI / 2) + local_yaw_angle) where world's yaw is the angle between the X-axis
+//	 * and a velocity vector.
+//	 * yaw_target converted to the actor coordinate system to tell the difference */
+//	ignition::math::Angle yaw_target(std::atan2(result_vel.Y(), result_vel.X()) + (IGN_PI/2));
+//	yaw_target.Normalize();
+//
+//	double yaw_start = _actor_pose.Rot().Yaw();
+//	ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );	// correct
+//
+//	/* With the below version there is such a debug info printed:
+//	 * yaw_start: -2.761	yaw_target: 0.380506	angle_change: -0.001	yaw_new: -2.762
+//	 * and NO FURTHER CHANGE - actor ends up with back facing the target
 //	ignition::math::Angle yaw_diff( yaw_target.Radian() - yaw_start );
-
-	yaw_diff.Normalize();
-
-
-	// ----------------------------------------------
-	// V1
-	/// Smooth rotation
-//	ignition::math::Angle yaw_new;
-//	if (std::fabs(yaw_delta.Radian()) > IGN_DTOR(10)) {
+//	*/
+//	yaw_diff.Normalize();
 //
-//      yaw_new.Radian(_actor_pose.Rot().Euler().Z() + yaw_delta.Radian() * 0.001);
-//      if ( print_info ) {
-//          std::cout << "\n\n\n\tSMOOTHING ROTATION\tyaw_initial: " << _actor_pose.Rot().Euler().Z() << /*"\tyaw_2: " << yaw_2.Radian() << */"\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << "\n\n\n" << std::endl;
-//      }
-//      recalculate_vel = true;
-//
-//	} else {
-//
-//	  yaw_new.Radian(_actor_pose.Rot().Euler().Z() + yaw_delta.Radian());
-//	  if ( print_info ) {
-//		  std::cout << "\n\tNORMAL ROTATION\tyaw_initial: " << _actor_pose.Rot().Euler().Z() << /*"\tyaw_2: " << yaw_2.Radian() << */"\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << '\n' << std::endl;
-//	  }
-//
-//	}
-
-	// ----------------------------------------------
-	// V2a
-	/*
-	// check the sign of the diff - the movement should be performed in the OPPOSITE direction to yaw_diff angle
-	static const double YAW_INCREMENT = 0.001; // 0.001; - OK - smooth
+//	// -----------------------------------------
+//	// STEP 2
+//	// smooth the rotation if too big
+//	static const double YAW_INCREMENT = 0.001;
 //	short int sign = -1;
-//	if ( yaw_delta.Radian() < 0.0f ) {
+//
+//	/* check the sign of the yaw_diff - the rotational movement should be performed
+//	 * in the OPPOSITE direction to yaw_diff angle */
+//	if ( yaw_diff.Radian() < 0.0f ) {
 //		sign = +1;
 //	}
-
-	// inverted sign?
-	short int sign = +1;
-	if ( yaw_delta.Radian() < 0.0f ) {
-		sign = -1;
-	}
-
-	// save the change to tell if actor is already aligned or not
-	double angle_change = 0.0;
-
-	// consider the difference (increment or decrement)
-	if ( std::fabs(yaw_delta.Radian()) < YAW_INCREMENT ) {
-		angle_change = static_cast<double>(sign) * yaw_delta.Radian();
-	} else {
-		angle_change = static_cast<double>(sign) * YAW_INCREMENT;
-	}
-	*/
-
-	// V2b
-	// smooth the rotation if too big
-	static const double YAW_INCREMENT = 0.001;
-	short int sign = -1;
-//	ignition::math::Vector3d rpy = this->pose_actor.Rot().Euler();
-
-	// check the sign of the diff - the movement should be performed in the OPPOSITE direction to yaw_diff angle
-	if ( yaw_diff.Radian() < 0.0f ) {
-		sign = +1;
-	}
-
-	// save the change to tell if actor is already aligned or not
-	double angle_change = 0.0;
-
-	// consider the difference (increment or decrement)
-	if ( std::fabs(yaw_diff.Radian()) < YAW_INCREMENT ) {
-		angle_change = static_cast<double>(sign) * yaw_diff.Radian();
-	} else {
-		angle_change = static_cast<double>(sign) * YAW_INCREMENT;
-	}
-	// ---------------------------
-	ignition::math::Angle yaw_new;
-	yaw_new.Radian(_actor_pose.Rot().Euler().Z() + angle_change);
-	yaw_new.Normalize();
-
-	// debug
-	if ( print_info ) {
-		// yaw target expressed as a yaw of new coordinates
-//		std::cout << "\t\tyaw_start: " << _actor_pose.Rot().Euler().Z() << "\tyaw_target: " << std::atan2(new_position.Y(), new_position.X()) << "\tangle_change: " << angle_change << "\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << std::endl;
-
-// V2a	std::cout << "\t\tyaw_start: " << _actor_pose.Rot().Euler().Z() << "\tyaw_target: " << std::atan2(result_vel.Y(), result_vel.X()) << "\tangle_change: " << angle_change << "\tyaw_delta: " << yaw_delta.Radian() << "\tyaw_new: " << yaw_new.Radian() << std::endl;
-		std::cout << "\t\tyaw_start: " << _actor_pose.Rot().Euler().Z() << "\tyaw_target: " << yaw_target.Radian() << "\tangle_change: " << angle_change << "\tyaw_new: " << yaw_new.Radian() << std::endl;
-	}
-
-	// ----------------------------------------------
-
-
-
+//
+//	// save the change to tell if actor is already aligned or not
+//	double angle_change = 0.0;
+//
+//	// consider the difference (increment or decrement)
+//	if ( std::fabs(yaw_diff.Radian()) < YAW_INCREMENT ) {
+//		angle_change = static_cast<double>(sign) * yaw_diff.Radian();
+//	} else {
+//		angle_change = static_cast<double>(sign) * YAW_INCREMENT;
+//	}
+//
+//	// -----------------------------------------
+//	// STEP 3
+//	ignition::math::Angle yaw_new;
+//	yaw_new.Radian(_actor_pose.Rot().Euler().Z() + angle_change);
+//	yaw_new.Normalize();
+//
+//	// END
+	// -------------------------------------------------------------------------------------------------------------------
 
 	/* TODO: debug
 	// if the actor's yaw angle is such that he faces opposite direction to his target - make him rotate in place first
@@ -668,7 +657,7 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	new_pose.Set(_actor_pose.Pos().X() + result_vel.X() * _dt,
 				 _actor_pose.Pos().Y() + result_vel.Y() * _dt,
 				 1.2138,
-				 (IGN_PI/2),
+				 (IGN_PI/2),	// assuming standing pose when sf is calculated thus roll angle is set to half-pi (STANDING)
 				 0,
 				 yaw_new.Radian());
 //				 _actor_pose.Rot().Yaw());	// WIP - testing AlignToTarget!
@@ -700,8 +689,7 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 
 	return new_pose;
 
-	/* Now consider the yaw angle of an actor - it is crucial to make him face his
-	 * current movement direction */
+
 
 	// TODO: check yaw angle calculation with default Gazebo script?
 	ignition::math::Vector3d actor_rpy_initial = _actor_pose.Rot().Euler();
@@ -799,6 +787,7 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 
 // ------------------------------------------------------------------- //
 
+// TODO: DEPRECATED?
 bool SocialForceModel::IsActorFacingTheTarget(	const ignition::math::Angle _yaw,
 												const ignition::math::Vector3d _target)
 {
