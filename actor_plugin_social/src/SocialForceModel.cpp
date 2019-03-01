@@ -31,6 +31,7 @@ namespace SocialForceModel {
 // #define THETA_ALPHA_BETA_CONSIDER_ZERO_VELOCITY
 // #define BETA_REL_LOCATION_BASED_ON_NORMAL
 
+
 // #define DEBUG_SFM_PARAMETERS
 // #define DEBUG_GEOMETRY_1 // angle correctes etc.
 #define DEBUG_GEOMETRY_2 // relative location
@@ -40,7 +41,14 @@ namespace SocialForceModel {
 #define DEBUG_NEW_POSE
 #define DEBUG_ACTOR_FACING_TARGET
 
+// ---------------------------------
+
+// #define CALCULATE_INTERACTION
+
+// ---------------------------------
+
 #define ACTOR_ID_NOT_FOUND	255u
+
 // - - - - - - - - - - - - - - - - -
 
 #include "print_info.h"
@@ -72,7 +80,7 @@ SocialForceModel::SocialForceModel():
 		// TODO: note that IT IS REQUIRED TO NAME ALL ACTORS "actor..."
 
 	fov(1.80), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
-	desired_force_factor(50.0), interaction_force_factor(300.0) {
+	desired_force_factor(500.0), interaction_force_factor(300.0) {
 
 	SetParameterValues();
 
@@ -178,6 +186,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	ignition::math::Vector3d f_alpha_beta(0.0, 0.0, 0.0);
 	ignition::math::Vector3d f_ab_single(0.0, 0.0, 0.0);
 
+#ifdef CALCULATE_INTERACTION
 	/* model_vel contains model's velocity (world's object or actor) - for the actor this is set differently
 	 * it was impossible to set actor's linear velocity by setting it by the model's class method */
 	ignition::math::Vector3d model_vel;
@@ -218,6 +227,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	if ( print_info ) {
 		std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
 	}
+#endif
 
 	return (desired_force_factor * f_alpha + interaction_force_factor * f_alpha_beta);
 
@@ -268,6 +278,9 @@ ignition::math::Vector3d SocialForceModel::GetNormalToAlphaDirection(const ignit
 //	}
 
 	// ignition::math::Vector3d rpy = _actor_pose.Rot().Euler();
+
+
+	// all calculations here are based on world coordinate system data
 
 	ignition::math::Angle yaw_norm(_actor_pose.Rot().Euler().Z());
 	// yaw_norm.Radian(rpy.Z());
@@ -486,8 +499,14 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	yaw_target.Normalize();
 
 	double yaw_start = _actor_pose.Rot().Yaw();
-//	ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );
-	ignition::math::Angle yaw_diff( yaw_target.Radian() - yaw_start );
+	ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );	// correct
+
+	/* With the below version there is such a debug info:
+	 * yaw_start: -2.761	yaw_target: 0.380506	angle_change: -0.001	yaw_new: -2.762
+	 * and NO FURTHER CHANGE - actor ends up with back facing the target
+	 */
+//	ignition::math::Angle yaw_diff( yaw_target.Radian() - yaw_start );
+
 	yaw_diff.Normalize();
 
 
@@ -1034,7 +1053,8 @@ double SocialForceModel::GetAngleBetweenObjectsVelocities(
 	_object_yaw->Radian(rpy_object.Z());
 	_object_yaw->Normalize();
 
-	ignition::math::Angle yaw_diff = *_object_yaw - *_actor_yaw;
+	// ignition::math::Angle yaw_diff = *_object_yaw - *_actor_yaw;					// TODO: below version is explicit, but is it correct? - DEBUG
+	ignition::math::Angle yaw_diff(_object_yaw->Radian() - _actor_yaw->Radian());
 	yaw_diff.Normalize();
 
 #ifdef DEBUG_GEOMETRY_1
