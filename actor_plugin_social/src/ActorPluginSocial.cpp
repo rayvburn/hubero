@@ -46,9 +46,15 @@ GZ_REGISTER_MODEL_PLUGIN(ActorPlugin)
 /* static std::map - same as above															=
 	 * // 	private: static std::map<std::string, unsigned int> map_of_names; *///			=
 // ==========================================================================================
+/*
 std::vector<ignition::math::Vector3d> lin_vels_vector;
 std::map<std::string, unsigned int> map_of_names;
+*/
 
+
+// static members of the class
+std::vector<ignition::math::Vector3d> ActorPlugin::lin_vels_vector;
+std::map<std::string, unsigned int> ActorPlugin::map_of_names;
 
 
 /////////////////////////////////////////////////

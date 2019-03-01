@@ -133,8 +133,9 @@ typedef enum {
 
 
 
-
-
+    // static members of the class
+    private: static std::vector<ignition::math::Vector3d> lin_vels_vector;
+    private: static std::map<std::string, unsigned int> map_of_names;
 
 
     /// \brief Linear velocity of the actor
