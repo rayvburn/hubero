@@ -33,7 +33,7 @@ namespace SocialForceModel {
 
 
 // #define DEBUG_SFM_PARAMETERS
-// #define DEBUG_GEOMETRY_1 // angle correctes etc.
+#define DEBUG_GEOMETRY_1 // angle correctes etc.
 #define DEBUG_GEOMETRY_2 // relative location
 // #define DEBUG_INTERNAL_ACC
 #define DEBUG_INTERACTION_FORCE
@@ -41,9 +41,14 @@ namespace SocialForceModel {
 #define DEBUG_NEW_POSE
 #define DEBUG_ACTOR_FACING_TARGET
 
+#ifdef DEBUG_NEW_POSE
+#define DEBUG_JUMPING_POSITION
+unsigned int curr_actor = 3;				// TODO: couldn't catch an event to debug this
+#endif
+
 // ---------------------------------
 
-// #define CALCULATE_INTERACTION
+#define CALCULATE_INTERACTION
 
 // ---------------------------------
 
@@ -160,6 +165,10 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	const std::map<std::string, unsigned int>  _map_actor_name_id,
 	const std::vector<ignition::math::Vector3d> _actors_velocities)
 {
+
+#ifdef DEBUG_JUMPING_POSITION
+	curr_actor = this->GetActorID(_actor_name, _map_actor_name_id);
+#endif
 
 //	unsigned int actor_id = this->GetActorID(_actor_name, _map_actor_name_id);
 //	if ( actor_id == ACTOR_ID_NOT_FOUND ) {
@@ -282,7 +291,8 @@ ignition::math::Vector3d SocialForceModel::GetNormalToAlphaDirection(const ignit
 
 	// all calculations here are based on world coordinate system data
 
-	ignition::math::Angle yaw_norm(_actor_pose.Rot().Euler().Z());
+	// ignition::math::Angle yaw_norm(_actor_pose.Rot().Euler().Z());
+	ignition::math::Angle yaw_norm(this->GetYawFromPose(_actor_pose));
 	// yaw_norm.Radian(rpy.Z());
 	yaw_norm.Normalize();
 	yaw_norm -= yaw_norm.Pi; // opposite pointing
@@ -414,7 +424,7 @@ ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Angle SocialForceModel::GetYawTarget(
+ignition::math::Angle SocialForceModel::GetYawMovementDirection(
 		const ignition::math::Pose3d &_actor_pose,
 		const ignition::math::Vector3d &_sf_vel) {
 
@@ -441,6 +451,7 @@ ignition::math::Angle SocialForceModel::GetYawTarget(
 	// -----------------------------------------
 	// STEP 2
 	// smooth the rotation if too big
+	// avoid big yaw changes, force smooth rotations; truncate to max
 	static const double YAW_INCREMENT = 0.001;
 	short int sign = -1;
 
@@ -492,10 +503,9 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 			const uint8_t &_stance)
 {
 
-	bool recalculate_vel = false;
-	ignition::math::Pose3d new_pose;
-
-	// a = F/m
+	/* II Newton's law equation			a = F / m
+	 * Straight-line movement equation 	v = a * t
+	 * with the use of 2 above - calculate the resulting ideal velocity caused by social forces */
 	ignition::math::Vector3d result_vel = (_social_force / this->mass_person) * _dt;
 
 #ifdef DEBUG_NEW_POSE
@@ -505,9 +515,10 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	}
 #endif
 
-	/* If calculated speed value is bigger than max speed -> perform normalization
-	// leave velocity direction as is, shorten the vector to max possible */
+	/* if calculated speed value is bigger than max_speed then perform normalization
+	 * leave velocity direction as is, shorten the vector to max possible */
 	if ( result_vel.Length() > speed_max ) {
+
 		result_vel = result_vel.Normalize() * speed_max;
 
 		#ifdef DEBUG_NEW_POSE
@@ -518,12 +529,12 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 
 	}
 
+#ifdef DEBUG_NEW_POSE
+	ignition::math::Vector3d result_vel_init = result_vel;
 	// temporary vector caused by social-force-based displacements
 	ignition::math::Vector3d new_position(_actor_pose.Pos().X() + result_vel.X() * _dt,
 										  _actor_pose.Pos().Y() + result_vel.Y() * _dt,
 										  _actor_pose.Pos().Z());
-
-#ifdef DEBUG_NEW_POSE
 	if ( print_info ) {
 		std::cout << "\nPOSITION1 \torig: " << _actor_pose.Pos() << "\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << "\tnew_position: " << new_position << std::endl;
 	}
@@ -532,258 +543,61 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	// -------------------------------------------------------------------------------------------------------------------
 
 	/* Consider the yaw angle of the actor - it is crucial to make him face his
-	 * current movement direction / current target */
-	ignition::math::Angle yaw_new = this->GetYawTarget(_actor_pose, result_vel);
+	 * current movement direction / current target.
+	 * yaw_new is calculated according to the vector of resulting velocity -
+	 * which is based on social force */
+	ignition::math::Angle yaw_new = this->GetYawMovementDirection(_actor_pose, result_vel);
 
-	// make a method out of below (will be useful for looking at some attractive objects too)
-//	// -----------------------------------------
-//	// STEP 1
-//	/* NOTE: coordinate systems of the actor and the world are orientated differently (actor's one rotated 90 deg CCW)
-//	 * World's yaw is expressed as ((IGN_PI / 2) + local_yaw_angle) where world's yaw is the angle between the X-axis
-//	 * and a velocity vector.
-//	 * yaw_target converted to the actor coordinate system to tell the difference */
-//	ignition::math::Angle yaw_target(std::atan2(result_vel.Y(), result_vel.X()) + (IGN_PI/2));
-//	yaw_target.Normalize();
-//
-//	double yaw_start = _actor_pose.Rot().Yaw();
-//	ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );	// correct
-//
-//	/* With the below version there is such a debug info printed:
-//	 * yaw_start: -2.761	yaw_target: 0.380506	angle_change: -0.001	yaw_new: -2.762
-//	 * and NO FURTHER CHANGE - actor ends up with back facing the target
-//	ignition::math::Angle yaw_diff( yaw_target.Radian() - yaw_start );
-//	*/
-//	yaw_diff.Normalize();
-//
-//	// -----------------------------------------
-//	// STEP 2
-//	// smooth the rotation if too big
-//	static const double YAW_INCREMENT = 0.001;
-//	short int sign = -1;
-//
-//	/* check the sign of the yaw_diff - the rotational movement should be performed
-//	 * in the OPPOSITE direction to yaw_diff angle */
-//	if ( yaw_diff.Radian() < 0.0f ) {
-//		sign = +1;
-//	}
-//
-//	// save the change to tell if actor is already aligned or not
-//	double angle_change = 0.0;
-//
-//	// consider the difference (increment or decrement)
-//	if ( std::fabs(yaw_diff.Radian()) < YAW_INCREMENT ) {
-//		angle_change = static_cast<double>(sign) * yaw_diff.Radian();
-//	} else {
-//		angle_change = static_cast<double>(sign) * YAW_INCREMENT;
-//	}
-//
-//	// -----------------------------------------
-//	// STEP 3
-//	ignition::math::Angle yaw_new;
-//	yaw_new.Radian(_actor_pose.Rot().Euler().Z() + angle_change);
-//	yaw_new.Normalize();
-//
-//	// END
-	// -------------------------------------------------------------------------------------------------------------------
+	/* calculate velocity components according to the yaw_new (that was likely truncated to prevent jumps
+	 * in rotational movement - this provides smoothed rotation)
+	 * only on-plane motions are supported, thus X and Y calculations */
+	result_vel.X( +sin(yaw_new.Radian()) * result_vel.SquaredLength() );
+	result_vel.Y( -cos(yaw_new.Radian()) * result_vel.SquaredLength() );
 
-	/* TODO: debug
-	// if the actor's yaw angle is such that he faces opposite direction to his target - make him rotate in place first
-	if ( IsActorFacingTheTarget(yaw_new, _actor_target) ) {
-
-		// ok - don't rotate in place
-		#ifdef DEBUG_ACTOR_FACING_TARGET
-		if ( print_info ) {
-			std::cout << "\tYES!" << std::endl;
-		}
-		#endif
-
-	} else {
-
-		// rotate in place condition
-		recalculate_vel = false;
-
-		// TODO: circular motion - swing around
-		result_vel.X(0.0);
-		result_vel.Y(0.0);
-
-		// check if delta is non-zero (to artificially force actor's rotation)
-		short int sign = 0;
-
-		if ( std::abs(yaw_delta.Radian()) <= 1e-03 ) {
-
-			// the sign of the trend must be determined (or just use yaw_delta's sign (?)
-			if ( GetYawFromPose(_actor_pose) - GetYawFromPose(_actor_last_pose) < 0 ) {
-				sign = -1;
-			} else {
-				sign = +1;
-			}
-			yaw_new.Radian(sign * 1.001f * GetYawFromPose(_actor_last_pose)); 	// speed up the rotation a bit
-
-		} else {
-
-			yaw_new.Radian(0.001 * yaw_delta.Radian() + yaw_new.Radian()); 		// speed up the rotation a bit
-
-
-		}
-
-		// yaw_new.Radian(sign * 1.01f * GetYawFromPose(_actor_last_pose)); // speed up the rotation a bit
-		yaw_new.Normalize();
-
-		#ifdef DEBUG_ACTOR_FACING_TARGET
-		if ( print_info ) {
-			std::cout << "\tNO!" << "\tyaw_calc: " << yaw_new << "\tsign: " << sign << std::endl;
-		}
-		#endif
-
-	}
-	*/
-
-	/// Recalculate velocity vectors if yaw was truncated
-	if ( recalculate_vel ) {
-		// TODO: debug sign of a sine/cosine
-		result_vel.X(+sin(yaw_new.Radian())*result_vel.SquaredLength());
-		result_vel.Y(+cos(yaw_new.Radian())*result_vel.SquaredLength());
-		/*
-		// 2nd method of yaw_delta calculation
-		result_vel.X(+cos(yaw_new.Radian())*result_vel.SquaredLength());
-		result_vel.Y(+sin(yaw_new.Radian())*result_vel.SquaredLength());
-		*/
-		if ( print_info ) {
-		    std::cout << "\n\tSMOOTHING ROTATION - RECALCULATED VEL\tx: " << result_vel.X() << "\ty: " << result_vel.Y() << '\n' << std::endl;
-		}
+	if ( print_info ) {
+		std::cout << "\n\tSMOOTHING ROTATION - RECALCULATED VEL\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << '\n' << std::endl;
 	}
 
-	// Set new pose values
+	/* calculate new pose - consider current pose, velocity and delta of time -
+	 * and set the new pose component values (for position and orientation) */
+
+	// TODO: fix forced pose.Z() and pose.Roll() according to current 'stance'
+	// TODO: hard-coded value for STANDING stance
+	// TODO: assuming standing pose thus roll angle is set to half-pi (STANDING)
+
+	ignition::math::Pose3d new_pose;
 	new_pose.Set(_actor_pose.Pos().X() + result_vel.X() * _dt,
 				 _actor_pose.Pos().Y() + result_vel.Y() * _dt,
 				 1.2138,
-				 (IGN_PI/2),	// assuming standing pose when sf is calculated thus roll angle is set to half-pi (STANDING)
+				 (IGN_PI/2),
 				 0,
 				 yaw_new.Radian());
-//				 _actor_pose.Rot().Yaw());	// WIP - testing AlignToTarget!
+
 
 #ifdef DEBUG_NEW_POSE
-	if ( print_info ) {
-//		std::cout << "\nPOSITION2 \t orig: " << _actor_pose.Pos() << " \t delta_x: " << result_vel.X() * _dt << "    delta_y: " << result_vel.Y() * _dt << std::endl;
-		std::cout << "\nPOSITION2 \torig: " << _actor_pose.Pos() << "\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << "\tnew_position: " << new_pose.Pos(); // << std::endl;
+
+	#ifdef DEBUG_JUMPING_POSITION
+	if ( (new_pose.Pos() - _actor_pose.Pos()).Length() > 0.1 ) {
+		std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n\n";
+		std::cout << "\nJUMP_IN_POSITION\tinit_pose: " << _actor_pose << "\tresult_vel init: " << result_vel_init << std::endl;
+		std::cout << "\t\tnew_pose: " << new_pose << "result_vel recalculated: " << result_vel << std::endl;
+		std::cout << "\t\tactor_ID: " << curr_actor << std::endl;
+		std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n\n";
 	}
-#endif
+	#endif
 
-	//new_pose.Pos().X(_actor_pose.Pos().X() + result_vel.X() * _dt);
-	//new_pose.Pos().Y(_actor_pose.Pos().Y() + result_vel.Y() * _dt);
-	//new_pose.Pos().Z(_actor_pose.Pos().Z()); // + result_vel.X() * _dt);
-
-//	new_pose.Set(new_position, ignition::math::Quaterniond(new_orientation.X(),
-//														   new_orientation.Y(),
-//														   new_orientation.Z()));
-
-//	new_pose.Set(new_position, _actor_pose.Rot());
-
-#ifdef DEBUG_NEW_POSE
 	if ( print_info ) {
+		std::cout << "\nPOSITION2 \torig: " << _actor_pose.Pos() << "\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << "\tnew_position: " << new_pose.Pos(); // << std::endl;
 		std::cout << std::endl;
 		std::cout << "---------------------------------------------------------------------------------";
 		std::cout << std::endl;
 	}
+
 #endif
-
-	return new_pose;
-
-
-
-	// TODO: check yaw angle calculation with default Gazebo script?
-	ignition::math::Vector3d actor_rpy_initial = _actor_pose.Rot().Euler();
-//	ignition::math::Angle yaw_new = atan2( result_vel.X(), result_vel.Y() );
-//	ignition::math::Angle yaw_delta = yaw_delta.HalfPi - yaw_new.Radian() - actor_rpy_initial.Z(); // HalfPi - theta(t=i+1) - theta(t=i)
-//	yaw_delta.Normalize();
-
-	ignition::math::Angle yaw_delta2 = atan2(result_vel.Y(), result_vel.X()) + 0.5*M_PI - actor_rpy_initial.Z();
-	yaw_delta2.Normalize();
-
-#ifdef DEBUG_NEW_POSE
-	if ( print_info ) {
-		std::cout << "\t rpy_initial: " << actor_rpy_initial;
-	//	std::cout << "  yaw_new: " << yaw_new;
-		std::cout << "\t yaw_delta2: " << yaw_delta2;
-	}
-#endif
-
-	// avoid big yaw changes, force smooth rotations; truncate to max
-
-//
-//	if ( abs( yaw_delta.Radian() ) > yaw_max_delta ) {
-//		(yaw_delta < 0) ? (yaw_delta = -yaw_max_delta) : (yaw_delta = +yaw_max_delta);
-//
-//		#ifdef DEBUG_NEW_POSE
-//		std::cout << "  yaw_delta TRUNCATED!: " << yaw_delta;
-//		#endif
-//
-//	}
-
-	ignition::math::Angle yaw_new2;
-	yaw_new2.Radian(actor_rpy_initial.Z() + yaw_delta2.Radian() - 0.5*M_PI);
-
-	// update yaw
-//	yaw_new += yaw_delta;
-	yaw_new2.Normalize();
-
-#ifdef DEBUG_NEW_POSE
-	if ( print_info ) {
-		std::cout << "\t yaw_new2: " << yaw_new2;
-	}
-#endif
-
-	// calculate x and y velocity components based on new yaw angle (on-plane motions only)
-	result_vel.X(+sin(yaw_new2.Radian())*result_vel.SquaredLength());
-	result_vel.Y(+cos(yaw_new2.Radian())*result_vel.SquaredLength());
-
-#ifdef DEBUG_NEW_POSE
-	if ( print_info ) {
-		std::cout << "\n \t vel YAW-CORRECTED: " << result_vel;
-	}
-#endif
-
-	// calculate new pose - consider current pose, velocity and delta of time
-	// set new rotation in the pose vector
-	ignition::math::Vector3d new_pos;
-	new_pos.X( _actor_pose.Pos().X() + result_vel.X()*_dt );
-	new_pos.Y( _actor_pose.Pos().Y() + result_vel.Y()*_dt );
-	new_pos.Z( _actor_pose.Pos().Z() + result_vel.Z()*_dt );
-
-	ignition::math::Vector3d new_rot_rpy = _actor_pose.Rot().Euler();
-	new_rot_rpy.X(1.5707);
-	new_rot_rpy.Z(yaw_new2.Radian());
-
-	//
-	// TODO: force pose.Z() according to current 'stance'
-	//
-
-	new_pose.Set(new_pos, new_rot_rpy);
-
-	//
-	if ( print_info ) {
-		print_info = false;
-		std::cout << " -------------- PRINT_INFO triggered FALSE ------------------ " << std::endl;
-	}
-	//
 
 	return new_pose;
 
 }
-
-// ------------------------------------------------------------------- //
-
-// overload?
-//ignition::math::Pose3d SocialForceModel::GetNewPose(
-//			const ignition::math::Pose3d &_actor_pose,
-//			const ignition::math::Vector3d &_actor_vel,
-//			const ignition::math::Vector3d &_actor_target,
-//			const ignition::math::Vector3d &_social_force,
-//			const double &_dt,
-//			const uint8_t &_stance)
-//{
-//
-//}
 
 // ------------------------------------------------------------------- //
 
@@ -868,9 +682,9 @@ double SocialForceModel::GetRelativeSpeed(
 		const ignition::math::Vector3d &_actor_velocity,
 		const ignition::math::Vector3d &_object_velocity) {
 
-	ignition::math::Vector3d rel_vel = _object_velocity - _actor_velocity;
-
 #ifdef DEBUG_REL_SPEED
+
+	ignition::math::Vector3d rel_vel = _object_velocity - _actor_velocity;
 	if ( print_info ) {
 		std::cout << std::endl;
 		std::cout << "GetRelativeSpeed(): ";
@@ -880,20 +694,26 @@ double SocialForceModel::GetRelativeSpeed(
 		std::cout << "  spd_rel: " << rel_vel.SquaredLength();
 		std::cout << std::endl;
 	}
-#endif
 
-	return rel_vel.SquaredLength();;
+	return rel_vel.SquaredLength();
+
+#else
+
+	return ( (_object_velocity - _actor_velocity).SquaredLength() );
+
+#endif
 
 }
 
 // ============================================================================
 
-inline double SocialForceModel::GetYawFromPose(const ignition::math::Pose3d &_actor_pose) {
+inline double SocialForceModel::GetYawFromPose(const ignition::math::Pose3d &_pose) {
+
 	// the actor's offset yaw is considered
 	// return (_actor_pose.Rot().Yaw() + (IGN_PI / 2));
 
 	// when offset already considered
-	return (_actor_pose.Rot().Yaw());
+	return (_pose.Rot().Yaw());
 }
 
 // ============================================================================
@@ -934,8 +754,18 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 		return f_alpha_beta;
 	}
 
+	/* yaw of an actor is always updated in new pose calculation procedure, so setting the yaw
+	 * based on world info should work - actor is always orientated in his movement direction
+	 * (if linear speed is non-zero) */
 	ignition::math::Angle actor_yaw(GetYawFromPose(_actor_pose));
-	ignition::math::Angle object_yaw(0.0);
+	actor_yaw.Normalize(); // just in case
+
+	/* this is a simplified version - object's yaw could be taken from world's info indeed,
+	 * but the object's coordinate system orientation is not known, so velocity calculation
+	 * still need to be performed (if needed depending on θ αβ calculation method) */
+	ignition::math::Angle object_yaw(GetYawFromPose(_object_pose));
+	object_yaw.Normalize();
+
 	uint8_t beta_rel_location = this->GetBetaRelativeLocation(actor_yaw, _d_alpha_beta);
 
 	if ( beta_rel_location == SFM_BEHIND && d_alpha_beta_length > 0.5 ) {
@@ -952,7 +782,7 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 
 	double v_rel = GetRelativeSpeed(_actor_velocity, _object_velocity);
 
-	if ( v_rel < 1e-12 ) {
+	if ( v_rel < 1e-06 ) {
 
 		#ifdef DEBUG_INTERACTION_FORCE
 		if ( print_info ) {
@@ -965,10 +795,28 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 
 	}
 
+	/* There is an inconsistency in papers connected with the Rudloff's version of Social Force model -
+	 * in Rudloff et al. 2011 - https://www.researchgate.net/publication/236149039_Can_Walking_Behavior_Be_Predicted_Analysis_of_Calibration_and_Fit_of_Pedestrian_Models
+	 * there is a statement that theta_alpha_beta is an "angle between velocity of pedestrian α and the displacement of pedestrian β"
+	 * whereas in Seer et al. 2014 - https://www.sciencedirect.com/science/article/pii/S2352146514001161
+	 * they say that in this model "φ αβ is the angle between n α and d αβ" (they call it phi instead of theta) */
+
+#if		defined(THETA_ALPHA_BETA_V2011)
+	double theta_alpha_beta = this->GetAngleBetweenObjectsVelocities(_actor_velocity, &actor_yaw)
+#elif 	defined(THETA_ALPHA_BETA_V2014)
+
+#else
+	/* NOTE: below method of calculating the angle is only correct when both objects are:
+	 * 		o dynamic,
+	 * 		o currently moving,
+	 * 		o already aligned with the to-target-direction,
+	 * 		o there are no obstacles in the environment that will make the object not move along a straight line. */
 	double theta_alpha_beta = this->GetAngleBetweenObjectsVelocities(_actor_pose, &actor_yaw, _object_pose, &object_yaw);
+#endif
+
 	ignition::math::Vector3d p_alpha = GetPerpendicularToNormal(_n_alpha, beta_rel_location); 	// actor's perpendicular (based on velocity vector)
 	double exp_normal = ((-Bn * theta_alpha_beta * theta_alpha_beta)/v_rel) - Cn * d_alpha_beta_length;
-	double exp_perpendicular = ((-Bp * theta_alpha_beta)/v_rel) - Cp * d_alpha_beta_length;
+	double exp_perpendicular = ((-Bp * std::fabs(theta_alpha_beta))/v_rel) - Cp * d_alpha_beta_length;
 	f_alpha_beta = _n_alpha * An * exp(exp_normal) + p_alpha * Ap * exp(exp_perpendicular);
 
 #ifdef DEBUG_INTERACTION_FORCE
@@ -987,12 +835,16 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 
 // ------------------------------------------------------------------- //
 
+// one of 3 possibilities of calculating theta_alpha_beta will be chosen
+
+#if !defined(THETA_ALPHA_BETA_V2011) && !defined(THETA_ALPHA_BETA_V2014)
+
 // dynamic objects interaction
 double SocialForceModel::GetAngleBetweenObjectsVelocities(
 		const ignition::math::Pose3d &_actor_pose,
-		ignition::math::Angle *_actor_yaw,					// alpha's yaw - will be calculated and saved for further work
+		ignition::math::Angle *_actor_yaw,
 		const ignition::math::Pose3d &_object_pose,
-		ignition::math::Angle *_object_yaw)					// beta's yaw - will be calculated and saved for further work
+		ignition::math::Angle *_object_yaw)
 {
 
 	// only on-plane movement considered
@@ -1033,17 +885,29 @@ double SocialForceModel::GetAngleBetweenObjectsVelocities(
 
 #endif
 
-	ignition::math::Vector3d rpy_actor = _actor_pose.Rot().Euler();
-	ignition::math::Vector3d rpy_object = _object_pose.Rot().Euler();
+//	ignition::math::Vector3d rpy_actor = _actor_pose.Rot().Euler();
+//	ignition::math::Vector3d rpy_object = _object_pose.Rot().Euler();
+//
+//	_actor_yaw->Radian(rpy_actor.Z());
+//	_actor_yaw->Normalize();
+//
+//	_object_yaw->Radian(rpy_object.Z());
+//	_object_yaw->Normalize();
 
-	_actor_yaw->Radian(rpy_actor.Z());
-	_actor_yaw->Normalize();
 
-	_object_yaw->Radian(rpy_object.Z());
-	_object_yaw->Normalize();
+
+//	// this is already done before the function invocation!		!
+//	_actor_yaw->Radian(this->GetYawFromPose(_actor_pose));		!
+//	_actor_yaw->Normalize();									!
+//																!
+//	_object_yaw->Radian(this->GetYawFromPose(_object_pose));	!
+//	_object_yaw->Normalize();									!
+
 
 	// ignition::math::Angle yaw_diff = *_object_yaw - *_actor_yaw;					// TODO: below version is explicit, but is it correct? - DEBUG
-	ignition::math::Angle yaw_diff(_object_yaw->Radian() - _actor_yaw->Radian());
+
+//	ignition::math::Angle yaw_diff(_object_yaw->Radian() - _actor_yaw->Radian());
+	ignition::math::Angle yaw_diff(_actor_yaw->Radian() - _object_yaw->Radian());
 	yaw_diff.Normalize();
 
 #ifdef DEBUG_GEOMETRY_1
@@ -1056,8 +920,48 @@ double SocialForceModel::GetAngleBetweenObjectsVelocities(
 
 }
 
-// ==================================================================== //
+#endif
 
+// ------------------------------------------------------------------- //
+
+#if defined(THETA_ALPHA_BETA_V2011)
+
+// 2011 - "θ αβ - angle between velocity of pedestrian α and the displacement of pedestrian β"
+double SocialForceModel::GetAngleBetweenObjectsVelocities(
+		const ignition::math::Vector3d &_actor_vel,
+		const ignition::math::Angle &_actor_yaw,
+		const ignition::math::Vector3d &_object_vel,
+		const ignition::math::Angle &_object_yaw)
+{
+
+	// velocities are expressed in world's coordinate system
+	_actor_yaw->Radian( std::atan2( _actor_vel.Y(), _actor_vel.X() ) );
+	_actor_yaw->Normalize();
+
+	_object_yaw->Radian( std::atan2( _object_vel.Y(), _object_vel.X() ) );
+	_object_yaw->Normalize();
+
+	ignition::math::Angle yaw_diff(_actor_yaw->Radian() - _object_yaw->Radian());
+	yaw_diff.Normalize();
+
+#ifdef DEBUG_GEOMETRY_1
+	if ( print_info ) {
+		std::cout << "\t yaw_actor: " << _actor_yaw->Radian() << "  yaw_object: " << _object_yaw->Radian() << "  yaw_diff: " << yaw_diff.Radian() << std::endl;
+	}
+#endif
+
+
+}
+
+#endif
+
+// ------------------------------------------------------------------- //
+
+#if defined(THETA_ALPHA_BETA_V2014)
+
+// 2014 - "φ αβ is the angle between n α and d αβ"
+
+#endif
 
 // ------------------------------------------------------------------- //
 

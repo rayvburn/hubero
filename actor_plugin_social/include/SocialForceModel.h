@@ -24,6 +24,12 @@
 #include <geometry_msgs/TransformStamped.h>
 #endif
 
+// ---------------------------------
+
+// choose 1 out of 2 or none of below
+// #define THETA_ALPHA_BETA_V2011
+// #define THETA_ALPHA_BETA_V2014
+
 // ----------------------------------------------------------------------------------------------- //
 /* References:
  * 		- D. Helbing et al. 	- Social Force Model for Pedestrian Dynamics ‎(1998)
@@ -46,7 +52,7 @@ public:
 
 	SocialForceModel();
 
-	ignition::math::Angle GetYawTarget(
+	ignition::math::Angle GetYawMovementDirection(
 			const ignition::math::Pose3d &_actor_pose,
 			const ignition::math::Vector3d &_sf_vel);
 
@@ -58,7 +64,7 @@ public:
 			const ignition::math::Vector3d &_actor_vel,
 			const ignition::math::Vector3d &_actor_target);
 
-	inline double GetYawFromPose(const ignition::math::Pose3d &_actor_pose);
+	inline double GetYawFromPose(const ignition::math::Pose3d &_pose);
 
 	ignition::math::Vector3d GetInteractionComponent(
 			const ignition::math::Pose3d &_actor_pose,
@@ -82,11 +88,32 @@ public:
 
 	ignition::math::Vector3d GetNormalToAlphaDirection(const ignition::math::Pose3d &_actor_pose);
 
+
+
+#if		defined(THETA_ALPHA_BETA_V2011)
+
+	double GetAngleBetweenObjectsVelocities(
+			const ignition::math::Vector3d &_actor_vel,
+			const ignition::math::Angle &_actor_yaw,
+			const ignition::math::Vector3d &_object_vel,
+			const ignition::math::Angle &_object_yaw);
+
+
+#elif	defined(THETA_ALPHA_BETA_V2014)
+
+
+
+#else
+
 	double GetAngleBetweenObjectsVelocities(
 			const ignition::math::Pose3d &_actor_pose,
 			ignition::math::Angle *_actor_yaw,
 			const ignition::math::Pose3d &_object_pose,
 			ignition::math::Angle *_object_yaw);
+
+#endif
+
+
 
 	uint8_t GetBetaRelativeLocation(
 			const ignition::math::Angle &_actor_yaw,

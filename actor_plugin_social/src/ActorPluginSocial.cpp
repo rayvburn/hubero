@@ -283,6 +283,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 			print_time = _info.simTime;
 			std::cout << "\n\n**************************************************** ACTOR1 ***********************************************" << std::endl;
 			std::cout << "**** INITIAL pose: " << this->actor->WorldPose() << "\t\t actor1 velocity: \t" << this->velocity_actual << "\t target: " << this->target << std::endl;
+			std::cout << "**** YAW vs VEL comparison\t\tyaw_from_vel: " << std::atan2(this->velocity_actual.Y(), this->velocity_actual.X()) << "\tyaw_from_pose: " << this->actor->WorldPose().Rot().Euler().Z() << std::endl;
 		}
 	} else {
 		print_info = false;
