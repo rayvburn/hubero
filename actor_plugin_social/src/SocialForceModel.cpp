@@ -333,13 +333,20 @@ ignition::math::Vector3d SocialForceModel::GetNormalToAlphaDirection(const ignit
 	// ignition::math::Vector3d rpy = _actor_pose.Rot().Euler();
 
 
-	// all calculations here are based on world coordinate system data
+	/* Another inconsistency between 2011 and 2014 papers connected to Rudloff's SFM version is n_alpha issue.
+	 * In 2011 original paper there is said that n_alpha is "pointing in the opposite direction to the walking
+	 * direction (deceleration force)".
+	 * On the other hand in 2014 paper (that Rudloff is co-author of) they say: "n α is the direction of movement
+	 * of pedestrian α". */
 
-	// ignition::math::Angle yaw_norm(_actor_pose.Rot().Euler().Z());
+	// all calculations here are based on world coordinate system data
 	ignition::math::Angle yaw_norm(this->GetYawFromPose(_actor_pose));
-	// yaw_norm.Radian(rpy.Z());
 	yaw_norm.Normalize();
+
+#ifdef N_ALPHA_V2011
 	yaw_norm -= yaw_norm.Pi; // opposite pointing
+#endif
+
 	yaw_norm.Normalize();
 
 	ignition::math::Vector3d n_alpha;
@@ -851,7 +858,7 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 #if		defined(THETA_ALPHA_BETA_V2011)
 	double theta_alpha_beta = this->GetAngleBetweenObjectsVelocities(_actor_velocity, actor_yaw, _object_velocity, object_yaw, _is_actor);
 #elif 	defined(THETA_ALPHA_BETA_V2014)
-
+	double theta_alpha_beta = this->GetAngleAlphaBeta(_n_alpha, _d_alpha_beta);
 #else
 	/* NOTE: below method of calculating the angle is only correct when both objects are:
 	 * 		o dynamic,
@@ -1072,6 +1079,40 @@ double SocialForceModel::GetAngleBetweenObjectsVelocities(
 #if defined(THETA_ALPHA_BETA_V2014)
 
 // 2014 - "φ αβ is the angle between n α and d αβ"
+double SocialForceModel::GetAngleAlphaBeta(
+			const ignition::math::Vector3d &_n_alpha, 		// actor's normal (based on velocity vector)
+			const ignition::math::Vector3d &_d_alpha_beta  	// vector between objects positions
+	)
+
+{
+
+	/* both n α and d αβ are expressed in world's coordinate system so
+	 * simple angle difference should do the job */
+
+#ifdef DEBUG_GEOMETRY_1
+	if ( print_info ) {
+		std::cout << "GetAngleBetweenObjectsVelocities(): ";
+	}
+#endif
+
+	ignition::math::Angle angle_n_alpha( std::atan2( _n_alpha.Y(), _n_alpha.X() ) );
+	angle_n_alpha.Normalize();
+
+	ignition::math::Angle angle_d_alpha_beta( std::atan2( _d_alpha_beta.Y(), _d_alpha_beta.X() ) );
+	angle_d_alpha_beta.Normalize();
+
+	ignition::math::Angle phi_alpha_beta(angle_n_alpha.Radian() - angle_d_alpha_beta.Radian());
+	phi_alpha_beta.Normalize();
+
+#ifdef DEBUG_GEOMETRY_1
+	if ( print_info ) {
+		std::cout << "\tangle_n_alpha: " << angle_n_alpha.Radian() << "\tangle_d_alpha_beta: " << angle_d_alpha_beta.Radian() << "\tdiff: " << phi_alpha_beta.Radian() << std::endl;
+	}
+#endif
+
+	return (phi_alpha_beta.Radian());
+
+}
 
 #endif
 
@@ -1118,11 +1159,21 @@ ignition::math::Vector3d SocialForceModel::GetPerpendicularToNormal(
 	ignition::math::Vector3d to_cross;
 
 	if ( _beta_rel_location == SFM_LEFT_SIDE ) {
-//		to_cross.Set(0.0, 0.0,  1.0);
+
+		#if 	defined(N_ALPHA_V2011)
 		to_cross.Set(0.0, 0.0, -1.0);
-	} else if ( _beta_rel_location == SFM_RIGHT_SIDE ) {
-//		to_cross.Set(0.0, 0.0, -1.0);
+		#elif 	defined(N_ALPHA_V2014)
 		to_cross.Set(0.0, 0.0,  1.0);
+		#endif
+
+	} else if ( _beta_rel_location == SFM_RIGHT_SIDE ) {
+
+		#if 	defined(N_ALPHA_V2011)
+		to_cross.Set(0.0, 0.0,  1.0);
+		#elif 	defined(N_ALPHA_V2014)
+		to_cross.Set(0.0, 0.0, -1.0);
+		#endif
+
 	}
 
 	p_alpha = _n_alpha.Cross(to_cross);

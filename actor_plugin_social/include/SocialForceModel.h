@@ -26,9 +26,17 @@
 
 // ---------------------------------
 
-// choose 1 out of 2 or none of below
-#define THETA_ALPHA_BETA_V2011
-// #define THETA_ALPHA_BETA_V2014
+// 1 out of 2 or none of below possible
+
+//#define THETA_ALPHA_BETA_V2011	// "φ_αβ is an angle between velocity of pedestrian α and the displacement of pedestrian β"
+#define THETA_ALPHA_BETA_V2014		// "φ_αβ is the angle between n_α and d_αβ"
+
+// ---------------------------------
+
+// 1 out of 2 below possible
+
+//#define N_ALPHA_V2011		// "n_α is pointing in the opposite direction to the walking direction (deceleration force)"
+#define N_ALPHA_V2014		// "n_α is the direction of movement of pedestrian α"
 
 // ----------------------------------------------------------------------------------------------- //
 /* References:
@@ -102,8 +110,10 @@ public:
 
 
 #elif	defined(THETA_ALPHA_BETA_V2014)
-
-
+	double GetAngleAlphaBeta(
+			const ignition::math::Vector3d &_n_alpha, 		// actor's normal (based on velocity vector)
+			const ignition::math::Vector3d &_d_alpha_beta  	// vector between objects positions
+	);
 
 #else
 
