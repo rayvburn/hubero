@@ -60,6 +60,12 @@ public:
 
 	SocialForceModel();
 
+	ignition::math::Vector3d GetModelPointClosestToActor(
+			const ignition::math::Pose3d &_actor_pose,
+			const ignition::math::Box &_bb,
+			const std::string &_model_name
+			);
+
 	ignition::math::Angle GetYawMovementDirection(
 			const ignition::math::Pose3d &_actor_pose,
 			const ignition::math::Vector3d &_sf_vel);

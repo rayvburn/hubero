@@ -6,10 +6,17 @@ desired_force_factor: 1.0 # coefficient
 interaction_force_factor: 2.3 # coefficient
 
 world_dictionary:
+
   # objects are by default treated as repulsive
   attractive_objects:
-    - robot: {name: tiago, mass: 20, immunity: 0.9}
+    - robot: {name: tiago, mass: 50, immunity: 0.9}
     - tv:    {name: tv,    mass: 3,  immunity: 0.9}
+
+  # neutral and those of which bounding box covers a lot of surface (single walls are ok)
   neutral_objects:
     - cafe
     - ground_plane
+
+  repulsive_objects:
+    # other actors are repulsive by default!
+    - tables: {name: table, mass: 10, immunity: 0.7 }

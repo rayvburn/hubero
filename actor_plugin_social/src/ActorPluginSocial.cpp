@@ -964,6 +964,17 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 		}
 		std::cout << std::endl;
 
+//		ignition::math::Box bb = this->model->CollisionBoundingBox();	// segfault
+		ignition::math::Box bb = this->model->BoundingBox();			// inf and 0 values
+
+		ignition::math::Box bb_local;
+		// bb_local.
+		std::cout << "\t\t\tACTOR BOUNDING BOX local\tcenter: " << bb.Center() << std::endl;
+
+//		std::cout << "\t\t\tACTOR BOUNDING BOX local\tcenter: " << bb.Center() << "\tmin: " << bb.Min() << "\tmax: " << bb.Max() << std::endl;
+
+// Gaz 7 std::cout << "\t\t\tACTOR BOUNDING BOX local\tcenter: " << bb.GetCenter() << "\tmin: " << bb.min << "\tmax: " << bb.max << "\tsize: " << bb.GetSize() << std::endl;
+
 		std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;
 	}
 

@@ -40,6 +40,8 @@ namespace SocialForceModel {
 #define DEBUG_REL_SPEED
 #define DEBUG_NEW_POSE
 #define DEBUG_ACTOR_FACING_TARGET
+#define DEBUG_BOUNDING_BOX
+
 
 #ifdef DEBUG_NEW_POSE
 #define DEBUG_JUMPING_POSITION
@@ -233,6 +235,8 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			model_vel = model_ptr->WorldLinearVel();
 		}
 
+		this->GetModelPointClosestToActor( _actor_pose, model_ptr->BoundingBox(), model_ptr->GetName() );
+
 		// what if velocity is actually non-zero but Gazebo sees 0?
 		f_alpha_beta = this->GetInteractionComponent(	_actor_pose,
 														_actor_velocity,
@@ -284,6 +288,24 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		std::cout << "\t\tfinalValue: " << f_total << "\tlength: " << f_total.Length() << std::endl;
 	}
 	return (f_total);
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Vector3d SocialForceModel::GetModelPointClosestToActor(
+		const ignition::math::Pose3d &_actor_pose,
+		const ignition::math::Box &_bb,
+		const std::string &_model_name) // debug only
+{
+
+#ifdef DEBUG_BOUNDING_BOX
+	if ( print_info ) {
+		std::cout << "GetModelPointClosestToActor()" << "\tname: " << _model_name << "\tcenter: " << _bb.Center() << "\tmax: " << _bb.Max() << "\tmin: " << _bb.Min() << std::endl;
+	}
+#endif
+
+	return ignition::math::Vector3d(0.0, 0.0, 0.0);
 
 }
 
@@ -1047,7 +1069,7 @@ double SocialForceModel::GetAngleBetweenObjectsVelocities(
 //			}
 			#endif
 
-			// TODO: debug this
+			// TODO: debug this, NOT TESTED!
 			// velocities are expressed in world's coordinate system
 
 			// transform object's yaw to actor's coordinate system by adding 90 deg
