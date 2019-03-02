@@ -27,7 +27,7 @@
 // ---------------------------------
 
 // choose 1 out of 2 or none of below
-// #define THETA_ALPHA_BETA_V2011
+#define THETA_ALPHA_BETA_V2011
 // #define THETA_ALPHA_BETA_V2014
 
 // ----------------------------------------------------------------------------------------------- //
@@ -73,8 +73,9 @@ public:
 			// const ignition::math::Vector3d &_n_alpha,
 			// const SFMObjectType &_object_type,
 			const ignition::math::Pose3d &_object_pose,
-			const ignition::math::Vector3d &_object_vel
+			const ignition::math::Vector3d &_object_vel,
 			//const ignition::math::Box &_object_bb = ignition::math::Box()); // gazebo::math::Box is deprecated (Gazebo 8.0 and above))
+			const bool &_is_actor
 	);
 
 	ignition::math::Pose3d GetNewPose(
@@ -96,7 +97,8 @@ public:
 			const ignition::math::Vector3d &_actor_vel,
 			const ignition::math::Angle &_actor_yaw,
 			const ignition::math::Vector3d &_object_vel,
-			const ignition::math::Angle &_object_yaw);
+			const ignition::math::Angle &_object_yaw,
+			const bool &_is_actor);
 
 
 #elif	defined(THETA_ALPHA_BETA_V2014)
@@ -139,7 +141,8 @@ public:
 			const ignition::math::Pose3d &_object_pose,
 			const ignition::math::Vector3d &_object_velocity,
 			const ignition::math::Vector3d &_n_alpha, 		// actor's normal (based on velocity vector)
-			const ignition::math::Vector3d &_d_alpha_beta );
+			const ignition::math::Vector3d &_d_alpha_beta,
+			const bool &_is_actor );
 
 	ignition::math::Vector3d GetSocialForce(
 		const gazebo::physics::WorldPtr _world_ptr,
@@ -174,6 +177,8 @@ private:
 	float relaxation_time;
 	float speed_desired;
 	float speed_max;
+	float force_max;
+	float force_min;
 	float fov;
 	float yaw_max_delta;
 	unsigned short int mass_person; 		// to evaluate if helpful

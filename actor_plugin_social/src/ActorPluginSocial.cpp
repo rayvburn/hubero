@@ -111,7 +111,7 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
 	// WARNING: HARD-CODED target coord
 	if ( this->actor->GetName() == "actor1" ) {
-		this->target.X(+2.00);
+		this->target.X(+0.00);
 		this->target.Y(-4.00);
 	}
 
@@ -261,6 +261,9 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 			ActorStateMoveAroundHandler(_info);
 			break;
 
+	case(ACTOR_STATE_STOP_AND_STARE):
+			std::cout << "\tACTOR_STATE_STOP_AND_STARE" << std::endl;
+			break;
 	case(ACTOR_STATE_FOLLOW_OBJECT):
 			std::cout << "\tACTOR_STATE_FOLLOW_OBJECT" << std::endl;
 			ActorStateFollowObjectHandler(_info);
@@ -283,7 +286,9 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 			print_time = _info.simTime;
 			std::cout << "\n\n**************************************************** ACTOR1 ***********************************************" << std::endl;
 			std::cout << "**** INITIAL pose: " << this->actor->WorldPose() << "\t\t actor1 velocity: \t" << this->velocity_actual << "\t target: " << this->target << std::endl;
-			std::cout << "**** YAW vs VEL comparison\t\tyaw_from_vel: " << std::atan2(this->velocity_actual.Y(), this->velocity_actual.X()) << "\tyaw_from_pose: " << this->actor->WorldPose().Rot().Euler().Z() << std::endl;
+			ignition::math::Angle yaw_from_vel_world( std::atan2(this->velocity_actual.Y(), this->velocity_actual.X()) + (IGN_PI/2) );
+			yaw_from_vel_world.Normalize();
+			std::cout << "**** YAW vs VEL comparison\t\tyaw_from_vel_act: " << std::atan2(this->velocity_actual.Y(), this->velocity_actual.X()) << "\tyaw_from_vel_vec: " << std::atan2( lin_vels_vector[this->actor_id].Y(), lin_vels_vector[this->actor_id].X() ) << "\tyaw_from_vel_WORLD: " << yaw_from_vel_world.Radian() << "\tyaw_from_pose: " << this->actor->WorldPose().Rot().Euler().Z() << std::endl;
 		}
 	} else {
 		print_info = false;
@@ -980,7 +985,10 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 	double to_target_distance = (this->target - this->pose_actor.Pos()).Length();
 
 	// choose a new target position if the actor has reached its current target
-	if (to_target_distance < 0.3) {
+//	if (to_target_distance < 0.3) {
+
+	// with very small to-target distance tolerance the actor reaches near-to-zero velocity
+	if (to_target_distance < 1.3) {
 
 		this->ChooseNewTarget();
 		// after setting new target, first let's rotate to its direction
@@ -989,8 +997,8 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 	}
 
 	// make sure the actor won't go out of bounds TODO: YAML config
-	new_pose.Pos().X( std::max(-3.0,  std::min( 3.5, new_pose.Pos().X() ) ) );
-	new_pose.Pos().Y( std::max(-10.0, std::min( 2.0, new_pose.Pos().Y() ) ) );
+//	new_pose.Pos().X( std::max(-3.0,  std::min( 3.5, new_pose.Pos().X() ) ) );
+//	new_pose.Pos().Y( std::max(-10.0, std::min( 2.0, new_pose.Pos().Y() ) ) );
 
 	// object info update
 	double dist_traveled = (new_pose.Pos() - this->actor->WorldPose().Pos()).Length();

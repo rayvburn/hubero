@@ -35,7 +35,7 @@ namespace SocialForceModel {
 // #define DEBUG_SFM_PARAMETERS
 #define DEBUG_GEOMETRY_1 // angle correctes etc.
 #define DEBUG_GEOMETRY_2 // relative location
-// #define DEBUG_INTERNAL_ACC
+#define DEBUG_INTERNAL_ACC
 #define DEBUG_INTERACTION_FORCE
 #define DEBUG_REL_SPEED
 #define DEBUG_NEW_POSE
@@ -76,6 +76,7 @@ static grid_map::GridMap gridmap({"layer"});
 
 #endif
 
+
 // ------------------------------------------------------------------- //
 
 // TODO: add references to arguments to avoid copy
@@ -85,7 +86,7 @@ SocialForceModel::SocialForceModel():
 		// TODO: note that IT IS REQUIRED TO NAME ALL ACTORS "actor..."
 
 	fov(1.80), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
-	desired_force_factor(500.0), interaction_force_factor(300.0) {
+	desired_force_factor(200.0), interaction_force_factor(5000.0), force_max(2000.0), force_min(750.0) {
 
 	SetParameterValues();
 
@@ -192,22 +193,33 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	ignition::math::Vector3d f_alpha = this->GetInternalAcceleration(_actor_pose,
 																	 _actor_velocity,
 																	 _actor_target);
+	ignition::math::Vector3d f_interaction(0.0, 0.0, 0.0);
 	ignition::math::Vector3d f_alpha_beta(0.0, 0.0, 0.0);
-	ignition::math::Vector3d f_ab_single(0.0, 0.0, 0.0);
 
 #ifdef CALCULATE_INTERACTION
 	/* model_vel contains model's velocity (world's object or actor) - for the actor this is set differently
 	 * it was impossible to set actor's linear velocity by setting it by the model's class method */
 	ignition::math::Vector3d model_vel;
 
-	gazebo::physics::ModelPtr model_ptr;
 	/* */
+
+	/* below flag is used as a workaround for the problem connected with being unable to set actor's
+	 * velocity and acceleration in the gazebo::physics::WorldPtr */
+	bool is_an_actor = false;
+	gazebo::physics::ModelPtr model_ptr;
+
 	for ( unsigned int i = 0; i < _world_ptr->ModelCount(); i++ ) {
 
 		model_ptr = _world_ptr->ModelByIndex(i);
 
 		if ( model_ptr->GetName() == _actor_name ) {
-			// do not calculate social force for itself
+			// do not calculate social force from itself
+			continue;
+		}
+
+		// test world specific names
+		if ( model_ptr->GetName() == "cafe" || model_ptr->GetName() == "ground_plane" ) {
+			// do not calculate social force from the objects he is stepping on
 			continue;
 		}
 
@@ -215,20 +227,21 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
 		}
 
-		if ( this->IsActor(model_ptr->GetName()) ) {
+		if ( (is_an_actor = this->IsActor(model_ptr->GetName())) ) {
 			model_vel = GetActorVelocity(model_ptr, _map_actor_name_id, _actors_velocities);
 		} else {
 			model_vel = model_ptr->WorldLinearVel();
 		}
 
 		// what if velocity is actually non-zero but Gazebo sees 0?
-		f_ab_single = this->GetInteractionComponent(	_actor_pose,
+		f_alpha_beta = this->GetInteractionComponent(	_actor_pose,
 														_actor_velocity,
 														model_ptr->WorldPose(),
-														model_vel);
-		f_alpha_beta += f_ab_single;
+														model_vel,
+														is_an_actor);
+		f_interaction += f_alpha_beta;
 		if ( print_info ) {
-			std::cout << " model's name: " << model_ptr->GetName() << "  pose: " << model_ptr->WorldPose() << "  lin vel: " << model_vel << "  force: " << f_ab_single << std::endl;
+			std::cout << " model's name: " << model_ptr->GetName() << "  pose: " << model_ptr->WorldPose() << "  lin vel: " << model_vel << "  force: " << f_alpha_beta << std::endl;
 		}
 
 	}
@@ -238,8 +251,39 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	}
 #endif
 
-	return (desired_force_factor * f_alpha + interaction_force_factor * f_alpha_beta);
+//	return (desired_force_factor * f_alpha + interaction_force_factor * f_alpha_beta);
 
+	// truncate the force value to max to prevent strange speedup of an actor
+	ignition::math::Vector3d f_total = desired_force_factor * f_alpha + interaction_force_factor * f_interaction;
+	f_total.Z(0.0);
+
+	if ( print_info ) {
+		std::cout << "!! SocialForce: " << f_total << "\tinternal: " << desired_force_factor * f_alpha << "\tinteraction: " << interaction_force_factor * f_interaction;
+	}
+
+	double force_length = f_total.Length();
+	if ( force_length > force_max ) {
+
+		f_total = f_total.Normalize() * force_max;
+
+		if ( print_info ) {
+			std::cout << "\tTRUNCATED";
+		}
+
+	} else if ( force_length < force_min ) {
+
+		f_total = f_total.Normalize() * force_min;
+
+		if ( print_info ) {
+			std::cout << "\tEXTENDED";
+		}
+
+	}
+
+	if ( print_info ) {
+		std::cout << "\t\tfinalValue: " << f_total << "\tlength: " << f_total.Length() << std::endl;
+	}
+	return (f_total);
 
 }
 
@@ -380,8 +424,9 @@ ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
 		// const ignition::math::Vector3d &_n_alpha,
 		// const SFMObjectType &_object_type,
 		const ignition::math::Pose3d &_object_pose,
-		const ignition::math::Vector3d &_object_vel
+		const ignition::math::Vector3d &_object_vel,
 		//const ignition::math::Box &_object_bb)
+		const bool &_is_actor
 )
 {
 
@@ -394,7 +439,7 @@ ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
 	// if the object is not considered as a point - then perform some calculations
 	ignition::math::Vector3d f_alpha_beta = this->GetObjectsInteractionForce(_actor_pose,
 													_actor_vel, _object_pose, _object_vel,
-													n_alpha, d_alpha_beta);
+													n_alpha, d_alpha_beta, _is_actor);
 	return f_alpha_beta;
 
 
@@ -430,7 +475,7 @@ ignition::math::Angle SocialForceModel::GetYawMovementDirection(
 
 	// -----------------------------------------
 	// STEP 1
-	/* NOTE: coordinate systems of the actor and the world are orientated differently (actor's one rotated 90 deg CCW)
+	/* NOTE: coordinate systems of the actor and the world are oriented differently (actor's one rotated 90 deg CCW)
 	 * World's yaw is expressed as ((IGN_PI / 2) + local_yaw_angle) where world's yaw is the angle between the X-axis
 	 * and a velocity vector.
 	 * yaw_target converted to the actor coordinate system to tell the difference */
@@ -724,7 +769,8 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 		const ignition::math::Pose3d &_object_pose,
 		const ignition::math::Vector3d &_object_velocity,
 		const ignition::math::Vector3d &_n_alpha, 		// actor's normal (based on velocity vector)
-		const ignition::math::Vector3d &_d_alpha_beta 	// vector between objects positions
+		const ignition::math::Vector3d &_d_alpha_beta, 	// vector between objects positions
+		const bool &_is_actor
 )
 {
 
@@ -755,14 +801,15 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 	}
 
 	/* yaw of an actor is always updated in new pose calculation procedure, so setting the yaw
-	 * based on world info should work - actor is always orientated in his movement direction
+	 * based on world info should work - actor is always oriented in his movement direction
 	 * (if linear speed is non-zero) */
 	ignition::math::Angle actor_yaw(GetYawFromPose(_actor_pose));
-	actor_yaw.Normalize(); // just in case
+	actor_yaw.Normalize();
 
 	/* this is a simplified version - object's yaw could be taken from world's info indeed,
 	 * but the object's coordinate system orientation is not known, so velocity calculation
-	 * still need to be performed (if needed depending on θ αβ calculation method) */
+	 * still may need to be performed (if needed depending on θ αβ calculation method);
+	 * when `_is_actor` flag is set no further velocity calculation needed! */
 	ignition::math::Angle object_yaw(GetYawFromPose(_object_pose));
 	object_yaw.Normalize();
 
@@ -802,7 +849,7 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 	 * they say that in this model "φ αβ is the angle between n α and d αβ" (they call it phi instead of theta) */
 
 #if		defined(THETA_ALPHA_BETA_V2011)
-	double theta_alpha_beta = this->GetAngleBetweenObjectsVelocities(_actor_velocity, &actor_yaw)
+	double theta_alpha_beta = this->GetAngleBetweenObjectsVelocities(_actor_velocity, actor_yaw, _object_velocity, object_yaw, _is_actor);
 #elif 	defined(THETA_ALPHA_BETA_V2014)
 
 #else
@@ -815,16 +862,17 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 #endif
 
 	ignition::math::Vector3d p_alpha = GetPerpendicularToNormal(_n_alpha, beta_rel_location); 	// actor's perpendicular (based on velocity vector)
-	double exp_normal = ((-Bn * theta_alpha_beta * theta_alpha_beta)/v_rel) - Cn * d_alpha_beta_length;
-	double exp_perpendicular = ((-Bp * std::fabs(theta_alpha_beta))/v_rel) - Cp * d_alpha_beta_length;
+	double exp_normal = ( (-Bn * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn * d_alpha_beta_length;
+	double exp_perpendicular = ( (-Bp * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp * d_alpha_beta_length;
 	f_alpha_beta = _n_alpha * An * exp(exp_normal) + p_alpha * Ap * exp(exp_perpendicular);
 
 #ifdef DEBUG_INTERACTION_FORCE
 	if ( print_info ) {
-		std::cout << "  v_rel: " << v_rel;
-		std::cout << "  exp_n: " << exp_normal;
-		std::cout << "  exp_p: " << exp_perpendicular;
-		std::cout << "  f_alpha_beta: " << f_alpha_beta;
+		std::cout << "Interaction";
+		std::cout << "\tv_rel: " << v_rel;
+		std::cout << "\texp_n: " << exp_normal;
+		std::cout << "\texp_p: " << exp_perpendicular;
+		std::cout << "\tf_alpha_beta: " << f_alpha_beta;
 		std::cout << std::endl;
 	}
 #endif
@@ -931,25 +979,89 @@ double SocialForceModel::GetAngleBetweenObjectsVelocities(
 		const ignition::math::Vector3d &_actor_vel,
 		const ignition::math::Angle &_actor_yaw,
 		const ignition::math::Vector3d &_object_vel,
-		const ignition::math::Angle &_object_yaw)
+		const ignition::math::Angle &_object_yaw,
+		const bool &_is_actor)
 {
-
-	// velocities are expressed in world's coordinate system
-	_actor_yaw->Radian( std::atan2( _actor_vel.Y(), _actor_vel.X() ) );
-	_actor_yaw->Normalize();
-
-	_object_yaw->Radian( std::atan2( _object_vel.Y(), _object_vel.X() ) );
-	_object_yaw->Normalize();
-
-	ignition::math::Angle yaw_diff(_actor_yaw->Radian() - _object_yaw->Radian());
-	yaw_diff.Normalize();
 
 #ifdef DEBUG_GEOMETRY_1
 	if ( print_info ) {
-		std::cout << "\t yaw_actor: " << _actor_yaw->Radian() << "  yaw_object: " << _object_yaw->Radian() << "  yaw_diff: " << yaw_diff.Radian() << std::endl;
+		std::cout << "GetAngleBetweenObjectsVelocities(): ";
 	}
 #endif
 
+
+	/* Actor's info is based on his world's pose - it is easier to treat the current actor
+	 * as an object that always keeps aligned to his movement direction.
+	 * On the other hand the object's orientation is not known and its velocity
+	 * will be used to determine it's yaw. */
+
+	/* The problem is that actor's linear velocity couldn't be set so it can't be visible
+	 * from the world_ptr (always 0, no matter what was set, same in model_ptr) - so when
+	 * calculating interaction between 2 actors the other one (so-called beta) has a velocity
+	 * linear velocity of (0,0,0). */
+
+	ignition::math::Angle yaw_diff;
+
+	// check if the other object is an actor
+	if ( _is_actor ) {
+
+		#ifdef DEBUG_GEOMETRY_1
+		if ( print_info ) {
+			std::cout << "\t++another ACTOR++";
+		}
+		#endif
+
+		/* both actors coordinate systems are oriented the same
+		 * so no extra calculations need to be performed (relative angle) */
+		yaw_diff.Radian((_actor_yaw.Radian() - _object_yaw.Radian()));
+		yaw_diff.Normalize();
+
+	} else {
+
+		/* so first let's check if the considered object is static or dynamic;
+		 * if it is static then the only thing that could be done is calculating
+		 * the yaw_diff as in `_is_actor` case */
+		if ( _object_vel.Length() < 1e-06 ) {
+
+			#ifdef DEBUG_GEOMETRY_1
+			if ( print_info ) {
+				std::cout << "\t++STATIC object++";
+			}
+			#endif
+
+			yaw_diff.Radian((_actor_yaw.Radian() - _object_yaw.Radian()));
+			yaw_diff.Normalize();
+
+		} else {
+
+			#ifdef DEBUG_GEOMETRY_1
+//			if ( print_info ) {
+				std::cout << "\t++!!! DYNAMIC object !!!++";
+//			}
+			#endif
+
+			// TODO: debug this
+			// velocities are expressed in world's coordinate system
+
+			// transform object's yaw to actor's coordinate system by adding 90 deg
+			ignition::math::Angle yaw_temp( std::atan2( _object_vel.Y(), _object_vel.X() ) + (IGN_PI/2) );
+			yaw_temp.Normalize();
+
+			yaw_diff.Radian( _actor_yaw.Radian() - yaw_temp.Radian() );
+			yaw_diff.Normalize();
+
+		}
+
+	}
+
+
+#ifdef DEBUG_GEOMETRY_1
+	if ( print_info ) {
+		std::cout << "\t yaw_actor: " << _actor_yaw.Radian() << "  yaw_object: " << _object_yaw.Radian() << "  yaw_diff: " << yaw_diff.Radian() << std::endl;
+	}
+#endif
+
+	return (yaw_diff.Radian());
 
 }
 
@@ -1006,9 +1118,11 @@ ignition::math::Vector3d SocialForceModel::GetPerpendicularToNormal(
 	ignition::math::Vector3d to_cross;
 
 	if ( _beta_rel_location == SFM_LEFT_SIDE ) {
-		to_cross.Set(0.0, 0.0,  1.0);
-	} else if ( _beta_rel_location == SFM_RIGHT_SIDE ) {
+//		to_cross.Set(0.0, 0.0,  1.0);
 		to_cross.Set(0.0, 0.0, -1.0);
+	} else if ( _beta_rel_location == SFM_RIGHT_SIDE ) {
+//		to_cross.Set(0.0, 0.0, -1.0);
+		to_cross.Set(0.0, 0.0,  1.0);
 	}
 
 	p_alpha = _n_alpha.Cross(to_cross);

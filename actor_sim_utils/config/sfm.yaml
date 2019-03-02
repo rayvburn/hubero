@@ -1,0 +1,15 @@
+homogenous_population: false # whether to set equal SFM parameters to all actors
+force_max: 2000 # [N]
+force_min: 500  # [N]
+fov: 120        # [deg]
+desired_force_factor: 1.0 # coefficient
+interaction_force_factor: 2.3 # coefficient
+
+world_dictionary:
+  # objects are by default treated as repulsive
+  attractive_objects:
+    - robot: {name: tiago, mass: 20, immunity: 0.9}
+    - tv:    {name: tv,    mass: 3,  immunity: 0.9}
+  neutral_objects:
+    - cafe
+    - ground_plane
