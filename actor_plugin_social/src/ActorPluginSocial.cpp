@@ -110,6 +110,8 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	actor_id = this->InitActorInfo(this->actor->GetName());
 	std::cout << " -------- ACTOR ID -------- " << actor_id << std::endl;
 
+	std::cout << " -------- MODEL TYPE -------- " << this->model->GetType() << std::endl;
+
 	// WARNING: HARD-CODED target coord
 	if ( this->actor->GetName() == "actor1" ) {
 		this->target.X(+0.00);
@@ -235,20 +237,27 @@ ignition::math::Box ActorPlugin::GenerateBoundingBox(const ignition::math::Pose3
 	 */
 
 	// lengths expressed in actor's coordinate system - x-axis is pointing forward (from face)
-	static const float ACTOR_X_BB_HALF_LENGTH = 1.21;
-	static const float ACTOR_Y_BB_HALF_LENGTH = 1.21;
-	static const float ACTOR_Z_BB_HALF_LENGTH = 1.21;	// TODO: should it change when stance changes?
+	static const double ACTOR_X_BB_HALF_LENGTH = 0.45;
+	static const double ACTOR_Y_BB_HALF_LENGTH = 0.45;
+	static const double ACTOR_Z_BB_HALF_LENGTH = 1.0;	// TODO: should it change when stance changes?
 
 
 	ignition::math::Vector3d bb_min_vector, bb_max_vector;
 
-	float x_bb = static_cast<float>(_actor_pose.Pos().X());
-	_actor_pose.Rot().Roll();
-	_actor_pose.Rot().Pitch();
-	_actor_pose.Rot().Yaw();
+//	float x_bb = static_cast<float>( _actor_pose.Pos().X() );
+//	_actor_pose.Rot().Roll();
+//	_actor_pose.Rot().Pitch();
+//	_actor_pose.Rot().Yaw();
 
 
-	ignition::math::Box bb;
+	// temp - static (not rotation-dependent)
+	ignition::math::Box bb(	_actor_pose.Pos().X() - ACTOR_X_BB_HALF_LENGTH,
+							_actor_pose.Pos().Y() - ACTOR_Y_BB_HALF_LENGTH,
+							_actor_pose.Pos().Z() - ACTOR_Z_BB_HALF_LENGTH,
+							_actor_pose.Pos().X() + ACTOR_X_BB_HALF_LENGTH,
+							_actor_pose.Pos().Y() + ACTOR_Y_BB_HALF_LENGTH,
+							_actor_pose.Pos().Z() + ACTOR_Z_BB_HALF_LENGTH );
+
 	return (bb);
 
 }
@@ -397,7 +406,8 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 													 this->velocity_actual,
 													 this->target, // );
 													 map_of_names,
-													 lin_vels_vector);
+													 lin_vels_vector,
+													 bounding_boxes_vector);
 	if ( print_info ) {
 		std::cout << "\t TOTAL force: " << sf << std::endl;
 //		std::cout << "\t\t\t Vels vector: ";
@@ -923,6 +933,9 @@ double ActorPlugin::PrepareForUpdate(const common::UpdateInfo &_info) {
 	SetActorsLinearVel(this->actor_id, this->velocity_actual);
 	this->actor->SetLinearVel(this->velocity_actual);
 
+	// update the bounding box of the actor
+	SetActorsBoundingBox( this->actor_id, this->GenerateBoundingBox(this->pose_actor) );
+
 	// dt is helpful for further calculations
 	return dt;
 
@@ -990,7 +1003,8 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 													 this->velocity_actual,
 													 this->target,
 													 map_of_names,
-													 lin_vels_vector);
+													 lin_vels_vector,
+													 bounding_boxes_vector);
 
 	if ( print_info ) {
 		std::cout << "\t TOTAL force: " << sf << std::endl;
@@ -1001,11 +1015,11 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 		std::cout << std::endl;
 
 //		ignition::math::Box bb = this->model->CollisionBoundingBox();	// segfault
-		ignition::math::Box bb = this->model->BoundingBox();			// inf and 0 values
-
-		ignition::math::Box bb_local;
-		// bb_local.
-		std::cout << "\t\t\tACTOR BOUNDING BOX local\tcenter: " << bb.Center() << std::endl;
+//		ignition::math::Box bb = this->model->BoundingBox();			// inf and 0 values
+//
+//		ignition::math::Box bb_local;
+//		// bb_local.
+//		std::cout << "\t\t\tACTOR BOUNDING BOX local\tcenter: " << bb.Center() << std::endl;
 
 //		std::cout << "\t\t\tACTOR BOUNDING BOX local\tcenter: " << bb.Center() << "\tmin: " << bb.Min() << "\tmax: " << bb.Max() << std::endl;
 

@@ -10,11 +10,12 @@ TODOs from notebook
 o maybe the _is_actor flag could be avoided? social force is calculated only then actor is moving? TODO
 
 current tasks:
-o 	actors accelerate quickly when close to each other
+o 	recalculation as a function of an angle
+o 	actors accelerate quickly when close to each other							some changes in model needed?
 o 	actor2 sometimes has non-zero lin vel while nearly stopped? 				could not reproduce in a while..
 o 	jumps (!) 																	X SOLVED - seems it was some angle calculation overflow or sth
 o 	interaction force seems to have wrong sign - object attract (!) the actor - X SOLVED - wrong direction of perpendicular vector
-o 	actors "collide" with tables (inflation/bounding box of a obstacle)
+o 	actors "collide" with tables (inflation/bounding box of a obstacle)			
 o 	create gridmap for visualization
 
 

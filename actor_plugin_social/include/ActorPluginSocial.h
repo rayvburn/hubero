@@ -51,6 +51,12 @@ typedef enum {
 	ACTOR_STATE_TELEOPERATION,
 } ActorState;
 
+
+
+// ACTOR MODEL TYPE is:  -------- MODEL TYPE -------- 32771
+
+
+
 // -------------------------
 
   class GAZEBO_VISIBLE ActorPlugin : public ModelPlugin

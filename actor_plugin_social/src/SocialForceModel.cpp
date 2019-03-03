@@ -42,7 +42,7 @@ namespace SocialForceModel {
 #define DEBUG_NEW_POSE
 #define DEBUG_ACTOR_FACING_TARGET
 #define DEBUG_BOUNDING_BOX
-#define DEBUG_SHORT_DISTANCE	// force printing info when distance to an obstalce is small
+//#define DEBUG_SHORT_DISTANCE	// force printing info when distance to an obstalce is small
 
 #ifdef DEBUG_NEW_POSE
 #define DEBUG_JUMPING_POSITION
@@ -56,6 +56,11 @@ unsigned int curr_actor = 3;				// TODO: couldn't catch an event to debug this
 // ---------------------------------
 
 #define ACTOR_ID_NOT_FOUND	255u
+
+#define ACTOR_MODEL_TYPE 	32771
+
+#define BOUNDING_BOX_INTERSECTION_X 0
+#define BOUNDING_BOX_INTERSECTION_Y 1
 
 // - - - - - - - - - - - - - - - - -
 
@@ -88,10 +93,10 @@ SocialForceModel::SocialForceModel():
 
 		// TODO: note that IT IS REQUIRED TO NAME ALL ACTORS "actor..."
 
-	fov(1.80), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
+	fov(1.56), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
 	desired_force_factor(200.0),
-	interaction_force_factor(10000.0), // interaction_force_factor(5000.0),
-	force_max(2000.0), force_min(750.0) {
+	interaction_force_factor(6000.0), // interaction_force_factor(5000.0),
+	force_max(2000.0), force_min(500.0) {
 
 	SetParameterValues();
 
@@ -148,15 +153,31 @@ bool SocialForceModel::IsActor(const std::string &_name) {
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d SocialForceModel::GetActorVelocity(const gazebo::physics::ModelPtr &_model_ptr,
-		const std::map<std::string, unsigned int>  _map,
+//ignition::math::Vector3d SocialForceModel::GetActorVelocity(const gazebo::physics::ModelPtr &_model_ptr,
+//		const std::map<std::string, unsigned int>  _map,
+//		const std::vector<ignition::math::Vector3d> _actors_velocities) {
+
+ignition::math::Vector3d SocialForceModel::GetActorVelocity(unsigned int _actor_id,
 		const std::vector<ignition::math::Vector3d> _actors_velocities) {
 
-	unsigned int actor_id = this->GetActorID(_model_ptr->GetName(), _map);
-	if ( actor_id == ACTOR_ID_NOT_FOUND ) {
+	if ( _actor_id == ACTOR_ID_NOT_FOUND ) {
 		return ignition::math::Vector3d(0.0, 0.0, 0.0);
 	}
-	return _actors_velocities[actor_id];
+	return _actors_velocities[_actor_id];
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Box SocialForceModel::GetActorBoundingBox(
+		const unsigned int _actor_id,
+		const std::vector<ignition::math::Box> _actors_bounding_boxes
+) {
+
+	if ( _actor_id == ACTOR_ID_NOT_FOUND ) {
+		return ignition::math::Box(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+	}
+	return _actors_bounding_boxes[_actor_id];
 
 }
 
@@ -169,7 +190,8 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	const ignition::math::Vector3d _actor_velocity,
 	const ignition::math::Vector3d _actor_target,
 	const std::map<std::string, unsigned int>  _map_actor_name_id,
-	const std::vector<ignition::math::Vector3d> _actors_velocities)
+	const std::vector<ignition::math::Vector3d> _actors_velocities,
+	const std::vector<ignition::math::Box> _actors_bounding_boxes)
 {
 
 #ifdef DEBUG_JUMPING_POSITION
@@ -205,8 +227,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	/* model_vel contains model's velocity (world's object or actor) - for the actor this is set differently
 	 * it was impossible to set actor's linear velocity by setting it by the model's class method */
 	ignition::math::Vector3d model_vel;
-
-	/* */
+	ignition::math::Box model_box;
 
 	/* below flag is used as a workaround for the problem connected with being unable to set actor's
 	 * velocity and acceleration in the gazebo::physics::WorldPtr */
@@ -232,17 +253,29 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
 		}
 
-		if ( (is_an_actor = this->IsActor(model_ptr->GetName())) ) {
-			model_vel = GetActorVelocity(model_ptr, _map_actor_name_id, _actors_velocities);
+		//if ( (is_an_actor = this->IsActor(model_ptr->GetName())) ) {
+		if ( (is_an_actor = model_ptr->GetType() == ACTOR_MODEL_TYPE) ) {
+//			unsigned int actor_id = this->GetActorID(_model_ptr->GetName(), _map);
+//			model_vel = GetActorVelocity(model_ptr, _map_actor_name_id, _actors_velocities);
+
+			unsigned int actor_id = this->GetActorID(model_ptr->GetName(), _map_actor_name_id);
+			model_vel = GetActorVelocity(actor_id, _actors_velocities);
+			model_box = GetActorBoundingBox(actor_id, _actors_bounding_boxes);
+
 		} else {
 			model_vel = model_ptr->WorldLinearVel();
+			model_box = model_ptr->BoundingBox();
 		}
 
 #ifdef BOUNDING_BOX_CALCULATION
 		ignition::math::Vector3d model_closest_point = this->GetModelPointClosestToActor( 	_actor_pose,
-																							model_ptr->BoundingBox(),
+																							//model_ptr->BoundingBox(),
+																							model_box,
 																							model_ptr->GetName(),
 																							model_ptr->WorldPose() );
+		if ( print_info ) {
+			std::cout << "actor_center: " << _actor_pose.Pos() << "\tobstacle_closest_pt: " << model_closest_point << "\tdist: " << (model_closest_point-_actor_pose.Pos()).Length() << std::endl;
+		}
 #endif
 
 		// what if velocity is actually non-zero but Gazebo sees 0?
@@ -350,9 +383,17 @@ ignition::math::Vector3d SocialForceModel::GetModelPointClosestToActor(
 	double dist_intersect = 0.0;
 	ignition::math::Vector3d point_intersect;
 
+	// 0 case  -------------------------------------------------------------------
+	// if actor stepped into some obstacle then force its central point to be the closest - WIP
+	// otherwise actor will not see the obstacle (BEHIND flag will be raised)
+	if ( _bb.Contains(_actor_pose.Pos()) ) {
+		return (_bb.Center());
+	}
+
 	// 1st case -------------------------------------------------------------------
 	// create a line of which intersection with a bounding box will be checked, syntax: x1, y1, x2, y2, z_common
-	line.Set(-1e+50, _actor_pose.Pos().Y(), +1e+50, _actor_pose.Pos().Y(), BOUNDING_BOX_Z_FIXED );
+//	line.Set(-1e+50, _actor_pose.Pos().Y(), +1e+50, _actor_pose.Pos().Y(), BOUNDING_BOX_Z_FIXED );
+	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _bb.Center().X(), _actor_pose.Pos().Y(), BOUNDING_BOX_Z_FIXED );
 	std::tie(does_intersect, dist_intersect, point_intersect) = _bb.Intersect(line);
 
 	if ( does_intersect ) {
@@ -368,7 +409,8 @@ ignition::math::Vector3d SocialForceModel::GetModelPointClosestToActor(
 	}
 
 	// 2nd case -------------------------------------------------------------------
-	line.Set(_actor_pose.Pos().X(), -1e+50, _actor_pose.Pos().X(), +1e+50, BOUNDING_BOX_Z_FIXED );
+//	line.Set(_actor_pose.Pos().X(), -1e+50, _actor_pose.Pos().X(), +1e+50, BOUNDING_BOX_Z_FIXED );
+	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _actor_pose.Pos().X(), _bb.Center().Y(), BOUNDING_BOX_Z_FIXED );
 	std::tie(does_intersect, dist_intersect, point_intersect) = _bb.Intersect(line);
 
 	if ( does_intersect ) {
@@ -466,6 +508,49 @@ std::vector<double> SocialForceModel::CalculateLengthToVertices(
 
 }
 #endif
+
+// ------------------------------------------------------------------- //
+
+//ignition::math::Line3d SocialForceModel::GetPossibleIntersectionLine(
+//		const ignition::math::Pose3d &_actor_pose,
+//		const ignition::math::Box &_bb,
+//		const unsigned short int &_flag)
+//{
+//
+//	/*
+//	 * if the intersection with the bounding box is checked along one axis then check which side
+//	 * (relative to actor) a bounding box is located on and set the line start in the actor's position
+//	 * and its end far away in the bb direction
+//	 */
+//
+//	ignition::math::Line3d line_temp;
+//
+//	switch(_flag) {
+//
+//	case(BOUNDING_BOX_INTERSECTION_X):
+//
+//
+//
+////		if ( _bb.Center().X() > _actor_pose.Pos().X() ) {
+////
+////		} else {
+////
+////		}
+////		break;
+//
+//	case(BOUNDING_BOX_INTERSECTION_Y):
+//
+//		if ( _bb.Center().Y() > _actor_pose.Pos().Y() ) {
+//
+//		} else {
+//
+//		}
+//		break;
+//
+//	}
+//
+//
+//}
 
 // ------------------------------------------------------------------- //
 
@@ -795,6 +880,10 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	 *  	o prevents getting stuck in 1 place (observed few times),
 	 * cons:
 	 * 		o prevents immediate action when actor is moving toward an obstacle. */
+
+	/* TODO: make recalculation vector length be a function of how much the angle is forced to be changed based
+	 * on social force; if the social force is completely different compared to current movement direction
+	 * then truncate the result_vel vector */
 
 //	result_vel.X( +sin(yaw_new.Radian()) * result_vel.SquaredLength() );
 //	result_vel.Y( -cos(yaw_new.Radian()) * result_vel.SquaredLength() );

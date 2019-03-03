@@ -82,6 +82,13 @@ public:
 
 #ifdef BOUNDING_BOX_CALCULATION
 
+// DEPRECATED
+//	ignition::math::Line3d SocialForceModel::GetPossibleIntersectionLine(
+//			const ignition::math::Pose3d &_actor_pose,
+//			const ignition::math::Box &_bb,
+//			const unsigned short int &_flag
+//	);
+
 	std::vector<ignition::math::Vector3d> CreateVerticesVector(
 			const ignition::math::Box &_bb
 	);
@@ -210,15 +217,26 @@ public:
 		const ignition::math::Vector3d _actor_velocity,
 		const ignition::math::Vector3d _actor_target, // );
 		const std::map<std::string, unsigned int>  _map_actor_name_id,
-		const std::vector<ignition::math::Vector3d> _actors_velocities);
+		const std::vector<ignition::math::Vector3d> _actors_velocities,
+		const std::vector<ignition::math::Box> _actors_bounding_boxes);
 
 	unsigned int GetActorID(const std::string _name, const std::map<std::string, unsigned int> _map);
 
 	bool IsActor(const std::string &_name);
 
-	ignition::math::Vector3d GetActorVelocity(const gazebo::physics::ModelPtr &_model_ptr,
-			const std::map<std::string, unsigned int>  _map,
-			const std::vector<ignition::math::Vector3d> _actors_velocities);
+//	ignition::math::Vector3d GetActorVelocity(const gazebo::physics::ModelPtr &_model_ptr,
+//			const std::map<std::string, unsigned int>  _map,
+//			const std::vector<ignition::math::Vector3d> _actors_velocities);
+
+	ignition::math::Vector3d GetActorVelocity(
+			const unsigned int _actor_id,
+			const std::vector<ignition::math::Vector3d> _actors_velocities
+	);
+
+	ignition::math::Box GetActorBoundingBox(
+			const unsigned int _actor_id,
+			const std::vector<ignition::math::Box> _actors_bounding_boxes
+	);
 
 	virtual ~SocialForceModel();
 
