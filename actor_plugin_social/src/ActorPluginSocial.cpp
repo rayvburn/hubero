@@ -55,6 +55,7 @@ std::map<std::string, unsigned int> map_of_names;
 // static members of the class
 std::vector<ignition::math::Vector3d> ActorPlugin::lin_vels_vector;
 std::map<std::string, unsigned int> ActorPlugin::map_of_names;
+std::vector<ignition::math::Box> ActorPlugin::bounding_boxes_vector;
 
 
 /////////////////////////////////////////////////
@@ -208,6 +209,9 @@ unsigned int ActorPlugin::InitActorInfo(const std::string &_name) {
 
 	unsigned int id = static_cast<unsigned int>(lin_vels_vector.size() - 1);
 	map_of_names.insert(std::make_pair(_name, id));
+
+	bounding_boxes_vector.push_back(ignition::math::Box(0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
+
 	return id;
 }
 
@@ -218,7 +222,39 @@ void ActorPlugin::SetActorsLinearVel(const unsigned int &_id, const ignition::ma
 	lin_vels_vector.at(_id) = _vel;
 }
 
+void ActorPlugin::SetActorsBoundingBox(const unsigned int &_id, const ignition::math::Box &_bb) {
+	bounding_boxes_vector.at(_id) = _bb;
+}
+
 /////////////////////////////////////////////////
+
+ignition::math::Box ActorPlugin::GenerateBoundingBox(const ignition::math::Pose3d &_actor_pose) {
+
+	/*
+	 *
+	 */
+
+	// lengths expressed in actor's coordinate system - x-axis is pointing forward (from face)
+	static const float ACTOR_X_BB_HALF_LENGTH = 1.21;
+	static const float ACTOR_Y_BB_HALF_LENGTH = 1.21;
+	static const float ACTOR_Z_BB_HALF_LENGTH = 1.21;	// TODO: should it change when stance changes?
+
+
+	ignition::math::Vector3d bb_min_vector, bb_max_vector;
+
+	float x_bb = static_cast<float>(_actor_pose.Pos().X());
+	_actor_pose.Rot().Roll();
+	_actor_pose.Rot().Pitch();
+	_actor_pose.Rot().Yaw();
+
+
+	ignition::math::Box bb;
+	return (bb);
+
+}
+
+/////////////////////////////////////////////////
+
 void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 {
 

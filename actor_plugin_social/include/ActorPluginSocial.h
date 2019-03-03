@@ -131,12 +131,16 @@ typedef enum {
     private: unsigned int actor_id;
 
     private: static void SetActorsLinearVel(const unsigned int &_id, const ignition::math::Vector3d &_vel);
-
+    private: static void SetActorsBoundingBox(const unsigned int &_id, const ignition::math::Box &_bb);
 
 
     // static members of the class
     private: static std::vector<ignition::math::Vector3d> lin_vels_vector;
     private: static std::map<std::string, unsigned int> map_of_names;
+
+    // actor has no collision thus no bounding box defined, it will be done artificially
+    private: static std::vector<ignition::math::Box> bounding_boxes_vector;
+    private: static ignition::math::Box GenerateBoundingBox(const ignition::math::Pose3d &_actor_pose);
 
 
     /// \brief Linear velocity of the actor

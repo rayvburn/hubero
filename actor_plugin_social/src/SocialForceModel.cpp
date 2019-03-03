@@ -238,13 +238,19 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			model_vel = model_ptr->WorldLinearVel();
 		}
 
-		this->GetModelPointClosestToActor( _actor_pose, model_ptr->BoundingBox(), model_ptr->GetName() );
+#ifdef BOUNDING_BOX_CALCULATION
+		ignition::math::Vector3d model_closest_point = this->GetModelPointClosestToActor( 	_actor_pose,
+																							model_ptr->BoundingBox(),
+																							model_ptr->GetName(),
+																							model_ptr->WorldPose() );
+#endif
 
 		// what if velocity is actually non-zero but Gazebo sees 0?
 		f_alpha_beta = this->GetInteractionComponent(	_actor_pose,
 														_actor_velocity,
 														model_ptr->WorldPose(),
 														model_vel,
+														model_closest_point,
 														is_an_actor);
 		f_interaction_total += f_alpha_beta;
 		if ( print_info ) {
@@ -296,24 +302,170 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 
 // ------------------------------------------------------------------- //
 
+#ifdef BOUNDING_BOX_CALCULATION
 ignition::math::Vector3d SocialForceModel::GetModelPointClosestToActor(
 		const ignition::math::Pose3d &_actor_pose,
 		const ignition::math::Box &_bb,
-		const std::string &_model_name) // debug only
+		const std::string &_model_name, 			// debug only
+		const ignition::math::Pose3d &_object_pose 	// debug only
+		)
 {
+
+	/* Assuming axis-aligned bounding box - closest point search algorithm:
+	 * 1st case:
+	 * 		o 	check whether actor's y-coordinate-defined line intersects the bounding box - if yes, then the y-coordinate
+	 * 			of the closest point is already known and x-coordinate will be located on the closest to actor
+	 * 			edge of a bounding box
+	 * 2nd case:
+	 * 		o 	analogical to 1st one but first check is connected with x-coordinate intersection with bounding box
+	 * 3rd case:
+	 * 		o 	none of actor's coordinates intersect the bounding box - let's check 4 vertices (assuming on-plane
+	 * 			check) and choose the closest one
+	 */
 
 #ifdef DEBUG_BOUNDING_BOX
 	if ( print_info ) {
-		std::cout << "GetModelPointClosestToActor()" << "\tname: " << _model_name << "\tcenter: " << _bb.Center() << "\tmax: " << _bb.Max() << "\tmin: " << _bb.Min() << std::endl;
+		std::cout << "GetModelPointClosestToActor()" << "\tname: " << _model_name << "\tcenter: " << _bb.Center() << "\tmax: " << _bb.Max() << "\tmin: " << _bb.Min() << "\n\t\t\t";
 	}
 #endif
 
-	// axis-aligned bounding box algorithm
+	// std::cout << "\nisinf: " << std::isinf( _bb.Center().X() ) << "\tcenter_x: " << _bb.Center().X() << std::endl;
+
+	/* */
+	// inf has an object with no bounding box defined (for example - actor)
+	if ( std::fabs(_bb.Center().X()) > 1e+300 ) {
+		#ifdef DEBUG_BOUNDING_BOX
+		if ( print_info ) {
+			std::cout << "\tANOTHER ACTOR HERE!\n";
+		}
+		#endif
+		return ( ignition::math::Vector3d(_object_pose.Pos().X(), _object_pose.Pos().Y(), _object_pose.Pos().Z()) );
+	}
 
 
-	return ignition::math::Vector3d(0.0, 0.0, 0.0);
+	ignition::math::Line3d line;
+
+	// Intersect() method returns a tuple
+	bool does_intersect = false;
+	double dist_intersect = 0.0;
+	ignition::math::Vector3d point_intersect;
+
+	// 1st case -------------------------------------------------------------------
+	// create a line of which intersection with a bounding box will be checked, syntax: x1, y1, x2, y2, z_common
+	line.Set(-1e+50, _actor_pose.Pos().Y(), +1e+50, _actor_pose.Pos().Y(), BOUNDING_BOX_Z_FIXED );
+	std::tie(does_intersect, dist_intersect, point_intersect) = _bb.Intersect(line);
+
+	if ( does_intersect ) {
+
+		#ifdef DEBUG_BOUNDING_BOX
+		if ( print_info ) {
+			std::cout << "\tY-intersection - bounding box point: " << point_intersect << std::endl;
+		}
+		#endif
+
+		return (point_intersect);
+
+	}
+
+	// 2nd case -------------------------------------------------------------------
+	line.Set(_actor_pose.Pos().X(), -1e+50, _actor_pose.Pos().X(), +1e+50, BOUNDING_BOX_Z_FIXED );
+	std::tie(does_intersect, dist_intersect, point_intersect) = _bb.Intersect(line);
+
+	if ( does_intersect ) {
+
+		#ifdef DEBUG_BOUNDING_BOX
+		if ( print_info ) {
+			std::cout << "\tX-intersection - bounding box point: " << point_intersect << std::endl;
+		}
+		#endif
+
+		return (point_intersect);
+
+	}
+
+
+	/* */
+	// 3rd case -------------------------------------------------------------------
+	std::vector<ignition::math::Vector3d> vertices_vector = this->CreateVerticesVector(_bb);
+	std::vector<double> lengths_vector = this->CalculateLengthToVertices(_actor_pose.Pos(), vertices_vector);
+
+	double min_value = 3.4e+38;
+	unsigned int index = 0;
+
+	for ( size_t i = 0; i < lengths_vector.size(); i++ ) {
+
+		if ( lengths_vector[i] < min_value ) {
+			index = i;
+			min_value = lengths_vector[i];
+		}
+
+	}
+
+	#ifdef DEBUG_BOUNDING_BOX
+	if ( print_info ) {
+		std::cout << "\tvertices_vector: 0) " << vertices_vector[0] << "  1) " << vertices_vector[1] << "  2) " << vertices_vector[2] << "  3) " << vertices_vector[3];
+		std::cout << "\n\t\t\t";
+		std::cout << "\tlengths_vector: 0) " << lengths_vector[0] << "  1) " << lengths_vector[1] << "  2) " << lengths_vector[2] << "  3) " << lengths_vector[3];
+		std::cout << "\n\t\t\t";
+		std::cout << "\tCLOSEST VERTEX - bounding box point: " << vertices_vector[index] << std::endl;
+	}
+	#endif
+
+	return (vertices_vector[index]);
 
 }
+
+// ------------------------------------------------------------------- //
+
+std::vector<ignition::math::Vector3d> SocialForceModel::CreateVerticesVector(const ignition::math::Box &_bb) {
+
+	// 4 vertices only (on-plane)
+	std::vector<ignition::math::Vector3d> temp_container;
+	ignition::math::Vector3d temp_vector;
+
+	temp_vector.Z(BOUNDING_BOX_Z_FIXED);
+
+	temp_vector.X(_bb.Min().X()); 	temp_vector.Y(_bb.Min().Y());
+	temp_container.push_back(temp_vector);
+
+	temp_vector.X(_bb.Min().X()); 	temp_vector.Y(_bb.Max().Y());
+	temp_container.push_back(temp_vector);
+
+	temp_vector.X(_bb.Max().X()); 	temp_vector.Y(_bb.Min().Y());
+	temp_container.push_back(temp_vector);
+
+	temp_vector.X(_bb.Max().X()); 	temp_vector.Y(_bb.Max().Y());
+	temp_container.push_back(temp_vector);
+
+	/* // blocks stdio messages
+	temp_container.emplace_back(_bb.Min().X(), _bb.Min().Y(), BOUNDING_BOX_Z_FIXED);
+	temp_container.emplace_back(_bb.Min().X(), _bb.Max().Y(), BOUNDING_BOX_Z_FIXED);
+	temp_container.emplace_back(_bb.Max().X(), _bb.Min().Y(), BOUNDING_BOX_Z_FIXED);
+	temp_container.emplace_back(_bb.Max().X(), _bb.Max().Y(), BOUNDING_BOX_Z_FIXED);
+	*/
+
+	return (temp_container);
+
+}
+
+// ------------------------------------------------------------------- //
+
+std::vector<double> SocialForceModel::CalculateLengthToVertices(
+		const ignition::math::Vector3d &_actor_pos,
+		const std::vector<ignition::math::Vector3d> &_vertices_pts)
+
+{
+
+	std::vector<double> temp_containter;
+	/* */
+	for ( size_t i = 0; i < _vertices_pts.size(); i++ ) {
+		temp_containter.push_back( (_vertices_pts[i] - _actor_pos).Length() );
+	}
+
+	return (temp_containter);
+
+}
+#endif
 
 // ------------------------------------------------------------------- //
 
@@ -460,12 +612,17 @@ ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
 		// const SFMObjectType &_object_type,
 		const ignition::math::Pose3d &_object_pose,
 		const ignition::math::Vector3d &_object_vel,
+		const ignition::math::Vector3d &_closest_point,
 		//const ignition::math::Box &_object_bb)
 		const bool &_is_actor
 )
 {
 
-	ignition::math::Vector3d d_alpha_beta = _object_pose.Pos() - _actor_pose.Pos();
+	// no bounding box
+//	ignition::math::Vector3d d_alpha_beta = _object_pose.Pos() - _actor_pose.Pos();
+	// bounding box
+	ignition::math::Vector3d d_alpha_beta = _closest_point - _actor_pose.Pos();
+
 	// TODO: adjust Z according to stance
 	d_alpha_beta.Z(0.0); // it is assumed that all objects are in the actor's plane
 
@@ -474,7 +631,8 @@ ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
 	// if the object is not considered as a point - then perform some calculations
 	ignition::math::Vector3d f_alpha_beta = this->GetObjectsInteractionForce(_actor_pose,
 													_actor_vel, _object_pose, _object_vel,
-													n_alpha, d_alpha_beta, _is_actor);
+													n_alpha, d_alpha_beta, // _closest_point,
+													_is_actor);
 	return f_alpha_beta;
 
 
@@ -812,6 +970,7 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 		const ignition::math::Vector3d &_object_velocity,
 		const ignition::math::Vector3d &_n_alpha, 		// actor's normal (based on velocity vector)
 		const ignition::math::Vector3d &_d_alpha_beta, 	// vector between objects positions
+		//const ignition::math::Vector3d &_closest_point,
 		const bool &_is_actor
 )
 {

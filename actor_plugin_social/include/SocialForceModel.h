@@ -42,6 +42,10 @@
 
 // #define PERPENDICULAR_COLLISION_AVOIDANCE_MOD // DEPRECATED?
 
+// ---------------------------------
+
+#define BOUNDING_BOX_CALCULATION
+
 // ----------------------------------------------------------------------------------------------- //
 /* References:
  * 		- D. Helbing et al. 	- Social Force Model for Pedestrian Dynamics ‎(1998)
@@ -75,11 +79,27 @@ public:
 
 	SocialForceModel();
 
+
+#ifdef BOUNDING_BOX_CALCULATION
+
+	std::vector<ignition::math::Vector3d> CreateVerticesVector(
+			const ignition::math::Box &_bb
+	);
+
+	std::vector<double> CalculateLengthToVertices(
+			const ignition::math::Vector3d &_actor_pos,
+			const std::vector<ignition::math::Vector3d> &_vertices_pts
+	);
+
 	ignition::math::Vector3d GetModelPointClosestToActor(
 			const ignition::math::Pose3d &_actor_pose,
 			const ignition::math::Box &_bb,
-			const std::string &_model_name
-			);
+			const std::string &_model_name,				// debug only
+			const ignition::math::Pose3d &_object_pose 	// debug only
+	);
+
+#endif
+
 
 	ignition::math::Angle GetYawMovementDirection(
 			const ignition::math::Pose3d &_actor_pose,
@@ -103,6 +123,7 @@ public:
 			// const SFMObjectType &_object_type,
 			const ignition::math::Pose3d &_object_pose,
 			const ignition::math::Vector3d &_object_vel,
+			const ignition::math::Vector3d &_closest_point,
 			//const ignition::math::Box &_object_bb = ignition::math::Box()); // gazebo::math::Box is deprecated (Gazebo 8.0 and above))
 			const bool &_is_actor
 	);
@@ -179,6 +200,7 @@ public:
 			const ignition::math::Vector3d &_object_velocity,
 			const ignition::math::Vector3d &_n_alpha, 		// actor's normal (based on velocity vector)
 			const ignition::math::Vector3d &_d_alpha_beta,
+			//const ignition::math::Vector3d &_closest_point,
 			const bool &_is_actor );
 
 	ignition::math::Vector3d GetSocialForce(
@@ -210,6 +232,8 @@ private:
 			//const double &_angle_alpha,
 			//const double &_angle_beta
 
+
+	static constexpr double BOUNDING_BOX_Z_FIXED = 0.5; // on-plane objects considered
 
 	float relaxation_time;
 	float speed_desired;
