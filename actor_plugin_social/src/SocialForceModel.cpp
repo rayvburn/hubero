@@ -24,9 +24,10 @@
 
 namespace SocialForceModel {
 
-#define SFM_RIGHT_SIDE 0
-#define SFM_LEFT_SIDE  1
-#define SFM_BEHIND     2
+// deprecated
+//#define SFM_RIGHT_SIDE 0
+//#define SFM_LEFT_SIDE  1
+//#define SFM_BEHIND     2
 
 // #define THETA_ALPHA_BETA_CONSIDER_ZERO_VELOCITY
 // #define BETA_REL_LOCATION_BASED_ON_NORMAL
@@ -41,7 +42,7 @@ namespace SocialForceModel {
 #define DEBUG_NEW_POSE
 #define DEBUG_ACTOR_FACING_TARGET
 #define DEBUG_BOUNDING_BOX
-
+#define DEBUG_SHORT_DISTANCE	// force printing info when distance to an obstalce is small
 
 #ifdef DEBUG_NEW_POSE
 #define DEBUG_JUMPING_POSITION
@@ -88,7 +89,9 @@ SocialForceModel::SocialForceModel():
 		// TODO: note that IT IS REQUIRED TO NAME ALL ACTORS "actor..."
 
 	fov(1.80), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
-	desired_force_factor(200.0), interaction_force_factor(5000.0), force_max(2000.0), force_min(750.0) {
+	desired_force_factor(200.0),
+	interaction_force_factor(10000.0), // interaction_force_factor(5000.0),
+	force_max(2000.0), force_min(750.0) {
 
 	SetParameterValues();
 
@@ -195,7 +198,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	ignition::math::Vector3d f_alpha = this->GetInternalAcceleration(_actor_pose,
 																	 _actor_velocity,
 																	 _actor_target);
-	ignition::math::Vector3d f_interaction(0.0, 0.0, 0.0);
+	ignition::math::Vector3d f_interaction_total(0.0, 0.0, 0.0);
 	ignition::math::Vector3d f_alpha_beta(0.0, 0.0, 0.0);
 
 #ifdef CALCULATE_INTERACTION
@@ -243,7 +246,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 														model_ptr->WorldPose(),
 														model_vel,
 														is_an_actor);
-		f_interaction += f_alpha_beta;
+		f_interaction_total += f_alpha_beta;
 		if ( print_info ) {
 			std::cout << " model's name: " << model_ptr->GetName() << "  pose: " << model_ptr->WorldPose() << "  lin vel: " << model_vel << "  force: " << f_alpha_beta << std::endl;
 		}
@@ -258,11 +261,11 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 //	return (desired_force_factor * f_alpha + interaction_force_factor * f_alpha_beta);
 
 	// truncate the force value to max to prevent strange speedup of an actor
-	ignition::math::Vector3d f_total = desired_force_factor * f_alpha + interaction_force_factor * f_interaction;
+	ignition::math::Vector3d f_total = desired_force_factor * f_alpha + interaction_force_factor * f_interaction_total;
 	f_total.Z(0.0);
 
 	if ( print_info ) {
-		std::cout << "!! SocialForce: " << f_total << "\tinternal: " << desired_force_factor * f_alpha << "\tinteraction: " << interaction_force_factor * f_interaction;
+		std::cout << "!! SocialForce: " << f_total << "\tinternal: " << desired_force_factor * f_alpha << "\tinteraction: " << interaction_force_factor * f_interaction_total;
 	}
 
 	double force_length = f_total.Length();
@@ -304,6 +307,9 @@ ignition::math::Vector3d SocialForceModel::GetModelPointClosestToActor(
 		std::cout << "GetModelPointClosestToActor()" << "\tname: " << _model_name << "\tcenter: " << _bb.Center() << "\tmax: " << _bb.Max() << "\tmin: " << _bb.Min() << std::endl;
 	}
 #endif
+
+	// axis-aligned bounding box algorithm
+
 
 	return ignition::math::Vector3d(0.0, 0.0, 0.0);
 
@@ -625,8 +631,15 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	/* calculate velocity components according to the yaw_new (that was likely truncated to prevent jumps
 	 * in rotational movement - this provides smoothed rotation)
 	 * only on-plane motions are supported, thus X and Y calculations */
-	result_vel.X( +sin(yaw_new.Radian()) * result_vel.SquaredLength() );
-	result_vel.Y( -cos(yaw_new.Radian()) * result_vel.SquaredLength() );
+
+	/* recalculation pros:
+	 *  	o smooth rotational motion,
+	 *  	o prevents getting stuck in 1 place (observed few times),
+	 * cons:
+	 * 		o prevents immediate action when actor is moving toward an obstacle. */
+
+//	result_vel.X( +sin(yaw_new.Radian()) * result_vel.SquaredLength() );
+//	result_vel.Y( -cos(yaw_new.Radian()) * result_vel.SquaredLength() );
 
 	if ( print_info ) {
 		std::cout << "\n\tSMOOTHING ROTATION - RECALCULATED VEL\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << '\n' << std::endl;
@@ -829,6 +842,12 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 		return f_alpha_beta;
 	}
 
+#ifdef DEBUG_SHORT_DISTANCE
+	if ( !print_info && curr_actor == 0 && d_alpha_beta_length < 0.4 ) {
+		print_info = true;
+	}
+#endif
+
 	/* yaw of an actor is always updated in new pose calculation procedure, so setting the yaw
 	 * based on world info should work - actor is always oriented in his movement direction
 	 * (if linear speed is non-zero) */
@@ -842,9 +861,11 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 	ignition::math::Angle object_yaw(GetYawFromPose(_object_pose));
 	object_yaw.Normalize();
 
-	uint8_t beta_rel_location = this->GetBetaRelativeLocation(actor_yaw, _d_alpha_beta);
+	RelativeLocation beta_rel_location = this->GetBetaRelativeLocation(actor_yaw, _d_alpha_beta);
 
-	if ( beta_rel_location == SFM_BEHIND && d_alpha_beta_length > 0.5 ) {
+
+	// if ( beta_rel_location == SFM_BEHIND && d_alpha_beta_length > 0.5 ) {
+	if ( beta_rel_location == SFM_BEHIND ) {
 
 		#ifdef DEBUG_INTERACTION_FORCE
 		if ( print_info ) {
@@ -1196,6 +1217,14 @@ ignition::math::Vector3d SocialForceModel::GetPerpendicularToNormal(
 		to_cross.Set(0.0, 0.0, -1.0);
 		#endif
 
+	} else {
+
+#ifdef DEBUG_GEOMETRY_1
+		if ( print_info ) {
+			std::cout << "BEHIND!\t" << std::endl;
+		}
+#endif
+
 	}
 
 	p_alpha = _n_alpha.Cross(to_cross);
@@ -1226,12 +1255,12 @@ ignition::math::Vector3d SocialForceModel::GetPerpendicularToNormal(
 
 // ------------------------------------------------------------------- //
 
-uint8_t SocialForceModel::GetBetaRelativeLocation(
+RelativeLocation SocialForceModel::GetBetaRelativeLocation(
 		const ignition::math::Angle &_actor_yaw,
 		const ignition::math::Vector3d &_d_alpha_beta)
 {
 
-	uint8_t rel_loc = 0;
+	RelativeLocation rel_loc = SFM_UNKNOWN;
 	ignition::math::Angle angle_relative; 		// relative to actor's (alpha) direction
 	ignition::math::Angle angle_d_alpha_beta;	// stores yaw of d_alpha_beta
 

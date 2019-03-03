@@ -38,6 +38,10 @@
 //#define N_ALPHA_V2011		// "n_α is pointing in the opposite direction to the walking direction (deceleration force)"
 #define N_ALPHA_V2014		// "n_α is the direction of movement of pedestrian α"
 
+// ---------------------------------
+
+// #define PERPENDICULAR_COLLISION_AVOIDANCE_MOD // DEPRECATED?
+
 // ----------------------------------------------------------------------------------------------- //
 /* References:
  * 		- D. Helbing et al. 	- Social Force Model for Pedestrian Dynamics ‎(1998)
@@ -53,6 +57,17 @@
 // ----------------------------------------------------------------------------------------------- //
 
 namespace SocialForceModel {
+
+// ---------------------------------
+
+typedef enum {
+	SFM_RIGHT_SIDE = 0,
+	SFM_LEFT_SIDE,
+	SFM_BEHIND,
+	SFM_UNKNOWN
+} RelativeLocation;
+
+// ---------------------------------
 
 class SocialForceModel {
 
@@ -133,16 +148,22 @@ public:
 
 
 
-	uint8_t GetBetaRelativeLocation(
+	RelativeLocation GetBetaRelativeLocation(
 			const ignition::math::Angle &_actor_yaw,
 			const ignition::math::Vector3d &_d_alpha_beta);
 
 	bool IsOutOfFOV(const double &_angle_relative);
 
+#if !defined(PERPENDICULAR_COLLISION_AVOIDANCE_MOD)
 	ignition::math::Vector3d GetPerpendicularToNormal(
 			const ignition::math::Vector3d &_n_alpha,
 			const uint8_t &_beta_rel_location);
-
+#else
+	ignition::math::Vector3d GetPerpendicularToNormal(
+			const ignition::math::Vector3d &_n_alpha,
+			const uint8_t &_beta_rel_location,
+			const ignition::math::Angle &_alpha_beta_angle);
+#endif
 
 	double GetRelativeSpeed(const ignition::math::Vector3d &_actor_velocity,
 							const ignition::math::Vector3d &_object_velocity);
