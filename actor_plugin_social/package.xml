@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
+
   <name>actor_plugin_social</name>
   <version>0.0.0</version>
   <description>The actor_plugin_social package</description>
@@ -39,19 +40,24 @@
   <!--   <run_depend>message_runtime</run_depend> -->
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
+
   <buildtool_depend>catkin</buildtool_depend>
+
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>actor_sim_utils</build_depend>
   <build_depend>actor_sim_srv</build_depend>
   <build_depend>social_force_vis</build_depend>
+
   <!-- <build_depend>grid_map_ros</build_depend> -->
   
-  <run_depend>roscpp</run_depend>
-  <run_depend>actor_sim_utils</run_depend>
-  <run_depend>actor_sim_srv</run_depend>
-  <run_depend>social_force_vis</run_depend>
-  <!-- <run_depend>grid_map_ros</run_depend> -->
+
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>actor_sim_utils</exec_depend>
+  <exec_depend>actor_sim_srv</exec_depend>
+  <exec_depend>social_force_vis</exec_depend>
+
+  <!-- <exec_depend>grid_map_ros</exec_depend> -->
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
