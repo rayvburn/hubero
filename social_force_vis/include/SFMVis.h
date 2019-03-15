@@ -26,18 +26,17 @@ public:
 	void addForce(const ignition::math::Vector3d &_force);
 	visualization_msgs::MarkerArray getMarkerArray();
 	ignition::math::Vector3d getNextGridElement();
-
-	static constexpr float MAX_ARROW_LENGTH = 0.5;
-
 	virtual ~SFMVis();
 
 private:
 
 	void clearInternalMemory();
+
 	std::vector<ignition::math::Vector3d> grid;
 	size_t grid_index;
 	visualization_msgs::MarkerArray marker_array;
 	int32_t action;
+	float arrow_length;
 
 };
 

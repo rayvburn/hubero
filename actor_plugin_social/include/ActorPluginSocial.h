@@ -26,6 +26,7 @@
 #include "gazebo/util/system.hh"
 
 #include "SocialForceModel.h"
+#include <SFMVis.h>
 
 //static std::vector<ignition::math::Vector3d> lin_vels_vector;
 //static std::map<std::string, unsigned int> map_of_names;
@@ -184,7 +185,7 @@ typedef enum {
     private: void ApplyUpdate(const common::UpdateInfo &_info, const double &_dist_traveled);
 
 
-
+    private: void VisualizeForceField();
 
     /// \brief Last actor's pose
     private: ignition::math::Pose3d last_pose_actor;
@@ -198,6 +199,8 @@ typedef enum {
 
     /// \brief Social Force Model interface object
     private: SocialForceModel::SocialForceModel sfm;
+
+    private: SocialForceModel::SFMVis sfm_vis;
 
 
   };

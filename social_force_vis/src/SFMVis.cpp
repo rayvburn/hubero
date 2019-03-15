@@ -15,7 +15,8 @@ namespace SocialForceModel {
 // ------------------------------------------------------------------- //
 
 SFMVis::SFMVis():
-		grid_index(0)
+		grid_index(0),
+		arrow_length(0.0f)
 {
 	this->clearInternalMemory();
 }
@@ -44,9 +45,12 @@ void SFMVis::createGrid(const float &_x_start, const float &_x_end, const float 
 		y_end	= _y_start;
 	}
 
+	// resolution becomes the arrow length
+	this->arrow_length = _resolution;
+
 	// according to resolution, create grid (measurement) points within selected bounds
-	for ( float x = x_start; x < _x_end; x += std::fabs(_resolution) ) {
-		for ( float y = y_start; y < _y_end; y += std::fabs(_resolution) ) {
+	for ( float x = x_start; x < x_end; x += std::fabs(_resolution) ) {
+		for ( float y = y_start; y < y_end; y += std::fabs(_resolution) ) {
 			this->grid.push_back(ignition::math::Vector3d(	static_cast<double>(x),
 															static_cast<double>(y),
 															static_cast<double>(0.0)) );
@@ -91,7 +95,7 @@ void SFMVis::addForce(const ignition::math::Vector3d &_force) {
 	// marker.points[1];
 
 	// scale
-	marker.scale.x = MAX_ARROW_LENGTH * _force.Length();
+	marker.scale.x = arrow_length * _force.Length() / 2000.0; // TODO: avoid hard-coding max_force value
 	marker.scale.y = 0.1;
 	marker.scale.z = 0.1;
 
@@ -100,7 +104,7 @@ void SFMVis::addForce(const ignition::math::Vector3d &_force) {
 	marker.color.g = 1.0;
 	marker.color.b = 0.0;
 
-	marker_array.markers.push_back(marker);
+	this->marker_array.markers.push_back(marker);
 
 }
 
@@ -124,8 +128,13 @@ ignition::math::Vector3d SFMVis::getNextGridElement() {
 bool SFMVis::isWholeGridChecked() {
 
 	if ( this->grid.size() >= this->grid_index ) {
+
+		// after reaching of the last index next arrows will be modified (not added)
+		this->action = visualization_msgs::Marker::MODIFY;
 		return (true);
+
 	}
+
 	return (false);
 
 }
@@ -137,7 +146,7 @@ void SFMVis::resetGridIndex() {
 	this->grid_index = 0;
 
 	// after reset of the last index next arrows will be modified (not added)
-	action = visualization_msgs::Marker::MODIFY;
+	this->action = visualization_msgs::Marker::MODIFY;
 
 }
 
@@ -154,9 +163,10 @@ SFMVis::~SFMVis() {
 void SFMVis::clearInternalMemory() {
 
 	this->grid.clear();
-	marker_array.markers.clear();
-	this->resetGridIndex();
-	action = visualization_msgs::Marker::ADD;	// after clearing next arrows will be added
+	this->marker_array.markers.clear();
+	this->grid_index = 0;
+	this->arrow_length = 0.0f;
+	this->action = visualization_msgs::Marker::ADD;	// after clearing next arrows will be added
 
 }
 

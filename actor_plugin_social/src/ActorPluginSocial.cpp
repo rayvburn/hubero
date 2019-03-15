@@ -916,6 +916,37 @@ ignition::math::Vector3d ActorPlugin::UpdateActorOrientation() {
 
 // ===============================================================================================
 
+void ActorPlugin::VisualizeForceField() {
+
+	sfm_vis.createGrid(-3.0, 3.5, -10.0, 2.0, 1.0);
+
+	ignition::math::Pose3d pose;
+	ignition::math::Vector3d sf;
+
+	std::cout << "sfm_vis 1st" << std::endl;
+	while ( !sfm_vis.isWholeGridChecked() ) {
+
+		pose = ignition::math::Pose3d(sfm_vis.getNextGridElement(), this->pose_actor.Rot());
+		sf = sfm.GetSocialForce( this->world,
+								 this->actor->GetName(),
+								 pose,
+								 this->velocity_actual,
+								 this->target,
+								 map_of_names,
+								 lin_vels_vector,
+								 bounding_boxes_vector);
+		sfm_vis.addForce(sf);
+
+	}
+
+	// std::cout << sfm_vis.getMarkerArray().markers << std::endl;
+	// sfm_vis.publishMarkerArray();
+	sfm_vis.resetGridIndex();
+
+}
+
+// ===============================================================================================
+
 double ActorPlugin::PrepareForUpdate(const common::UpdateInfo &_info) {
 
 	this->SetActorPose(this->actor->WorldPose());

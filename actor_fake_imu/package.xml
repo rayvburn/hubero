@@ -3,7 +3,7 @@
 	<version>1.0.0</version>
 	<description>Simulated IMU sensor for actors</description>
 	
-	<maintainer email="TODO@TODO.com">TODO</maintainer>
+	<maintainer email="j.karwowski@stud.elka.pw.edu.pl">Jaroslaw Karwowski</maintainer>
 	
 	<license>GPLv3</license>
 	
