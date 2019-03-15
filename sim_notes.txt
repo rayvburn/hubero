@@ -10,6 +10,7 @@ TODOs from notebook
 o maybe the _is_actor flag could be avoided? social force is calculated only then actor is moving? TODO
 
 current tasks:
+o 	fov manipulation (rising to higher value) creates some strange readings of relative location?
 o 	recalculation as a function of an angle
 o 	actors accelerate quickly when close to each other							some changes in model needed?
 o 	actor2 sometimes has non-zero lin vel while nearly stopped? 				could not reproduce in a while..

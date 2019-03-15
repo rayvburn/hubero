@@ -9,8 +9,9 @@
 #include <cmath>
 #include <tgmath.h>		// fabs()
 
-/* Uncommenting hangs debug messages and makes 2 actors move the same way -
- * just like adding the `static` function to ActorPlugin class */
+// ----------------------------------------
+
+/* Uncommenting hangs debug messages and makes 2 actors move the same way */
 // #define GRID_MAP_VISUALIZATION
 
 #ifdef GRID_MAP_VISUALIZATION
@@ -1562,6 +1563,8 @@ RelativeLocation SocialForceModel::GetBetaRelativeLocation(
 	return rel_loc;
 
 }
+
+// ------------------------------------------------------------------- //
 
 bool SocialForceModel::IsOutOfFOV(const double &_angle_relative) {
 
