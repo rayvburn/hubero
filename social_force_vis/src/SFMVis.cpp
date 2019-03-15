@@ -127,7 +127,7 @@ ignition::math::Vector3d SFMVis::getNextGridElement() {
 
 bool SFMVis::isWholeGridChecked() {
 
-	if ( this->grid.size() >= this->grid_index ) {
+	if ( this->grid_index >= this->grid.size() ) {
 
 		// after reaching of the last index next arrows will be modified (not added)
 		this->action = visualization_msgs::Marker::MODIFY;

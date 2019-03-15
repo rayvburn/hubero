@@ -3,12 +3,13 @@
 
   <name>social_force_vis</name>
   <version>0.1.0</version>
-  <description>Social Force Model Visualization Package</description>
+  <description>Social Force Model Visualization package</description>
 
   <maintainer email="j.karwowski@stud.elka.pw.edu.pl">Jaroslaw Karwowski</maintainer>
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
+
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>visualization_msgs</build_depend>
@@ -27,6 +28,7 @@
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
-
+    <gazebo_ros plugin_path="${prefix}/lib" gazebo_media_path="${prefix}" />
   </export>
+
 </package>

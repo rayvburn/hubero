@@ -1,3 +1,4 @@
+TODO: divide SFM into: core, utils, vis and make a separate package out of it
 TODO: ROS interface with actor's info (pose, vel, acc) etc. (ros::isInitialized, pass the pointer to the ActorPlugin class member)
 TODO: service 'stand `pose`' or 'lie `pose`' (pose as a target and stance change after reaching it)
 TODO: Actor Helper class that stores all Set etc methods as well as velocity vector and map

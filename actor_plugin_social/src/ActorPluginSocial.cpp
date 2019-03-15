@@ -18,6 +18,8 @@
 #include <functional>
 #include <tgmath.h>		// fabs()
 
+//#include <ros/ros.h>
+
 #include <ignition/math.hh>
 #include "gazebo/physics/physics.hh"
 #include "ActorPluginSocial.h"
@@ -82,6 +84,15 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	if ( this->ReadSDF() ) { /* TODO: Exception Handling */ }
 
 	// - - - - - - - - - - - - - - - - - - - - - -  - - - -- - - -- - - -- -  -- -
+
+//	if (!ros::isInitialized())
+//	{
+//		int argc = 0;
+//		char **argv = nullptr;
+//		ros::init(argc, argv, "gazebo_ros", ros::init_options::NoSigintHandler);
+//	}
+
+	// - - - - - - - - - - - - - - - - - - - - - -  - - - -- - - -- - - -- -  -- -
     std::cout << "LOADED POSE: " << this->actor->WorldPose() << std::endl;
 
   	ignition::math::Vector3d init_orient = this->actor->WorldPose().Rot().Euler();
@@ -119,6 +130,10 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	}
 
 	prev_state_actor = ACTOR_STATE_MOVE_AROUND;
+
+#ifdef VISUALIZE_SFM
+	VisualizeForceField();
+#endif
 
 }
 
@@ -916,6 +931,7 @@ ignition::math::Vector3d ActorPlugin::UpdateActorOrientation() {
 
 // ===============================================================================================
 
+#ifdef VISUALIZE_SFM
 void ActorPlugin::VisualizeForceField() {
 
 	sfm_vis.createGrid(-3.0, 3.5, -10.0, 2.0, 1.0);
@@ -923,7 +939,9 @@ void ActorPlugin::VisualizeForceField() {
 	ignition::math::Pose3d pose;
 	ignition::math::Vector3d sf;
 
-	std::cout << "sfm_vis 1st" << std::endl;
+	size_t iter = 0;
+	std::cout << "sfm_vis:" << iter << std::endl;
+
 	while ( !sfm_vis.isWholeGridChecked() ) {
 
 		pose = ignition::math::Pose3d(sfm_vis.getNextGridElement(), this->pose_actor.Rot());
@@ -937,6 +955,9 @@ void ActorPlugin::VisualizeForceField() {
 								 bounding_boxes_vector);
 		sfm_vis.addForce(sf);
 
+		std::cout << "sfm_vis:" << iter << "\tsf: " << sf << std::endl;
+		iter++;
+
 	}
 
 	// std::cout << sfm_vis.getMarkerArray().markers << std::endl;
@@ -944,6 +965,7 @@ void ActorPlugin::VisualizeForceField() {
 	sfm_vis.resetGridIndex();
 
 }
+#endif
 
 // ===============================================================================================
 

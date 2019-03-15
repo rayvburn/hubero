@@ -26,10 +26,17 @@
 #include "gazebo/util/system.hh"
 
 #include "SocialForceModel.h"
+
+#define VISUALIZE_SFM
+
+#ifdef VISUALIZE_SFM
 #include <SFMVis.h>
+#endif
 
 //static std::vector<ignition::math::Vector3d> lin_vels_vector;
 //static std::map<std::string, unsigned int> map_of_names;
+
+
 
 namespace gazebo
 {
@@ -184,8 +191,9 @@ typedef enum {
     private: double PrepareForUpdate(const common::UpdateInfo &_info);
     private: void ApplyUpdate(const common::UpdateInfo &_info, const double &_dist_traveled);
 
-
+#ifdef VISUALIZE_SFM
     private: void VisualizeForceField();
+#endif
 
     /// \brief Last actor's pose
     private: ignition::math::Pose3d last_pose_actor;
@@ -200,8 +208,9 @@ typedef enum {
     /// \brief Social Force Model interface object
     private: SocialForceModel::SocialForceModel sfm;
 
+#ifdef VISUALIZE_SFM
     private: SocialForceModel::SFMVis sfm_vis;
-
+#endif
 
   };
 }
