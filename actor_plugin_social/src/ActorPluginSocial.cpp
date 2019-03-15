@@ -18,8 +18,6 @@
 #include <functional>
 #include <tgmath.h>		// fabs()
 
-//#include <ros/ros.h>
-
 #include <ignition/math.hh>
 #include "gazebo/physics/physics.hh"
 #include "ActorPluginSocial.h"
@@ -53,6 +51,9 @@ std::vector<ignition::math::Vector3d> lin_vels_vector;
 std::map<std::string, unsigned int> map_of_names;
 */
 
+#ifdef CREATE_ROS_NODE
+#include <visualization_msgs/MarkerArray.h>
+#endif
 
 // static members of the class
 std::vector<ignition::math::Vector3d> ActorPlugin::lin_vels_vector;
@@ -85,12 +86,23 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
 	// - - - - - - - - - - - - - - - - - - - - - -  - - - -- - - -- - - -- -  -- -
 
-//	if (!ros::isInitialized())
-//	{
-//		int argc = 0;
-//		char **argv = nullptr;
-//		ros::init(argc, argv, "gazebo_ros", ros::init_options::NoSigintHandler);
-//	}
+#ifdef CREATE_ROS_NODE
+
+	if (!ros::isInitialized())
+	{
+		int argc = 0;
+		char **argv = nullptr;
+		ros::init(argc, argv, "gazebo_ros", ros::init_options::NoSigintHandler);
+	}
+
+	ros_nh.reset(new ros::NodeHandle());
+	vis_pub = ros_nh->advertise<visualization_msgs::MarkerArray>("sfm_mrkr", 1000);
+
+	if(!vis_pub) {
+		ROS_FATAL_STREAM("Unable to create publisher for topic ``sfm_mrkr``");
+	}
+
+#endif
 
 	// - - - - - - - - - - - - - - - - - - - - - -  - - - -- - - -- - - -- -  -- -
     std::cout << "LOADED POSE: " << this->actor->WorldPose() << std::endl;
@@ -131,9 +143,9 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
 	prev_state_actor = ACTOR_STATE_MOVE_AROUND;
 
-#ifdef VISUALIZE_SFM
-	VisualizeForceField();
-#endif
+//#ifdef VISUALIZE_SFM
+//	VisualizeForceField();
+//#endif
 
 }
 
@@ -289,6 +301,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 		if ( curr_sec != last_sec ) {
 			std::cout << curr_sec << "\tWAITING..." << std::endl;
 			last_sec = curr_sec;
+
 		}
 		to_start = false;
 		state_actor = ACTOR_STATE_ALIGN_TARGET;
@@ -298,6 +311,9 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 		return;
 	};
 
+#ifdef CREATE_ROS_NODE
+	PublishActorTf();
+#endif
 
 	switch(state_actor) {
 
@@ -340,7 +356,13 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
   	static common::Time print_time;
 
   	if ( (_info.simTime - print_time).Double() > 0.2 ) {
+
 		if ( this->actor->GetName() == "actor1" ) {
+
+			#ifdef VISUALIZE_SFM
+			VisualizeForceField();
+			#endif
+
 			print_info = true;
 			Print_Set(true);
 			print_time = _info.simTime;
@@ -350,6 +372,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 			yaw_from_vel_world.Normalize();
 			std::cout << "**** YAW vs VEL comparison\t\tyaw_from_vel_act: " << std::atan2(this->velocity_actual.Y(), this->velocity_actual.X()) << "\tyaw_from_vel_vec: " << std::atan2( lin_vels_vector[this->actor_id].Y(), lin_vels_vector[this->actor_id].X() ) << "\tyaw_from_vel_WORLD: " << yaw_from_vel_world.Radian() << "\tyaw_from_pose: " << this->actor->WorldPose().Rot().Euler().Z() << std::endl;
 		}
+
 	} else {
 		print_info = false;
 	}
@@ -931,6 +954,33 @@ ignition::math::Vector3d ActorPlugin::UpdateActorOrientation() {
 
 // ===============================================================================================
 
+#ifdef CREATE_ROS_NODE
+
+void ActorPlugin::PublishActorTf() {
+
+	geometry_msgs::TransformStamped msg;
+
+	msg.header.frame_id = "map";
+	msg.header.stamp = ros::Time::now();
+	msg.child_frame_id = this->actor->GetName();
+
+	msg.transform.translation.x = this->pose_actor.Pos().X();
+	msg.transform.translation.y = this->pose_actor.Pos().Y();
+	msg.transform.translation.z = 0.0f; // this->pose_actor.Pos().Z();
+
+	msg.transform.rotation.x = this->pose_actor.Rot().X();
+	msg.transform.rotation.y = this->pose_actor.Rot().Y();
+	msg.transform.rotation.z = this->pose_actor.Rot().Z();
+	msg.transform.rotation.w = this->pose_actor.Rot().W();
+
+	tf_broadcaster.sendTransform(msg);
+
+}
+
+#endif
+
+// ===============================================================================================
+
 #ifdef VISUALIZE_SFM
 void ActorPlugin::VisualizeForceField() {
 
@@ -939,8 +989,8 @@ void ActorPlugin::VisualizeForceField() {
 	ignition::math::Pose3d pose;
 	ignition::math::Vector3d sf;
 
-	size_t iter = 0;
-	std::cout << "sfm_vis:" << iter << std::endl;
+//	size_t iter = 0;
+//	std::cout << "sfm_vis:" << iter << std::endl;
 
 	while ( !sfm_vis.isWholeGridChecked() ) {
 
@@ -955,13 +1005,18 @@ void ActorPlugin::VisualizeForceField() {
 								 bounding_boxes_vector);
 		sfm_vis.addForce(sf);
 
-		std::cout << "sfm_vis:" << iter << "\tsf: " << sf << std::endl;
-		iter++;
+//		std::cout << "sfm_vis:" << iter << "\tsf: " << sf << std::endl;
+//		iter++;
 
 	}
 
+#ifdef CREATE_ROS_NODE
+	vis_pub.publish(sfm_vis.getMarkerArray());
+#endif
+
 	// std::cout << sfm_vis.getMarkerArray().markers << std::endl;
 	// sfm_vis.publishMarkerArray();
+
 	sfm_vis.resetGridIndex();
 
 }

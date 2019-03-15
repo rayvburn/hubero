@@ -27,15 +27,28 @@
 
 #include "SocialForceModel.h"
 
+// -------------------------
+
 #define VISUALIZE_SFM
+#define CREATE_ROS_NODE
+
+// -------------------------
+
+#ifdef CREATE_ROS_NODE
+#include <ros/ros.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/TransformStamped.h>
+#endif
 
 #ifdef VISUALIZE_SFM
 #include <SFMVis.h>
 #endif
 
+// -------------------------
+
 //static std::vector<ignition::math::Vector3d> lin_vels_vector;
 //static std::map<std::string, unsigned int> map_of_names;
-
 
 
 namespace gazebo
@@ -210,6 +223,14 @@ typedef enum {
 
 #ifdef VISUALIZE_SFM
     private: SocialForceModel::SFMVis sfm_vis;
+#endif
+
+
+#ifdef CREATE_ROS_NODE
+    void PublishActorTf();
+    std::unique_ptr<ros::NodeHandle> ros_nh;
+    ros::Publisher vis_pub;
+    tf2_ros::TransformBroadcaster tf_broadcaster;
 #endif
 
   };

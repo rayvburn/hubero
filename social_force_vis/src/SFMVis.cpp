@@ -57,6 +57,9 @@ void SFMVis::createGrid(const float &_x_start, const float &_x_end, const float 
 		}
 	}
 
+	// resize the marker array
+	this->marker_array.markers.resize(this->grid.size());
+
 }
 
 // ------------------------------------------------------------------- //
@@ -68,7 +71,7 @@ void SFMVis::addForce(const ignition::math::Vector3d &_force) {
 	marker.header.frame_id = "map";
 	marker.header.stamp = ros::Time();
 	marker.ns = "social_force";
-	marker.id = grid_index - 1;
+	marker.id = (grid_index - 1);
 	marker.type = visualization_msgs::Marker::ARROW;
 	marker.action = action;
 
@@ -104,7 +107,14 @@ void SFMVis::addForce(const ignition::math::Vector3d &_force) {
 	marker.color.g = 1.0;
 	marker.color.b = 0.0;
 
-	this->marker_array.markers.push_back(marker);
+//	// depending on action - add new or modify present marker
+//	if ( this->action == visualization_msgs::Marker::ADD ) {
+//		this->marker_array.markers.push_back(marker);
+//	} else if ( this->action == visualization_msgs::Marker::MODIFY) {
+//		this->marker_array.markers[grid_index - 1] = marker;
+//	}
+
+	this->marker_array.markers[grid_index - 1] = marker;
 
 }
 
