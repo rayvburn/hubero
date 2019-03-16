@@ -57,11 +57,14 @@ std::map<std::string, unsigned int> map_of_names;
 
 #define SILENT_
 
+#ifndef REFACTOR_COMMON
 // static members of the class
 std::vector<ignition::math::Vector3d> ActorPlugin::lin_vels_vector;
 std::map<std::string, unsigned int> ActorPlugin::map_of_names;
 std::vector<ignition::math::Box> ActorPlugin::bounding_boxes_vector;
 //
+#endif
+
 #ifdef VISUALIZE_SFM
 SocialForceModel::SFMVisPoint ActorPlugin::sfm_vis;
 #endif
@@ -139,8 +142,12 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	last_pose_actor.Pos() = this->actor->WorldPose().Pos();
 	std::cout << " -------- SET last_pos_actor! -------- " << last_pose_actor.Pos() << std::endl;
 
+#ifndef REFACTOR_COMMON
 	actor_id = this->InitActorInfo(this->actor->GetName());
 	std::cout << " -------- ACTOR ID -------- " << actor_id << std::endl;
+#else
+	actor_common_info.addActor(this->actor->GetName());
+#endif
 
 	std::cout << " -------- MODEL TYPE -------- " << this->model->GetType() << std::endl;
 
@@ -231,6 +238,8 @@ void ActorPlugin::HandleObstacles(ignition::math::Vector3d &_pos)
 
 /////////////////////////////////////////////////
 
+#ifndef REFACTOR_COMMON
+
 unsigned int ActorPlugin::InitActorInfo(const std::string &_name) {
 
 //	ignition::math::Vector3d vel(0.0, 0.0, 0.0);
@@ -244,7 +253,9 @@ unsigned int ActorPlugin::InitActorInfo(const std::string &_name) {
 	unsigned int id = static_cast<unsigned int>(lin_vels_vector.size() - 1);
 	map_of_names.insert(std::make_pair(_name, id));
 
+#ifdef INFLATE_BOUNDING_BOX
 	bounding_boxes_vector.push_back(ignition::math::Box(0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
+#endif
 
 	return id;
 }
@@ -256,10 +267,15 @@ void ActorPlugin::SetActorsLinearVel(const unsigned int &_id, const ignition::ma
 	lin_vels_vector.at(_id) = _vel;
 }
 
+#ifdef INFLATE_BOUNDING_BOX
+
 void ActorPlugin::SetActorsBoundingBox(const unsigned int &_id, const ignition::math::Box &_bb) {
 	bounding_boxes_vector.at(_id) = _bb;
 }
 
+#endif
+
+#endif
 /////////////////////////////////////////////////
 
 ignition::math::Box ActorPlugin::GenerateBoundingBox(const ignition::math::Pose3d &_actor_pose) {
@@ -293,6 +309,8 @@ ignition::math::Box ActorPlugin::GenerateBoundingBox(const ignition::math::Pose3
 	return (bb);
 
 }
+
+
 
 /////////////////////////////////////////////////
 
@@ -421,7 +439,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
 
 
-
+#ifndef REFACTOR_COMMON
 
 
   	// OnUpdate algorithm
@@ -476,6 +494,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
   	this->actor->SetLinearVel(this->velocity_actual);
 
+
 	ignition::math::Vector3d sf = sfm.GetSocialForce(this->world,
 													 this->actor->GetName(),
 													 this->pose_actor,
@@ -484,6 +503,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 													 map_of_names,
 													 lin_vels_vector,
 													 bounding_boxes_vector);
+
 	if ( print_info ) {
 		std::cout << "\t TOTAL force: " << sf << std::endl;
 //		std::cout << "\t\t\t Vels vector: ";
@@ -774,6 +794,9 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
     (distanceTraveled * this->animationFactor));
   this->lastUpdate = _info.simTime;
   */
+
+#endif
+
 }
 
 // ===============================================================================================
@@ -1026,6 +1049,8 @@ void ActorPlugin::VisualizeForceField() {
 #ifdef VIS_SFM_POINT
 
 	ignition::math::Vector3d sf;
+
+#ifndef REFACTOR_COMMON
 	sf = sfm.GetSocialForce( this->world,
 							 this->actor->GetName(),
 							 this->pose_actor,
@@ -1038,6 +1063,21 @@ void ActorPlugin::VisualizeForceField() {
 	sfm_vis.setForcePoint(	sf,
 							ignition::math::Vector3d(this->pose_actor.Pos().X(), this->pose_actor.Pos().Y(), 0.0f),
 							this->actor_id);
+#else
+	sf = sfm.GetSocialForce( this->world,
+							 this->actor->GetName(),
+							 this->pose_actor,
+							 this->velocity_actual,
+							 this->target,
+							 actor_common_info.getNameIDMap(),
+							 actor_common_info.getLinearVelocitiesVector(),
+							 actor_common_info.getBoundingBoxesVector());
+
+	sfm_vis.setForcePoint(	sf,
+							ignition::math::Vector3d(this->pose_actor.Pos().X(), this->pose_actor.Pos().Y(), 0.0f),
+							actor_common_info.getActorID());
+
+#endif
 
 #ifdef CREATE_ROS_NODE
 	vis_pub.publish(sfm_vis.getMarkerArray());
@@ -1103,11 +1143,22 @@ double ActorPlugin::PrepareForUpdate(const common::UpdateInfo &_info) {
 	double dt = (_info.simTime - this->last_update).Double();
 	CalculateVelocity(this->pose_actor.Pos(), dt);
 
+#ifndef REFACTOR_COMMON
 	SetActorsLinearVel(this->actor_id, this->velocity_actual);
+#else
+	actor_common_info.setLinearVel(this->velocity_actual);
+#endif
 	this->actor->SetLinearVel(this->velocity_actual);
 
+#ifdef INFLATE_BOUNDING_BOX
 	// update the bounding box of the actor
+#ifndef REFACTOR_COMMON
 	SetActorsBoundingBox( this->actor_id, this->GenerateBoundingBox(this->pose_actor) );
+#else
+	actor_common_info.setBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
+#endif
+
+#endif
 
 	// dt is helpful for further calculations
 	return dt;
@@ -1172,6 +1223,7 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 	double dt = this->PrepareForUpdate(_info);
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+#ifndef REFACTOR_COMMON
 	ignition::math::Vector3d sf = sfm.GetSocialForce(this->world,
 													 this->actor->GetName(),
 													 this->pose_actor,
@@ -1202,6 +1254,17 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 
 		std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;
 	}
+
+#else
+	ignition::math::Vector3d sf = sfm.GetSocialForce(this->world,
+													 this->actor->GetName(),
+													 this->pose_actor,
+													 this->velocity_actual,
+													 this->target,
+													 actor_common_info.getNameIDMap(),
+													 actor_common_info.getLinearVelocitiesVector(),
+													 actor_common_info.getBoundingBoxesVector());
+#endif
 
 	ignition::math::Pose3d new_pose = sfm.GetNewPose(	this->pose_actor,
 														this->last_pose_actor,

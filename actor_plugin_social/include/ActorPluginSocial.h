@@ -21,6 +21,9 @@
 #include <string>
 #include <vector>
 
+#include "Enums.h"
+#include "CommonInfo.h"
+
 #include "gazebo/common/Plugin.hh"
 #include "gazebo/physics/physics.hh"
 #include "gazebo/util/system.hh"
@@ -48,6 +51,8 @@
 #include <geometry_msgs/TransformStamped.h>
 #endif
 
+// -------------------------
+
 #ifdef VISUALIZE_SFM
 
 	#ifdef VIS_SFM_POINT
@@ -60,31 +65,27 @@
 
 // -------------------------
 
+#define INFLATE_BOUNDING_BOX
+// #define INFLATE_BOUNDING_CIRCLE
+// #define INFLATE_BOUNDING_ELLIPSE
+
+// -------------------------
+
+#if 	defined(INFLATE_BOUNDING_CIRCLE)
+#include "BoundingCircle.h"
+#elif 	defined(INFLATE_BOUNDING_ELLIPSE)
+// #include
+#endif
+
+// -------------------------
+
 //static std::vector<ignition::math::Vector3d> lin_vels_vector;
 //static std::map<std::string, unsigned int> map_of_names;
 
+#define REFACTOR_COMMON
 
 namespace gazebo
 {
-
-// -------------------------
-
-typedef enum {
-	ACTOR_STANCE_WALK = 0,
-	ACTOR_STANCE_STAND,
-	ACTOR_STANCE_LIE,
-} ActorStance;
-
-// -------------------------
-
-typedef enum {
-	ACTOR_STATE_ALIGN_TARGET = 0,
-	ACTOR_STATE_MOVE_AROUND,
-	ACTOR_STATE_STOP_AND_STARE,
-	ACTOR_STATE_FOLLOW_OBJECT,
-	ACTOR_STATE_TELEOPERATION,
-} ActorState;
-
 
 
 // ACTOR MODEL TYPE is:  -------- MODEL TYPE -------- 32771
@@ -164,23 +165,36 @@ typedef enum {
     /// \brief TODO
     private: bool ReadSDF();
 
-    /// \brief Method that assigns an ID for the actor that is invoked by (must be called for each actor)
+#ifndef REFACTOR_COMMON
     private: unsigned int InitActorInfo(const std::string &_name);
-
-    /// \brief Actor's ID for indexing the lin_vels_vector (see below)
     private: unsigned int actor_id;
-
     private: static void SetActorsLinearVel(const unsigned int &_id, const ignition::math::Vector3d &_vel);
+    private: static std::vector<ignition::math::Vector3d> lin_vels_vector; // static members of the class
+    private: static std::map<std::string, unsigned int> map_of_names;
+#else
+    private: ActorUtils::CommonInfo actor_common_info;
+#endif
+
+#if	defined(INFLATE_BOUNDING_BOX)
+
+#ifndef REFACTOR_COMMON
+    private: static void SetActorsBoundingBox(const unsigned int &_id, const ignition::math::Box &_bb);
+    private: static std::vector<ignition::math::Box> bounding_boxes_vector;
+#endif
+    private: static ignition::math::Box GenerateBoundingBox(const ignition::math::Pose3d &_actor_pose);
+
+#elif defined(INFLATE_BOUNDING_CIRCLE)
+
     private: static void SetActorsBoundingBox(const unsigned int &_id, const ignition::math::Box &_bb);
 
+#elif defined(INFLATE_BOUNDING_ELLIPSE)
 
-    // static members of the class
-    private: static std::vector<ignition::math::Vector3d> lin_vels_vector;
-    private: static std::map<std::string, unsigned int> map_of_names;
 
-    // actor has no collision thus no bounding box defined, it will be done artificially
-    private: static std::vector<ignition::math::Box> bounding_boxes_vector;
-    private: static ignition::math::Box GenerateBoundingBox(const ignition::math::Pose3d &_actor_pose);
+
+#endif
+
+
+
 
 
     /// \brief Linear velocity of the actor
@@ -193,7 +207,7 @@ typedef enum {
     /// 	   offset depending on current stance
     private: ignition::math::Vector3d UpdateActorOrientation();
     private: ignition::math::Vector3d UpdateActorOrientation(const ignition::math::Pose3d &_pose);
-//    private: inline void RestoreYawGazeboInPose();
+
     private: inline void SetActorPose(const ignition::math::Pose3d &_pose);
 
     /// \brief Type of current stance of the actor
