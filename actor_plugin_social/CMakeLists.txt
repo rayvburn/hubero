@@ -37,10 +37,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 add_library(${PROJECT_NAME} SHARED include/ActorPluginSocial.h src/ActorPluginSocial.cpp)
 add_library(social_force_model include/SocialForceModel.h src/SocialForceModel.cpp)
 add_library(social_force_model_utils include/SocialForceModelUtils.h src/SocialForceModelUtils.cpp)
+add_library(actor_bounding_circle include/BoundingCircle.h src/BoundingCircle.cpp)
 
 target_link_libraries( ${PROJECT_NAME} 
   social_force_model 
-  social_force_model_utils 
+  social_force_model_utils
+  actor_bounding_circle
   ${GAZEBO_LIBRARIES}  
   ${roscpp_LIBRARIES} 
   ${tf_LIBRARIES}
