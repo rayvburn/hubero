@@ -6,7 +6,7 @@
  */
 
 #include <SocialForceModel.h>
-#include <cmath>
+#include <cmath>		// atan2()
 #include <tgmath.h>		// fabs()
 
 // ----------------------------------------
@@ -290,6 +290,8 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		if ( print_info ) {
 			std::cout << "actor_center: " << _actor_pose.Pos() << "\tobstacle_closest_pt: " << model_closest_point << "\tdist: " << (model_closest_point-_actor_pose.Pos()).Length() << std::endl;
 		}
+#else
+		ignition::math::Vector3d model_closest_point(0.0f, 0.0f, 0.0f);
 #endif
 
 		// what if velocity is actually non-zero but Gazebo sees 0?
@@ -717,10 +719,13 @@ ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
 )
 {
 
+#ifndef BOUNDING_BOX_CALCULATION
 	// no bounding box
-//	ignition::math::Vector3d d_alpha_beta = _object_pose.Pos() - _actor_pose.Pos();
+	ignition::math::Vector3d d_alpha_beta = _object_pose.Pos() - _actor_pose.Pos();
+#else
 	// bounding box
 	ignition::math::Vector3d d_alpha_beta = _closest_point - _actor_pose.Pos();
+#endif
 
 	// TODO: adjust Z according to stance
 	d_alpha_beta.Z(0.0); // it is assumed that all objects are in the actor's plane

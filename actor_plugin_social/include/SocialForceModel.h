@@ -44,6 +44,10 @@
 
 // ---------------------------------
 
+/*
+ * At first it seemed that it's the bounding box calculation that makes algorithm unstable,
+ * but without BB the situation is the same
+ */
 #define BOUNDING_BOX_CALCULATION
 
 // ----------------------------------------------------------------------------------------------- //
