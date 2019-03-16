@@ -62,7 +62,9 @@ std::vector<ignition::math::Vector3d> ActorPlugin::lin_vels_vector;
 std::map<std::string, unsigned int> ActorPlugin::map_of_names;
 std::vector<ignition::math::Box> ActorPlugin::bounding_boxes_vector;
 //
+#ifdef VISUALIZE_SFM
 SocialForceModel::SFMVisPoint ActorPlugin::sfm_vis;
+#endif
 
 /////////////////////////////////////////////////
 ActorPlugin::ActorPlugin()
@@ -105,6 +107,10 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 		ROS_FATAL_STREAM("Unable to create publisher for topic ``sfm_mrkr``");
 	}
 
+#endif
+
+#ifdef VISUALIZE_SFM
+	sfm_vis.init("sfm", "map");
 #endif
 
 	// - - - - - - - - - - - - - - - - - - - - - -  - - - -- - - -- - - -- -  -- -
