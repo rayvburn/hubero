@@ -20,6 +20,8 @@ class SFMVisGrid {
 public:
 
 	SFMVisGrid();
+	SFMVisGrid(const std::string &_namespace_id, const std::string &_parent_frame);
+	void init(const std::string &_namespace_id, const std::string &_parent_frame);
 
 	void createGrid(const float &_x_start, const float &_x_end, const float &_y_start, const float &_y_end, const float &_resolution);
 	bool isWholeGridChecked();
@@ -39,6 +41,8 @@ private:
 	visualization_msgs::MarkerArray marker_array;
 	int32_t action;
 	float arrow_length;
+	std::string ns;
+	std::string frame;
 
 };
 

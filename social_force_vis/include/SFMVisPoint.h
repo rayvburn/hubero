@@ -26,6 +26,8 @@ class SFMVisPoint {
 public:
 
 	SFMVisPoint();
+	SFMVisPoint(const std::string &_namespace_id, const std::string &_parent_frame);
+	void init(const std::string &_namespace_id, const std::string &_parent_frame);
 
 	void setMaxArrowLength(const float _marker_length);
 	void setForcePoint(const ignition::math::Vector3d &_force, const ignition::math::Vector3d &_pt, const unsigned int &_pt_id);
@@ -43,6 +45,8 @@ private:
 	int32_t action;
 	float arrow_length;
 	unsigned int point_last_idx;
+	std::string ns;
+	std::string frame;
 
 };
 

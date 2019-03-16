@@ -14,9 +14,38 @@ namespace SocialForceModel {
 
 SFMVisGrid::SFMVisGrid():
 		grid_index(0),
-		arrow_length(0.0f)
+		arrow_length(0.0f),
+		ns("social_force_model"),
+		frame("map")
+{
+	// clear vectors
+	this->clearInternalMemory();
+}
+
+// ------------------------------------------------------------------- //
+
+SFMVisGrid::SFMVisGrid(const std::string &_namespace_id, const std::string &_parent_frame):
+		grid_index(0),
+		arrow_length(0.0f),
+		ns(_namespace_id),
+		frame(_parent_frame)
 {
 	this->clearInternalMemory();
+}
+
+// ------------------------------------------------------------------- //
+
+/*
+ * init must be invoked each time when frame changes
+ */
+void SFMVisGrid::init(const std::string &_namespace_id, const std::string &_parent_frame) {
+
+	// clear vectors
+	this->clearInternalMemory();
+
+	this->ns = _namespace_id;
+	this->frame = _parent_frame;
+
 }
 
 // ------------------------------------------------------------------- //
@@ -70,9 +99,9 @@ void SFMVisGrid::setForce(const ignition::math::Vector3d &_force) {
 
 	visualization_msgs::Marker marker;
 
-	marker.header.frame_id = "map";
+	marker.header.frame_id = this->frame;
 	marker.header.stamp = ros::Time();
-	marker.ns = "social_force";
+	marker.ns = this->ns;
 	marker.id = (this->grid_index - 1);
 	marker.type = visualization_msgs::Marker::ARROW;
 	marker.action = this->action;

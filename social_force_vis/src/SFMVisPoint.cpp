@@ -13,10 +13,36 @@ namespace SocialForceModel {
 
 SFMVisPoint::SFMVisPoint():
 		arrow_length(1.0f),
-		point_last_idx(0)
+		point_last_idx(0),
+		ns("social_force_model"),
+		frame("map")
 {
 	// clear vectors
 	this->clearInternalMemory();
+}
+
+// ------------------------------------------------------------------- //
+
+SFMVisPoint::SFMVisPoint(const std::string &_namespace_id, const std::string &_parent_frame):
+		arrow_length(1.0f),
+		point_last_idx(0),
+		ns(_namespace_id),
+		frame(_parent_frame)
+{
+	// clear vectors
+	this->clearInternalMemory();
+}
+
+// ------------------------------------------------------------------- //
+
+void SFMVisPoint::init(const std::string &_namespace_id, const std::string &_parent_frame) {
+
+	// clear vectors
+	this->clearInternalMemory();
+
+	this->ns = _namespace_id;
+	this->frame = _parent_frame;
+
 }
 
 // ------------------------------------------------------------------- //
@@ -59,9 +85,9 @@ void SFMVisPoint::setForcePoint(	const ignition::math::Vector3d &_force, const i
 
 	visualization_msgs::Marker marker;
 
-	marker.header.frame_id = "map";
+	marker.header.frame_id = this->frame;
 	marker.header.stamp = ros::Time();
-	marker.ns = "social_force";
+	marker.ns = this->ns;
 	marker.id = marker_arr_index;
 	marker.type = visualization_msgs::Marker::ARROW;
 	marker.action = this->action;
