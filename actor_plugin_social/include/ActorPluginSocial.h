@@ -34,6 +34,13 @@
 
 // -------------------------
 
+#ifdef VISUALIZE_SFM
+	// #define VIS_SFM_GRID
+	#define VIS_SFM_POINT
+#endif
+
+// -------------------------
+
 #ifdef CREATE_ROS_NODE
 #include <ros/ros.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -42,7 +49,13 @@
 #endif
 
 #ifdef VISUALIZE_SFM
-#include <SFMVis.h>
+
+	#ifdef VIS_SFM_POINT
+	#include <SFMVisPoint.h>
+	#elif defined(VIS_SFM_GRID)
+	#include <SFMVisGrid.h>
+	#endif
+
 #endif
 
 // -------------------------
@@ -222,7 +235,13 @@ typedef enum {
     private: SocialForceModel::SocialForceModel sfm;
 
 #ifdef VISUALIZE_SFM
-    private: SocialForceModel::SFMVis sfm_vis;
+
+#ifdef VIS_SFM_POINT
+    private: static SocialForceModel::SFMVisPoint sfm_vis;
+#elif defined(VIS_SFM_GRID)
+    private: static SocialForceModel::SFMVisGrid sfm_vis;
+#endif
+
 #endif
 
 

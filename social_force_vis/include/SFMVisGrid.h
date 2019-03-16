@@ -1,12 +1,12 @@
 /*
- * SFMVis.h
+ * SFMVisGrid.h
  *
  *  Created on: Mar 14, 2019
  *      Author: rayvburn
  */
 
-#ifndef SRC_SFMVIS_H_
-#define SRC_SFMVIS_H_
+#ifndef SRC_SFMVISGRID_H_
+#define SRC_SFMVISGRID_H_
 
 #include <ignition/math.hh>	// include whole math
 #include <vector>
@@ -15,18 +15,20 @@
 
 namespace SocialForceModel {
 
-class SFMVis {
+class SFMVisGrid {
 
 public:
 
-	SFMVis();
+	SFMVisGrid();
+
 	void createGrid(const float &_x_start, const float &_x_end, const float &_y_start, const float &_y_end, const float &_resolution);
 	bool isWholeGridChecked();
-	void resetGridIndex();
-	void addForce(const ignition::math::Vector3d &_force);
-	visualization_msgs::MarkerArray getMarkerArray();
 	ignition::math::Vector3d getNextGridElement();
-	virtual ~SFMVis();
+	void resetGridIndex();
+	void setForce(const ignition::math::Vector3d &_force);
+
+	visualization_msgs::MarkerArray getMarkerArray();
+	virtual ~SFMVisGrid();
 
 private:
 
@@ -42,4 +44,4 @@ private:
 
 } /* namespace SocialForceModel */
 
-#endif /* SRC_SFMVIS_H_ */
+#endif /* SRC_SFMVISGRID_H_ */

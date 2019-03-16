@@ -45,8 +45,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 #############
 
 add_library( ${PROJECT_NAME} SHARED
- include/SFMVis.h
- src/SFMVis.cpp
+ include/SFMVisGrid.h
+ src/SFMVisGrid.cpp
+ include/SFMVisPoint.h
+ src/SFMVisPoint.cpp
 )
 
 add_dependencies( ${PROJECT_NAME} 

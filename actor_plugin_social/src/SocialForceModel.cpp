@@ -25,6 +25,8 @@
 
 namespace SocialForceModel {
 
+#define SILENT_
+
 // deprecated
 //#define SFM_RIGHT_SIDE 0
 //#define SFM_LEFT_SIDE  1
@@ -35,6 +37,9 @@ namespace SocialForceModel {
 
 
 // #define DEBUG_SFM_PARAMETERS
+
+#ifndef SILENT_
+
 #define DEBUG_GEOMETRY_1 // angle correctes etc.
 #define DEBUG_GEOMETRY_2 // relative location
 #define DEBUG_INTERNAL_ACC
@@ -43,6 +48,10 @@ namespace SocialForceModel {
 #define DEBUG_NEW_POSE
 #define DEBUG_ACTOR_FACING_TARGET
 #define DEBUG_BOUNDING_BOX
+
+#endif
+
+
 //#define DEBUG_SHORT_DISTANCE	// force printing info when distance to an obstalce is small
 
 #ifdef DEBUG_NEW_POSE
@@ -206,7 +215,11 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 
 	// easier to debug
 	if ( _actor_name == "actor1" ) {
+#ifndef SILENT_
 		if ( print_counter++ == 250 ) {
+#else
+		if ( print_counter == 250 ) {
+#endif
 			std::cout << " -------------- PRINT_INFO triggered TRUE ------------------ " << std::endl;
 			print_info = true;
 			print_counter = 0;

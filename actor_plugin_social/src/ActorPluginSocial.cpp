@@ -55,11 +55,14 @@ std::map<std::string, unsigned int> map_of_names;
 #include <visualization_msgs/MarkerArray.h>
 #endif
 
+#define SILENT_
+
 // static members of the class
 std::vector<ignition::math::Vector3d> ActorPlugin::lin_vels_vector;
 std::map<std::string, unsigned int> ActorPlugin::map_of_names;
 std::vector<ignition::math::Box> ActorPlugin::bounding_boxes_vector;
-
+//
+SocialForceModel::SFMVisPoint ActorPlugin::sfm_vis;
 
 /////////////////////////////////////////////////
 ActorPlugin::ActorPlugin()
@@ -142,10 +145,6 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	}
 
 	prev_state_actor = ACTOR_STATE_MOVE_AROUND;
-
-//#ifdef VISUALIZE_SFM
-//	VisualizeForceField();
-//#endif
 
 }
 
@@ -315,12 +314,36 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	PublishActorTf();
 #endif
 
+#if defined(VISUALIZE_SFM) && defined(VIS_SFM_POINT)
+	static common::Time vis_time;
+	static int counter = 0;
+
+	if ( (_info.simTime - vis_time).Double() > 0.05 ) {
+
+		//std::cout << "ACTOR FOR VIS: " << this->actor_id << "\tname: " << this->actor->GetName() << std::endl;
+		VisualizeForceField();
+		counter++;
+		if ( counter == 2 ) {
+			vis_time = _info.simTime;
+			counter = 0;
+		}
+
+	}
+
+#endif
+
+#ifdef SILENT_
+	print_info = false;
+#endif
+
 	switch(state_actor) {
 
 	case(ACTOR_STATE_ALIGN_TARGET):
 
 			if ( prev_state_actor != ACTOR_STATE_ALIGN_TARGET ) {
+#ifndef SILENT_
 				std::cout << "\tACTOR_STATE_ALIGN_TARGET" << std::endl;
+#endif
 				prev_state_actor =  ACTOR_STATE_ALIGN_TARGET;
 			}
 
@@ -330,7 +353,9 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	case(ACTOR_STATE_MOVE_AROUND):
 
 			if ( prev_state_actor != ACTOR_STATE_MOVE_AROUND ) {
+#ifndef SILENT_
 				std::cout << "\tACTOR_STATE_MOVE_AROUND" << std::endl;
+#endif
 				prev_state_actor =  ACTOR_STATE_MOVE_AROUND;
 			}
 
@@ -338,14 +363,20 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 			break;
 
 	case(ACTOR_STATE_STOP_AND_STARE):
+#ifndef SILENT_
 			std::cout << "\tACTOR_STATE_STOP_AND_STARE" << std::endl;
+#endif
 			break;
 	case(ACTOR_STATE_FOLLOW_OBJECT):
+#ifndef SILENT_
 			std::cout << "\tACTOR_STATE_FOLLOW_OBJECT" << std::endl;
+#endif
 			ActorStateFollowObjectHandler(_info);
 			break;
 	case(ACTOR_STATE_TELEOPERATION):
+#ifndef SILENT_
 			std::cout << "\tACTOR_STATE_TELEOPERATION" << std::endl;
+#endif
 			ActorStateTeleoperationHandler(_info);
 			break;
 	}
@@ -357,12 +388,12 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
   	if ( (_info.simTime - print_time).Double() > 0.2 ) {
 
+#ifndef SILENT_
 		if ( this->actor->GetName() == "actor1" ) {
 
-			#ifdef VISUALIZE_SFM
+			#if defined(VISUALIZE_SFM) && defined(VIS_SFM_GRID)
 			VisualizeForceField();
 			#endif
-
 			print_info = true;
 			Print_Set(true);
 			print_time = _info.simTime;
@@ -372,6 +403,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 			yaw_from_vel_world.Normalize();
 			std::cout << "**** YAW vs VEL comparison\t\tyaw_from_vel_act: " << std::atan2(this->velocity_actual.Y(), this->velocity_actual.X()) << "\tyaw_from_vel_vec: " << std::atan2( lin_vels_vector[this->actor_id].Y(), lin_vels_vector[this->actor_id].X() ) << "\tyaw_from_vel_WORLD: " << yaw_from_vel_world.Radian() << "\tyaw_from_pose: " << this->actor->WorldPose().Rot().Euler().Z() << std::endl;
 		}
+#endif
 
 	} else {
 		print_info = false;
@@ -982,9 +1014,33 @@ void ActorPlugin::PublishActorTf() {
 // ===============================================================================================
 
 #ifdef VISUALIZE_SFM
+
 void ActorPlugin::VisualizeForceField() {
 
-	sfm_vis.createGrid(-3.0, 3.5, -10.0, 2.0, 1.0);
+#ifdef VIS_SFM_POINT
+
+	ignition::math::Vector3d sf;
+	sf = sfm.GetSocialForce( this->world,
+							 this->actor->GetName(),
+							 this->pose_actor,
+							 this->velocity_actual,
+							 this->target,
+							 map_of_names,
+							 lin_vels_vector,
+							 bounding_boxes_vector);
+
+	sfm_vis.setForcePoint(	sf,
+							ignition::math::Vector3d(this->pose_actor.Pos().X(), this->pose_actor.Pos().Y(), 0.0f),
+							this->actor_id);
+
+#ifdef CREATE_ROS_NODE
+	vis_pub.publish(sfm_vis.getMarkerArray());
+#endif
+
+#elif defined(VIS_SFM_GRID)
+
+	//sfm_vis.createGrid(-3.0, 3.5, -10.0, 2.0, 1.0);
+	sfm_vis.createGrid(-5.0, 5.5, -12.0, 4.0, 0.5);
 
 	ignition::math::Pose3d pose;
 	ignition::math::Vector3d sf;
@@ -1003,7 +1059,7 @@ void ActorPlugin::VisualizeForceField() {
 								 map_of_names,
 								 lin_vels_vector,
 								 bounding_boxes_vector);
-		sfm_vis.addForce(sf);
+		sfm_vis.setForce(sf);
 
 //		std::cout << "sfm_vis:" << iter << "\tsf: " << sf << std::endl;
 //		iter++;
@@ -1019,7 +1075,10 @@ void ActorPlugin::VisualizeForceField() {
 
 	sfm_vis.resetGridIndex();
 
+#endif
+
 }
+
 #endif
 
 // ===============================================================================================
@@ -1083,7 +1142,9 @@ void ActorPlugin::ActorStateAlignTargetHandler(const common::UpdateInfo &_info) 
 	/* if already aligned - switch to a certain state, otherwise proceed to the next
 	 * rotation procedure */
 	if ( this->AlignToTargetDirection(&new_rpy) ) {
+#ifndef SILENT_
 		std::cout << "\n\n\t\t\tALIGNED\n\n";
+#endif
 		state_actor = ACTOR_STATE_MOVE_AROUND;
 	}
 

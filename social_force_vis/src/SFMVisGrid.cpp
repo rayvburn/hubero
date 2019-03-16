@@ -1,20 +1,18 @@
 /*
- * SFMVis.cpp
+ * SFMVisGrid.cpp
  *
  *  Created on: Mar 14, 2019
  *      Author: rayvburn
  */
 
-#include "SFMVis.h"
+#include "SFMVisGrid.h"
 #include <tgmath.h>		// fabs()
 
 namespace SocialForceModel {
 
-// float SFMVis::MAX_ARROW_LENGTH;
-
 // ------------------------------------------------------------------- //
 
-SFMVis::SFMVis():
+SFMVisGrid::SFMVisGrid():
 		grid_index(0),
 		arrow_length(0.0f)
 {
@@ -23,7 +21,11 @@ SFMVis::SFMVis():
 
 // ------------------------------------------------------------------- //
 
-void SFMVis::createGrid(const float &_x_start, const float &_x_end, const float &_y_start,
+/*
+ * Grid allows to simulate actor's position in each grid cell (representing different world positions)
+ * and visualize the force that could influence him
+ */
+void SFMVisGrid::createGrid(const float &_x_start, const float &_x_end, const float &_y_start,
 						const float &_y_end, const float &_resolution) {
 
 	// clear vectors containing grid and markers
@@ -64,16 +66,16 @@ void SFMVis::createGrid(const float &_x_start, const float &_x_end, const float 
 
 // ------------------------------------------------------------------- //
 
-void SFMVis::addForce(const ignition::math::Vector3d &_force) {
+void SFMVisGrid::setForce(const ignition::math::Vector3d &_force) {
 
 	visualization_msgs::Marker marker;
 
 	marker.header.frame_id = "map";
 	marker.header.stamp = ros::Time();
 	marker.ns = "social_force";
-	marker.id = (grid_index - 1);
+	marker.id = (this->grid_index - 1);
 	marker.type = visualization_msgs::Marker::ARROW;
-	marker.action = action;
+	marker.action = this->action;
 
 	// assign marker coordinates according to current point that is pointed by grid index
 	marker.pose.position.x = this->grid[grid_index - 1].X();
@@ -92,27 +94,20 @@ void SFMVis::addForce(const ignition::math::Vector3d &_force) {
 	marker.pose.orientation.z = quaternion.Z();
 	marker.pose.orientation.w = quaternion.W();
 
-	// ??length is calculated based on max allowable force `in SFM class`
 	// specify the arrow start and end points
 	// marker.points[0];
 	// marker.points[1];
 
 	// scale
+	// length is calculated based on max allowable force `in SFM class`
 	marker.scale.x = arrow_length * _force.Length() / 2000.0; // TODO: avoid hard-coding max_force value
 	marker.scale.y = 0.1;
 	marker.scale.z = 0.1;
 
-	marker.color.a = 1.0; // Don't forget to set the alpha!
+	marker.color.a = 0.7; // alpha channel
 	marker.color.r = 0.0;
 	marker.color.g = 1.0;
 	marker.color.b = 0.0;
-
-//	// depending on action - add new or modify present marker
-//	if ( this->action == visualization_msgs::Marker::ADD ) {
-//		this->marker_array.markers.push_back(marker);
-//	} else if ( this->action == visualization_msgs::Marker::MODIFY) {
-//		this->marker_array.markers[grid_index - 1] = marker;
-//	}
 
 	this->marker_array.markers[grid_index - 1] = marker;
 
@@ -120,13 +115,13 @@ void SFMVis::addForce(const ignition::math::Vector3d &_force) {
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::MarkerArray SFMVis::getMarkerArray() {
+visualization_msgs::MarkerArray SFMVisGrid::getMarkerArray() {
 	return (this->marker_array);
 }
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d SFMVis::getNextGridElement() {
+ignition::math::Vector3d SFMVisGrid::getNextGridElement() {
 
 	this->grid_index++;
 	return (this->grid[grid_index - 1]);
@@ -135,7 +130,7 @@ ignition::math::Vector3d SFMVis::getNextGridElement() {
 
 // ------------------------------------------------------------------- //
 
-bool SFMVis::isWholeGridChecked() {
+bool SFMVisGrid::isWholeGridChecked() {
 
 	if ( this->grid_index >= this->grid.size() ) {
 
@@ -151,7 +146,7 @@ bool SFMVis::isWholeGridChecked() {
 
 // ------------------------------------------------------------------- //
 
-void SFMVis::resetGridIndex() {
+void SFMVisGrid::resetGridIndex() {
 
 	this->grid_index = 0;
 
@@ -162,7 +157,7 @@ void SFMVis::resetGridIndex() {
 
 // ------------------------------------------------------------------- //
 
-SFMVis::~SFMVis() {
+SFMVisGrid::~SFMVisGrid() {
 
 	this->clearInternalMemory();
 
@@ -170,7 +165,7 @@ SFMVis::~SFMVis() {
 
 // ------------------------------------------------------------------- //
 
-void SFMVis::clearInternalMemory() {
+void SFMVisGrid::clearInternalMemory() {
 
 	this->grid.clear();
 	this->marker_array.markers.clear();
