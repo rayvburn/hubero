@@ -33,7 +33,8 @@
 // -------------------------
 
 #define VISUALIZE_SFM
-#define CREATE_ROS_NODE
+//#define CREATE_ROS_NODE
+#define CREATE_ROS_INTERFACE
 
 // -------------------------
 
@@ -49,6 +50,10 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TransformStamped.h>
+#endif
+
+#ifdef CREATE_ROS_INTERFACE
+#include "ActorROSInterface.h"
 #endif
 
 // -------------------------
@@ -245,6 +250,10 @@ namespace gazebo
     std::unique_ptr<ros::NodeHandle> ros_nh;
     ros::Publisher vis_pub;
     tf2_ros::TransformBroadcaster tf_broadcaster;
+#endif
+
+#ifdef CREATE_ROS_INTERFACE
+    ActorUtils::ActorROSInterface ros_interface;
 #endif
 
   };

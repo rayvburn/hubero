@@ -51,7 +51,7 @@ std::vector<ignition::math::Vector3d> lin_vels_vector;
 std::map<std::string, unsigned int> map_of_names;
 */
 
-#ifdef CREATE_ROS_NODE
+#if defined(CREATE_ROS_NODE) || defined(CREATE_ROS_INTERFACE)
 #include <visualization_msgs/MarkerArray.h>
 #endif
 
@@ -106,6 +106,8 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 		ROS_FATAL_STREAM("Unable to create publisher for topic ``sfm_mrkr``");
 	}
 
+#elif defined(CREATE_ROS_INTERFACE)
+	ros_interface.Init(this->actor->GetName());
 #endif
 
 #ifdef VISUALIZE_SFM
@@ -264,6 +266,8 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
 #ifdef CREATE_ROS_NODE
 	PublishActorTf();
+#elif defined(CREATE_ROS_INTERFACE)
+	ros_interface.PublishActorTf(this->pose_actor);
 #endif
 
 #if defined(VISUALIZE_SFM) && defined(VIS_SFM_POINT)
@@ -1024,6 +1028,8 @@ void ActorPlugin::VisualizeForceField() {
 
 #ifdef CREATE_ROS_NODE
 	vis_pub.publish(sfm_vis.getMarkerArray());
+#elif defined(CREATE_ROS_INTERFACE)
+	ros_interface.PublishMarkerArray(sfm_vis.getMarkerArray());
 #endif
 
 #elif defined(VIS_SFM_GRID)
@@ -1055,6 +1061,8 @@ void ActorPlugin::VisualizeForceField() {
 
 #ifdef CREATE_ROS_NODE
 	vis_pub.publish(sfm_vis.getMarkerArray());
+#elif defined(CREATE_ROS_INTERFACE)
+	ros_interface.PublishMarkerArray(sfm_vis.getMarkerArray());
 #endif
 
 	// std::cout << sfm_vis.getMarkerArray().markers << std::endl;
