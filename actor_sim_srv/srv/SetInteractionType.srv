@@ -1,0 +1,4 @@
+string object
+uint8 interaction_type
+------
+bool flag

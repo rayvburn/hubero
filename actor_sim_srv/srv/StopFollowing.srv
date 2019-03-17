@@ -1,0 +1,4 @@
+bool req_flag
+
+------
+bool resp_flag

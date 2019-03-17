@@ -1,7 +1,0 @@
-bool set_flag
-float64 new_x
-float64 new_y
-
-------
-float64 x
-float64 y
