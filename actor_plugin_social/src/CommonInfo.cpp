@@ -57,49 +57,49 @@ void CommonInfo::setLinearVel (const ignition::math::Vector3d &_vel) {
 
 // ------------------------------------------------------------------- //
 
-unsigned int CommonInfo::getActorID() {
+unsigned int CommonInfo::getActorID() const {
 	return (this->id);
 }
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Box	CommonInfo::getBoundingBox() {
+ignition::math::Box	CommonInfo::getBoundingBox() const {
 	return (bounding_box_vector.at(this->id));
 }
 
 // ------------------------------------------------------------------- //
 
-BoundingCircle CommonInfo::getBoundingCircle() {
+BoundingCircle CommonInfo::getBoundingCircle() const {
 	return (bounding_circle_vector.at(this->id));
 }
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d CommonInfo::getLinearVelocity() {
+ignition::math::Vector3d CommonInfo::getLinearVelocity() const {
 	return (lin_vel_vector.at(this->id));
 }
 
 // ------------------------------------------------------------------- //
 
-std::vector<ignition::math::Box> CommonInfo::getBoundingBoxesVector() {
+std::vector<ignition::math::Box> CommonInfo::getBoundingBoxesVector() const {
 	return (bounding_box_vector);
 }
 
 // ------------------------------------------------------------------- //
 
-std::vector<BoundingCircle> CommonInfo::getBoundingCirclesVector() {
+std::vector<BoundingCircle> CommonInfo::getBoundingCirclesVector() const {
 	return (bounding_circle_vector);
 }
 
 // ------------------------------------------------------------------- //
 
-std::vector<ignition::math::Vector3d> CommonInfo::getLinearVelocitiesVector() {
+std::vector<ignition::math::Vector3d> CommonInfo::getLinearVelocitiesVector() const {
 	return (lin_vel_vector);
 }
 
 // ------------------------------------------------------------------- //
 
-std::map<std::string, unsigned int> CommonInfo::getNameIDMap() {
+std::map<std::string, unsigned int> CommonInfo::getNameIDMap() const {
 	return (name_id_map);
 }
 

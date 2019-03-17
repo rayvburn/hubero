@@ -23,7 +23,9 @@ namespace ActorUtils {
  * Some info could not be set (at least in Gazebo8) and actors can't have velocity,
  * acceleration, bounding boxes set as a common world properties thus properties
  * couldn't be read from the world pointer.
- *
+ */
+
+/*
  * Actor has no collision thus no bounding box could be defined - it will be done artificially.
  */
 
@@ -44,15 +46,15 @@ public:
 	void setBoundingCircle	(const BoundingCircle &_bc);
 	void setLinearVel		(const ignition::math::Vector3d &_vel);
 
-	unsigned int							getActorID();
-	ignition::math::Box						getBoundingBox();
-	BoundingCircle							getBoundingCircle();
-	ignition::math::Vector3d				getLinearVelocity();
+	unsigned int							getActorID() const;
+	ignition::math::Box						getBoundingBox() const;
+	BoundingCircle							getBoundingCircle() const;
+	ignition::math::Vector3d				getLinearVelocity() const;
 
-	std::vector<ignition::math::Box> 		getBoundingBoxesVector();
-	std::vector<BoundingCircle> 	 		getBoundingCirclesVector();
-	std::vector<ignition::math::Vector3d>	getLinearVelocitiesVector();
-	std::map<std::string, unsigned int>		getNameIDMap();
+	std::vector<ignition::math::Box> 		getBoundingBoxesVector() const;
+	std::vector<BoundingCircle> 	 		getBoundingCirclesVector() const;
+	std::vector<ignition::math::Vector3d>	getLinearVelocitiesVector() const;
+	std::map<std::string, unsigned int>		getNameIDMap() const;
 
 	virtual ~CommonInfo();
 

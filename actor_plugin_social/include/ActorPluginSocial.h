@@ -38,8 +38,8 @@
 // -------------------------
 
 #ifdef VISUALIZE_SFM
-	// #define VIS_SFM_GRID
-	#define VIS_SFM_POINT
+	#define VIS_SFM_GRID
+	//#define VIS_SFM_POINT
 #endif
 
 // -------------------------
@@ -165,6 +165,7 @@ namespace gazebo
     /// \brief TODO
     private: bool ReadSDF();
 
+
     private: ActorUtils::CommonInfo actor_common_info;
 
 #if	defined(INFLATE_BOUNDING_BOX)
@@ -182,21 +183,14 @@ namespace gazebo
 #endif
 
 
-
-
-
-    /// \brief Linear velocity of the actor
-    private: ignition::math::Vector3d linear_velocity; 	// ??????????????????
-
     /// \brief Pose of the actor
     private: ignition::math::Pose3d pose_actor;	// raw pose value has the offset
+    private: inline void SetActorPose(const ignition::math::Pose3d &_pose);
 
     /// \brief Helper function that considers the offset of the actor's yaw and a roll
     /// 	   offset depending on current stance
     private: ignition::math::Vector3d UpdateActorOrientation();
     private: ignition::math::Vector3d UpdateActorOrientation(const ignition::math::Pose3d &_pose);
-
-    private: inline void SetActorPose(const ignition::math::Pose3d &_pose);
 
     /// \brief Type of current stance of the actor
     private: ActorStance stance_actor;
@@ -207,21 +201,15 @@ namespace gazebo
 
     private: bool AlignToTargetDirection(ignition::math::Vector3d *_rpy);
 
-
     // handlers for each state
     private: void ActorStateAlignTargetHandler	(const common::UpdateInfo &_info);
     private: void ActorStateMoveAroundHandler	(const common::UpdateInfo &_info);
     private: void ActorStateFollowObjectHandler	(const common::UpdateInfo &_info);
     private: void ActorStateTeleoperationHandler(const common::UpdateInfo &_info);
 
-
-
+    // functions invoked at start and in the end of each OnUpdate event
     private: double PrepareForUpdate(const common::UpdateInfo &_info);
     private: void ApplyUpdate(const common::UpdateInfo &_info, const double &_dist_traveled);
-
-#ifdef VISUALIZE_SFM
-    private: void VisualizeForceField();
-#endif
 
     /// \brief Last actor's pose
     private: ignition::math::Pose3d last_pose_actor;
@@ -236,7 +224,11 @@ namespace gazebo
     /// \brief Social Force Model interface object
     private: SocialForceModel::SocialForceModel sfm;
 
+
+
 #ifdef VISUALIZE_SFM
+
+    private: void VisualizeForceField();
 
 #ifdef VIS_SFM_POINT
     private: static SocialForceModel::SFMVisPoint sfm_vis;
@@ -245,6 +237,7 @@ namespace gazebo
 #endif
 
 #endif
+
 
 
 #ifdef CREATE_ROS_NODE

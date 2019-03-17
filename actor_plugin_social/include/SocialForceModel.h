@@ -12,6 +12,9 @@
 // #define DEBUG_TF
 
 #include <SocialForceModelUtils.h>
+#include "BoundingCircle.h"
+#include "CommonInfo.h"
+
 // #include <gazebo/physics/World.hh>
 #include <gazebo-8/gazebo/physics/World.hh>
 #include <gazebo-8/gazebo/physics/Model.hh>
@@ -49,6 +52,13 @@
  * but without BB the situation is the same
  */
 #define BOUNDING_BOX_CALCULATION
+
+#ifdef BOUNDING_BOX_CALCULATION
+	#define BOUNDING_BOX_ONLY_FROM_OTHER_OBJECTS
+	// #define BOUNDING_BOX_ALL_OBJECTS
+#endif
+
+// #define BOUNDING_CIRCLE_CALCULATION	// bounding circle around actors only
 
 // ----------------------------------------------------------------------------------------------- //
 /* References:
@@ -109,6 +119,16 @@ public:
 			const ignition::math::Pose3d &_object_pose 	// debug only
 	);
 
+	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
+			const ignition::math::Pose3d &_actor_pose,
+			//ignition::math::Pose3d *_actor_closest_to_model_pose,
+			const ignition::math::Box &_actor_bb,
+			const ignition::math::Pose3d &_object_pose,
+			//ignition::math::Vector3d *_object_closest_to_actor_pos,
+			const ignition::math::Box &_object_bb,
+			const std::string &_object_name // debug only
+	);
+
 #endif
 
 
@@ -134,7 +154,7 @@ public:
 			// const SFMObjectType &_object_type,
 			const ignition::math::Pose3d &_object_pose,
 			const ignition::math::Vector3d &_object_vel,
-			const ignition::math::Vector3d &_closest_point,
+			const ignition::math::Vector3d &_object_closest_point,
 			//const ignition::math::Box &_object_bb = ignition::math::Box()); // gazebo::math::Box is deprecated (Gazebo 8.0 and above))
 			const bool &_is_actor
 	);
@@ -220,9 +240,10 @@ public:
 		const ignition::math::Pose3d _actor_pose,
 		const ignition::math::Vector3d _actor_velocity,
 		const ignition::math::Vector3d _actor_target, // );
-		const std::map<std::string, unsigned int>  _map_actor_name_id,
-		const std::vector<ignition::math::Vector3d> _actors_velocities,
-		const std::vector<ignition::math::Box> _actors_bounding_boxes);
+		const ActorUtils::CommonInfo &_actor_info);
+//		const std::map<std::string, unsigned int>  _map_actor_name_id,
+//		const std::vector<ignition::math::Vector3d> _actors_velocities,
+//		const std::vector<ignition::math::Box> _actors_bounding_boxes);
 
 	unsigned int GetActorID(const std::string _name, const std::map<std::string, unsigned int> _map);
 

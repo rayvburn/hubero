@@ -8,10 +8,12 @@
 #include <SocialForceModel.h>
 #include <cmath>		// atan2()
 #include <tgmath.h>		// fabs()
+#include <tuple>		// std::tuple
 
 // ----------------------------------------
 
-/* Uncommenting hangs debug messages and makes 2 actors move the same way */
+/* Uncommenting hangs debug messages and makes 2 actors move the same way
+ * This is probably some library inclusion problem? */
 // #define GRID_MAP_VISUALIZATION
 
 #ifdef GRID_MAP_VISUALIZATION
@@ -50,7 +52,6 @@ namespace SocialForceModel {
 #define DEBUG_BOUNDING_BOX
 
 #endif
-
 
 //#define DEBUG_SHORT_DISTANCE	// force printing info when distance to an obstalce is small
 
@@ -128,7 +129,8 @@ SocialForceModel::SocialForceModel():
 
 // ------------------------------------------------------------------- //
 
-void SocialForceModel::Init(const unsigned short int _mass_person, const float _desired_force_factor, const float _interaction_force_factor) {
+void SocialForceModel::Init(const unsigned short int _mass_person, const float _desired_force_factor,
+		const float _interaction_force_factor) {
 
 
 
@@ -199,9 +201,11 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	const ignition::math::Pose3d _actor_pose,
 	const ignition::math::Vector3d _actor_velocity,
 	const ignition::math::Vector3d _actor_target,
-	const std::map<std::string, unsigned int>  _map_actor_name_id,
-	const std::vector<ignition::math::Vector3d> _actors_velocities,
-	const std::vector<ignition::math::Box> _actors_bounding_boxes)
+	const ActorUtils::CommonInfo &_actor_info)
+//	const std::map<std::string, unsigned int>  _map_actor_name_id,
+//	const std::vector<ignition::math::Vector3d> _actors_velocities,
+//	const std::vector<ignition::math::Box> _actors_bounding_boxes)
+
 {
 
 #ifdef DEBUG_JUMPING_POSITION
@@ -272,9 +276,15 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 //			unsigned int actor_id = this->GetActorID(_model_ptr->GetName(), _map);
 //			model_vel = GetActorVelocity(model_ptr, _map_actor_name_id, _actors_velocities);
 
-			unsigned int actor_id = this->GetActorID(model_ptr->GetName(), _map_actor_name_id);
-			model_vel = GetActorVelocity(actor_id, _actors_velocities);
-			model_box = GetActorBoundingBox(actor_id, _actors_bounding_boxes);
+			// no CommonInfo class
+//			unsigned int actor_id = this->GetActorID(model_ptr->GetName(), _map_actor_name_id);
+//			model_vel = GetActorVelocity(actor_id, _actors_velocities);
+//			model_box = GetActorBoundingBox(actor_id, _actors_bounding_boxes);
+
+			// CommonInfo class
+			unsigned int actor_id = this->GetActorID(model_ptr->GetName(), _actor_info.getNameIDMap());
+			model_vel = this->GetActorVelocity(actor_id, _actor_info.getLinearVelocitiesVector() );
+			model_box = this->GetActorBoundingBox(actor_id, _actor_info.getBoundingBoxesVector());
 
 		} else {
 			model_vel = model_ptr->WorldLinearVel();
@@ -282,17 +292,16 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		}
 
 #ifdef BOUNDING_BOX_CALCULATION
+
+		// model_closest_point i.e. closest to the actor or the actor's bounding box
+
+	#ifdef BOUNDING_BOX_ONLY_FROM_OTHER_OBJECTS
+
 		ignition::math::Vector3d model_closest_point = this->GetModelPointClosestToActor( 	_actor_pose,
 																							//model_ptr->BoundingBox(),
 																							model_box,
 																							model_ptr->GetName(),
 																							model_ptr->WorldPose() );
-		if ( print_info ) {
-			std::cout << "actor_center: " << _actor_pose.Pos() << "\tobstacle_closest_pt: " << model_closest_point << "\tdist: " << (model_closest_point-_actor_pose.Pos()).Length() << std::endl;
-		}
-#else
-		ignition::math::Vector3d model_closest_point(0.0f, 0.0f, 0.0f);
-#endif
 
 		// what if velocity is actually non-zero but Gazebo sees 0?
 		f_alpha_beta = this->GetInteractionComponent(	_actor_pose,
@@ -301,6 +310,35 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 														model_vel,
 														model_closest_point,
 														is_an_actor);
+
+	#elif defined(BOUNDING_BOX_ALL_OBJECTS)
+
+		ignition::math::Pose3d actor_closest_to_model_pose;
+		ignition::math::Vector3d model_closest_point;
+		std::tie(actor_closest_to_model_pose, model_closest_point) = this->GetActorModelBBsClosestPoints(_actor_pose,
+																										 _actor_info.getBoundingBox(),
+																										 model_ptr->WorldPose(),
+																										 model_box,
+																										 model_ptr->GetName() );
+		// what if velocity is actually non-zero but Gazebo sees 0?
+		f_alpha_beta = this->GetInteractionComponent(	actor_closest_to_model_pose, // _actor_pose,
+														_actor_velocity,
+														model_ptr->WorldPose(),
+														model_vel,
+														model_closest_point,
+														is_an_actor);
+
+	#endif
+
+		if ( print_info ) {
+			std::cout << "actor_center: " << _actor_pose.Pos() << "\tobstacle_closest_pt: " << model_closest_point << "\tdist: " << (model_closest_point-_actor_pose.Pos()).Length() << std::endl;
+		}
+
+#else
+		ignition::math::Vector3d model_closest_point(0.0f, 0.0f, 0.0f);
+#endif
+
+
 		f_interaction_total += f_alpha_beta;
 		if ( print_info ) {
 			std::cout << " model's name: " << model_ptr->GetName() << "  pose: " << model_ptr->WorldPose() << "  lin vel: " << model_vel << "  force: " << f_alpha_beta << std::endl;
@@ -470,6 +508,81 @@ ignition::math::Vector3d SocialForceModel::GetModelPointClosestToActor(
 	#endif
 
 	return (vertices_vector[index]);
+
+}
+
+// ABOVE works right but it doesn't take ACTOR's BOUNDING BOX into consideration (only object's BB)
+
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::GetActorModelBBsClosestPoints(
+		const ignition::math::Pose3d &_actor_pose,
+		//ignition::math::Pose3d *_actor_closest_to_model_pose,
+		const ignition::math::Box &_actor_bb,
+		const ignition::math::Pose3d &_object_pose,
+		//ignition::math::Vector3d *_object_closest_to_actor_pos,
+		const ignition::math::Box &_object_bb,
+		const std::string &_object_name // debug only
+		)
+{
+
+	/* the below algorithm of searching the closest points of 2 bounding boxes
+	 * consists of creation of a line starting in the 1st bounding box's center,
+	 * ending in the 2nd bb's center; then the Intersects method of the Box class
+	 * will be used to find 2 points creating the shortest distance between boxes */
+
+	/* no error handling as there should always be an intersection found
+	 * when 2 center points from each bounding box are connected by a line */
+
+	/* the only exception is calculating the social force for visualization -
+	 * in such a case there is a very high possibility of being unable to
+	 * finding intersection */
+
+	// for some reason the line has to be 'inverted' for a second case (see below)
+
+	ignition::math::Line3d line;
+
+	// Intersect() method returns a tuple
+	bool does_intersect = false;
+	double dist_intersect = 0.0;
+	ignition::math::Vector3d point_intersect; 	// create an array for storing 2 points
+
+	// actor's bounding box point that is closest to object's bounding box
+	line.Set(_object_pose.Pos().X(), _object_pose.Pos().Y(), _actor_pose.Pos().X(), _actor_pose.Pos().Y(), BOUNDING_BOX_Z_FIXED );
+	std::tie(does_intersect, dist_intersect, point_intersect) = _actor_bb.Intersect(line);
+
+	// create new pose based on actor's pose, POSSIBLY update only position component
+	ignition::math::Pose3d actor_pose_shifted = _actor_pose;
+
+	if ( !does_intersect ) {
+		#ifdef DEBUG_BOUNDING_BOX
+		std::cout << "\n\n\nGetActorModelBBsClosestPoints() ERROR1"; // \n\n\n";
+		std::cout << "\nACTOR BB check - center: " << _actor_bb.Center() << "\tmin: " << _actor_bb.Min() << "\tmax: " << _actor_bb.Max() << std::endl;
+		std::cout << "ACTOR pos: " << _actor_pose.Pos().X() << " " << _actor_pose.Pos().Y() << "  BB closest: " << point_intersect.X() << " " << point_intersect.Y() << std::endl;
+		std::cout << "OBJECT pos: " << _object_pose.Pos();
+		std::cout << "\n\n\n";
+		#endif
+	} else {
+		// the intersection is found - update
+		actor_pose_shifted.Pos() = point_intersect;
+	}
+
+
+	// object's bounding box point that is closest to actor's bounding box
+	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _object_pose.Pos().X(), _object_pose.Pos().Y(), BOUNDING_BOX_Z_FIXED );
+	std::tie(does_intersect, dist_intersect, point_intersect) = _object_bb.Intersect(line);
+
+	if ( !does_intersect ) {
+		#ifdef DEBUG_BOUNDING_BOX
+		std::cout << "\n\n\nGetActorModelBBsClosestPoints() ERROR2"; // \n\n\n";
+		std::cout << "\t" << _object_name << "'s pos: " << _object_pose.Pos() << "\tBB closest: " << point_intersect.X() << " " << point_intersect.Y() << std::endl;
+		std::cout << "\n\n\n";
+		#endif
+		// the intersection was not found - set intersection point as a object's central point
+		point_intersect = _object_pose.Pos();
+	} else {
+		// that's ok, point_intersect will be returned from function
+	}
+
+	return ( std::make_tuple(actor_pose_shifted, point_intersect) );
 
 }
 
@@ -713,7 +826,7 @@ ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
 		// const SFMObjectType &_object_type,
 		const ignition::math::Pose3d &_object_pose,
 		const ignition::math::Vector3d &_object_vel,
-		const ignition::math::Vector3d &_closest_point,
+		const ignition::math::Vector3d &_object_closest_point,
 		//const ignition::math::Box &_object_bb)
 		const bool &_is_actor
 )
@@ -724,7 +837,7 @@ ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
 	ignition::math::Vector3d d_alpha_beta = _object_pose.Pos() - _actor_pose.Pos();
 #else
 	// bounding box
-	ignition::math::Vector3d d_alpha_beta = _closest_point - _actor_pose.Pos();
+	ignition::math::Vector3d d_alpha_beta = _object_closest_point - _actor_pose.Pos();
 #endif
 
 	// TODO: adjust Z according to stance

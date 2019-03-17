@@ -58,7 +58,11 @@ std::map<std::string, unsigned int> map_of_names;
 #define SILENT_
 
 #ifdef VISUALIZE_SFM
-SocialForceModel::SFMVisPoint ActorPlugin::sfm_vis;
+	#ifdef VIS_SFM_POINT
+	SocialForceModel::SFMVisPoint ActorPlugin::sfm_vis;
+	#elif defined(VIS_SFM_GRID)
+	SocialForceModel::SFMVisGrid ActorPlugin::sfm_vis;
+	#endif
 #endif
 
 /////////////////////////////////////////////////
@@ -135,6 +139,8 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	std::cout << " -------- SET last_pos_actor! -------- " << last_pose_actor.Pos() << std::endl;
 
 	actor_common_info.addActor(this->actor->GetName());
+	actor_common_info.setBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
+
 	std::cout << " -------- ACTOR ID -------- " << actor_common_info.getActorID() << std::endl;
 	std::cout << " -------- MODEL TYPE -------- " << this->model->GetType() << std::endl;
 
@@ -201,57 +207,32 @@ void ActorPlugin::ChooseNewTarget()
 }
 
 /////////////////////////////////////////////////
-void ActorPlugin::HandleObstacles(ignition::math::Vector3d &_pos)
-{
-  for (unsigned int i = 0; i < this->world->ModelCount(); ++i)
-  {
-    physics::ModelPtr model = this->world->ModelByIndex(i);
-    if (std::find(this->ignoreModels.begin(), this->ignoreModels.end(),
-          model->GetName()) == this->ignoreModels.end())
-    {
-      ignition::math::Vector3d offset = model->WorldPose().Pos() -
-        this->actor->WorldPose().Pos();
-      double modelDist = offset.Length();
-      if (modelDist < 4.0)
-      {
-        double invModelDist = this->obstacleWeight / modelDist;
-        offset.Normalize();
-        offset *= invModelDist;
-        _pos -= offset;
-      }
-    }
-  }
-}
+
 
 /////////////////////////////////////////////////
 
 ignition::math::Box ActorPlugin::GenerateBoundingBox(const ignition::math::Pose3d &_actor_pose) {
 
-	/*
-	 *
-	 */
-
 	// lengths expressed in actor's coordinate system - x-axis is pointing forward (from face)
 	static const double ACTOR_X_BB_HALF_LENGTH = 0.45;
 	static const double ACTOR_Y_BB_HALF_LENGTH = 0.45;
-	static const double ACTOR_Z_BB_HALF_LENGTH = 1.0;	// TODO: should it change when stance changes?
+	static const double ACTOR_Z_BB_HALF_LENGTH = 1.0;
 
+	// TODO: add roll rotation handling (as actor lies down X and Z changes)
 
-	ignition::math::Vector3d bb_min_vector, bb_max_vector;
+	// below calculations might not be perfect - not checked throughly
+	static const double XY_SUM_SQUARES = (2*ACTOR_X_BB_HALF_LENGTH)*(2*ACTOR_X_BB_HALF_LENGTH) + (2*ACTOR_Y_BB_HALF_LENGTH)*(2*ACTOR_Y_BB_HALF_LENGTH);
+	// single side max length extension, max total extra extension (when actor rotated 45 deg) will be MAX_LENGTH_EXTENSION * 2
+	static const double MAX_LENGTH_EXTENSION = 0.5 * std::sqrt(XY_SUM_SQUARES);
 
-//	float x_bb = static_cast<float>( _actor_pose.Pos().X() );
-//	_actor_pose.Rot().Roll();
-//	_actor_pose.Rot().Pitch();
-//	_actor_pose.Rot().Yaw();
-
-
-	// temp - static (not rotation-dependent)
-	ignition::math::Box bb(	_actor_pose.Pos().X() - ACTOR_X_BB_HALF_LENGTH,
-							_actor_pose.Pos().Y() - ACTOR_Y_BB_HALF_LENGTH,
+	ignition::math::Box bb(	_actor_pose.Pos().X() - ACTOR_X_BB_HALF_LENGTH - sin(_actor_pose.Rot().Yaw()*2) * (MAX_LENGTH_EXTENSION-ACTOR_X_BB_HALF_LENGTH),
+							_actor_pose.Pos().Y() - ACTOR_Y_BB_HALF_LENGTH - sin(_actor_pose.Rot().Yaw()*2) * (MAX_LENGTH_EXTENSION-ACTOR_Y_BB_HALF_LENGTH),
 							_actor_pose.Pos().Z() - ACTOR_Z_BB_HALF_LENGTH,
-							_actor_pose.Pos().X() + ACTOR_X_BB_HALF_LENGTH,
-							_actor_pose.Pos().Y() + ACTOR_Y_BB_HALF_LENGTH,
+							_actor_pose.Pos().X() + ACTOR_X_BB_HALF_LENGTH + sin(_actor_pose.Rot().Yaw()*2) * (MAX_LENGTH_EXTENSION-ACTOR_X_BB_HALF_LENGTH),
+							_actor_pose.Pos().Y() + ACTOR_Y_BB_HALF_LENGTH + sin(_actor_pose.Rot().Yaw()*2) * (MAX_LENGTH_EXTENSION-ACTOR_Y_BB_HALF_LENGTH),
 							_actor_pose.Pos().Z() + ACTOR_Z_BB_HALF_LENGTH );
+
+//	std::cout << "BB min: " << bb.Min() << "\tmax: " << bb.Max() << "\tcenter: " << bb.Center() << "\tRAW x: " << _actor_pose.Pos().X() - ACTOR_X_BB_HALF_LENGTH << "\tRAW y: " << _actor_pose.Pos().Y() + ACTOR_Y_BB_HALF_LENGTH << std::endl;
 
 	return (bb);
 
@@ -299,6 +280,13 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 			counter = 0;
 		}
 
+	}
+#elif defined(VISUALIZE_SFM) && defined(VIS_SFM_GRID)
+
+	static common::Time vis_time;
+	if ( (_info.simTime - vis_time).Double() > 0.05 ) {
+		VisualizeForceField();
+		vis_time = _info.simTime;
 	}
 
 #endif
@@ -362,9 +350,6 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 #ifndef SILENT_
 		if ( this->actor->GetName() == "actor1" ) {
 
-			#if defined(VISUALIZE_SFM) && defined(VIS_SFM_GRID)
-			VisualizeForceField();
-			#endif
 			print_info = true;
 			Print_Set(true);
 			print_time = _info.simTime;
@@ -745,6 +730,32 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
 }
 
+#ifndef REFACTOR_COMMON
+
+void ActorPlugin::HandleObstacles(ignition::math::Vector3d &_pos)
+{
+  for (unsigned int i = 0; i < this->world->ModelCount(); ++i)
+  {
+    physics::ModelPtr model = this->world->ModelByIndex(i);
+    if (std::find(this->ignoreModels.begin(), this->ignoreModels.end(),
+          model->GetName()) == this->ignoreModels.end())
+    {
+      ignition::math::Vector3d offset = model->WorldPose().Pos() -
+        this->actor->WorldPose().Pos();
+      double modelDist = offset.Length();
+      if (modelDist < 4.0)
+      {
+        double invModelDist = this->obstacleWeight / modelDist;
+        offset.Normalize();
+        offset *= invModelDist;
+        _pos -= offset;
+      }
+    }
+  }
+}
+
+#endif
+
 // ===============================================================================================
 
 bool ActorPlugin::CalculateVelocity(const ignition::math::Vector3d &_pos, const double &_dt) {
@@ -1001,9 +1012,10 @@ void ActorPlugin::VisualizeForceField() {
 							 this->pose_actor,
 							 this->velocity_actual,
 							 this->target,
-							 actor_common_info.getNameIDMap(),
-							 actor_common_info.getLinearVelocitiesVector(),
-							 actor_common_info.getBoundingBoxesVector());
+							 this->actor_common_info);
+//							 actor_common_info.getNameIDMap(),
+//							 actor_common_info.getLinearVelocitiesVector(),
+//							 actor_common_info.getBoundingBoxesVector());
 
 	sfm_vis.setForcePoint(	sf,
 							ignition::math::Vector3d(this->pose_actor.Pos().X(), this->pose_actor.Pos().Y(), 0.0f),
@@ -1017,7 +1029,7 @@ void ActorPlugin::VisualizeForceField() {
 #elif defined(VIS_SFM_GRID)
 
 	//sfm_vis.createGrid(-3.0, 3.5, -10.0, 2.0, 1.0);
-	sfm_vis.createGrid(-5.0, 5.5, -12.0, 4.0, 0.5);
+	sfm_vis.createGrid(-5.0, 5.5, -12.0, 4.0, 0.75);
 
 	ignition::math::Pose3d pose;
 	ignition::math::Vector3d sf;
@@ -1033,9 +1045,7 @@ void ActorPlugin::VisualizeForceField() {
 								 pose,
 								 this->velocity_actual,
 								 this->target,
-								 map_of_names,
-								 lin_vels_vector,
-								 bounding_boxes_vector);
+								 this->actor_common_info);
 		sfm_vis.setForce(sf);
 
 //		std::cout << "sfm_vis:" << iter << "\tsf: " << sf << std::endl;
@@ -1152,9 +1162,11 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 													 this->pose_actor,
 													 this->velocity_actual,
 													 this->target,
-													 actor_common_info.getNameIDMap(),
-													 actor_common_info.getLinearVelocitiesVector(),
-													 actor_common_info.getBoundingBoxesVector());
+													 this->actor_common_info);
+//													 actor_common_info.getNameIDMap(),
+//													 actor_common_info.getLinearVelocitiesVector(),
+//													 actor_common_info.getBoundingBoxesVector());
+
 	if ( print_info ) {
 		std::cout << "\t TOTAL force: " << sf << std::endl;
 		std::cout << "\t lin_vels_vector: ";
