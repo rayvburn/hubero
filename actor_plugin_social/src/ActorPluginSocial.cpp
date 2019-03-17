@@ -141,7 +141,18 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	std::cout << " -------- SET last_pos_actor! -------- " << last_pose_actor.Pos() << std::endl;
 
 	actor_common_info.AddActor(this->actor->GetName());
+
+
+#if	defined(INFLATE_BOUNDING_BOX)
 	actor_common_info.SetBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
+#elif defined(INFLATE_BOUNDING_CIRCLE)
+	bounding_circle.SetCenter(this->pose_actor.Pos());
+	bounding_circle.SetRadius(0.5f);
+	actor_common_info.SetBoundingCircle(bounding_circle);
+#elif defined(INFLATE_BOUNDING_ELLIPSE)
+
+#endif
+
 
 	std::cout << " -------- ACTOR ID -------- " << actor_common_info.GetActorID() << std::endl;
 	std::cout << " -------- MODEL TYPE -------- " << this->model->GetType() << std::endl;
@@ -208,10 +219,11 @@ void ActorPlugin::ChooseNewTarget()
   this->target = newTarget;
 }
 
+
 /////////////////////////////////////////////////
 
 
-/////////////////////////////////////////////////
+#if	defined(INFLATE_BOUNDING_BOX)
 
 ignition::math::Box ActorPlugin::GenerateBoundingBox(const ignition::math::Pose3d &_actor_pose) {
 
@@ -239,7 +251,7 @@ ignition::math::Box ActorPlugin::GenerateBoundingBox(const ignition::math::Pose3
 	return (bb);
 
 }
-
+#endif
 
 
 /////////////////////////////////////////////////

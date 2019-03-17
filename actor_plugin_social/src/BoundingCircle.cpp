@@ -33,7 +33,7 @@ void BoundingCircle::SetCenter(const ignition::math::Vector3d &_center_point) {
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d BoundingCircle::GetIntersection(ignition::math::Vector3d &_pt_dest) {
+ignition::math::Vector3d BoundingCircle::GetIntersection(ignition::math::Vector3d &_pt_dest) const {
 
 	/*
 	 * circle equation in parametric form:
