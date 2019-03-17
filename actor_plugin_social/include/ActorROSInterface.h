@@ -41,6 +41,7 @@ public:
 	void Init(const std::string &_actor_name);
 
 	void PublishActorTf(const ignition::math::Pose3d &_actor_pose);
+	void PublishMarker(const visualization_msgs::Marker &_marker);
 	void PublishMarkerArray(const visualization_msgs::MarkerArray &_marker_array);
 
 	void LoadParameters();
@@ -51,6 +52,7 @@ public:
 private:
 
 	std::string actor_name;
+	ros::Publisher pub_marker;
 	ros::Publisher pub_marker_array;
 	tf2_ros::TransformBroadcaster tf_broadcaster;
 

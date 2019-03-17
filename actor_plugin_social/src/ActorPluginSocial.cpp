@@ -280,6 +280,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	PublishActorTf();
 #elif defined(CREATE_ROS_INTERFACE)
 	ros_interface.PublishActorTf(this->pose_actor);
+	ros_interface.PublishMarker(bounding_circle.GetMarkerConversion());
 #endif
 
 #if defined(VISUALIZE_SFM) && defined(VIS_SFM_POINT)
@@ -1023,6 +1024,7 @@ void ActorPlugin::VisualizeForceField() {
 
 	ignition::math::Vector3d sf;
 
+	std::cout << "\n\n\n\nGET SOCIAL FORCE FOR VISUALIZATION " << this->actor->GetName();
 	sf = sfm.GetSocialForce( this->world,
 							 this->actor->GetName(),
 							 this->pose_actor,
@@ -1032,8 +1034,9 @@ void ActorPlugin::VisualizeForceField() {
 //							 actor_common_info.getNameIDMap(),
 //							 actor_common_info.getLinearVelocitiesVector(),
 //							 actor_common_info.getBoundingBoxesVector());
+	std::cout << "\nGET SOCIAL FORCE FOR VISUALIZATION\n\t\tEND\n\n\n\n";
 
-	sfm_vis.setForcePoint(	sf,
+	sfm_vis.SetForcePoint(	sf,
 							ignition::math::Vector3d(this->pose_actor.Pos().X(), this->pose_actor.Pos().Y(), 0.0f),
 							actor_common_info.GetActorID());
 
@@ -1058,6 +1061,21 @@ void ActorPlugin::VisualizeForceField() {
 	while ( !sfm_vis.IsWholeGridChecked() ) {
 
 		pose = ignition::math::Pose3d(sfm_vis.GetNextGridElement(), this->pose_actor.Rot());
+
+
+		/*
+		 * Remember to artificially place the actor (along with his bounding) in current grid cell!
+		 */
+#if	defined(INFLATE_BOUNDING_BOX)
+		actor_common_info.SetBoundingBox( this->GenerateBoundingBox(pose) );
+#elif defined(INFLATE_BOUNDING_CIRCLE)
+		this->bounding_circle.SetCenter(pose.Pos());
+		this->actor_common_info.SetBoundingCircle(this->bounding_circle);
+#elif defined(INFLATE_BOUNDING_ELLIPSE)
+
+#endif
+
+
 		sf = sfm.GetSocialForce( this->world,
 								 this->actor->GetName(),
 								 pose,
@@ -1108,9 +1126,16 @@ double ActorPlugin::PrepareForUpdate(const common::UpdateInfo &_info) {
 
 	this->actor->SetLinearVel(this->velocity_actual);
 
-#ifdef INFLATE_BOUNDING_BOX
-	// update the bounding box of the actor
+	/* update the bounding box/circle/ellipse of the actor
+	 * (aim is to create a kind of inflation layer) */
+
+#if	defined(INFLATE_BOUNDING_BOX)
 	actor_common_info.SetBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
+#elif defined(INFLATE_BOUNDING_CIRCLE)
+	bounding_circle.SetCenter(this->pose_actor.Pos());
+	actor_common_info.SetBoundingCircle(bounding_circle);
+#elif defined(INFLATE_BOUNDING_ELLIPSE)
+
 #endif
 
 	// dt is helpful for further calculations

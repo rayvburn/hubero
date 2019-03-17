@@ -27,7 +27,7 @@
 
 namespace SocialForceModel {
 
-#define SILENT_
+// #define SILENT_
 
 // deprecated
 //#define SFM_RIGHT_SIDE 0
@@ -50,6 +50,7 @@ namespace SocialForceModel {
 #define DEBUG_NEW_POSE
 #define DEBUG_ACTOR_FACING_TARGET
 #define DEBUG_BOUNDING_BOX
+// #define DEBUG_BOUNDING_CIRCLE // each iteration
 
 #endif
 
@@ -195,6 +196,23 @@ ignition::math::Box SocialForceModel::GetActorBoundingBox(
 
 // ------------------------------------------------------------------- //
 
+#ifdef BOUNDING_CIRCLE_CALCULATION
+ActorUtils::BoundingCircle SocialForceModel::GetActorBoundingCircle(
+		const unsigned int _actor_id,
+		const std::vector<ActorUtils::BoundingCircle> _actors_bounding_circles
+) const
+{
+
+	if ( _actor_id == ACTOR_ID_NOT_FOUND ) {
+		return (ActorUtils::BoundingCircle());
+	}
+	return _actors_bounding_circles[_actor_id];
+
+}
+#endif
+
+// ------------------------------------------------------------------- //
+
 ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	const gazebo::physics::WorldPtr _world_ptr,
 	const std::string _actor_name,
@@ -209,7 +227,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 {
 
 #ifdef DEBUG_JUMPING_POSITION
-	curr_actor = this->GetActorID(_actor_name, _map_actor_name_id);
+	curr_actor = this->GetActorID(_actor_name, _actor_info.GetNameIDMap());
 #endif
 
 //	unsigned int actor_id = this->GetActorID(_actor_name, _map_actor_name_id);
@@ -246,6 +264,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	 * it was impossible to set actor's linear velocity by setting it by the model's class method */
 	ignition::math::Vector3d model_vel;
 	ignition::math::Box model_box;
+	ActorUtils::BoundingCircle model_circle;
 
 	/* below flag is used as a workaround for the problem connected with being unable to set actor's
 	 * velocity and acceleration in the gazebo::physics::WorldPtr */
@@ -272,7 +291,9 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		}
 
 		//if ( (is_an_actor = this->IsActor(model_ptr->GetName())) ) {
+
 		if ( (is_an_actor = model_ptr->GetType() == ACTOR_MODEL_TYPE) ) {
+
 //			unsigned int actor_id = this->GetActorID(_model_ptr->GetName(), _map);
 //			model_vel = GetActorVelocity(model_ptr, _map_actor_name_id, _actors_velocities);
 
@@ -283,12 +304,18 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 
 			// CommonInfo class
 			unsigned int actor_id = this->GetActorID(model_ptr->GetName(), _actor_info.GetNameIDMap());
-			model_vel = this->GetActorVelocity(actor_id, _actor_info.GetLinearVelocitiesVector() );
-			model_box = this->GetActorBoundingBox(actor_id, _actor_info.GetBoundingBoxesVector());
+
+			model_vel    = this->GetActorVelocity      (actor_id, _actor_info.GetLinearVelocitiesVector());
+			#ifdef BOUNDING_CIRCLE_CALCULATION
+			model_circle = this->GetActorBoundingCircle(actor_id, _actor_info.GetBoundingCirclesVector());
+			#endif
+			model_box    = this->GetActorBoundingBox   (actor_id, _actor_info.GetBoundingBoxesVector());
 
 		} else {
+
 			model_vel = model_ptr->WorldLinearVel();
 			model_box = model_ptr->BoundingBox();
+
 		}
 
 #ifdef BOUNDING_BOX_CALCULATION
@@ -334,8 +361,51 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			std::cout << "actor_center: " << _actor_pose.Pos() << "\tobstacle_closest_pt: " << model_closest_point << "\tdist: " << (model_closest_point-_actor_pose.Pos()).Length() << std::endl;
 		}
 
+#elif defined (BOUNDING_CIRCLE_CALCULATION)
+
+
+		ignition::math::Pose3d actor_closest_to_model_pose;
+		ignition::math::Vector3d model_closest_point;
+
+		if ( is_an_actor ) {
+
+			std::tie(actor_closest_to_model_pose, model_closest_point) = this->GetActorModelBBsClosestPoints(_actor_pose,
+																											 _actor_info.GetBoundingCircle(),
+																											 model_ptr->WorldPose(),
+																											 model_circle,
+																											 model_ptr->GetName() );
+
+		} else {
+
+			std::tie(actor_closest_to_model_pose, model_closest_point) = this->GetActorModelBBsClosestPoints(_actor_pose,
+																											 _actor_info.GetBoundingCircle(),
+																											 model_ptr->WorldPose(),
+																											 model_box,
+																											 model_ptr->GetName() );
+
+		}
+
+		ignition::math::Pose3d model_pose_shifted = model_ptr->WorldPose();
+		model_pose_shifted.Pos() = model_closest_point;
+		#ifdef DEBUG_BOUNDING_CIRCLE
+		std::cout << "AFTER: actor pos: " << actor_closest_to_model_pose << "\t" << model_ptr->GetName() << "'s pos: " << model_closest_point << std::endl;
+		#endif
+		// what if velocity is actually non-zero but Gazebo sees 0?
+		f_alpha_beta = this->GetInteractionComponent(	actor_closest_to_model_pose,
+														_actor_velocity,
+														model_pose_shifted, // model_ptr->WorldPose(),
+														model_vel,
+														model_closest_point,
+														is_an_actor);
+
 #else
 		ignition::math::Vector3d model_closest_point(0.0f, 0.0f, 0.0f);
+		f_alpha_beta = this->GetInteractionComponent(	_actor_pose,
+														_actor_velocity,
+														model_ptr->WorldPose(),
+														model_vel,
+														model_closest_point, // not used then
+														is_an_actor);
 #endif
 
 
@@ -585,9 +655,88 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	return ( std::make_tuple(actor_pose_shifted, point_intersect) );
 
 }
+#endif
 
 // ------------------------------------------------------------------- //
+// BOUNDING CIRCLE
 
+#ifdef BOUNDING_CIRCLE_CALCULATION
+
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::GetActorModelBBsClosestPoints(
+		const ignition::math::Pose3d &_actor_pose,
+		const ActorUtils::BoundingCircle &_actor_bc,
+		const ignition::math::Pose3d &_object_pose,
+		const ignition::math::Box &_object_bb,
+		const std::string &_object_name // debug only
+		) const
+{
+
+	ignition::math::Line3d line;
+
+	// Intersect() method returns a tuple
+	bool does_intersect = false;
+	double dist_intersect = 0.0;
+	ignition::math::Vector3d point_intersect; 	// create an array for storing 2 points
+
+	// object's bounding box point that is closest to actor's bounding box
+	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _object_pose.Pos().X(), _object_pose.Pos().Y(), BOUNDING_BOX_Z_FIXED );
+	std::tie(does_intersect, dist_intersect, point_intersect) = _object_bb.Intersect(line);
+
+	if ( !does_intersect ) {
+		#ifdef DEBUG_BOUNDING_BOX
+		std::cout << "\n\n\nGetActorModelBBsClosestPoints() ERROR2"; // \n\n\n";
+		std::cout << "\t" << _object_name << "'s pos: " << _object_pose.Pos() << "\tBB closest: " << point_intersect.X() << " " << point_intersect.Y() << std::endl;
+		std::cout << "\n\n\n";
+		#endif
+		// the intersection was not found - set intersection point as a object's central point
+		point_intersect = _object_pose.Pos();
+	} else {
+		// that's ok, point_intersect will be returned from function
+	}
+
+	// intersection of the actor's circle
+	ignition::math::Pose3d actor_pose_shifted = _actor_pose;
+	actor_pose_shifted.Pos() = _actor_bc.GetIntersection(point_intersect);
+
+	#ifdef DEBUG_BOUNDING_CIRCLE
+	std::cout << "\n\nBOUND - actor & object | actor pos: " << _actor_pose.Pos() << "\tintersection: " << actor_pose_shifted.Pos() << std::endl;
+	std::cout << "BOUND - actor & object |" << _object_name << "'s pos: " << _object_pose.Pos() << "\tintersection: " << point_intersect << std::endl;
+	#endif
+
+	return ( std::make_tuple(actor_pose_shifted, point_intersect) );
+
+}
+
+// --------------------------
+
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::GetActorModelBBsClosestPoints(
+		const ignition::math::Pose3d &_actor_pose,
+		const ActorUtils::BoundingCircle &_actor_bc,
+		const ignition::math::Pose3d &_object_pose,
+		const ActorUtils::BoundingCircle &_object_bc,
+		const std::string &_object_name // debug only
+		) const
+{
+
+	// intersection of the 1st actor's circle (currently processed)
+	ignition::math::Pose3d actor_pose_shifted = _actor_pose;
+	actor_pose_shifted.Pos() = _actor_bc.GetIntersection(_object_pose.Pos());
+
+	// intersection of the 2nd actor's circle (another one)
+	ignition::math::Vector3d object_pos_shifted = _object_bc.GetIntersection(_actor_pose.Pos());
+
+	#ifdef DEBUG_BOUNDING_CIRCLE
+	std::cout << "\n\nBOUND - 2 actors | 1 pos: " << _actor_pose.Pos() << "\tintersection: " << actor_pose_shifted.Pos() << std::endl;
+	std::cout << "BOUND - 2 actors |" << _object_name << "'s pos: " << _object_pose.Pos() << "\tintersection: " << object_pos_shifted << std::endl;
+	#endif
+
+	return ( std::make_tuple(actor_pose_shifted, object_pos_shifted) );
+
+}
+#endif
+// ------------------------------------------------------------------- //
+
+#ifdef BOUNDING_BOX_CALCULATION
 std::vector<ignition::math::Vector3d> SocialForceModel::CreateVerticesVector(const ignition::math::Box &_bb) {
 
 	// 4 vertices only (on-plane)
@@ -832,10 +981,13 @@ ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
 )
 {
 
-#ifndef BOUNDING_BOX_CALCULATION
-	// no bounding box
+#if !defined(BOUNDING_BOX_CALCULATION) && !defined(BOUNDING_CIRCLE_CALCULATION)
+	// no bounding box or circle
 	ignition::math::Vector3d d_alpha_beta = _object_pose.Pos() - _actor_pose.Pos();
-#else
+#elif defined(BOUNDING_CIRCLE_CALCULATION)
+	// bounding circle
+	ignition::math::Vector3d d_alpha_beta = _object_closest_point - _actor_pose.Pos();
+#elif defined(BOUNDING_BOX_CALCULATION)
 	// bounding box
 	ignition::math::Vector3d d_alpha_beta = _object_closest_point - _actor_pose.Pos();
 #endif

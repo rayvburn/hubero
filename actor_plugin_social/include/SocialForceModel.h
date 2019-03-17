@@ -51,14 +51,15 @@
  * At first it seemed that it's the bounding box calculation that makes algorithm unstable,
  * but without BB the situation is the same
  */
-#define BOUNDING_BOX_CALCULATION
+
+// #define BOUNDING_BOX_CALCULATION
 
 #ifdef BOUNDING_BOX_CALCULATION
 	#define BOUNDING_BOX_ONLY_FROM_OTHER_OBJECTS
 	// #define BOUNDING_BOX_ALL_OBJECTS
 #endif
 
-// #define BOUNDING_CIRCLE_CALCULATION	// bounding circle around actors only
+#define BOUNDING_CIRCLE_CALCULATION	// bounding circle around actors only
 
 // ----------------------------------------------------------------------------------------------- //
 /* References:
@@ -128,6 +129,31 @@ public:
 			const ignition::math::Box &_object_bb,
 			const std::string &_object_name // debug only
 	);
+
+#endif
+
+#ifdef BOUNDING_CIRCLE_CALCULATION
+
+	ActorUtils::BoundingCircle GetActorBoundingCircle(
+			const unsigned int _actor_id,
+			const std::vector<ActorUtils::BoundingCircle> _actors_bounding_circles
+	) const;
+
+	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
+			const ignition::math::Pose3d &_actor_pose,
+			const ActorUtils::BoundingCircle &_actor_bc,
+			const ignition::math::Pose3d &_object_pose,
+			const ignition::math::Box &_object_bb,
+			const std::string &_object_name // debug only
+			) const;
+
+	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
+			const ignition::math::Pose3d &_actor_pose,
+			const ActorUtils::BoundingCircle &_actor_bc,
+			const ignition::math::Pose3d &_object_pose,
+			const ActorUtils::BoundingCircle &_object_bc,
+			const std::string &_object_name // debug only
+			) const;
 
 #endif
 

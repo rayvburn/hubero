@@ -33,7 +33,7 @@ void BoundingCircle::SetCenter(const ignition::math::Vector3d &_center_point) {
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d BoundingCircle::GetIntersection(ignition::math::Vector3d &_pt_dest) const {
+ignition::math::Vector3d BoundingCircle::GetIntersection(const ignition::math::Vector3d &_pt_dest) const {
 
 	/*
 	 * circle equation in parametric form:
@@ -61,6 +61,43 @@ ignition::math::Vector3d BoundingCircle::GetIntersection(ignition::math::Vector3
 
 	return (pt_intersection);
 
+}
+
+// ------------------------------------------------------------------- //
+
+visualization_msgs::Marker BoundingCircle::GetMarkerConversion() const {
+
+	visualization_msgs::Marker marker;
+
+	marker.header.frame_id = "map";
+	//marker.header.stamp = 0.0;
+	marker.ns = "test";
+	marker.id = 0;
+	marker.type = visualization_msgs::Marker::CYLINDER;
+	marker.action = visualization_msgs::Marker::MODIFY;
+
+	// assign marker coordinates according to current point that is pointed by grid index
+	marker.pose.position.x = this->center.X();
+	marker.pose.position.y = this->center.Y();
+	marker.pose.position.z = 1.0;
+
+	// cylinder - yaw orientation doesn't matter
+	marker.pose.orientation.x = 0.0;
+	marker.pose.orientation.y = 0.0;
+	marker.pose.orientation.z = 0.0;
+	marker.pose.orientation.w = 1.0;
+
+	// scale
+	marker.scale.x = this->radius * 2;
+	marker.scale.y = this->radius * 2;
+	marker.scale.z = 2.0;
+
+	marker.color.a = 0.7; // alpha channel
+	marker.color.r = 0.0;
+	marker.color.g = 0.0;
+	marker.color.b = 1.0;
+
+	return (marker);
 }
 
 // ------------------------------------------------------------------- //

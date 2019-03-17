@@ -11,6 +11,7 @@
 #include <ignition/math/Vector3.hh>
 #include <string>
 #include <map>
+#include <visualization_msgs/Marker.h>
 
 namespace ActorUtils {
 
@@ -23,7 +24,8 @@ public:
 	void SetRadius(const double &_radius);
 	void SetCenter(const ignition::math::Vector3d &_center_point);
 
-	ignition::math::Vector3d GetIntersection(ignition::math::Vector3d &_pt_dest) const;
+	ignition::math::Vector3d GetIntersection(const ignition::math::Vector3d &_pt_dest) const;
+	visualization_msgs::Marker GetMarkerConversion() const;
 
 	virtual ~BoundingCircle();
 

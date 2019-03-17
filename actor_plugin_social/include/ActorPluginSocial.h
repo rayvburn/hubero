@@ -39,8 +39,8 @@
 // -------------------------
 
 #ifdef VISUALIZE_SFM
-	#define VIS_SFM_GRID
-	//#define VIS_SFM_POINT
+	//#define VIS_SFM_GRID
+	#define VIS_SFM_POINT
 #endif
 
 // -------------------------
@@ -70,7 +70,7 @@
 
 // -------------------------
 
-// #define INFLATE_BOUNDING_BOX
+//#define INFLATE_BOUNDING_BOX
 #define INFLATE_BOUNDING_CIRCLE
 // #define INFLATE_BOUNDING_ELLIPSE
 
