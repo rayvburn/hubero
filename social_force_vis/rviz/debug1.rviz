@@ -52,7 +52,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /sfm_mrkr
+      Marker Topic: /actor_plugin_ros_interface/sfm_mrkr
       Name: MarkerArray
       Namespaces:
         social_force: true

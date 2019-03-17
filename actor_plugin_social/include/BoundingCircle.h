@@ -17,9 +17,9 @@ class BoundingCircle {
 public:
 
 	BoundingCircle();
-	void setRadius(const double &_radius);
-	void setCenter(const ignition::math::Vector3d &_center_point);
-	ignition::math::Vector3d getIntersection(ignition::math::Vector3d &_pt_dest);
+	void SetRadius(const double &_radius);
+	void SetCenter(const ignition::math::Vector3d &_center_point);
+	ignition::math::Vector3d GetIntersection(ignition::math::Vector3d &_pt_dest);
 
 	virtual ~BoundingCircle();
 

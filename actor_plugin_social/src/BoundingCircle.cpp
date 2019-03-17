@@ -21,19 +21,19 @@ BoundingCircle::BoundingCircle():
 
 // ------------------------------------------------------------------- //
 
-void BoundingCircle::setRadius(const double &_radius) {
+void BoundingCircle::SetRadius(const double &_radius) {
 	this->radius = _radius;
 }
 
 // ------------------------------------------------------------------- //
 
-void BoundingCircle::setCenter(const ignition::math::Vector3d &_center_point) {
+void BoundingCircle::SetCenter(const ignition::math::Vector3d &_center_point) {
 	this->center = _center_point;
 }
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d BoundingCircle::getIntersection(ignition::math::Vector3d &_pt_dest) {
+ignition::math::Vector3d BoundingCircle::GetIntersection(ignition::math::Vector3d &_pt_dest) {
 
 	/*
 	 * circle equation in parametric form:

@@ -21,20 +21,20 @@ public:
 
 	SFMVisGrid();
 	SFMVisGrid(const std::string &_namespace_id, const std::string &_parent_frame);
-	void init(const std::string &_namespace_id, const std::string &_parent_frame);
+	void Init(const std::string &_namespace_id, const std::string &_parent_frame);
 
-	void createGrid(const float &_x_start, const float &_x_end, const float &_y_start, const float &_y_end, const float &_resolution);
-	bool isWholeGridChecked();
-	ignition::math::Vector3d getNextGridElement();
-	void resetGridIndex();
-	void setForce(const ignition::math::Vector3d &_force);
+	void CreateGrid(const float &_x_start, const float &_x_end, const float &_y_start, const float &_y_end, const float &_resolution);
+	bool IsWholeGridChecked();
+	ignition::math::Vector3d GetNextGridElement();
+	void ResetGridIndex();
+	void SetForce(const ignition::math::Vector3d &_force);
 
-	visualization_msgs::MarkerArray getMarkerArray();
+	visualization_msgs::MarkerArray GetMarkerArray();
 	virtual ~SFMVisGrid();
 
 private:
 
-	void clearInternalMemory();
+	void ClearInternalMemory();
 
 	std::vector<ignition::math::Vector3d> grid;
 	size_t grid_index;

@@ -282,9 +282,9 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 //			model_box = GetActorBoundingBox(actor_id, _actors_bounding_boxes);
 
 			// CommonInfo class
-			unsigned int actor_id = this->GetActorID(model_ptr->GetName(), _actor_info.getNameIDMap());
-			model_vel = this->GetActorVelocity(actor_id, _actor_info.getLinearVelocitiesVector() );
-			model_box = this->GetActorBoundingBox(actor_id, _actor_info.getBoundingBoxesVector());
+			unsigned int actor_id = this->GetActorID(model_ptr->GetName(), _actor_info.GetNameIDMap());
+			model_vel = this->GetActorVelocity(actor_id, _actor_info.GetLinearVelocitiesVector() );
+			model_box = this->GetActorBoundingBox(actor_id, _actor_info.GetBoundingBoxesVector());
 
 		} else {
 			model_vel = model_ptr->WorldLinearVel();

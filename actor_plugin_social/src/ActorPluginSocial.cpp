@@ -96,7 +96,7 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	{
 		int argc = 0;
 		char **argv = nullptr;
-		ros::init(argc, argv, "gazebo_ros", ros::init_options::NoSigintHandler);
+		ros::Init(argc, argv, "gazebo_ros", ros::init_options::NoSigintHandler);
 	}
 
 	ros_nh.reset(new ros::NodeHandle());
@@ -111,7 +111,7 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 #endif
 
 #ifdef VISUALIZE_SFM
-	sfm_vis.init("sfm", "map");
+	sfm_vis.Init("sfm", "map");
 #endif
 
 	// - - - - - - - - - - - - - - - - - - - - - -  - - - -- - - -- - - -- -  -- -
@@ -140,10 +140,10 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	last_pose_actor.Pos() = this->actor->WorldPose().Pos();
 	std::cout << " -------- SET last_pos_actor! -------- " << last_pose_actor.Pos() << std::endl;
 
-	actor_common_info.addActor(this->actor->GetName());
-	actor_common_info.setBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
+	actor_common_info.AddActor(this->actor->GetName());
+	actor_common_info.SetBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
 
-	std::cout << " -------- ACTOR ID -------- " << actor_common_info.getActorID() << std::endl;
+	std::cout << " -------- ACTOR ID -------- " << actor_common_info.GetActorID() << std::endl;
 	std::cout << " -------- MODEL TYPE -------- " << this->model->GetType() << std::endl;
 
 	// WARNING: HARD-CODED target coord
@@ -1023,19 +1023,19 @@ void ActorPlugin::VisualizeForceField() {
 
 	sfm_vis.setForcePoint(	sf,
 							ignition::math::Vector3d(this->pose_actor.Pos().X(), this->pose_actor.Pos().Y(), 0.0f),
-							actor_common_info.getActorID());
+							actor_common_info.GetActorID());
 
 
 #ifdef CREATE_ROS_NODE
-	vis_pub.publish(sfm_vis.getMarkerArray());
+	vis_pub.publish(sfm_vis.GetMarkerArray());
 #elif defined(CREATE_ROS_INTERFACE)
-	ros_interface.PublishMarkerArray(sfm_vis.getMarkerArray());
+	ros_interface.PublishMarkerArray(sfm_vis.GetMarkerArray());
 #endif
 
 #elif defined(VIS_SFM_GRID)
 
 	//sfm_vis.createGrid(-3.0, 3.5, -10.0, 2.0, 1.0);
-	sfm_vis.createGrid(-5.0, 5.5, -12.0, 4.0, 0.75);
+	sfm_vis.CreateGrid(-5.0, 5.5, -12.0, 4.0, 0.75);
 
 	ignition::math::Pose3d pose;
 	ignition::math::Vector3d sf;
@@ -1043,16 +1043,16 @@ void ActorPlugin::VisualizeForceField() {
 //	size_t iter = 0;
 //	std::cout << "sfm_vis:" << iter << std::endl;
 
-	while ( !sfm_vis.isWholeGridChecked() ) {
+	while ( !sfm_vis.IsWholeGridChecked() ) {
 
-		pose = ignition::math::Pose3d(sfm_vis.getNextGridElement(), this->pose_actor.Rot());
+		pose = ignition::math::Pose3d(sfm_vis.GetNextGridElement(), this->pose_actor.Rot());
 		sf = sfm.GetSocialForce( this->world,
 								 this->actor->GetName(),
 								 pose,
 								 this->velocity_actual,
 								 this->target,
 								 this->actor_common_info);
-		sfm_vis.setForce(sf);
+		sfm_vis.SetForce(sf);
 
 //		std::cout << "sfm_vis:" << iter << "\tsf: " << sf << std::endl;
 //		iter++;
@@ -1060,15 +1060,15 @@ void ActorPlugin::VisualizeForceField() {
 	}
 
 #ifdef CREATE_ROS_NODE
-	vis_pub.publish(sfm_vis.getMarkerArray());
+	vis_pub.publish(sfm_vis.GetMarkerArray());
 #elif defined(CREATE_ROS_INTERFACE)
-	ros_interface.PublishMarkerArray(sfm_vis.getMarkerArray());
+	ros_interface.PublishMarkerArray(sfm_vis.GetMarkerArray());
 #endif
 
 	// std::cout << sfm_vis.getMarkerArray().markers << std::endl;
 	// sfm_vis.publishMarkerArray();
 
-	sfm_vis.resetGridIndex();
+	sfm_vis.ResetGridIndex();
 
 #endif
 
@@ -1092,13 +1092,13 @@ double ActorPlugin::PrepareForUpdate(const common::UpdateInfo &_info) {
 	double dt = (_info.simTime - this->last_update).Double();
 	CalculateVelocity(this->pose_actor.Pos(), dt);
 
-	actor_common_info.setLinearVel(this->velocity_actual);
+	actor_common_info.SetLinearVel(this->velocity_actual);
 
 	this->actor->SetLinearVel(this->velocity_actual);
 
 #ifdef INFLATE_BOUNDING_BOX
 	// update the bounding box of the actor
-	actor_common_info.setBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
+	actor_common_info.SetBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
 #endif
 
 	// dt is helpful for further calculations
@@ -1178,8 +1178,8 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 	if ( print_info ) {
 		std::cout << "\t TOTAL force: " << sf << std::endl;
 		std::cout << "\t lin_vels_vector: ";
-		for ( int i = 0; i < actor_common_info.getLinearVelocitiesVector().size(); i++ ) {
-			std::cout << "\t" << actor_common_info.getLinearVelocitiesVector()[i];
+		for ( int i = 0; i < actor_common_info.GetLinearVelocitiesVector().size(); i++ ) {
+			std::cout << "\t" << actor_common_info.GetLinearVelocitiesVector()[i];
 		}
 		std::cout << std::endl;
 		std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;

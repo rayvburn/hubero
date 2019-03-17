@@ -18,7 +18,7 @@ SFMVisPoint::SFMVisPoint():
 		frame("map")
 {
 	// clear vectors
-	this->clearInternalMemory();
+	this->ClearInternalMemory();
 }
 
 // ------------------------------------------------------------------- //
@@ -30,15 +30,15 @@ SFMVisPoint::SFMVisPoint(const std::string &_namespace_id, const std::string &_p
 		frame(_parent_frame)
 {
 	// clear vectors
-	this->clearInternalMemory();
+	this->ClearInternalMemory();
 }
 
 // ------------------------------------------------------------------- //
 
-void SFMVisPoint::init(const std::string &_namespace_id, const std::string &_parent_frame) {
+void SFMVisPoint::Init(const std::string &_namespace_id, const std::string &_parent_frame) {
 
 	// clear vectors
-	this->clearInternalMemory();
+	this->ClearInternalMemory();
 
 	this->ns = _namespace_id;
 	this->frame = _parent_frame;
@@ -47,13 +47,13 @@ void SFMVisPoint::init(const std::string &_namespace_id, const std::string &_par
 
 // ------------------------------------------------------------------- //
 
-void SFMVisPoint::setMaxArrowLength(const float _marker_length) {
+void SFMVisPoint::SetMaxArrowLength(const float _marker_length) {
 	this->arrow_length = _marker_length;
 }
 
 // ------------------------------------------------------------------- //
 
-unsigned int SFMVisPoint::getIDUpdateMapAndAction(const unsigned int &_pt_id) {
+unsigned int SFMVisPoint::GetIDUpdateMapAndAction(const unsigned int &_pt_id) {
 
 	// use of map allows to pass points IDs as a `random` numbers - not need for them to be incremented by 1
 	std::map<unsigned int, unsigned int>::const_iterator iter;
@@ -78,10 +78,10 @@ unsigned int SFMVisPoint::getIDUpdateMapAndAction(const unsigned int &_pt_id) {
 
 // ------------------------------------------------------------------- //
 
-void SFMVisPoint::setForcePoint(	const ignition::math::Vector3d &_force, const ignition::math::Vector3d &_pt,
+void SFMVisPoint::SetForcePoint(	const ignition::math::Vector3d &_force, const ignition::math::Vector3d &_pt,
 							const unsigned int &_pt_id) {
 
-	unsigned int marker_arr_index = getIDUpdateMapAndAction(_pt_id);
+	unsigned int marker_arr_index = GetIDUpdateMapAndAction(_pt_id);
 
 	visualization_msgs::Marker marker;
 
@@ -135,13 +135,13 @@ void SFMVisPoint::setForcePoint(	const ignition::math::Vector3d &_force, const i
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::MarkerArray SFMVisPoint::getMarkerArray() {
+visualization_msgs::MarkerArray SFMVisPoint::GetMarkerArray() {
 	return (this->marker_array);
 }
 
 // ------------------------------------------------------------------- //
 
-void SFMVisPoint::clearInternalMemory() {
+void SFMVisPoint::ClearInternalMemory() {
 
 	this->marker_array.markers.clear();
 	this->map_point_id_index.clear();
@@ -153,7 +153,7 @@ void SFMVisPoint::clearInternalMemory() {
 // ------------------------------------------------------------------- //
 
 SFMVisPoint::~SFMVisPoint() {
-	this->clearInternalMemory();
+	this->ClearInternalMemory();
 }
 
 } /* namespace SocialForceModel */

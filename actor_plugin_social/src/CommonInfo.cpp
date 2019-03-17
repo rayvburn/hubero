@@ -27,7 +27,7 @@ CommonInfo::CommonInfo():
 
 // ------------------------------------------------------------------- //
 
-void CommonInfo::addActor (const std::string &_name) {
+void CommonInfo::AddActor (const std::string &_name) {
 
 	lin_vel_vector.emplace_back(1.0, 1.0, 0.0);
 	this->id = static_cast<unsigned int>(lin_vel_vector.size() - 1);
@@ -39,73 +39,73 @@ void CommonInfo::addActor (const std::string &_name) {
 
 // ------------------------------------------------------------------- //
 
-void CommonInfo::setBoundingBox (const ignition::math::Box &_bb) {
+void CommonInfo::SetBoundingBox (const ignition::math::Box &_bb) {
 	bounding_box_vector.at(this->id) = _bb;
 }
 
 // ------------------------------------------------------------------- //
 
-void CommonInfo::setBoundingCircle (const BoundingCircle &_bc) {
+void CommonInfo::SetBoundingCircle (const BoundingCircle &_bc) {
 	bounding_circle_vector.at(this->id) = _bc;
 }
 
 // ------------------------------------------------------------------- //
 
-void CommonInfo::setLinearVel (const ignition::math::Vector3d &_vel) {
+void CommonInfo::SetLinearVel (const ignition::math::Vector3d &_vel) {
 	lin_vel_vector.at(this->id) = _vel;
 }
 
 // ------------------------------------------------------------------- //
 
-unsigned int CommonInfo::getActorID() const {
+unsigned int CommonInfo::GetActorID() const {
 	return (this->id);
 }
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Box	CommonInfo::getBoundingBox() const {
+ignition::math::Box	CommonInfo::GetBoundingBox() const {
 	return (bounding_box_vector.at(this->id));
 }
 
 // ------------------------------------------------------------------- //
 
-BoundingCircle CommonInfo::getBoundingCircle() const {
+BoundingCircle CommonInfo::GetBoundingCircle() const {
 	return (bounding_circle_vector.at(this->id));
 }
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d CommonInfo::getLinearVelocity() const {
+ignition::math::Vector3d CommonInfo::GetLinearVelocity() const {
 	return (lin_vel_vector.at(this->id));
 }
 
 // ------------------------------------------------------------------- //
 
-std::vector<ignition::math::Box> CommonInfo::getBoundingBoxesVector() const {
+std::vector<ignition::math::Box> CommonInfo::GetBoundingBoxesVector() const {
 	return (bounding_box_vector);
 }
 
 // ------------------------------------------------------------------- //
 
-std::vector<BoundingCircle> CommonInfo::getBoundingCirclesVector() const {
+std::vector<BoundingCircle> CommonInfo::GetBoundingCirclesVector() const {
 	return (bounding_circle_vector);
 }
 
 // ------------------------------------------------------------------- //
 
-std::vector<ignition::math::Vector3d> CommonInfo::getLinearVelocitiesVector() const {
+std::vector<ignition::math::Vector3d> CommonInfo::GetLinearVelocitiesVector() const {
 	return (lin_vel_vector);
 }
 
 // ------------------------------------------------------------------- //
 
-std::map<std::string, unsigned int> CommonInfo::getNameIDMap() const {
+std::map<std::string, unsigned int> CommonInfo::GetNameIDMap() const {
 	return (name_id_map);
 }
 
 // ------------------------------------------------------------------- //
 
-void CommonInfo::clearInternalMemory() {
+void CommonInfo::ClearInternalMemory() {
 
 	lin_vel_vector.clear();
 	bounding_box_vector.clear();
@@ -117,7 +117,7 @@ void CommonInfo::clearInternalMemory() {
 // ------------------------------------------------------------------- //
 
 CommonInfo::~CommonInfo() {
-	clearInternalMemory();
+	ClearInternalMemory();
 }
 
 } /* namespace ActorUtils */

@@ -27,18 +27,18 @@ public:
 
 	SFMVisPoint();
 	SFMVisPoint(const std::string &_namespace_id, const std::string &_parent_frame);
-	void init(const std::string &_namespace_id, const std::string &_parent_frame);
+	void Init(const std::string &_namespace_id, const std::string &_parent_frame);
 
-	void setMaxArrowLength(const float _marker_length);
-	void setForcePoint(const ignition::math::Vector3d &_force, const ignition::math::Vector3d &_pt, const unsigned int &_pt_id);
-	visualization_msgs::MarkerArray getMarkerArray();
+	void SetMaxArrowLength(const float _marker_length);
+	void SetForcePoint(const ignition::math::Vector3d &_force, const ignition::math::Vector3d &_pt, const unsigned int &_pt_id);
+	visualization_msgs::MarkerArray GetMarkerArray();
 
 	virtual ~SFMVisPoint();
 
 private:
 
-	void clearInternalMemory();
-	unsigned int getIDUpdateMapAndAction(const unsigned int &_pt_id);
+	void ClearInternalMemory();
+	unsigned int GetIDUpdateMapAndAction(const unsigned int &_pt_id);
 
 	std::map<unsigned int, unsigned int> map_point_id_index;
 	visualization_msgs::MarkerArray marker_array;

@@ -40,27 +40,27 @@ public:
 	CommonInfo();
 
 	/// \brief Method that assigns an ID for the actor that is invoked by (must be called for each actor)
-	void addActor 			(const std::string &_name);
+	void AddActor 			(const std::string &_name);
 
-	void setBoundingBox		(const ignition::math::Box &_bb);
-	void setBoundingCircle	(const BoundingCircle &_bc);
-	void setLinearVel		(const ignition::math::Vector3d &_vel);
+	void SetBoundingBox		(const ignition::math::Box &_bb);
+	void SetBoundingCircle	(const BoundingCircle &_bc);
+	void SetLinearVel		(const ignition::math::Vector3d &_vel);
 
-	unsigned int							getActorID() const;
-	ignition::math::Box						getBoundingBox() const;
-	BoundingCircle							getBoundingCircle() const;
-	ignition::math::Vector3d				getLinearVelocity() const;
+	unsigned int							GetActorID() const;
+	ignition::math::Box						GetBoundingBox() const;
+	BoundingCircle							GetBoundingCircle() const;
+	ignition::math::Vector3d				GetLinearVelocity() const;
 
-	std::vector<ignition::math::Box> 		getBoundingBoxesVector() const;
-	std::vector<BoundingCircle> 	 		getBoundingCirclesVector() const;
-	std::vector<ignition::math::Vector3d>	getLinearVelocitiesVector() const;
-	std::map<std::string, unsigned int>		getNameIDMap() const;
+	std::vector<ignition::math::Box> 		GetBoundingBoxesVector() const;
+	std::vector<BoundingCircle> 	 		GetBoundingCirclesVector() const;
+	std::vector<ignition::math::Vector3d>	GetLinearVelocitiesVector() const;
+	std::map<std::string, unsigned int>		GetNameIDMap() const;
 
 	virtual ~CommonInfo();
 
 private:
 
-	void clearInternalMemory();
+	void ClearInternalMemory();
 
 	/// \brief Actor's ID for indexing the vectors
 	unsigned int id;

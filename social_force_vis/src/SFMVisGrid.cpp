@@ -19,7 +19,7 @@ SFMVisGrid::SFMVisGrid():
 		frame("map")
 {
 	// clear vectors
-	this->clearInternalMemory();
+	this->ClearInternalMemory();
 }
 
 // ------------------------------------------------------------------- //
@@ -30,7 +30,7 @@ SFMVisGrid::SFMVisGrid(const std::string &_namespace_id, const std::string &_par
 		ns(_namespace_id),
 		frame(_parent_frame)
 {
-	this->clearInternalMemory();
+	this->ClearInternalMemory();
 }
 
 // ------------------------------------------------------------------- //
@@ -38,10 +38,10 @@ SFMVisGrid::SFMVisGrid(const std::string &_namespace_id, const std::string &_par
 /*
  * init must be invoked each time when frame changes
  */
-void SFMVisGrid::init(const std::string &_namespace_id, const std::string &_parent_frame) {
+void SFMVisGrid::Init(const std::string &_namespace_id, const std::string &_parent_frame) {
 
 	// clear vectors
-	this->clearInternalMemory();
+	this->ClearInternalMemory();
 
 	this->ns = _namespace_id;
 	this->frame = _parent_frame;
@@ -54,11 +54,11 @@ void SFMVisGrid::init(const std::string &_namespace_id, const std::string &_pare
  * Grid allows to simulate actor's position in each grid cell (representing different world positions)
  * and visualize the force that could influence him
  */
-void SFMVisGrid::createGrid(const float &_x_start, const float &_x_end, const float &_y_start,
+void SFMVisGrid::CreateGrid(const float &_x_start, const float &_x_end, const float &_y_start,
 						const float &_y_end, const float &_resolution) {
 
 	// clear vectors containing grid and markers
-	this->clearInternalMemory();
+	this->ClearInternalMemory();
 
 	float x_start 	= _x_start;
 	float x_end 	= _x_end;
@@ -95,7 +95,7 @@ void SFMVisGrid::createGrid(const float &_x_start, const float &_x_end, const fl
 
 // ------------------------------------------------------------------- //
 
-void SFMVisGrid::setForce(const ignition::math::Vector3d &_force) {
+void SFMVisGrid::SetForce(const ignition::math::Vector3d &_force) {
 
 	visualization_msgs::Marker marker;
 
@@ -144,13 +144,13 @@ void SFMVisGrid::setForce(const ignition::math::Vector3d &_force) {
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::MarkerArray SFMVisGrid::getMarkerArray() {
+visualization_msgs::MarkerArray SFMVisGrid::GetMarkerArray() {
 	return (this->marker_array);
 }
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d SFMVisGrid::getNextGridElement() {
+ignition::math::Vector3d SFMVisGrid::GetNextGridElement() {
 
 	this->grid_index++;
 	return (this->grid[grid_index - 1]);
@@ -159,7 +159,7 @@ ignition::math::Vector3d SFMVisGrid::getNextGridElement() {
 
 // ------------------------------------------------------------------- //
 
-bool SFMVisGrid::isWholeGridChecked() {
+bool SFMVisGrid::IsWholeGridChecked() {
 
 	if ( this->grid_index >= this->grid.size() ) {
 
@@ -175,7 +175,7 @@ bool SFMVisGrid::isWholeGridChecked() {
 
 // ------------------------------------------------------------------- //
 
-void SFMVisGrid::resetGridIndex() {
+void SFMVisGrid::ResetGridIndex() {
 
 	this->grid_index = 0;
 
@@ -188,13 +188,13 @@ void SFMVisGrid::resetGridIndex() {
 
 SFMVisGrid::~SFMVisGrid() {
 
-	this->clearInternalMemory();
+	this->ClearInternalMemory();
 
 }
 
 // ------------------------------------------------------------------- //
 
-void SFMVisGrid::clearInternalMemory() {
+void SFMVisGrid::ClearInternalMemory() {
 
 	this->grid.clear();
 	this->marker_array.markers.clear();
