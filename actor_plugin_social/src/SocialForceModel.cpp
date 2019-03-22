@@ -27,7 +27,7 @@
 
 namespace SocialForceModel {
 
-// #define SILENT_
+#define SILENT_
 
 // deprecated
 //#define SFM_RIGHT_SIDE 0
@@ -50,7 +50,8 @@ namespace SocialForceModel {
 #define DEBUG_NEW_POSE
 #define DEBUG_ACTOR_FACING_TARGET
 #define DEBUG_BOUNDING_BOX
-// #define DEBUG_BOUNDING_CIRCLE // each iteration
+#define DEBUG_BOUNDING_CIRCLE // each iteration
+#define DEBUG_CLOSEST_POINTS
 
 #endif
 
@@ -82,6 +83,8 @@ static int print_counter = 0;
 
 #define NEW_YAW_BASE
 
+static std::string debug_current_object_name;
+static std::string debug_current_actor_name;
 
 // ------------------------------------------------------------------- //
 
@@ -308,6 +311,12 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			continue;
 		}
 
+		//////////////////////////////////////////////////////////////////////////////////////////////////////
+		// catch especially table1 - debugging ///////////////////////////////////////////////////////////////
+		debug_current_object_name = model_ptr->GetName(); ////////////////////////////////////////////////////
+		debug_current_actor_name = _actor_name; //////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////////////////////////////
+
 		if ( print_info ) {
 			std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
 		}
@@ -436,6 +445,11 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 #endif
 
 
+		if ( _actor_name == "actor1" && model_ptr->GetName() == "table1" ) {
+			std::cout << "\tactor1-table1 interaction vector: " << f_alpha_beta.X() << "\t" << f_alpha_beta.Y() << std::endl;
+		}
+
+
 		f_interaction_total += f_alpha_beta;
 		if ( print_info ) {
 			std::cout << " model's name: " << model_ptr->GetName() << "  pose: " << model_ptr->WorldPose() << "  lin vel: " << model_vel << "  force: " << f_alpha_beta << std::endl;
@@ -448,9 +462,13 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	}
 #endif
 
-//	return (desired_force_factor * f_alpha + interaction_force_factor * f_alpha_beta);
 
-	// truncate the force value to max to prevent strange speedup of an actor
+	/* TODO: set desired force factor according to the distance to the closest obstacle -
+	 * the closer actor gets, the smaller the coefficient should be - this is
+	 * the REAL SOCIAL feature of the model */
+	// this->calculateDesiredForceFactor(dist_to_closest_obstacle);
+	// inside the function lets normalize the factor according to the `desired` one
+
 	ignition::math::Vector3d f_total = desired_force_factor * f_alpha + interaction_force_factor * f_interaction_total;
 	f_total.Z(0.0);
 
@@ -458,6 +476,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		std::cout << "!! SocialForce: " << f_total << "\tinternal: " << desired_force_factor * f_alpha << "\tinteraction: " << interaction_force_factor * f_interaction_total;
 	}
 
+	// truncate the force value to max to prevent strange speedup of an actor
 	double force_length = f_total.Length();
 	if ( force_length > force_max ) {
 
@@ -706,24 +725,42 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	ignition::math::Vector3d point_intersect; 	// create an array for storing 2 points
 
 	// object's bounding box point that is closest to actor's bounding box
+	/* lets create the line from the actor's center to the object's center and check
+	 * the intersection point of that line with the object's bounding box */
 	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _object_pose.Pos().X(), _object_pose.Pos().Y(), BOUNDING_BOX_Z_FIXED );
 	std::tie(does_intersect, dist_intersect, point_intersect) = _object_bb.Intersect(line);
 
+#ifdef DEBUG_CLOSEST_POINTS
+	if ( _object_name == "table1" ) {
+		std::cout << "GetClosestPoints()\t" << _object_name << "'s BB point of intersection: " << point_intersect;
+	}
+#endif
+
 	if ( !does_intersect ) {
+
 		#ifdef DEBUG_BOUNDING_BOX
 		std::cout << "\n\n\nGetActorModelBBsClosestPoints() ERROR2"; // \n\n\n";
 		std::cout << "\t" << _object_name << "'s pos: " << _object_pose.Pos() << "\tBB closest: " << point_intersect.X() << " " << point_intersect.Y() << std::endl;
 		std::cout << "\n\n\n";
 		#endif
-		// the intersection was not found - set intersection point as a object's central point
+		/* the intersection was not found - set intersection point as a object's central point;
+		 * it might happen when actor stepped INTO the obstacle and is within its bounds */
 		point_intersect = _object_pose.Pos();
+		return ( std::make_tuple(_actor_pose, point_intersect) );
+
 	} else {
-		// that's ok, point_intersect will be returned from function
+		// that's OK, point of intersection will be returned from function
 	}
 
 	// intersection of the actor's circle
 	ignition::math::Pose3d actor_pose_shifted = _actor_pose;
 	actor_pose_shifted.Pos() = _actor_bc.GetIntersection(point_intersect);
+
+#ifdef DEBUG_CLOSEST_POINTS
+	if ( _object_name == "table1" ) {
+		std::cout << "\t\tACTOR's BC point of intersection: " << actor_pose_shifted.Pos() << std::endl;
+	}
+#endif
 
 	#ifdef DEBUG_BOUNDING_CIRCLE
 	std::cout << "\n\nBOUND - actor & object | actor pos: " << _actor_pose.Pos() << "\tintersection: " << actor_pose_shifted.Pos() << std::endl;
@@ -1422,9 +1459,22 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 
 	RelativeLocation beta_rel_location = this->GetBetaRelativeLocation(actor_yaw, _d_alpha_beta);
 
+	if ( debug_current_object_name == "table1" && debug_current_actor_name == "actor1" ) {
+		std::string location_str;
+		if ( beta_rel_location == SFM_BEHIND ) {
+			location_str = "BEHIND";
+		} else if ( beta_rel_location == SFM_RIGHT_SIDE ) {
+			location_str = "RIGHT SIDE";
+		} else if ( beta_rel_location == SFM_LEFT_SIDE ) {
+			location_str = "LEFT SIDE";
+		} else if ( beta_rel_location == SFM_UNKNOWN ) {
+			location_str = "UNKNOWN";
+		}
+		std::cout << "\t" << debug_current_object_name << "'s relative location: " << location_str << "\t";
+	}
 
-	// if ( beta_rel_location == SFM_BEHIND && d_alpha_beta_length > 0.5 ) {
-	if ( beta_rel_location == SFM_BEHIND ) {
+	if ( beta_rel_location == SFM_BEHIND && d_alpha_beta_length > 1.0 ) {
+	// if ( beta_rel_location == SFM_BEHIND ) {
 
 		#ifdef DEBUG_INTERACTION_FORCE
 		if ( print_info ) {

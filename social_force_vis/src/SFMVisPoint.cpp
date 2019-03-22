@@ -48,6 +48,17 @@ void SFMVisPoint::Init(const std::string &_namespace_id, const std::string &_par
 
 // ------------------------------------------------------------------- //
 
+void SFMVisPoint::SetColor(const float &_red, const float &_green, const float &_blue, const float &_alpha) {
+
+	this->color.alpha = _alpha;
+	this->color.red   = _red;
+	this->color.green = _green;
+	this->color.blue  = _blue;
+
+}
+
+// ------------------------------------------------------------------- //
+
 void SFMVisPoint::SetMaxArrowLength(const float _marker_length) {
 	this->arrow_length = _marker_length;
 }
@@ -120,10 +131,10 @@ void SFMVisPoint::SetForcePoint(	const ignition::math::Vector3d &_force, const i
 	marker.scale.y = 0.1;
 	marker.scale.z = 0.1;
 
-	marker.color.a = 0.8; // alpha channel
-	marker.color.r = 0.0;
-	marker.color.g = 1.0;
-	marker.color.b = 0.0;
+	marker.color.a = this->color.alpha; // 0.8; // alpha channel
+	marker.color.r = this->color.red;   // 0.0;
+	marker.color.g = this->color.green; // 1.0;
+	marker.color.b = this->color.blue;  // 0.0;
 
 	// depending on the `action` - add new or modify present marker
 	if ( this->action == visualization_msgs::Marker::ADD ) {
@@ -165,10 +176,10 @@ void SFMVisPoint::SetPointArrow(const ignition::math::Pose3d &_pt, const unsigne
 	marker.scale.y = 0.1;
 	marker.scale.z = 0.1;
 
-	marker.color.a = 0.8; // alpha channel
-	marker.color.r = 1.0;
-	marker.color.g = 0.0;
-	marker.color.b = 0.0;
+	marker.color.a = this->color.alpha; // 0.8; // alpha channel
+	marker.color.r = this->color.red;   // 0.0;
+	marker.color.g = this->color.green; // 1.0;
+	marker.color.b = this->color.blue;  // 0.0;
 
 	// depending on the `action` - add new or modify present marker
 	if ( this->action == visualization_msgs::Marker::ADD ) {
@@ -201,10 +212,10 @@ void SFMVisPoint::SetPointsLines(const ignition::math::Pose3d &_pt1, const ignit
 	// line width
 	marker.scale.x = 0.05;
 
-	marker.color.a = 0.5; // alpha channel
-	marker.color.r = 1.0;
-	marker.color.g = 0.0;
-	marker.color.b = 0.0;
+	marker.color.a = this->color.alpha; // 0.8; // alpha channel
+	marker.color.r = this->color.red;   // 0.0;
+	marker.color.g = this->color.green; // 1.0;
+	marker.color.b = this->color.blue;  // 0.0;
 
 	geometry_msgs::Point point;
 

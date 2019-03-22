@@ -41,4 +41,13 @@ typedef enum {
 
 // -------------------------
 
+typedef enum {
+	ACTOR_SOCIAL_FORCE = 0,
+	ACTOR_SOCIAL_FORCE_GRID,
+	ACTOR_BOUNDING,
+	ACTOR_MODEL_CLOSEST, 		// i.e. ACTOR_MODEL_BOUNDINGS_CLOSEST_POINTS
+} ActorVisType;
+
+// -------------------------
+
 #endif /* INCLUDE_ENUMS_H_ */

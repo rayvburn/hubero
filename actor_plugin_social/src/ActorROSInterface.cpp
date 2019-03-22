@@ -36,6 +36,7 @@ void ActorROSInterface::Init(const std::string &_actor_name) {
 
 	}
 
+	pub_array_grid = nh->advertise<visualization_msgs::MarkerArray>("sfm_grid_"+_actor_name, 10);
 	pub_closest_points_array = nh->advertise<visualization_msgs::MarkerArray>("sfm_closest_"+_actor_name, 10);
 	pub_marker_array_sf = nh->advertise<visualization_msgs::MarkerArray>("sfm_mrkr_sf_"+_actor_name, 10);
 	pub_marker_array = nh->advertise<visualization_msgs::MarkerArray>("sfm_mrkr_"+_actor_name, 10);
@@ -70,6 +71,17 @@ void ActorROSInterface::PublishActorTf(const ignition::math::Pose3d &_actor_pose
 // ------------------------------------------------------------------- //
 
 void ActorROSInterface::PublishMarker(const visualization_msgs::Marker &_marker) {
+
+	/*
+	 * switch (vis_type) {
+	 * case(1):
+	 * 	if ( getNumSub > 0 ) {
+	 * 		publish(_marker);
+	 * 	}
+	 * 	break;
+	 * }
+	 *
+	 */
 	pub_marker.publish(_marker);
 }
 
@@ -79,6 +91,11 @@ void ActorROSInterface::PublishMarkerArray(const visualization_msgs::MarkerArray
 	pub_marker_array.publish(_marker_array);
 }
 
+// ------------------------------------------------------------------- //
+
+void ActorROSInterface::PublishMarkerArrayGrid(const visualization_msgs::MarkerArray &_marker_array) {
+	pub_array_grid.publish(_marker_array);
+}
 // ------------------------------------------------------------------- //
 
 void ActorROSInterface::PublishClosestPoints(const visualization_msgs::MarkerArray &_marker_array) {

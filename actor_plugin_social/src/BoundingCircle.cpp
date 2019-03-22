@@ -79,7 +79,7 @@ visualization_msgs::Marker BoundingCircle::GetMarkerConversion() const {
 	// assign marker coordinates according to current point that is pointed by grid index
 	marker.pose.position.x = this->center.X();
 	marker.pose.position.y = this->center.Y();
-	marker.pose.position.z = 1.0;
+	marker.pose.position.z = 0.9; // half of a typical person height
 
 	// cylinder - yaw orientation doesn't matter
 	marker.pose.orientation.x = 0.0;
@@ -88,13 +88,13 @@ visualization_msgs::Marker BoundingCircle::GetMarkerConversion() const {
 	marker.pose.orientation.w = 1.0;
 
 	// scale
-	marker.scale.x = this->radius * 2;
-	marker.scale.y = this->radius * 2;
-	marker.scale.z = 2.0;
+	marker.scale.x = this->radius * 2.0;
+	marker.scale.y = this->radius * 2.0;
+	marker.scale.z = 1.8f; // typical person height
 
-	marker.color.a = 0.7; // alpha channel
-	marker.color.r = 0.0;
-	marker.color.g = 0.0;
+	marker.color.a = 0.2; // alpha channel
+	marker.color.r = 1.0;
+	marker.color.g = 1.0;
 	marker.color.b = 1.0;
 
 	return (marker);

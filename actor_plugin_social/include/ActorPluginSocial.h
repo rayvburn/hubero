@@ -242,6 +242,8 @@ namespace gazebo
     private: static SocialForceModel::SFMVisGrid sfm_vis;
 #endif
 
+    private: static SocialForceModel::SFMVisGrid grid_vis;
+
 #endif
 
 

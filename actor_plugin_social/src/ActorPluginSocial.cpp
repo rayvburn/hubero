@@ -63,6 +63,7 @@ std::map<std::string, unsigned int> map_of_names;
 	#elif defined(VIS_SFM_GRID)
 	SocialForceModel::SFMVisGrid ActorPlugin::sfm_vis;
 	#endif
+	SocialForceModel::SFMVisGrid ActorPlugin::grid_vis;
 #endif
 
 /////////////////////////////////////////////////
@@ -112,6 +113,7 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
 #ifdef VISUALIZE_SFM
 	sfm_vis.Init("sfm", "map");
+	grid_vis.Init("sfm_grid", "map");
 #endif
 
 	// - - - - - - - - - - - - - - - - - - - - - -  - - - -- - - -- - - -- -  -- -
@@ -1041,10 +1043,15 @@ void ActorPlugin::VisualizeForceField() {
 //		sfm_vis.SetPointArrow(sfm.GetClosestPointsVector()[i], i);
 //	}
 
+
+	// set closest to actor model points
+	sfm_vis.SetColor(1.0, 1.0, 0.0, 0.5);
 	for ( size_t i = 0; i < sfm.GetClosestPointsVector().size(); i=i+2 ) {
 		sfm_vis.SetPointsLines(sfm.GetClosestPointsVector()[i], sfm.GetClosestPointsVector()[i+1], i);
 	}
 
+	// set general force for the actor
+	sf_vis.SetColor(1.0, 0.0, 0.0, 1.0);
 	sf_vis.SetForcePoint(	sf,
 							ignition::math::Vector3d(this->pose_actor.Pos().X(), this->pose_actor.Pos().Y(), 0.0f),
 							actor_common_info.GetActorID());
@@ -1053,8 +1060,8 @@ void ActorPlugin::VisualizeForceField() {
 #ifdef CREATE_ROS_NODE
 	vis_pub.publish(sfm_vis.GetMarkerArray());
 #elif defined(CREATE_ROS_INTERFACE)
-	ros_interface.PublishMarkerArray(sfm_vis.GetMarkerArray());
-	ros_interface.PublishSFArrows(   sf_vis. GetMarkerArray());
+	ros_interface.PublishMarkerArray(sfm_vis.GetMarkerArray()); // closest to actor model points
+	ros_interface.PublishSFArrows(   sf_vis. GetMarkerArray()); // result force for the actor
 #endif
 
 #elif defined(VIS_SFM_GRID)
@@ -1111,6 +1118,50 @@ void ActorPlugin::VisualizeForceField() {
 	sfm_vis.ResetGridIndex();
 
 #endif
+
+
+	// calculate grid for actor1
+
+	if ( this->actor->GetName() == "actor1" ) {
+
+		grid_vis.CreateGrid(-5.0, 5.5, -12.0, 4.0, 0.75);
+
+		ignition::math::Pose3d pose;
+		ignition::math::Vector3d sf;
+
+		while ( !grid_vis.IsWholeGridChecked() ) {
+
+			pose = ignition::math::Pose3d(grid_vis.GetNextGridElement(), this->pose_actor.Rot());
+
+			/*
+			 * Remember to artificially place the actor (along with his bounding) in current grid cell!
+			 */
+	#if	defined(INFLATE_BOUNDING_BOX)
+			actor_common_info.SetBoundingBox( this->GenerateBoundingBox(pose) );
+	#elif defined(INFLATE_BOUNDING_CIRCLE)
+			this->bounding_circle.SetCenter(pose.Pos());
+			this->actor_common_info.SetBoundingCircle(this->bounding_circle);
+	#elif defined(INFLATE_BOUNDING_ELLIPSE)
+
+	#endif
+
+			sf = sfm.GetSocialForce( this->world,
+									 this->actor->GetName(),
+									 pose,
+									 this->velocity_actual,
+									 this->target,
+									 this->actor_common_info);
+			grid_vis.SetForce(sf);
+
+		}
+
+		#if defined(CREATE_ROS_INTERFACE)
+		ros_interface.PublishMarkerArrayGrid(grid_vis.GetMarkerArray());
+		#endif
+
+		grid_vis.ResetGridIndex();
+
+	}
 
 }
 

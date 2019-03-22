@@ -29,6 +29,7 @@ public:
 	SFMVisPoint(const std::string &_namespace_id, const std::string &_parent_frame);
 	void Init(const std::string &_namespace_id, const std::string &_parent_frame);
 
+	void SetColor(const float &_red, const float &_green, const float &_blue, const float &_alpha);
 	void SetMaxArrowLength(const float _marker_length);
 	void SetForcePoint(const ignition::math::Vector3d &_force, const ignition::math::Vector3d &_pt, const unsigned int &_pt_id);
 	void SetPointArrow(const ignition::math::Pose3d &_pt, const unsigned int &_pt_id);
@@ -49,6 +50,16 @@ private:
 	unsigned int point_last_idx;
 	std::string ns;
 	std::string frame;
+
+	typedef struct {
+		float alpha = 1.0f;
+		float red   = 1.0f;
+		float green = 1.0f;
+		float blue  = 1.0f;
+	} MarkerColor;
+
+	MarkerColor color;
+
 
 };
 
