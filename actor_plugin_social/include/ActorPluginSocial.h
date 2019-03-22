@@ -237,6 +237,7 @@ namespace gazebo
 
 #ifdef VIS_SFM_POINT
     private: static SocialForceModel::SFMVisPoint sfm_vis;
+    private: SocialForceModel::SFMVisPoint sf_vis;
 #elif defined(VIS_SFM_GRID)
     private: static SocialForceModel::SFMVisGrid sfm_vis;
 #endif

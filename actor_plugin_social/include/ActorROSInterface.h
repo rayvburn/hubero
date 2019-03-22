@@ -44,6 +44,7 @@ public:
 	void PublishMarker(const visualization_msgs::Marker &_marker);						// better name?
 	void PublishMarkerArray(const visualization_msgs::MarkerArray &_marker_array);		// better name?
 	void PublishClosestPoints(const visualization_msgs::MarkerArray &_marker_array);	// debugging purposes only
+	void PublishSFArrows(const visualization_msgs::MarkerArray &_marker_array);			// debugging purposes only
 
 	void LoadParameters();
 	bool AreParametersLoaded() const;
@@ -55,6 +56,7 @@ private:
 	std::string actor_name;
 	ros::Publisher pub_marker;
 	ros::Publisher pub_marker_array;
+	ros::Publisher pub_marker_array_sf;
 	ros::Publisher pub_closest_points_array;
 	tf2_ros::TransformBroadcaster tf_broadcaster;
 

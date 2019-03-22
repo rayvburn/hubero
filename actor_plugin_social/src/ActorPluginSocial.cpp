@@ -1045,15 +1045,16 @@ void ActorPlugin::VisualizeForceField() {
 		sfm_vis.SetPointsLines(sfm.GetClosestPointsVector()[i], sfm.GetClosestPointsVector()[i+1], i);
 	}
 
-//	sfm_vis.SetForcePoint(	sf,
-//							ignition::math::Vector3d(this->pose_actor.Pos().X(), this->pose_actor.Pos().Y(), 0.0f),
-//							actor_common_info.GetActorID());
+	sf_vis.SetForcePoint(	sf,
+							ignition::math::Vector3d(this->pose_actor.Pos().X(), this->pose_actor.Pos().Y(), 0.0f),
+							actor_common_info.GetActorID());
 
 
 #ifdef CREATE_ROS_NODE
 	vis_pub.publish(sfm_vis.GetMarkerArray());
 #elif defined(CREATE_ROS_INTERFACE)
 	ros_interface.PublishMarkerArray(sfm_vis.GetMarkerArray());
+	ros_interface.PublishSFArrows(   sf_vis. GetMarkerArray());
 #endif
 
 #elif defined(VIS_SFM_GRID)

@@ -53,7 +53,7 @@ Visualization Manager:
       Marker Topic: /actor_plugin_ros_interface/sfm_mrkr_actor1
       Name: MarkerArrayA1
       Namespaces:
-        {}
+        sfm: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -85,7 +85,7 @@ Visualization Manager:
       Marker Topic: /actor_plugin_ros_interface/sfm_mrkr_single_actor1
       Name: MarkerA1
       Namespaces:
-        {}
+        test: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -93,7 +93,7 @@ Visualization Manager:
       Marker Topic: /actor_plugin_ros_interface/sfm_mrkr_single_actor2
       Name: MarkerA2
       Namespaces:
-        {}
+        test: true
       Queue Size: 100
       Value: true
     - Class: rviz/TF
@@ -119,6 +119,22 @@ Visualization Manager:
           actor2:
             {}
       Update Interval: 0
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /actor_plugin_ros_interface/sfm_mrkr_sf_actor1
+      Name: SFA1
+      Namespaces:
+        social_force_model: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /actor_plugin_ros_interface/sfm_mrkr_sf_actor2
+      Name: SFA2
+      Namespaces:
+        {}
+      Queue Size: 100
       Value: true
   Enabled: true
   Global Options:
