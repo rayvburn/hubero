@@ -41,8 +41,9 @@ public:
 	void Init(const std::string &_actor_name);
 
 	void PublishActorTf(const ignition::math::Pose3d &_actor_pose);
-	void PublishMarker(const visualization_msgs::Marker &_marker);
-	void PublishMarkerArray(const visualization_msgs::MarkerArray &_marker_array);
+	void PublishMarker(const visualization_msgs::Marker &_marker);						// better name?
+	void PublishMarkerArray(const visualization_msgs::MarkerArray &_marker_array);		// better name?
+	void PublishClosestPoints(const visualization_msgs::MarkerArray &_marker_array);	// debugging purposes only
 
 	void LoadParameters();
 	bool AreParametersLoaded() const;
@@ -54,6 +55,7 @@ private:
 	std::string actor_name;
 	ros::Publisher pub_marker;
 	ros::Publisher pub_marker_array;
+	ros::Publisher pub_closest_points_array;
 	tf2_ros::TransformBroadcaster tf_broadcaster;
 
 	std::vector<std::pair<std::string, std::string> > params;

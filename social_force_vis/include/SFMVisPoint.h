@@ -31,7 +31,9 @@ public:
 
 	void SetMaxArrowLength(const float _marker_length);
 	void SetForcePoint(const ignition::math::Vector3d &_force, const ignition::math::Vector3d &_pt, const unsigned int &_pt_id);
-	visualization_msgs::MarkerArray GetMarkerArray();
+	void SetPointArrow(const ignition::math::Pose3d &_pt, const unsigned int &_pt_id);
+	void SetPointsLines(const ignition::math::Pose3d &_pt1, const ignition::math::Pose3d &_pt2, const unsigned int &_pt_id);
+	visualization_msgs::MarkerArray GetMarkerArray() const;
 
 	virtual ~SFMVisPoint();
 

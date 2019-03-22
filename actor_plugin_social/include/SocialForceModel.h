@@ -27,6 +27,9 @@
 #include <geometry_msgs/TransformStamped.h>
 #endif
 
+// debug closest points
+#include <vector>
+
 // ---------------------------------
 
 // 1 out of 2 or none of below possible
@@ -289,6 +292,11 @@ public:
 			const std::vector<ignition::math::Box> _actors_bounding_boxes
 	);
 
+	// debug closest points
+//	std::vector<ignition::math::Pose3d> GetModelClosestPointsVector() const;
+//	std::vector<ignition::math::Pose3d> GetActorClosestPointsVector() const;
+	std::vector<ignition::math::Pose3d> GetClosestPointsVector() const;
+
 	virtual ~SocialForceModel();
 
 private:
@@ -303,6 +311,11 @@ private:
 
 
 	static constexpr double BOUNDING_BOX_Z_FIXED = 0.5; // on-plane objects considered
+
+	// debug closest points
+//	std::vector<ignition::math::Pose3d> models_closest_points;
+//	std::vector<ignition::math::Pose3d> actor_closest_points;
+	std::vector<ignition::math::Pose3d> closest_points;
 
 	float relaxation_time;
 	float speed_desired;

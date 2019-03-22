@@ -50,34 +50,50 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /actor_plugin_ros_interface/sfm_mrkractor1
+      Marker Topic: /actor_plugin_ros_interface/sfm_mrkr_actor1
       Name: MarkerArrayA1
       Namespaces:
-        sfm: true
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /actor_plugin_ros_interface/sfm_closest_actor1
+      Name: ClosestA1
+      Namespaces:
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /actor_plugin_ros_interface/sfm_mrkractor2
+      Marker Topic: /actor_plugin_ros_interface/sfm_mrkr_actor2
       Name: MarkerArrayA2
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/MarkerArray
+      Enabled: false
+      Marker Topic: /actor_plugin_ros_interface/sfm_closest_actor2
+      Name: ClosestA2
       Namespaces:
         {}
       Queue Size: 100
       Value: false
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /actor_plugin_ros_interface/sfm_mrkr_singleactor1
+      Marker Topic: /actor_plugin_ros_interface/sfm_mrkr_single_actor1
       Name: MarkerA1
       Namespaces:
-        test: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /actor_plugin_ros_interface/sfm_mrkr_singleactor2
+      Marker Topic: /actor_plugin_ros_interface/sfm_mrkr_single_actor2
       Name: MarkerA2
       Namespaces:
-        test: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/TF
@@ -129,25 +145,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 19.8645325
+      Distance: 10.4831486
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.80405819
-        Y: 0.304528356
-        Z: 2.80950117
+        X: 0.120228894
+        Y: -1.15822136
+        Z: 1.52695894
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.36979714
+      Pitch: 0.834796727
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.46858549
+      Yaw: 4.69358158
     Saved: ~
 Window Geometry:
   Displays:

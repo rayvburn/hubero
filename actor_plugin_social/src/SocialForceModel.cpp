@@ -112,6 +112,8 @@ SocialForceModel::SocialForceModel():
 
 	SetParameterValues();
 
+	closest_points.clear();
+
 	/* Algorithm PARAMETERS are:
 	 * - relaxation time must be given here
 	 * - kind of coefficient for attraction artificial potential field (decreases over time)
@@ -126,6 +128,24 @@ SocialForceModel::SocialForceModel():
 	gridmap["layer"].setRandom();
 #endif
 
+}
+
+// ------------------------------------------------------------------- //
+
+//std::vector<ignition::math::Pose3d> SocialForceModel::GetModelClosestPointsVector() const {
+//	return (this->models_closest_points);
+//}
+//
+//// ------------------------------------------------------------------- //
+//
+//std::vector<ignition::math::Pose3d> SocialForceModel::GetActorClosestPointsVector() const {
+//	return (this->actor_closest_points);
+//}
+
+// ------------------------------------------------------------------- //
+
+std::vector<ignition::math::Pose3d> SocialForceModel::GetClosestPointsVector() const {
+	return (this->closest_points);
 }
 
 // ------------------------------------------------------------------- //
@@ -225,6 +245,8 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 //	const std::vector<ignition::math::Box> _actors_bounding_boxes)
 
 {
+
+	closest_points.clear();
 
 #ifdef DEBUG_JUMPING_POSITION
 	curr_actor = this->GetActorID(_actor_name, _actor_info.GetNameIDMap());
@@ -390,6 +412,11 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		#ifdef DEBUG_BOUNDING_CIRCLE
 		std::cout << "AFTER: actor pos: " << actor_closest_to_model_pose << "\t" << model_ptr->GetName() << "'s pos: " << model_closest_point << std::endl;
 		#endif
+
+		// debug closest points
+		closest_points.push_back(model_pose_shifted);
+		closest_points.push_back(actor_closest_to_model_pose);
+
 		// what if velocity is actually non-zero but Gazebo sees 0?
 		f_alpha_beta = this->GetInteractionComponent(	actor_closest_to_model_pose,
 														_actor_velocity,

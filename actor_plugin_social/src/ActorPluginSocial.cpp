@@ -1024,7 +1024,7 @@ void ActorPlugin::VisualizeForceField() {
 
 	ignition::math::Vector3d sf;
 
-	std::cout << "\n\n\n\nGET SOCIAL FORCE FOR VISUALIZATION " << this->actor->GetName();
+//	std::cout << "\n\n\n\nGET SOCIAL FORCE FOR VISUALIZATION " << this->actor->GetName();
 	sf = sfm.GetSocialForce( this->world,
 							 this->actor->GetName(),
 							 this->pose_actor,
@@ -1034,11 +1034,20 @@ void ActorPlugin::VisualizeForceField() {
 //							 actor_common_info.getNameIDMap(),
 //							 actor_common_info.getLinearVelocitiesVector(),
 //							 actor_common_info.getBoundingBoxesVector());
-	std::cout << "\nGET SOCIAL FORCE FOR VISUALIZATION\n\t\tEND\n\n\n\n";
+//	std::cout << "\nGET SOCIAL FORCE FOR VISUALIZATION\n\t\tEND\n\n\n\n";
 
-	sfm_vis.SetForcePoint(	sf,
-							ignition::math::Vector3d(this->pose_actor.Pos().X(), this->pose_actor.Pos().Y(), 0.0f),
-							actor_common_info.GetActorID());
+
+//	for ( size_t i = 0; i < sfm.GetClosestPointsVector().size(); i++ ) {
+//		sfm_vis.SetPointArrow(sfm.GetClosestPointsVector()[i], i);
+//	}
+
+	for ( size_t i = 0; i < sfm.GetClosestPointsVector().size(); i=i+2 ) {
+		sfm_vis.SetPointsLines(sfm.GetClosestPointsVector()[i], sfm.GetClosestPointsVector()[i+1], i);
+	}
+
+//	sfm_vis.SetForcePoint(	sf,
+//							ignition::math::Vector3d(this->pose_actor.Pos().X(), this->pose_actor.Pos().Y(), 0.0f),
+//							actor_common_info.GetActorID());
 
 
 #ifdef CREATE_ROS_NODE

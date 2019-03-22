@@ -36,8 +36,9 @@ void ActorROSInterface::Init(const std::string &_actor_name) {
 
 	}
 
-	pub_marker_array = nh->advertise<visualization_msgs::MarkerArray>("sfm_mrkr"+_actor_name, 1000);
-	pub_marker = nh->advertise<visualization_msgs::Marker>("sfm_mrkr_single"+_actor_name, 1000);
+	pub_closest_points_array = nh->advertise<visualization_msgs::MarkerArray>("sfm_closest_"+_actor_name, 1000);
+	pub_marker_array = nh->advertise<visualization_msgs::MarkerArray>("sfm_mrkr_"+_actor_name, 1000);
+	pub_marker = nh->advertise<visualization_msgs::Marker>("sfm_mrkr_single_"+_actor_name, 1000);
 	this->actor_name = _actor_name;
 
 }
@@ -75,6 +76,12 @@ void ActorROSInterface::PublishMarker(const visualization_msgs::Marker &_marker)
 
 void ActorROSInterface::PublishMarkerArray(const visualization_msgs::MarkerArray &_marker_array) {
 	pub_marker_array.publish(_marker_array);
+}
+
+// ------------------------------------------------------------------- //
+
+void ActorROSInterface::PublishClosestPoints(const visualization_msgs::MarkerArray &_marker_array) {
+	pub_closest_points_array.publish(_marker_array);
 }
 
 // ------------------------------------------------------------------- //
