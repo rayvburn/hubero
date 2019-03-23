@@ -94,7 +94,9 @@ void ActorROSInterface::PublishMarkerArray(const visualization_msgs::MarkerArray
 // ------------------------------------------------------------------- //
 
 void ActorROSInterface::PublishMarkerArrayGrid(const visualization_msgs::MarkerArray &_marker_array) {
-	pub_array_grid.publish(_marker_array);
+	if ( pub_array_grid.getNumSubscribers() > 0 ) {
+		pub_array_grid.publish(_marker_array);
+	}
 }
 // ------------------------------------------------------------------- //
 

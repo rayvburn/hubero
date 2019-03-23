@@ -55,6 +55,8 @@ namespace SocialForceModel {
 
 #endif
 
+#define DEBUG_OSCILLATIONS
+
 //#define DEBUG_SHORT_DISTANCE	// force printing info when distance to an obstalce is small
 
 #ifdef DEBUG_NEW_POSE
@@ -106,9 +108,7 @@ static grid_map::GridMap gridmap({"layer"});
 
 SocialForceModel::SocialForceModel():
 
-		// TODO: note that IT IS REQUIRED TO NAME ALL ACTORS "actor..."
-
-	fov(1.56), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
+	fov(2.25), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
 	desired_force_factor(200.0),
 	interaction_force_factor(6000.0), // interaction_force_factor(5000.0),
 	force_max(2000.0), force_min(500.0) {
@@ -153,10 +153,15 @@ std::vector<ignition::math::Pose3d> SocialForceModel::GetClosestPointsVector() c
 
 // ------------------------------------------------------------------- //
 
-void SocialForceModel::Init(const unsigned short int _mass_person, const float _desired_force_factor,
-		const float _interaction_force_factor) {
+void SocialForceModel::Init(const unsigned short int _mass_person,
+		const float _desired_force_factor,
+		const float _interaction_force_factor,
+		const gazebo::physics::WorldPtr _world_ptr) {
 
-
+	// TODO: discard the objects that should be ignored
+	for ( unsigned int i = 0; i < _world_ptr->ModelCount(); i++ ) {
+		map_models_rel_locations[_world_ptr->ModelByIndex(i)->GetName()] = SFM_BEHIND;
+	}
 
 }
 
@@ -1056,6 +1061,12 @@ ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
 	ignition::math::Vector3d d_alpha_beta = _object_closest_point - _actor_pose.Pos();
 #endif
 
+#ifdef DEBUG_OSCILLATIONS
+	if ( debug_current_object_name == "table1" && debug_current_actor_name == "actor1" ) {
+		std::cout << "\n\n\t +++++++ ACTOR pos: " << _actor_pose.Pos() << "\tOBJECT pos: " << _object_closest_point << std::endl;
+	}
+#endif
+
 	// TODO: adjust Z according to stance
 	d_alpha_beta.Z(0.0); // it is assumed that all objects are in the actor's plane
 
@@ -1424,10 +1435,9 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 	/* Force is zeroed in 2 cases:
 	 * 	- distance between actors is bigger than 5 meters
 	 * 	- the other actor is more than 0.5 m behind */
-	double d_alpha_beta_length = _d_alpha_beta.Length();
-	if ( d_alpha_beta_length > 10.0 ) {
+	if ( _d_alpha_beta.Length() > 10.0 ) {
 
-		// TODO: if no objects nearby the thershold should be increased
+		// TODO: if no objects nearby the threshold should be increased
 		#ifdef DEBUG_INTERACTION_FORCE
 		if ( print_info ) {
 			std::cout << "\t OBJECT TOO FAR AWAY, ZEROING FORCE! \t d_alpha_beta_length: " << d_alpha_beta_length;
@@ -1459,21 +1469,7 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 
 	RelativeLocation beta_rel_location = this->GetBetaRelativeLocation(actor_yaw, _d_alpha_beta);
 
-	if ( debug_current_object_name == "table1" && debug_current_actor_name == "actor1" ) {
-		std::string location_str;
-		if ( beta_rel_location == SFM_BEHIND ) {
-			location_str = "BEHIND";
-		} else if ( beta_rel_location == SFM_RIGHT_SIDE ) {
-			location_str = "RIGHT SIDE";
-		} else if ( beta_rel_location == SFM_LEFT_SIDE ) {
-			location_str = "LEFT SIDE";
-		} else if ( beta_rel_location == SFM_UNKNOWN ) {
-			location_str = "UNKNOWN";
-		}
-		std::cout << "\t" << debug_current_object_name << "'s relative location: " << location_str << "\t";
-	}
-
-	if ( beta_rel_location == SFM_BEHIND && d_alpha_beta_length > 1.0 ) {
+	if ( beta_rel_location == SFM_BEHIND && _d_alpha_beta.Length() > 1.0 ) {
 	// if ( beta_rel_location == SFM_BEHIND ) {
 
 		#ifdef DEBUG_INTERACTION_FORCE
@@ -1521,8 +1517,8 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 #endif
 
 	ignition::math::Vector3d p_alpha = GetPerpendicularToNormal(_n_alpha, beta_rel_location); 	// actor's perpendicular (based on velocity vector)
-	double exp_normal = ( (-Bn * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn * d_alpha_beta_length;
-	double exp_perpendicular = ( (-Bp * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp * d_alpha_beta_length;
+	double exp_normal = ( (-Bn * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn * _d_alpha_beta.Length();
+	double exp_perpendicular = ( (-Bp * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp * _d_alpha_beta.Length();
 	f_alpha_beta = _n_alpha * An * exp(exp_normal) + p_alpha * Ap * exp(exp_perpendicular);
 
 #ifdef DEBUG_INTERACTION_FORCE
@@ -1877,11 +1873,27 @@ RelativeLocation SocialForceModel::GetBetaRelativeLocation(
 	d_alpha_beta_norm.Normalize();
 
 	// when normalized vector used with atan2 then division by euclidean distance not needed
-	angle_d_alpha_beta.Radian( std::atan2(d_alpha_beta_norm.X(), d_alpha_beta_norm.Y()) );
+	//angle_d_alpha_beta.Radian( std::atan2(d_alpha_beta_norm.X(), d_alpha_beta_norm.Y()) );	// V1
+	angle_d_alpha_beta.Radian( std::atan2(d_alpha_beta_norm.Y(), d_alpha_beta_norm.X()) ); 	// V2
 	angle_d_alpha_beta.Normalize();
 
-	angle_relative = _actor_yaw + angle_d_alpha_beta;
-	angle_relative.Normalize();
+	//angle_relative = _actor_yaw + angle_d_alpha_beta;	// V1
+
+	// V2
+	//angle_relative = _actor_yaw - angle_d_alpha_beta; 	// actor's coordinate system rotation considered (relative to world coord. sys.)
+
+	/* V2 NOTES:
+	 *
+	 */
+	angle_relative = _actor_yaw - angle_d_alpha_beta;
+
+	// V3
+	ignition::math::Angle actor_yaw_corrected(_actor_yaw.Radian() - IGN_PI_2); // corrected in terms of transforming to world's coordinate system
+	actor_yaw_corrected.Normalize(); // V4
+	angle_relative.Radian( angle_d_alpha_beta.Radian() - actor_yaw_corrected() );
+	angle_relative.Normalize(); // V4
+
+	// angle_relative.Normalize(); // V1
 
 #ifdef DEBUG_GEOMETRY_2
 	if ( print_info ) {
@@ -1890,22 +1902,29 @@ RelativeLocation SocialForceModel::GetBetaRelativeLocation(
 	std::string txt_dbg;
 #endif
 
-	// consider FOV
-	if ( IsOutOfFOV(angle_relative.Radian() ) ) {
+	// SFM_FRONT ~ hysteresis regulator
+	if ( angle_relative.Radian() >= -IGN_DTOR(5) &&
+		 angle_relative.Radian() <= +IGN_DTOR(5) ) {
+
+		rel_loc = SFM_FRONT;
+#ifdef DEBUG_GEOMETRY_2
+		txt_dbg = "FRONT";
+#endif
+	} else if ( IsOutOfFOV(angle_relative.Radian() ) ) { // consider FOV
 
 		rel_loc = SFM_BEHIND;
 #ifdef DEBUG_GEOMETRY_2
 		txt_dbg = "BEHIND";
 #endif
 
-	} else if ( angle_relative.Radian() <= 0.0 ) {
+	} else if ( angle_relative.Radian() <= 0.0 ) { // 0.0 ) {
 
 		rel_loc = SFM_RIGHT_SIDE;
 #ifdef DEBUG_GEOMETRY_2
 		txt_dbg = "RIGHT";
 #endif
 
-	} else if ( angle_relative.Radian() > 0.0 ) {
+	} else if ( angle_relative.Radian() > 0.0 ) { // 0.0 ) {
 
 		rel_loc = SFM_LEFT_SIDE;
 #ifdef DEBUG_GEOMETRY_2
@@ -1920,6 +1939,38 @@ RelativeLocation SocialForceModel::GetBetaRelativeLocation(
 	}
 #endif
 
+	/* historical data considered when calculating relative location - it is crucial to not
+	 * allow minor yaw rotations to switch from left to right etc. thus a relative angle
+	 * must exceed certain threshold before it will be in fact switched;
+	 * SFM_BEHIND must not be found in map_models_rel_locations! */
+
+#ifdef DEBUG_OSCILLATIONS
+	if ( debug_current_object_name == "table1" && debug_current_actor_name == "actor1" ) {
+		std::string location_str;
+		if ( rel_loc == SFM_FRONT ) {
+			location_str = "FRONT";
+		} else if ( rel_loc == SFM_BEHIND ) {
+			location_str = "BEHIND";
+		} else if ( rel_loc == SFM_RIGHT_SIDE ) {
+			location_str = "RIGHT SIDE";
+		} else if ( rel_loc == SFM_LEFT_SIDE ) {
+			location_str = "LEFT SIDE";
+		} else if ( rel_loc == SFM_UNKNOWN ) {
+			location_str = "UNKNOWN";
+		}
+		std::cout << "\t" << debug_current_object_name << "'s relative location: " << location_str <<  "\tactor: " << debug_current_actor_name;
+		std::cout << "\n\t\td_alpha_beta: x " << d_alpha_beta_norm.X() << "  y " << d_alpha_beta_norm.Y() << "\tangle_actor_yaw_RAW: " << _actor_yaw.Radian() << "\tangle_actor_yaw_CORR: " << actor_yaw_corrected.Radian() << "\tangle_d_ab: " << angle_d_alpha_beta.Radian() << /* "\tangle_diff: " << (angle_d_alpha_beta.Radian()-actor_yaw_corrected.Radian())<< */ "\tangle_rel: " << angle_relative.Radian();
+	}
+#endif
+
+	/* if the angle_relative is above ~5 deg value then the historical value may be discarded */
+	if ( std::fabs(angle_relative.Radian()) > 0.0872 ) {
+		map_models_rel_locations[debug_current_object_name] = rel_loc;
+	} else {
+		std::cout << "\t:::::::::::::::::::::::::HIST REL ANG!:::::::::::::::::::::::::::::::::::::::::::\t";
+		return (map_models_rel_locations[debug_current_object_name]);
+	}
+
 	return rel_loc;
 
 }
@@ -1928,7 +1979,7 @@ RelativeLocation SocialForceModel::GetBetaRelativeLocation(
 
 bool SocialForceModel::IsOutOfFOV(const double &_angle_relative) {
 
-	if ( std::fabs(_angle_relative) <= fov ) {
+	if ( std::fabs(_angle_relative) >= fov ) {
 		return true;
 	}
 

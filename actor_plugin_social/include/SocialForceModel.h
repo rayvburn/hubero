@@ -83,10 +83,11 @@ namespace SocialForceModel {
 // ---------------------------------
 
 typedef enum {
-	SFM_RIGHT_SIDE = 0,
+	SFM_FRONT = 0,
+	SFM_RIGHT_SIDE,
 	SFM_LEFT_SIDE,
 	SFM_BEHIND,
-	SFM_UNKNOWN
+	SFM_UNKNOWN,
 } RelativeLocation;
 
 // ---------------------------------
@@ -167,7 +168,8 @@ public:
 
 	void Init(const unsigned short int _mass_person,
 			  const float _desired_force_factor,
-			  const float _interaction_force_factor);
+			  const float _interaction_force_factor,
+				const gazebo::physics::WorldPtr _world_ptr);
 
 	ignition::math::Vector3d GetInternalAcceleration(		const ignition::math::Pose3d &_actor_pose,
 			const ignition::math::Vector3d &_actor_vel,
@@ -316,6 +318,9 @@ private:
 //	std::vector<ignition::math::Pose3d> models_closest_points;
 //	std::vector<ignition::math::Pose3d> actor_closest_points;
 	std::vector<ignition::math::Pose3d> closest_points;
+
+	// stores previous location of a model relative to an actor
+	std::map<std::string, RelativeLocation> map_models_rel_locations;
 
 	float relaxation_time;
 	float speed_desired;

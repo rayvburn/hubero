@@ -166,6 +166,7 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	}
 
 	prev_state_actor = ACTOR_STATE_MOVE_AROUND;
+	sfm.Init(80.0, 2.0, 1.0, this->world);
 
 }
 
@@ -1119,7 +1120,7 @@ void ActorPlugin::VisualizeForceField() {
 
 #endif
 
-
+/*
 	// calculate grid for actor1
 
 	if ( this->actor->GetName() == "actor1" ) {
@@ -1133,9 +1134,7 @@ void ActorPlugin::VisualizeForceField() {
 
 			pose = ignition::math::Pose3d(grid_vis.GetNextGridElement(), this->pose_actor.Rot());
 
-			/*
-			 * Remember to artificially place the actor (along with his bounding) in current grid cell!
-			 */
+			// Remember to artificially place the actor (along with his bounding) in current grid cell!
 	#if	defined(INFLATE_BOUNDING_BOX)
 			actor_common_info.SetBoundingBox( this->GenerateBoundingBox(pose) );
 	#elif defined(INFLATE_BOUNDING_CIRCLE)
@@ -1162,6 +1161,7 @@ void ActorPlugin::VisualizeForceField() {
 		grid_vis.ResetGridIndex();
 
 	}
+*/
 
 }
 
