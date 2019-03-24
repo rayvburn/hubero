@@ -1161,8 +1161,8 @@ void ActorPlugin::VisualizeForceField() {
 		grid_vis.ResetGridIndex();
 
 	}
-*/
 
+ */
 }
 
 #endif

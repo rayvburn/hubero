@@ -12,22 +12,9 @@
 
 // ----------------------------------------
 
-/* Uncommenting hangs debug messages and makes 2 actors move the same way
- * This is probably some library inclusion problem? */
-// #define GRID_MAP_VISUALIZATION
-
-#ifdef GRID_MAP_VISUALIZATION
-
-#include <grid_map_core/GridMap.hpp>
-#include <grid_map_ros/grid_map_ros.hpp>
-
-#endif
-
-// ----------------------------------------
-
 namespace SocialForceModel {
 
-#define SILENT_
+// #define SILENT_
 
 // deprecated
 //#define SFM_RIGHT_SIDE 0
@@ -44,20 +31,21 @@ namespace SocialForceModel {
 
 #define DEBUG_GEOMETRY_1 // angle correctes etc.
 #define DEBUG_GEOMETRY_2 // relative location
-#define DEBUG_INTERNAL_ACC
-#define DEBUG_INTERACTION_FORCE
-#define DEBUG_REL_SPEED
-#define DEBUG_NEW_POSE
-#define DEBUG_ACTOR_FACING_TARGET
-#define DEBUG_BOUNDING_BOX
-#define DEBUG_BOUNDING_CIRCLE // each iteration
-#define DEBUG_CLOSEST_POINTS
+//#define DEBUG_INTERNAL_ACC
+//#define DEBUG_INTERACTION_FORCE
+//#define DEBUG_REL_SPEED
+//#define DEBUG_NEW_POSE
+//#define DEBUG_ACTOR_FACING_TARGET
+//#define DEBUG_BOUNDING_BOX
+//#define DEBUG_BOUNDING_CIRCLE // each iteration
+//#define DEBUG_CLOSEST_POINTS
+//#define DEBUG_OSCILLATIONS	// each iteration (table1 & actor1)
 
 #endif
 
-#define DEBUG_OSCILLATIONS
 
-//#define DEBUG_SHORT_DISTANCE	// force printing info when distance to an obstalce is small
+
+//#define DEBUG_SHORT_DISTANCE	// force printing info when distance to an obstacle is small
 
 #ifdef DEBUG_NEW_POSE
 #define DEBUG_JUMPING_POSITION
@@ -85,22 +73,9 @@ static int print_counter = 0;
 
 #define NEW_YAW_BASE
 
+// temp variables for debugging
 static std::string debug_current_object_name;
 static std::string debug_current_actor_name;
-
-// ------------------------------------------------------------------- //
-
-#ifdef GRID_MAP_VISUALIZATION
-
-#define MAP_BOUND_X     3.0f
-#define MAP_BOUND_Y     2.0f
-#define MAP_RESOLUTION  0.1f
-
-// Create grid map
-static grid_map::GridMap gridmap({"layer"});
-
-#endif
-
 
 // ------------------------------------------------------------------- //
 
@@ -124,12 +99,6 @@ SocialForceModel::SocialForceModel():
 	 * - direction weight
 	 * - max speed
 	 */
-
-#ifdef GRID_MAP_VISUALIZATION
-	gridmap.setFrameId("map");
-	gridmap.setGeometry(grid_map::Length(1.0, 1.0), 0.1);
-	gridmap["layer"].setRandom();
-#endif
 
 }
 
@@ -449,11 +418,11 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 														is_an_actor);
 #endif
 
-
+#ifdef DEBUG_OSCILLATIONS
 		if ( _actor_name == "actor1" && model_ptr->GetName() == "table1" ) {
 			std::cout << "\tactor1-table1 interaction vector: " << f_alpha_beta.X() << "\t" << f_alpha_beta.Y() << std::endl;
 		}
-
+#endif
 
 		f_interaction_total += f_alpha_beta;
 		if ( print_info ) {
@@ -1440,7 +1409,7 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 		// TODO: if no objects nearby the threshold should be increased
 		#ifdef DEBUG_INTERACTION_FORCE
 		if ( print_info ) {
-			std::cout << "\t OBJECT TOO FAR AWAY, ZEROING FORCE! \t d_alpha_beta_length: " << d_alpha_beta_length;
+			std::cout << "\t OBJECT TOO FAR AWAY, ZEROING FORCE! \t d_alpha_beta_length: " << _d_alpha_beta.Length();
 			std::cout << std::endl;
 		}
 		#endif
@@ -1542,6 +1511,7 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 
 #if !defined(THETA_ALPHA_BETA_V2011) && !defined(THETA_ALPHA_BETA_V2014)
 
+// ******************** BELOW IS NOT CORRECT - TODO: delete it completely ************************
 // dynamic objects interaction
 double SocialForceModel::GetAngleBetweenObjectsVelocities(
 		const ignition::math::Pose3d &_actor_pose,
@@ -1647,7 +1617,7 @@ double SocialForceModel::GetAngleBetweenObjectsVelocities(
 
 	/* Actor's info is based on his world's pose - it is easier to treat the current actor
 	 * as an object that always keeps aligned to his movement direction.
-	 * On the other hand the object's orientation is not known and its velocity
+	 * On the other hand the other object's orientation is not known and its velocity
 	 * will be used to determine it's yaw. */
 
 	/* The problem is that actor's linear velocity couldn't be set so it can't be visible
@@ -1668,6 +1638,12 @@ double SocialForceModel::GetAngleBetweenObjectsVelocities(
 
 		/* both actors coordinate systems are oriented the same
 		 * so no extra calculations need to be performed (relative angle) */
+
+		/* this is a lightweight version - another one is based on dot product
+		 * and arccos calculation (used in the dynamic object case) - result would
+		 * be equal here (when both actors are moving);
+		 * with a use of this version there is an ability to calculate the angle
+		 * even when one of the actors is currently rotating */
 		yaw_diff.Radian((_actor_yaw.Radian() - _object_yaw.Radian()));
 		yaw_diff.Normalize();
 
@@ -1680,29 +1656,37 @@ double SocialForceModel::GetAngleBetweenObjectsVelocities(
 
 			#ifdef DEBUG_GEOMETRY_1
 			if ( print_info ) {
-				std::cout << "\t++STATIC object++";
+				std::cout << "\t++STATIC object++"; // THIS SHOULD NOT HAPPEN AFTER ADDING COMPONENT FOR STATIC OBSTACLES!
 			}
 			#endif
 
-			yaw_diff.Radian((_actor_yaw.Radian() - _object_yaw.Radian()));
+			// yaw_diff.Radian((_actor_yaw.Radian() - _object_yaw.Radian()));
+			// transform actor's yaw to the world's coordinate system
+			yaw_diff.Radian((_actor_yaw.Radian() - IGN_PI_2 - _object_yaw.Radian()));
 			yaw_diff.Normalize();
 
 		} else {
 
 			#ifdef DEBUG_GEOMETRY_1
-//			if ( print_info ) {
+			if ( print_info ) {
 				std::cout << "\t++!!! DYNAMIC object !!!++";
-//			}
+			}
 			#endif
 
-			// TODO: debug this, NOT TESTED!
-			// velocities are expressed in world's coordinate system
+//			 TODO: debug this, NOT TESTED!
+//			 velocities are expressed in world's coordinate system
+//
+//			 V1
+//			 transform object's yaw to actor's coordinate system by adding 90 deg
+//			ignition::math::Angle yaw_temp( std::atan2( _object_vel.Y(), _object_vel.X() ) + (IGN_PI/2) );
+//			yaw_temp.Normalize();
+//
+//			yaw_diff.Radian( _actor_yaw.Radian() - yaw_temp.Radian() );
 
-			// transform object's yaw to actor's coordinate system by adding 90 deg
-			ignition::math::Angle yaw_temp( std::atan2( _object_vel.Y(), _object_vel.X() ) + (IGN_PI/2) );
-			yaw_temp.Normalize();
-
-			yaw_diff.Radian( _actor_yaw.Radian() - yaw_temp.Radian() );
+			// V2 - OK
+			// both velocities are expressed in world's coordinate system
+			// formula -> Section "Examples of spatial tasks" @ https://onlinemschool.com/math/library/vector/angl/
+			yaw_diff.Radian( std::acos( _actor_vel.Dot(_object_vel) / (_actor_vel.Length() * _object_vel.Length()) ) );
 			yaw_diff.Normalize();
 
 		}
@@ -1712,7 +1696,7 @@ double SocialForceModel::GetAngleBetweenObjectsVelocities(
 
 #ifdef DEBUG_GEOMETRY_1
 	if ( print_info ) {
-		std::cout << "\t yaw_actor: " << _actor_yaw.Radian() << "  yaw_object: " << _object_yaw.Radian() << "  yaw_diff: " << yaw_diff.Radian() << std::endl;
+		std::cout << "\t yaw_actor: " << _actor_yaw.Radian() << "  yaw_object: " << _object_yaw.Radian() << "  yaw_diff: " << yaw_diff.Radian() << "\tactor_vel: " << _actor_vel << "\tobj_vel: " << _object_vel << std::endl;
 	}
 #endif
 
@@ -1860,6 +1844,7 @@ ignition::math::Vector3d SocialForceModel::GetPerpendicularToNormal(
 
 // ------------------------------------------------------------------- //
 
+// TODO: make it return a tuple <RelativeLocation rel_loc, double rel_angle>
 RelativeLocation SocialForceModel::GetBetaRelativeLocation(
 		const ignition::math::Angle &_actor_yaw,
 		const ignition::math::Vector3d &_d_alpha_beta)
@@ -1903,8 +1888,8 @@ RelativeLocation SocialForceModel::GetBetaRelativeLocation(
 #endif
 
 	// SFM_FRONT ~ hysteresis regulator
-	if ( angle_relative.Radian() >= -IGN_DTOR(5) &&
-		 angle_relative.Radian() <= +IGN_DTOR(5) ) {
+	if ( angle_relative.Radian() >= -IGN_DTOR(9) &&
+		 angle_relative.Radian() <= +IGN_DTOR(9) ) {
 
 		rel_loc = SFM_FRONT;
 #ifdef DEBUG_GEOMETRY_2
@@ -1964,10 +1949,12 @@ RelativeLocation SocialForceModel::GetBetaRelativeLocation(
 #endif
 
 	/* if the angle_relative is above ~5 deg value then the historical value may be discarded */
-	if ( std::fabs(angle_relative.Radian()) > 0.0872 ) {
+	if ( rel_loc != SFM_FRONT ) {
 		map_models_rel_locations[debug_current_object_name] = rel_loc;
 	} else {
+#ifdef DEBUG_OSCILLATIONS
 		std::cout << "\t:::::::::::::::::::::::::HIST REL ANG!:::::::::::::::::::::::::::::::::::::::::::\t";
+#endif
 		return (map_models_rel_locations[debug_current_object_name]);
 	}
 
