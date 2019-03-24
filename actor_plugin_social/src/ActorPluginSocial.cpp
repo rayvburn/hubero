@@ -780,37 +780,71 @@ void ActorPlugin::HandleObstacles(ignition::math::Vector3d &_pos)
 
 bool ActorPlugin::CalculateVelocity(const ignition::math::Vector3d &_pos, const double &_dt) {
 
-  	/// calculate actor's velocity vector or leave the last velocity
-	/// max allowable speed is 15 m/s
-	const unsigned int SPEED_LIMIT = 15;
-	double temp_x, temp_y, temp_z = 0.0;
+//  	/// calculate actor's velocity vector or leave the last velocity
+//	/// max allowable speed is 15 m/s
+//	const unsigned int SPEED_LIMIT = 15;
+//	double temp_x, temp_y, temp_z = 0.0;
+//
+//	// std::cout << " Calc vel! " << std::endl;
+//	if ( (temp_x = (_pos.X() - this->last_pose_actor.Pos().X())/_dt) > SPEED_LIMIT ) {
+//		if ( print_info ) {
+//			std::cout << " oooooo VELOCITY SHOOTOUT X oooooo " << std::endl;
+//		}
+//		return false;
+//	}
+//
+//	if ( (temp_y = (_pos.Y() - this->last_pose_actor.Pos().Y())/_dt) > SPEED_LIMIT ) {
+//		if ( print_info ) {
+//			std::cout << " oooooo VELOCITY SHOOTOUT Y oooooo " << std::endl;
+//		}
+//		return false;
+//	}
+//
+//	if ( (temp_z = (_pos.Z() - this->last_pose_actor.Pos().Z())/_dt) > SPEED_LIMIT ) {
+//		if ( print_info ) {
+//			std::cout << " oooooo VELOCITY SHOOTOUT Z oooooo " << std::endl;
+//		}
+//		return false;
+//	}
+//
+//	// if got there, then speed is in the permitted range - update the velocity
+//	this->velocity_actual.X(temp_x);
+//	this->velocity_actual.Y(temp_y);
+//	this->velocity_actual.Z(temp_z);
 
-	// std::cout << " Calc vel! " << std::endl;
-	if ( (temp_x = (_pos.X() - this->last_pose_actor.Pos().X())/_dt) > SPEED_LIMIT ) {
-		if ( print_info ) {
-			std::cout << " oooooo VELOCITY SHOOTOUT X oooooo " << std::endl;
-		}
-		return false;
+
+	// TODO: RETURN bool DEPRECATED
+	ignition::math::Vector3d new_velocity;
+	new_velocity.X( (_pos.X() - this->last_pose_actor.Pos().X()) / _dt );
+	new_velocity.Y( (_pos.Y() - this->last_pose_actor.Pos().Y()) / _dt );
+	new_velocity.Z( (_pos.Z() - this->last_pose_actor.Pos().Z()) / _dt );
+
+	/* Velocity Averaging Block -
+	 * used there to prevent some kind of oscillations in
+	 * social force algorithm execution - the main reason of such behavior were changes
+	 * in speed which cause relative velocity fluctuations which on turn affects final
+	 * result a lot */
+
+	std::rotate( velocities_to_avg.begin(), velocities_to_avg.begin()+1, velocities_to_avg.end() );
+	velocities_to_avg.at(velocities_to_avg.size()-1) = new_velocity;
+
+	// sum up - at the moment no Z-velocities are taken into consideration
+	double vel[3] = {0.0, 0.0, 0.0};
+	for ( size_t i = 0; i < velocities_to_avg.size(); i++ ) {
+		vel[0] += velocities_to_avg.at(i).X();
+		vel[1] += velocities_to_avg.at(i).Y();
+		// vel[2] += velocities_to_avg.at(i).Z();
 	}
 
-	if ( (temp_y = (_pos.Y() - this->last_pose_actor.Pos().Y())/_dt) > SPEED_LIMIT ) {
-		if ( print_info ) {
-			std::cout << " oooooo VELOCITY SHOOTOUT Y oooooo " << std::endl;
-		}
-		return false;
-	}
+	vel[0] = vel[0] / static_cast<double>(velocities_to_avg.size());
+	vel[1] = vel[1] / static_cast<double>(velocities_to_avg.size());
+	// vel[2] = vel[2] / static_cast<double>(velocities_to_avg.size());
 
-	if ( (temp_z = (_pos.Z() - this->last_pose_actor.Pos().Z())/_dt) > SPEED_LIMIT ) {
-		if ( print_info ) {
-			std::cout << " oooooo VELOCITY SHOOTOUT Z oooooo " << std::endl;
-		}
-		return false;
-	}
+	new_velocity.X(vel[0]);
+	new_velocity.Y(vel[1]);
+	new_velocity.Z(vel[2]);
 
-	// if got there, then speed is in the permitted range - update the velocity
-	this->velocity_actual.X(temp_x);
-	this->velocity_actual.Y(temp_y);
-	this->velocity_actual.Z(temp_z);
+	this->velocity_actual = new_velocity;
 	return true;
 
 }
@@ -1161,8 +1195,8 @@ void ActorPlugin::VisualizeForceField() {
 		grid_vis.ResetGridIndex();
 
 	}
+*/
 
- */
 }
 
 #endif
@@ -1209,7 +1243,7 @@ double ActorPlugin::PrepareForUpdate(const common::UpdateInfo &_info) {
 void ActorPlugin::ApplyUpdate(const common::UpdateInfo &_info, const double &_dist_traveled) {
 
   	// save last position to calculate velocity
-	last_pose_actor = this->actor->WorldPose();
+	this->last_pose_actor = this->actor->WorldPose();
 
 	// update the global pose
 	this->actor->SetWorldPose(this->pose_actor, false, false);

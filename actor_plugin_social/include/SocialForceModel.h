@@ -46,6 +46,13 @@
 
 // ---------------------------------
 
+// 1 out of 2 below possible
+
+// #define INTERACTION_FORCE_STATIC_OBJ_V2011 	// `repulsion from walls uses the same formulas as the repulsion from other pedestrians`
+#define INTERACTION_FORCE_STATIC_OBJ_V2014	// `The repulsive force from static obstacles f αi is modeled by using the functional form as given by the repulsive force for elliptical formulation`
+
+// ---------------------------------
+
 // #define PERPENDICULAR_COLLISION_AVOIDANCE_MOD // DEPRECATED?
 
 // ---------------------------------
@@ -298,6 +305,12 @@ public:
 //	std::vector<ignition::math::Pose3d> GetModelClosestPointsVector() const;
 //	std::vector<ignition::math::Pose3d> GetActorClosestPointsVector() const;
 	std::vector<ignition::math::Pose3d> GetClosestPointsVector() const;
+
+	ignition::math::Vector3d GetForceFromStaticObstacle(const ignition::math::Pose3d &_actor_pose,
+			const ignition::math::Vector3d &_actor_velocity,
+			const ignition::math::Pose3d &_object_pose,
+			const double &_dt);
+	// dt needed to be passed!
 
 	virtual ~SocialForceModel();
 

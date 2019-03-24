@@ -14,7 +14,7 @@
 
 namespace SocialForceModel {
 
-// #define SILENT_
+#define SILENT_
 
 // deprecated
 //#define SFM_RIGHT_SIDE 0
@@ -29,8 +29,8 @@ namespace SocialForceModel {
 
 #ifndef SILENT_
 
-#define DEBUG_GEOMETRY_1 // angle correctes etc.
-#define DEBUG_GEOMETRY_2 // relative location
+//#define DEBUG_GEOMETRY_1 // angle correctes etc.
+//#define DEBUG_GEOMETRY_2 // relative location
 //#define DEBUG_INTERNAL_ACC
 //#define DEBUG_INTERACTION_FORCE
 //#define DEBUG_REL_SPEED
@@ -43,6 +43,8 @@ namespace SocialForceModel {
 
 #endif
 
+
+#define DEBUG_FORCE_EACH_OBJECT // each iteration
 
 
 //#define DEBUG_SHORT_DISTANCE	// force printing info when distance to an obstacle is small
@@ -83,9 +85,9 @@ static std::string debug_current_actor_name;
 
 SocialForceModel::SocialForceModel():
 
-	fov(2.25), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
+	fov(2.00), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
 	desired_force_factor(200.0),
-	interaction_force_factor(6000.0), // interaction_force_factor(5000.0),
+	interaction_force_factor(10000.0), // interaction_force_factor(6000.0),
 	force_max(2000.0), force_min(500.0) {
 
 	SetParameterValues();
@@ -400,6 +402,8 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		closest_points.push_back(model_pose_shifted);
 		closest_points.push_back(actor_closest_to_model_pose);
 
+		#if defined(INTERACTION_FORCE_STATIC_OBJ_V2011)
+
 		// what if velocity is actually non-zero but Gazebo sees 0?
 		f_alpha_beta = this->GetInteractionComponent(	actor_closest_to_model_pose,
 														_actor_velocity,
@@ -408,14 +412,48 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 														model_closest_point,
 														is_an_actor);
 
+		#elif defined(INTERACTION_FORCE_STATIC_OBJ_V2014)
+		// simplified version - actor or not -> no other dynamic objects considered
+		if ( is_an_actor) {
+			f_alpha_beta = this->GetInteractionComponent(	actor_closest_to_model_pose,
+															_actor_velocity,
+															model_pose_shifted, // model_ptr->WorldPose(),
+															model_vel,
+															model_closest_point,
+															is_an_actor);
+		} else {
+			// TODO: dt arbitrary ATM!
+			f_alpha_beta = this->GetForceFromStaticObstacle(actor_closest_to_model_pose,
+															_actor_velocity, model_pose_shifted, 0.001);
+		}
+		#endif
 #else
 		ignition::math::Vector3d model_closest_point(0.0f, 0.0f, 0.0f);
+		// --------------------------------- NO BOUNDING CIRCLE USED ---------------------------------
+		#if defined(INTERACTION_FORCE_STATIC_OBJ_V2011)
+
 		f_alpha_beta = this->GetInteractionComponent(	_actor_pose,
 														_actor_velocity,
 														model_ptr->WorldPose(),
 														model_vel,
 														model_closest_point, // not used then
 														is_an_actor);
+		#elif defined(INTERACTION_FORCE_STATIC_OBJ_V2014)
+		// simplified version - actor or not -> no other dynamic objects considered
+		if ( is_an_actor) {
+			f_alpha_beta = this->GetInteractionComponent(	_actor_pose,
+															_actor_velocity,
+															model_ptr->WorldPose(),
+															model_vel,
+															model_closest_point,
+															is_an_actor);
+		} else {
+			// TODO: dt arbitrary ATM!
+			f_alpha_beta = this->GetForceFromStaticObstacle(_actor_pose,
+															_actor_velocity, model_ptr->WorldPose(), 0.001);
+		}
+		#endif
+
 #endif
 
 #ifdef DEBUG_OSCILLATIONS
@@ -435,6 +473,16 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
 	}
 #endif
+
+
+	/* kind of a hack connected with very strong repulsion when actors are close to each other
+	 * whereas in bigger distances the force is quite weak */
+	if ( f_interaction_total.Length() > 1200 ) {
+		f_interaction_total = f_interaction_total.Normalized() * 1200;
+	}
+//	else if ( f_interaction_total.Length() < 500 ) {
+//		f_interaction_total = f_interaction_total.Normalized() * 1000;
+//	}
 
 
 	/* TODO: set desired force factor according to the distance to the closest obstacle -
@@ -1213,6 +1261,7 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	 * on social force; if the social force is completely different compared to current movement direction
 	 * then truncate the result_vel vector */
 
+	// FIXME: uncommenting this will not allow visualizing the grid properly
 //	result_vel.X( +sin(yaw_new.Radian()) * result_vel.SquaredLength() );
 //	result_vel.Y( -cos(yaw_new.Radian()) * result_vel.SquaredLength() );
 
@@ -1485,10 +1534,28 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 	double theta_alpha_beta = this->GetAngleBetweenObjectsVelocities(_actor_pose, &actor_yaw, _object_pose, &object_yaw);
 #endif
 
+
+	/* NOTE: kind of a hack to prevent an interaction force wind-up which happens while 2 pedestrians
+	 *  are close to each other - bigger v_rel will reduce this complaint */
+	//v_rel *= 0.25;
+
 	ignition::math::Vector3d p_alpha = GetPerpendicularToNormal(_n_alpha, beta_rel_location); 	// actor's perpendicular (based on velocity vector)
 	double exp_normal = ( (-Bn * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn * _d_alpha_beta.Length();
 	double exp_perpendicular = ( (-Bp * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp * _d_alpha_beta.Length();
 	f_alpha_beta = _n_alpha * An * exp(exp_normal) + p_alpha * Ap * exp(exp_perpendicular);
+
+#ifdef DEBUG_FORCE_EACH_OBJECT
+	if ( debug_current_actor_name == "actor1" ) {
+		std::cout << "\nDYNAMIC OBSTACLE" << std::endl;
+		std::cout << "\t" << debug_current_object_name << ": ";
+		std::cout << "\tv_rel: " << v_rel << std::endl;
+		std::cout << "\tn_alpha: " << _n_alpha;
+		std::cout << "\texp_n: " << exp_normal << "\ttheta_alpha_beta: " << theta_alpha_beta << "\td_alpha_beta_len: " << _d_alpha_beta.Length() << std::endl;
+		std::cout << "\tp_alpha: " << p_alpha;
+		std::cout << "\texp_p: " << exp_perpendicular << std::endl;
+		std::cout << "\tf_alpha_beta: " << f_alpha_beta * interaction_force_factor << "\t\tvec len: " << interaction_force_factor * f_alpha_beta.Length() << std::endl;
+	}
+#endif
 
 #ifdef DEBUG_INTERACTION_FORCE
 	if ( print_info ) {
@@ -1971,6 +2038,47 @@ bool SocialForceModel::IsOutOfFOV(const double &_angle_relative) {
 	}
 
 	return false;
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Vector3d SocialForceModel::GetForceFromStaticObstacle(
+		const ignition::math::Pose3d &_actor_pose,
+		const ignition::math::Vector3d &_actor_velocity,
+		const ignition::math::Pose3d &_object_pose,
+		const double &_dt)
+{
+
+	/* elliptic formulation - `14 article - equations (3) and (4) */
+
+	// distance vector
+	ignition::math::Vector3d d_alpha_i = _object_pose.Pos() - _actor_pose.Pos();
+
+	// acceleration
+	ignition::math::Vector3d y_alpha_i = _actor_velocity * _dt;
+
+	// semi-minor axis of the elliptic formulation
+	double w_alpha_i = 0.5 * sqrt( std::pow((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()),2) -
+								   std::pow(y_alpha_i.Length(), 2) );
+
+	// ~force (acceleration) calculation
+	ignition::math::Vector3d f_alpha_i;
+	f_alpha_i = this->Aw * exp(-w_alpha_i/this->Bw) * ((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()) /
+			    2*w_alpha_i) * 0.5 * (d_alpha_i.Normalized() + (d_alpha_i - y_alpha_i).Normalized());
+
+#ifdef DEBUG_FORCE_EACH_OBJECT
+	if ( debug_current_actor_name == "actor1" && debug_current_object_name == "table1") {
+		std::cout << "\nSTATIC OBSTACLE" << std::endl;
+		std::cout << "\t" << debug_current_object_name << ": ";
+		std::cout << "\td_alpha_i: " << d_alpha_i << std::endl;
+		std::cout << "\ty_alpha_i: " << y_alpha_i;
+		std::cout << "\tw_alpha_i: " << w_alpha_i << std::endl;
+		std::cout << "\tf_alpha_i: " << f_alpha_i * interaction_force_factor << std::endl;
+	}
+#endif
+
+	return (f_alpha_i);
 
 }
 

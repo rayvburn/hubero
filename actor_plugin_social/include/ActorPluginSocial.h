@@ -222,6 +222,8 @@ namespace gazebo
     /// \brief Actual velocity of the actor
     private: ignition::math::Vector3d velocity_actual;
 
+    private: std::array<ignition::math::Vector3d, 50> velocities_to_avg;
+
     /// \brief Helper function to calculate the velocity (if it is allowable)
     /// 	   allowable in terms of immediate jumps which are not permitted
     private: bool CalculateVelocity(const ignition::math::Vector3d &_pos, const double &_dt);
