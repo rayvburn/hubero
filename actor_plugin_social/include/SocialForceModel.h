@@ -106,6 +106,7 @@ public:
 	SocialForceModel();
 
 
+
 #ifdef BOUNDING_BOX_CALCULATION
 
 // DEPRECATED
@@ -142,6 +143,9 @@ public:
 	);
 
 #endif
+
+	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> GetClosestPointsOfIntersectedModels(
+			const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_object_pos) const;
 
 #ifdef BOUNDING_CIRCLE_CALCULATION
 

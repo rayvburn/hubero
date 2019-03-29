@@ -812,7 +812,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	// intersection of the 2nd actor's circle (another one)
 	ignition::math::Vector3d object_pos_shifted = _object_bc.GetIntersection(_actor_pose.Pos());
 
-#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX
+
 
 	/*
 	 * Let's check whether the bounding circles are not intruding each other -
@@ -826,45 +826,15 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	connection.Z(0.0); // planar
 	if ( connection.Length() <= _actor_bc.GetRadius() ) {
 
-		if ( debug_current_actor_name == "actor1" ) {
-			std::cout << "\n\n\n\n";
-			std::cout << "\nWARNING - " << debug_current_actor_name << "'s bounding circle IS INTERSECTING " << debug_current_object_name << "'s bounding circle!" << std::endl;
-		}
-		/* 1) 	create a line which divides the connection into 2 parts
-		 * 2) 	re-assign shifted points - place then just around the center of the line
-		 * 		to force very small distance between objects to strengthen their repulsion */
-
-		ignition::math::Line3d line;
-		line.Set(_actor_pose.Pos(), _object_pose.Pos());
-
-		ignition::math::Angle line_slope( std::atan2( line.Direction().Y(), line.Direction().X() ) );
-		line_slope.Normalize(); // just in case
-
-		ignition::math::Vector3d actor_within = _actor_pose.Pos();
-		actor_within.X( _actor_pose.Pos().X() + 0.49 * line.Length() * cos(line_slope.Radian() ));
-		actor_within.Y( _actor_pose.Pos().Y() + 0.49 * line.Length() * sin(line_slope.Radian() ));
-
-		ignition::math::Vector3d object_within = _object_pose.Pos();
-		object_within.X( _object_pose.Pos().X() - 0.49 * line.Length() * cos(line_slope.Radian() ));
-		object_within.Y( _object_pose.Pos().Y() - 0.49 * line.Length() * sin(line_slope.Radian() ));
-
-		if ( debug_current_actor_name == "actor1" ) {
-			std::cout << "\tLINE    slope: " << line_slope.Radian() << "\tdir: " << line.Direction() << std::endl;
-			std::cout << "\t\tlength: " << line.Length() << "\tsin: " << sin(line_slope.Radian()) << "\tcos: " << cos(line_slope.Radian()) << std::endl;
-			std::cout << "\tINITIAL shift\tactor: " << actor_pose_shifted.Pos() << "\tobject: " <<  object_pos_shifted << std::endl;
-			std::cout << "\tMODDED  shift\tactor: " << actor_within << "\tobject: " <<  object_within << std::endl;
-			std::cout << std::endl;
-			std::cout << "\n\n\n\n";
-		}
-
-		actor_pose_shifted.Pos() = actor_within;
-		object_pos_shifted = object_within;
+		std::tie(actor_pose_shifted.Pos(), object_pos_shifted) = this->GetClosestPointsOfIntersectedModels(_actor_pose.Pos(), _object_pose.Pos());
 
 	} else {
+		#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX
 		std::cout << "\nINFO - " << debug_current_actor_name << "'s bounding circle IS SAFE\tlength: " << connection.Length() << "\tradius: " << _actor_bc.GetRadius() << std::endl;
+		#endif
 	}
 
-#endif
+
 
 	#ifdef DEBUG_BOUNDING_CIRCLE
 	std::cout << "\n\nBOUND - 2 actors | 1 pos: " << _actor_pose.Pos() << "\tintersection: " << actor_pose_shifted.Pos() << std::endl;
@@ -875,6 +845,69 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 
 }
 #endif
+
+// ------------------------------------------------------------------- //
+
+std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> SocialForceModel::GetClosestPointsOfIntersectedModels(
+		const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_object_pos) const
+
+{
+
+	/*
+	 * While actors are moving towards each other the distance between their extreme points
+	 * (those which intersect bounding boxes/circles) gets smaller. At some point it will
+	 * become so small that 2 bounding boxes/circles will intersect. This creates some
+	 * trouble connected with calculating the distance between closest points.
+	 * The main issue there will be related with RelativeLocation of an object - it will likely
+	 * switch from (for example) RIGHT to LEFT which in turn will create a switch in perpendicular
+	 * vector direction too (RelativeLocation is calculated based on d_alpha_beta which relies on
+	 * extreme points position - bingo!)
+	 * This function prevents from accidental switch of Relative Location which produces sticking
+	 * of 2 objects located near to each other. It will calculate the closest points (extreme)
+	 * position as settled just around the half distance between 2 objects (their centers -
+	 * to be specific).
+	 */
+
+#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX
+	if ( debug_current_actor_name == "actor1" ) {
+		std::cout << "\n\n\n\n";
+		std::cout << "\nWARNING - " << debug_current_actor_name << "'s bounding circle IS INTERSECTING " << debug_current_object_name << "'s bounding circle!" << std::endl;
+	}
+#endif
+
+	/* 1) 	create a line which divides the connection into 2 parts
+	 * 2) 	re-assign shifted points - place then just around the center of the line
+	 * 		to force very small distance between objects to strengthen their repulsion */
+
+	ignition::math::Line3d line;
+	line.Set(_actor_pos, _object_pos);
+
+	ignition::math::Angle line_slope( std::atan2( line.Direction().Y(), line.Direction().X() ) );
+	line_slope.Normalize(); // just in case
+
+	ignition::math::Vector3d actor_shifted = _actor_pos;
+	actor_shifted.X( _actor_pos.X() + 0.495 * line.Length() * cos(line_slope.Radian() ));
+	actor_shifted.Y( _actor_pos.Y() + 0.495 * line.Length() * sin(line_slope.Radian() ));
+
+	ignition::math::Vector3d object_shifted = _object_pos;
+	object_shifted.X( _object_pos.X() - 0.495 * line.Length() * cos(line_slope.Radian() ));
+	object_shifted.Y( _object_pos.Y() - 0.495 * line.Length() * sin(line_slope.Radian() ));
+
+#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX
+	if ( debug_current_actor_name == "actor1" ) {
+		std::cout << "\tLINE    slope: " << line_slope.Radian() << "\tdir: " << line.Direction() << std::endl;
+		std::cout << "\t\tlength: " << line.Length() << "\tsin: " << sin(line_slope.Radian()) << "\tcos: " << cos(line_slope.Radian()) << std::endl;
+		//std::cout << "\tINITIAL shift\tactor: " << actor_pose_shifted.Pos() << "\tobject: " <<  object_pos_shifted << std::endl;
+		std::cout << "\tMODDED  shift\tactor: " << actor_shifted << "\tobject: " <<  object_shifted << std::endl;
+		std::cout << std::endl;
+		std::cout << "\n\n\n\n";
+	}
+#endif
+
+	return (std::make_tuple(actor_shifted, object_shifted));
+
+}
+
 // ------------------------------------------------------------------- //
 
 #ifdef BOUNDING_BOX_CALCULATION
