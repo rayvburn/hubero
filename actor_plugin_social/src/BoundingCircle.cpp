@@ -33,6 +33,10 @@ void BoundingCircle::SetCenter(const ignition::math::Vector3d &_center_point) {
 
 // ------------------------------------------------------------------- //
 
+/*
+ * GetIntersection takes a destination point and calculates the intersection point on the circle which
+ * creates a line from circle's center (actor's center) to destination point while passing through the circle
+ */
 ignition::math::Vector3d BoundingCircle::GetIntersection(const ignition::math::Vector3d &_pt_dest) const {
 
 	/*
@@ -61,6 +65,12 @@ ignition::math::Vector3d BoundingCircle::GetIntersection(const ignition::math::V
 
 	return (pt_intersection);
 
+}
+
+// ------------------------------------------------------------------- //
+
+double BoundingCircle::GetRadius() const {
+	return (this->radius);
 }
 
 // ------------------------------------------------------------------- //

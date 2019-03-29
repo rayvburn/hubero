@@ -25,6 +25,7 @@ public:
 	void SetCenter(const ignition::math::Vector3d &_center_point);
 
 	ignition::math::Vector3d GetIntersection(const ignition::math::Vector3d &_pt_dest) const;
+	double GetRadius() const;
 	visualization_msgs::Marker GetMarkerConversion() const;
 
 	virtual ~BoundingCircle();

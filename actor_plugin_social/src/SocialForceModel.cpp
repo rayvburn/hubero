@@ -44,6 +44,7 @@ namespace SocialForceModel {
 #endif
 
 
+#define DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX
 #define DEBUG_FORCE_EACH_OBJECT // each iteration
 
 
@@ -681,7 +682,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	// Intersect() method returns a tuple
 	bool does_intersect = false;
 	double dist_intersect = 0.0;
-	ignition::math::Vector3d point_intersect; 	// create an array for storing 2 points
+	ignition::math::Vector3d point_intersect;
 
 	// actor's bounding box point that is closest to object's bounding box
 	line.Set(_object_pose.Pos().X(), _object_pose.Pos().Y(), _actor_pose.Pos().X(), _actor_pose.Pos().Y(), BOUNDING_BOX_Z_FIXED );
@@ -744,7 +745,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	// Intersect() method returns a tuple
 	bool does_intersect = false;
 	double dist_intersect = 0.0;
-	ignition::math::Vector3d point_intersect; 	// create an array for storing 2 points
+	ignition::math::Vector3d point_intersect;
 
 	// object's bounding box point that is closest to actor's bounding box
 	/* lets create the line from the actor's center to the object's center and check
@@ -810,6 +811,60 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 
 	// intersection of the 2nd actor's circle (another one)
 	ignition::math::Vector3d object_pos_shifted = _object_bc.GetIntersection(_actor_pose.Pos());
+
+#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX
+
+	/*
+	 * Let's check whether the bounding circles are not intruding each other -
+	 * compare the length of a vector from actor's center to the object's position
+	 * shifted. When it's longer than radius then both bounding circles are safe -
+	 * they are not intersecting each other.
+	 */
+
+	ignition::math::Vector3d connection;
+	connection = object_pos_shifted - _actor_pose.Pos();
+	connection.Z(0.0); // planar
+	if ( connection.Length() <= _actor_bc.GetRadius() ) {
+
+		if ( debug_current_actor_name == "actor1" ) {
+			std::cout << "\n\n\n\n";
+			std::cout << "\nWARNING - " << debug_current_actor_name << "'s bounding circle IS INTERSECTING " << debug_current_object_name << "'s bounding circle!" << std::endl;
+		}
+		/* 1) 	create a line which divides the connection into 2 parts
+		 * 2) 	re-assign shifted points - place then just around the center of the line
+		 * 		to force very small distance between objects to strengthen their repulsion */
+
+		ignition::math::Line3d line;
+		line.Set(_actor_pose.Pos(), _object_pose.Pos());
+
+		ignition::math::Angle line_slope( std::atan2( line.Direction().Y(), line.Direction().X() ) );
+		line_slope.Normalize(); // just in case
+
+		ignition::math::Vector3d actor_within = _actor_pose.Pos();
+		actor_within.X( _actor_pose.Pos().X() + 0.49 * line.Length() * cos(line_slope.Radian() ));
+		actor_within.Y( _actor_pose.Pos().Y() + 0.49 * line.Length() * sin(line_slope.Radian() ));
+
+		ignition::math::Vector3d object_within = _object_pose.Pos();
+		object_within.X( _object_pose.Pos().X() - 0.49 * line.Length() * cos(line_slope.Radian() ));
+		object_within.Y( _object_pose.Pos().Y() - 0.49 * line.Length() * sin(line_slope.Radian() ));
+
+		if ( debug_current_actor_name == "actor1" ) {
+			std::cout << "\tLINE    slope: " << line_slope.Radian() << "\tdir: " << line.Direction() << std::endl;
+			std::cout << "\t\tlength: " << line.Length() << "\tsin: " << sin(line_slope.Radian()) << "\tcos: " << cos(line_slope.Radian()) << std::endl;
+			std::cout << "\tINITIAL shift\tactor: " << actor_pose_shifted.Pos() << "\tobject: " <<  object_pos_shifted << std::endl;
+			std::cout << "\tMODDED  shift\tactor: " << actor_within << "\tobject: " <<  object_within << std::endl;
+			std::cout << std::endl;
+			std::cout << "\n\n\n\n";
+		}
+
+		actor_pose_shifted.Pos() = actor_within;
+		object_pos_shifted = object_within;
+
+	} else {
+		std::cout << "\nINFO - " << debug_current_actor_name << "'s bounding circle IS SAFE\tlength: " << connection.Length() << "\tradius: " << _actor_bc.GetRadius() << std::endl;
+	}
+
+#endif
 
 	#ifdef DEBUG_BOUNDING_CIRCLE
 	std::cout << "\n\nBOUND - 2 actors | 1 pos: " << _actor_pose.Pos() << "\tintersection: " << actor_pose_shifted.Pos() << std::endl;
@@ -1497,6 +1552,11 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 		}
 		#endif
 
+#ifdef DEBUG_FORCE_EACH_OBJECT
+		std::cout << "\nDYNAMIC OBSTACLE (*)" << std::endl;
+		std::cout << "\t" << debug_current_object_name << " is too far away BEHIND, force ZEROED" << std::endl;
+#endif
+
 		return f_alpha_beta;
 	}
 
@@ -1552,7 +1612,22 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 		std::cout << "\tn_alpha: " << _n_alpha;
 		std::cout << "\texp_n: " << exp_normal << "\ttheta_alpha_beta: " << theta_alpha_beta << "\td_alpha_beta_len: " << _d_alpha_beta.Length() << std::endl;
 		std::cout << "\tp_alpha: " << p_alpha;
-		std::cout << "\texp_p: " << exp_perpendicular << std::endl;
+		std::cout << "\texp_p: " << exp_perpendicular;
+
+		std::string location_str;
+		if ( beta_rel_location == SFM_FRONT ) {
+			location_str = "FRONT";
+		} else if ( beta_rel_location == SFM_BEHIND ) {
+			location_str = "BEHIND";
+		} else if ( beta_rel_location == SFM_RIGHT_SIDE ) {
+			location_str = "RIGHT SIDE";
+		} else if ( beta_rel_location == SFM_LEFT_SIDE ) {
+			location_str = "LEFT SIDE";
+		} else if ( beta_rel_location == SFM_UNKNOWN ) {
+			location_str = "UNKNOWN";
+		}
+		std::cout << "\t\trel_location: " << location_str << std::endl;
+
 		std::cout << "\tf_alpha_beta: " << f_alpha_beta * interaction_force_factor << "\t\tvec len: " << interaction_force_factor * f_alpha_beta.Length() << std::endl;
 	}
 #endif
