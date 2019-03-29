@@ -1248,7 +1248,22 @@ void ActorPlugin::ApplyUpdate(const common::UpdateInfo &_info, const double &_di
 	// update the global pose
 	this->actor->SetWorldPose(this->pose_actor, false, false);
 
-	// Update script time to set proper animation speed
+	/*
+	 * std::cout << this->actor->GetName() << " | script time: " << this->actor->ScriptTime() << "\tdist_trav: " << _dist_traveled << "\tanim_factor: " << this->animation_factor << std::endl;
+	 *
+	 * for some reason (very likely some very small number returned as interaction force
+	 * in social force model) dist_traveled sometimes turns out to be a NaN - then change
+	 * it to a typical value of 0.005; NaN value of dist seems to be the cause of such error:
+	 *
+	 * "gazebo::common::NodeAnimation::FrameAt(double, bool) const: Assertion
+	 *  `(t >= 0.0 && t <= 1.0)&&("t is not in the range 0.0..1.0")' failed."
+	 *
+	 *  FIXME: if such error occurs uncomment below line (not done for debugging process)
+	 *  (std::isnan(_dist_traveled)) ? (_dist_traveled = 0.0005) : (0);
+	 *
+	 */
+
+	// update script time to set proper animation speed
 	this->actor->SetScriptTime(this->actor->ScriptTime() + (_dist_traveled * this->animation_factor));
 
 	// udpdate time
@@ -1346,7 +1361,8 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 
 	}
 
-	// make sure the actor won't go out of bounds TODO: YAML config
+	// make sure the actor won't go out of bounds
+	// TODO: YAML config
 //	new_pose.Pos().X( std::max(-3.0,  std::min( 3.5, new_pose.Pos().X() ) ) );
 //	new_pose.Pos().Y( std::max(-10.0, std::min( 2.0, new_pose.Pos().Y() ) ) );
 

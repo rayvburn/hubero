@@ -46,9 +46,9 @@ namespace SocialForceModel {
 #endif
 
 
-#define DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
+//#define DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
 #define DEBUG_FORCE_EACH_OBJECT // each iteration
-
+#define DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 
 //#define DEBUG_SHORT_DISTANCE	// force printing info when distance to an obstacle is small
 
@@ -497,9 +497,17 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	ignition::math::Vector3d f_total = desired_force_factor * f_alpha + interaction_force_factor * f_interaction_total;
 	f_total.Z(0.0);
 
+#ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+	print_info = true;
+#endif
+
 	if ( print_info ) {
-		std::cout << "!! SocialForce: " << f_total << "\tinternal: " << desired_force_factor * f_alpha << "\tinteraction: " << interaction_force_factor * f_interaction_total;
+		std::cout << debug_current_actor_name << " | SocialForce: " << f_total << "\tinternal: " << desired_force_factor * f_alpha << "\tinteraction: " << interaction_force_factor * f_interaction_total;
 	}
+
+#ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+	print_info = false;
+#endif
 
 	// truncate the force value to max to prevent strange speedup of an actor
 	double force_length = f_total.Length();
@@ -521,9 +529,18 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 
 	}
 
+#ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+	print_info = true;
+#endif
+
 	if ( print_info ) {
-		std::cout << "\t\tfinalValue: " << f_total << "\tlength: " << f_total.Length() << std::endl;
+		std::cout <<  debug_current_actor_name << " | finalValue: " << f_total << "\tlength: " << f_total.Length() << std::endl;
 	}
+
+#ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+	print_info = false;
+#endif
+
 	return (f_total);
 
 }
@@ -1432,8 +1449,8 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	 * then truncate the result_vel vector */
 
 	// FIXME: uncommenting this will not allow visualizing the grid properly
-//	result_vel.X( +sin(yaw_new.Radian()) * result_vel.SquaredLength() );
-//	result_vel.Y( -cos(yaw_new.Radian()) * result_vel.SquaredLength() );
+//	result_vel.X( +sin(yaw_new.Radian()) * result_vel.Length() );
+//	result_vel.Y( -cos(yaw_new.Radian()) * result_vel.Length() );
 
 	if ( print_info ) {
 		std::cout << "\n\tSMOOTHING ROTATION - RECALCULATED VEL\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << '\n' << std::endl;
@@ -1474,6 +1491,14 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 		std::cout << std::endl;
 	}
 
+#endif
+
+#ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+	std::cout <<  debug_current_actor_name << " | GetNewPose() CALCULATION\n";
+	std::cout << "\tresult_vel: " << result_vel;
+	std::cout << "\nPOSITION2 \torig: " << _actor_pose.Pos() << "\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << "\tnew_position: " << new_pose.Pos(); // << std::endl;
+	std::cout << std::endl;
+	std::cout << "---------------------------------------------------------------------------------\n";
 #endif
 
 	return new_pose;
@@ -1572,15 +1597,15 @@ double SocialForceModel::GetRelativeSpeed(
 		std::cout << "  obj_vel: " << _object_velocity;
 		std::cout << "  act_vel: " << _actor_velocity;
 		std::cout << "  v_rel:  " << rel_vel;
-		std::cout << "  spd_rel: " << rel_vel.SquaredLength();
+		std::cout << "  spd_rel: " << rel_vel.Length();
 		std::cout << std::endl;
 	}
 
-	return rel_vel.SquaredLength();
+	return rel_vel.Length();
 
 #else
 
-	return ( (_object_velocity - _actor_velocity).SquaredLength() );
+	return ( (_object_velocity - _actor_velocity).Length() );
 
 #endif
 
@@ -1668,6 +1693,9 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 		#endif
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
+	#ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+		std::cout << debug_current_actor_name;
+	#endif
 		std::cout << "\nDYNAMIC OBSTACLE (*)" << std::endl;
 		std::cout << "\t" << debug_current_object_name << " is too far away BEHIND, force ZEROED" << std::endl;
 #endif
@@ -1720,7 +1748,12 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 	f_alpha_beta = _n_alpha * An * exp(exp_normal) + p_alpha * Ap * exp(exp_perpendicular);
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
+
+	#ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+	std::cout << "\n-----------------------\n" << debug_current_actor_name;
+	#else
 	if ( debug_current_actor_name == "actor1" ) {
+	#endif
 		std::cout << "\nDYNAMIC OBSTACLE" << std::endl;
 		std::cout << "\t" << debug_current_object_name << ": ";
 		std::cout << "\tv_rel: " << v_rel << std::endl;
@@ -1744,7 +1777,9 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 		std::cout << "\t\trel_location: " << location_str << std::endl;
 
 		std::cout << "\tf_alpha_beta: " << f_alpha_beta * interaction_force_factor << "\t\tvec len: " << interaction_force_factor * f_alpha_beta.Length() << std::endl;
+	#ifndef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	}
+	#endif
 #endif
 
 #ifdef DEBUG_INTERACTION_FORCE
@@ -2101,7 +2136,7 @@ ignition::math::Vector3d SocialForceModel::GetPerpendicularToNormal(
 
 // ------------------------------------------------------------------- //
 
-// TODO: make it return a tuple <RelativeLocation rel_loc, double rel_angle>
+// TODO: make it return a tuple <RelativeLocation rel_loc, double rel_angle> - for detailed info connected with BEHIND objects?
 RelativeLocation SocialForceModel::GetBetaRelativeLocation(
 		const ignition::math::Angle &_actor_yaw,
 		const ignition::math::Vector3d &_d_alpha_beta)
@@ -2251,23 +2286,36 @@ ignition::math::Vector3d SocialForceModel::GetForceFromStaticObstacle(
 	y_alpha_i.Z(0.00); // planar
 
 	// semi-minor axis of the elliptic formulation
-	double w_alpha_i = 0.5 * sqrt( std::pow((d_alpha_i.SquaredLength() + (d_alpha_i - y_alpha_i).SquaredLength()),2) -
-								   std::pow(y_alpha_i.SquaredLength(), 2) );
+	double w_alpha_i = 0.5 * sqrt( std::pow((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()),2) -
+								   std::pow(y_alpha_i.Length(), 2) );
+
+	// division by ~0 prevention - returning zeros vector instead of NaNs
+	if ( (std::fabs(w_alpha_i) < 1e-08) || (std::isnan(w_alpha_i)) || (d_alpha_i.Length() < 1e-08) ) {
+		return ( ignition::math::Vector3d(0.0, 0.0, 0.0) );
+	}
 
 	// ~force (acceleration) calculation
 	ignition::math::Vector3d f_alpha_i;
-	f_alpha_i = this->Aw * exp(-w_alpha_i/this->Bw) * ((d_alpha_i.SquaredLength() + (d_alpha_i - y_alpha_i).SquaredLength()) /
+	f_alpha_i = this->Aw * exp(-w_alpha_i/this->Bw) * ((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()) /
 			    2*w_alpha_i) * 0.5 * (d_alpha_i.Normalized() + (d_alpha_i - y_alpha_i).Normalized());
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
+
+	#ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+	std::cout << "\n-----------------------\n" << debug_current_actor_name;
+	#else
 	if ( debug_current_actor_name == "actor1" ) { // && debug_current_object_name == "table1") {
+	#endif
 		std::cout << "\nSTATIC OBSTACLE" << std::endl;
 		std::cout << "\t" << debug_current_object_name << ": ";
-		std::cout << "\td_alpha_i: " << d_alpha_i << " \tlen: " << d_alpha_i.SquaredLength() << std::endl;
+		std::cout << "\td_alpha_i: " << d_alpha_i << " \tlen: " << d_alpha_i.Length() << std::endl;
 		std::cout << "\ty_alpha_i: " << y_alpha_i;
 		std::cout << "\tw_alpha_i: " << w_alpha_i << std::endl;
 		std::cout << "\tf_alpha_i: " << f_alpha_i * interaction_force_factor << std::endl;
+	#ifndef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	}
+	#endif
+
 #endif
 
 	return (f_alpha_i);

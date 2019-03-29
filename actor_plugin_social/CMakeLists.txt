@@ -53,7 +53,9 @@ target_link_libraries( ${PROJECT_NAME}
   ${roscpp_LIBRARIES} 
   ${tf_LIBRARIES}
   ${catkin_LIBRARIES}
-  ${social_force_vis_LIBRARIES}
+#  ${social_force_vis_LIBRARIES} # catkin sees it, gazebo seems to not - plugin does not load
+  /home/rayvburn/ros_workspace/ws_people_sim/src/incare_people_sim/social_force_vis/lib/libsocial_force_vis.so 
+#  social_force_vis
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
