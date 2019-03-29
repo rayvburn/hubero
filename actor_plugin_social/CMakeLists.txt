@@ -53,8 +53,7 @@ target_link_libraries( ${PROJECT_NAME}
   ${roscpp_LIBRARIES} 
   ${tf_LIBRARIES}
   ${catkin_LIBRARIES}
-  /home/rayvburn/ros_workspace/ws_people_sim/src/incare_people_sim/social_force_vis/lib/libsocial_force_vis.so 
-#  social_force_vis
+  ${social_force_vis_LIBRARIES}
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
