@@ -144,12 +144,11 @@ public:
 
 #endif
 
-	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> GetClosestPointsOfIntersectedModels(
+	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> GetClosestPointsOfIntersectedModelsActors(
 			const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_object_pos) const;
 
-	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> GetClosestPointsOfIntersectedModels(
-			const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_object_pos,
-			const ignition::math::Box &_object_bb) const;
+	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> GetClosestPointsOfIntersectedModelsActorObject(
+			const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_bb_intersection_pt) const;
 
 #ifdef BOUNDING_CIRCLE_CALCULATION
 
