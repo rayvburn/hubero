@@ -149,7 +149,7 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	actor_common_info.SetBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
 #elif defined(INFLATE_BOUNDING_CIRCLE)
 	bounding_circle.SetCenter(this->pose_actor.Pos());
-	bounding_circle.SetRadius(0.5f);
+	bounding_circle.SetRadius(1.0f);
 	actor_common_info.SetBoundingCircle(bounding_circle);
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
 

@@ -40,11 +40,13 @@ namespace SocialForceModel {
 //#define DEBUG_BOUNDING_CIRCLE // each iteration
 //#define DEBUG_CLOSEST_POINTS
 //#define DEBUG_OSCILLATIONS	// each iteration (table1 & actor1)
+//#define DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX 			// GetClosestPointsOfIntersectedModels()
+
 
 #endif
 
 
-#define DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX
+#define DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
 #define DEBUG_FORCE_EACH_OBJECT // each iteration
 
 
@@ -740,12 +742,23 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 		) const
 {
 
+	/* BoundingCircle and BoundingBox -> actor and static object */
+	ignition::math::Pose3d actor_pose_shifted = _actor_pose;
 	ignition::math::Line3d line;
+	ignition::math::Vector3d point_intersect;
+
+	// check whether actor has stepped into some obstacle (its bounding box - to be specific)
+	if ( _object_bb.Contains(ignition::math::Vector3d(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _object_bb.Center().Z())) ) {	// planar
+		#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
+		std::cout << "\n1\tACTOR STEPPED INTO OBSTACLE \t" << debug_current_actor_name << "\t" << debug_current_object_name << "\n" << std::endl;
+		#endif
+		std::tie(actor_pose_shifted.Pos(), point_intersect) = this->GetClosestPointsOfIntersectedModels(_actor_pose.Pos(), _object_pose.Pos(), _object_bb);
+		return ( std::make_tuple(actor_pose_shifted, point_intersect) );
+	}
 
 	// Intersect() method returns a tuple
 	bool does_intersect = false;
 	double dist_intersect = 0.0;
-	ignition::math::Vector3d point_intersect;
 
 	// object's bounding box point that is closest to actor's bounding box
 	/* lets create the line from the actor's center to the object's center and check
@@ -759,7 +772,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	}
 #endif
 
-	if ( !does_intersect ) {
+	if ( !does_intersect ) { // always will inter
 
 		#ifdef DEBUG_BOUNDING_BOX
 		std::cout << "\n\n\nGetActorModelBBsClosestPoints() ERROR2"; // \n\n\n";
@@ -768,15 +781,25 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 		#endif
 		/* the intersection was not found - set intersection point as a object's central point;
 		 * it might happen when actor stepped INTO the obstacle and is within its bounds */
-		point_intersect = _object_pose.Pos();
-		return ( std::make_tuple(_actor_pose, point_intersect) );
+//		point_intersect = _object_pose.Pos();
+//		return ( std::make_tuple(_actor_pose, point_intersect) );
+
+		// fix applied (point intersect used just not to create a new variable)
+		#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
+		std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n1\tNO INTERSECTION FOUND\t" << debug_current_actor_name << "\t" << debug_current_object_name << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" << std::endl;
+		#endif
+		std::tie(actor_pose_shifted.Pos(), point_intersect) = this->GetClosestPointsOfIntersectedModels(_actor_pose.Pos(), _object_pose.Pos(), _object_bb);
+		return ( std::make_tuple(actor_pose_shifted, point_intersect) );
+
 
 	} else {
 		// that's OK, point of intersection will be returned from function
+		#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
+		//std::cout << "\n1\tINTERSECTION SUCCESSFULLY FOUND\t" << debug_current_actor_name << "\t" << debug_current_object_name << "\n" << std::endl;
+		#endif
 	}
 
 	// intersection of the actor's circle
-	ignition::math::Pose3d actor_pose_shifted = _actor_pose;
 	actor_pose_shifted.Pos() = _actor_bc.GetIntersection(point_intersect);
 
 #ifdef DEBUG_CLOSEST_POINTS
@@ -805,6 +828,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 		) const
 {
 
+	/* BoundingCircle and BoundingCircle -> 2 actors */
 	// intersection of the 1st actor's circle (currently processed)
 	ignition::math::Pose3d actor_pose_shifted = _actor_pose;
 	actor_pose_shifted.Pos() = _actor_bc.GetIntersection(_object_pose.Pos());
@@ -849,6 +873,64 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 // ------------------------------------------------------------------- //
 
 std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> SocialForceModel::GetClosestPointsOfIntersectedModels(
+		const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_object_pos,
+		const ignition::math::Box &_object_bb) const
+{
+
+	/* Below is OK under assumption that calculations are related to bounding circle and bounding box */
+
+#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
+	if ( debug_current_actor_name == "actor1" ) {
+		std::cout << "\nWARNING - " << debug_current_actor_name << "'s bounding circle IS INTERSECTING " << debug_current_object_name << "'s bounding BOX!" << std::endl;
+	}
+#endif
+
+	// first - create a line that connects center of an actor and center of an object
+	ignition::math::Line3d line_centers, line_actor_intersection;
+	line_centers.Set(_actor_pos, _object_pos);
+
+	// Intersect() method returns a tuple
+	bool does_intersect = false;
+	double dist_intersect = 0.0;
+	ignition::math::Vector3d bb_intersection_pt;
+	std::tie(does_intersect, dist_intersect, bb_intersection_pt) = _object_bb.Intersect(line_centers);
+
+	if ( !does_intersect ) {
+		std::cout << "\n\n\n\n2\tNO INTERSECTION FOUND\t" << debug_current_actor_name << "\t" << debug_current_object_name << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" << std::endl;
+	} else {
+		// pretty sure that intersection will be found
+	}
+
+	// line from the actor's center to the point of intersection
+	line_actor_intersection.Set(_actor_pos, bb_intersection_pt);
+
+	// calculate the slope of the created line
+	ignition::math::Angle line_slope( std::atan2( line_actor_intersection.Direction().Y(), line_actor_intersection.Direction().X() ) );
+	line_slope.Normalize(); // just in case
+
+	/* locate the actor_shifted just around the intersection point (this will force
+	 * a very short distance between the actor and the object) */
+	ignition::math::Vector3d actor_shifted = _actor_pos;
+	actor_shifted.X( _actor_pos.X() + 0.99 * line_actor_intersection.Length() * cos(line_slope.Radian() ));
+	actor_shifted.Y( _actor_pos.Y() + 0.99 * line_actor_intersection.Length() * sin(line_slope.Radian() ));
+
+#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
+	if ( debug_current_actor_name == "actor1" ) {
+		std::cout << "\tLINE    slope: " << line_slope.Radian() << "\tdir: " << line_actor_intersection.Direction() << std::endl;
+		std::cout << "\t\tlength: " << line_actor_intersection.Length() << "\tsin: " << sin(line_slope.Radian()) << "\tcos: " << cos(line_slope.Radian()) << std::endl;
+		//std::cout << "\tINITIAL shift\tactor: " << actor_pose_shifted.Pos() << "\tobject: " <<  object_pos_shifted << std::endl;
+		std::cout << "\tMODDED  shift\tactor: " << actor_shifted << "\tobject: " <<  bb_intersection_pt << std::endl;
+		std::cout << std::endl;
+	}
+#endif
+
+	return (std::make_tuple(actor_shifted, bb_intersection_pt));
+
+}
+
+// ------------------------------------------------------------------- //
+
+std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> SocialForceModel::GetClosestPointsOfIntersectedModels(
 		const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_object_pos) const
 
 {
@@ -870,12 +952,13 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> SocialForceModel:
 
 #ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX
 	if ( debug_current_actor_name == "actor1" ) {
-		std::cout << "\n\n\n\n";
 		std::cout << "\nWARNING - " << debug_current_actor_name << "'s bounding circle IS INTERSECTING " << debug_current_object_name << "'s bounding circle!" << std::endl;
 	}
 #endif
 
-	/* 1) 	create a line which divides the connection into 2 parts
+
+	/* Below is OK under assumption that both bounding `boxes` have the same shape and dimensions
+	 * 1) 	create a line which divides the connection into 2 parts
 	 * 2) 	re-assign shifted points - place then just around the center of the line
 	 * 		to force very small distance between objects to strengthen their repulsion */
 
@@ -900,7 +983,6 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> SocialForceModel:
 		//std::cout << "\tINITIAL shift\tactor: " << actor_pose_shifted.Pos() << "\tobject: " <<  object_pos_shifted << std::endl;
 		std::cout << "\tMODDED  shift\tactor: " << actor_shifted << "\tobject: " <<  object_shifted << std::endl;
 		std::cout << std::endl;
-		std::cout << "\n\n\n\n";
 	}
 #endif
 
@@ -2161,25 +2243,27 @@ ignition::math::Vector3d SocialForceModel::GetForceFromStaticObstacle(
 	/* elliptic formulation - `14 article - equations (3) and (4) */
 
 	// distance vector
-	ignition::math::Vector3d d_alpha_i = _object_pose.Pos() - _actor_pose.Pos();
+	ignition::math::Vector3d d_alpha_i = _actor_pose.Pos() - _object_pose.Pos(); // proper direction
+	d_alpha_i.Z(0.00); // planar
 
 	// acceleration
 	ignition::math::Vector3d y_alpha_i = _actor_velocity * _dt;
+	y_alpha_i.Z(0.00); // planar
 
 	// semi-minor axis of the elliptic formulation
-	double w_alpha_i = 0.5 * sqrt( std::pow((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()),2) -
-								   std::pow(y_alpha_i.Length(), 2) );
+	double w_alpha_i = 0.5 * sqrt( std::pow((d_alpha_i.SquaredLength() + (d_alpha_i - y_alpha_i).SquaredLength()),2) -
+								   std::pow(y_alpha_i.SquaredLength(), 2) );
 
 	// ~force (acceleration) calculation
 	ignition::math::Vector3d f_alpha_i;
-	f_alpha_i = this->Aw * exp(-w_alpha_i/this->Bw) * ((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()) /
+	f_alpha_i = this->Aw * exp(-w_alpha_i/this->Bw) * ((d_alpha_i.SquaredLength() + (d_alpha_i - y_alpha_i).SquaredLength()) /
 			    2*w_alpha_i) * 0.5 * (d_alpha_i.Normalized() + (d_alpha_i - y_alpha_i).Normalized());
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
-	if ( debug_current_actor_name == "actor1" && debug_current_object_name == "table1") {
+	if ( debug_current_actor_name == "actor1" ) { // && debug_current_object_name == "table1") {
 		std::cout << "\nSTATIC OBSTACLE" << std::endl;
 		std::cout << "\t" << debug_current_object_name << ": ";
-		std::cout << "\td_alpha_i: " << d_alpha_i << std::endl;
+		std::cout << "\td_alpha_i: " << d_alpha_i << " \tlen: " << d_alpha_i.SquaredLength() << std::endl;
 		std::cout << "\ty_alpha_i: " << y_alpha_i;
 		std::cout << "\tw_alpha_i: " << w_alpha_i << std::endl;
 		std::cout << "\tf_alpha_i: " << f_alpha_i * interaction_force_factor << std::endl;

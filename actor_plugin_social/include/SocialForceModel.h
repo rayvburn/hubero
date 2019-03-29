@@ -147,6 +147,10 @@ public:
 	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> GetClosestPointsOfIntersectedModels(
 			const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_object_pos) const;
 
+	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> GetClosestPointsOfIntersectedModels(
+			const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_object_pos,
+			const ignition::math::Box &_object_bb) const;
+
 #ifdef BOUNDING_CIRCLE_CALCULATION
 
 	ActorUtils::BoundingCircle GetActorBoundingCircle(
