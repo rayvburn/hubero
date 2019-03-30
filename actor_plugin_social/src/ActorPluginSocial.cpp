@@ -236,30 +236,41 @@ ignition::math::Box ActorPlugin::GenerateBoundingBox(const ignition::math::Pose3
 
 	// TODO: add roll rotation handling (as actor lies down X and Z changes)
 
-	// below calculations might not be perfect - not checked throughly
-	static const double XY_SUM_SQUARES = (2*ACTOR_X_BB_HALF_LENGTH)*(2*ACTOR_X_BB_HALF_LENGTH) + (2*ACTOR_Y_BB_HALF_LENGTH)*(2*ACTOR_Y_BB_HALF_LENGTH);
-	// single side max length extension, max total extra extension (when actor rotated 45 deg) will be MAX_LENGTH_EXTENSION * 2
-	static const double MAX_LENGTH_EXTENSION = 0.5 * std::sqrt(XY_SUM_SQUARES);
+	// forced calculations in 0-90 deg range
+	double angle_truncated = std::fabs(_actor_pose.Rot().Yaw());
+	angle_truncated -= static_cast<int>(angle_truncated / IGN_PI_2) * IGN_PI_2;
 
-	// angle normalization
-	ignition::math::Angle yaw(_actor_pose.Rot().Yaw() * 2.00);
-	yaw.Normalize();
+	// x-projection on x-axis
+	double xp = ACTOR_X_BB_HALF_LENGTH * cos(angle_truncated);
+	// line projected on x-axis that extends basic x-projection
+	double xp_ext = ACTOR_Y_BB_HALF_LENGTH * sin(angle_truncated);
+	// sum of xp's gives total length of x-component of BB
+	double x_total = xp + xp_ext;
 
-//	ignition::math::Box bb(	_actor_pose.Pos().X() - ACTOR_X_BB_HALF_LENGTH - sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_X_BB_HALF_LENGTH),
-//							_actor_pose.Pos().Y() - ACTOR_Y_BB_HALF_LENGTH - sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_Y_BB_HALF_LENGTH),
-//							_actor_pose.Pos().Z() - ACTOR_Z_BB_HALF_LENGTH,
-//							_actor_pose.Pos().X() + ACTOR_X_BB_HALF_LENGTH + sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_X_BB_HALF_LENGTH),
-//							_actor_pose.Pos().Y() + ACTOR_Y_BB_HALF_LENGTH + sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_Y_BB_HALF_LENGTH),
-//							_actor_pose.Pos().Z() + ACTOR_Z_BB_HALF_LENGTH );
+	// the same for y-axis
+	double yp = ACTOR_Y_BB_HALF_LENGTH * cos(angle_truncated);
+	double yp_ext = ACTOR_X_BB_HALF_LENGTH * sin(angle_truncated);
+	double y_total = yp + yp_ext;
 
-	ignition::math::Box bb(	_actor_pose.Pos().X() - ACTOR_X_BB_HALF_LENGTH - sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_X_BB_HALF_LENGTH),
-							_actor_pose.Pos().Y() - ACTOR_Y_BB_HALF_LENGTH - sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_Y_BB_HALF_LENGTH),
+	ignition::math::Box bb(	_actor_pose.Pos().X() - x_total,
+							_actor_pose.Pos().Y() - y_total,
 							_actor_pose.Pos().Z() - ACTOR_Z_BB_HALF_LENGTH,
-							_actor_pose.Pos().X() + ACTOR_X_BB_HALF_LENGTH + sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_X_BB_HALF_LENGTH),
-							_actor_pose.Pos().Y() + ACTOR_Y_BB_HALF_LENGTH + sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_Y_BB_HALF_LENGTH),
+							_actor_pose.Pos().X() + x_total,
+							_actor_pose.Pos().Y() + y_total,
 							_actor_pose.Pos().Z() + ACTOR_Z_BB_HALF_LENGTH );
 
-	std::cout << "BB min: " << bb.Min() << "\tmax: " << bb.Max() << "\tcenter: " << bb.Center() << "\tRAW x: " << _actor_pose.Pos().X() - ACTOR_X_BB_HALF_LENGTH << "\tRAW y: " << _actor_pose.Pos().Y() + ACTOR_Y_BB_HALF_LENGTH << std::endl;
+	if ( (bb.Max().X() - bb.Min().X()) < 0.90 || (bb.Max().X() - bb.Min().X()) > 1.272793 ) {
+		std::cout << "\tBB min: " << bb.Min() << "\tmax: " << bb.Max() << std::endl;
+		std::cout << "\t\tcenter: " << bb.Center() << "\tRAW x: " << _actor_pose.Pos().X() - ACTOR_X_BB_HALF_LENGTH << "\tRAW y: " << _actor_pose.Pos().Y() + ACTOR_Y_BB_HALF_LENGTH << std::endl;
+		std::cout << "\t\tyaw: " << _actor_pose.Rot().Yaw() << std::endl;
+		std::cout << "\t\txp: " << xp << "\txp_ext: " << xp_ext << "\tx_total: " << x_total << std::endl;
+		std::cout << "\t\typ: " << yp << "\typ_ext: " << yp_ext << "\ty_total: " << y_total << std::endl;
+		std::cout << "\t\tlen: " << bb.Max().X() - bb.Min().X() << std::endl;
+		std::cout << "\t\tWRONG LENGTH\n\n" << std::endl;
+		std::cout << std::endl;
+		std::cout << std::endl;
+		std::cout << std::endl;
+	}
 
 	return (bb);
 
