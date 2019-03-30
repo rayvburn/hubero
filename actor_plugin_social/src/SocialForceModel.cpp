@@ -890,8 +890,7 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> SocialForceModel:
 
 	// line from the actor's center to the point of intersection
 	ignition::math::Line3d line_actor_intersection;
-	//line_actor_intersection.Set(_actor_pos, _bb_intersection_pt);
-	line_actor_intersection.Set(ignition::math::Vector3d(_actor_pos.X(), _actor_pos.Y(), 0.00),
+	line_actor_intersection.Set(ignition::math::Vector3d(_actor_pos.X(), 		  _actor_pos.Y(),          0.00),
 			 	 	 	 	 	ignition::math::Vector3d(_bb_intersection_pt.X(), _bb_intersection_pt.Y(), 0.00));
 
 	// calculate the slope of the created line

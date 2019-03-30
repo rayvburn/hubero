@@ -144,7 +144,6 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
 	actor_common_info.AddActor(this->actor->GetName());
 
-
 #if	defined(INFLATE_BOUNDING_BOX)
 	actor_common_info.SetBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
 #elif defined(INFLATE_BOUNDING_CIRCLE)
@@ -242,14 +241,25 @@ ignition::math::Box ActorPlugin::GenerateBoundingBox(const ignition::math::Pose3
 	// single side max length extension, max total extra extension (when actor rotated 45 deg) will be MAX_LENGTH_EXTENSION * 2
 	static const double MAX_LENGTH_EXTENSION = 0.5 * std::sqrt(XY_SUM_SQUARES);
 
-	ignition::math::Box bb(	_actor_pose.Pos().X() - ACTOR_X_BB_HALF_LENGTH - sin(_actor_pose.Rot().Yaw()*2) * (MAX_LENGTH_EXTENSION-ACTOR_X_BB_HALF_LENGTH),
-							_actor_pose.Pos().Y() - ACTOR_Y_BB_HALF_LENGTH - sin(_actor_pose.Rot().Yaw()*2) * (MAX_LENGTH_EXTENSION-ACTOR_Y_BB_HALF_LENGTH),
+	// angle normalization
+	ignition::math::Angle yaw(_actor_pose.Rot().Yaw() * 2.00);
+	yaw.Normalize();
+
+//	ignition::math::Box bb(	_actor_pose.Pos().X() - ACTOR_X_BB_HALF_LENGTH - sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_X_BB_HALF_LENGTH),
+//							_actor_pose.Pos().Y() - ACTOR_Y_BB_HALF_LENGTH - sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_Y_BB_HALF_LENGTH),
+//							_actor_pose.Pos().Z() - ACTOR_Z_BB_HALF_LENGTH,
+//							_actor_pose.Pos().X() + ACTOR_X_BB_HALF_LENGTH + sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_X_BB_HALF_LENGTH),
+//							_actor_pose.Pos().Y() + ACTOR_Y_BB_HALF_LENGTH + sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_Y_BB_HALF_LENGTH),
+//							_actor_pose.Pos().Z() + ACTOR_Z_BB_HALF_LENGTH );
+
+	ignition::math::Box bb(	_actor_pose.Pos().X() - ACTOR_X_BB_HALF_LENGTH - sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_X_BB_HALF_LENGTH),
+							_actor_pose.Pos().Y() - ACTOR_Y_BB_HALF_LENGTH - sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_Y_BB_HALF_LENGTH),
 							_actor_pose.Pos().Z() - ACTOR_Z_BB_HALF_LENGTH,
-							_actor_pose.Pos().X() + ACTOR_X_BB_HALF_LENGTH + sin(_actor_pose.Rot().Yaw()*2) * (MAX_LENGTH_EXTENSION-ACTOR_X_BB_HALF_LENGTH),
-							_actor_pose.Pos().Y() + ACTOR_Y_BB_HALF_LENGTH + sin(_actor_pose.Rot().Yaw()*2) * (MAX_LENGTH_EXTENSION-ACTOR_Y_BB_HALF_LENGTH),
+							_actor_pose.Pos().X() + ACTOR_X_BB_HALF_LENGTH + sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_X_BB_HALF_LENGTH),
+							_actor_pose.Pos().Y() + ACTOR_Y_BB_HALF_LENGTH + sin(yaw.Radian()) * (MAX_LENGTH_EXTENSION - ACTOR_Y_BB_HALF_LENGTH),
 							_actor_pose.Pos().Z() + ACTOR_Z_BB_HALF_LENGTH );
 
-//	std::cout << "BB min: " << bb.Min() << "\tmax: " << bb.Max() << "\tcenter: " << bb.Center() << "\tRAW x: " << _actor_pose.Pos().X() - ACTOR_X_BB_HALF_LENGTH << "\tRAW y: " << _actor_pose.Pos().Y() + ACTOR_Y_BB_HALF_LENGTH << std::endl;
+	std::cout << "BB min: " << bb.Min() << "\tmax: " << bb.Max() << "\tcenter: " << bb.Center() << "\tRAW x: " << _actor_pose.Pos().X() - ACTOR_X_BB_HALF_LENGTH << "\tRAW y: " << _actor_pose.Pos().Y() + ACTOR_Y_BB_HALF_LENGTH << std::endl;
 
 	return (bb);
 
@@ -283,7 +293,11 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	PublishActorTf();
 #elif defined(CREATE_ROS_INTERFACE)
 	ros_interface.PublishActorTf(this->pose_actor);
+	#ifdef INFLATE_BOUNDING_CIRCLE
 	ros_interface.PublishMarker(bounding_circle.GetMarkerConversion());
+	#elif defined(INFLATE_BOUNDING_BOX)
+	ros_interface.PublishMarker(sfm_vis.GetBBMarkerConversion(actor_common_info.GetBoundingBox()));
+	#endif
 #endif
 
 #if defined(VISUALIZE_SFM) && defined(VIS_SFM_POINT)

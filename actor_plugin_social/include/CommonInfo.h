@@ -20,7 +20,7 @@ namespace ActorUtils {
 
 /*
  * Private objects are made static here because whole info vectors must be passed to SFM.
- * Some info could not be set (at least in Gazebo8) and actors can't have velocity,
+ * Some info could not be set (at least in Gazebo 8.6.0) so actors can't have velocity,
  * acceleration, bounding boxes set as a common world properties thus properties
  * couldn't be read from the world pointer.
  */

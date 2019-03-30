@@ -248,6 +248,43 @@ visualization_msgs::MarkerArray SFMVisPoint::GetMarkerArray() const {
 
 // ------------------------------------------------------------------- //
 
+visualization_msgs::Marker SFMVisPoint::GetBBMarkerConversion(const ignition::math::Box &_bb) const {
+
+	visualization_msgs::Marker marker;
+
+	marker.header.frame_id = this->frame;
+	marker.header.stamp = ros::Time();
+	marker.ns = this->ns;
+	// marker.id = marker_arr_index;
+	marker.type = visualization_msgs::Marker::CUBE;
+	marker.action = visualization_msgs::Marker::MODIFY;
+
+	// assign marker coordinates according to current point that is pointed by grid index
+	marker.pose.position.x = _bb.Center().X();
+	marker.pose.position.y = _bb.Center().Y();
+	marker.pose.position.z = _bb.Center().Z();
+
+	marker.pose.orientation.x = 0.00;
+	marker.pose.orientation.y = 0.00;
+	marker.pose.orientation.z = 0.00;
+	marker.pose.orientation.w = 1.00;
+
+	// scale
+	marker.scale.x = std::fabs(_bb.Max().X() - _bb.Min().X());
+	marker.scale.y = std::fabs(_bb.Max().Y() - _bb.Min().Y());
+	marker.scale.z = std::fabs(_bb.Max().Z() - _bb.Min().Z());
+
+	marker.color.a = 0.3; // alpha channel
+	marker.color.r = 1.0;
+	marker.color.g = 1.0;
+	marker.color.b = 1.0;
+
+	return (marker);
+
+}
+
+// ------------------------------------------------------------------- //
+
 void SFMVisPoint::ClearInternalMemory() {
 
 	this->marker_array.markers.clear();

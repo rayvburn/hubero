@@ -70,8 +70,8 @@
 
 // -------------------------
 
-//#define INFLATE_BOUNDING_BOX
-#define INFLATE_BOUNDING_CIRCLE
+#define INFLATE_BOUNDING_BOX
+//#define INFLATE_BOUNDING_CIRCLE
 // #define INFLATE_BOUNDING_ELLIPSE
 
 // -------------------------
