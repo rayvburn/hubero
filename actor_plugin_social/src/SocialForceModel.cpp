@@ -47,8 +47,7 @@ namespace SocialForceModel {
 
 
 // #define DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
-#define DEBUG_ACTORS_BOUNDING_CIRCLES_NO_INTERSECTION_SEEK
-// #define DEBUG_FORCE_EACH_OBJECT // each iteration
+// #define DEBUG_FORCE_EACH_OBJECT 									// each iteration
 // #define DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 
 //#define DEBUG_SHORT_DISTANCE	// force printing info when distance to an obstacle is small
@@ -92,7 +91,8 @@ SocialForceModel::SocialForceModel():
 	fov(2.00), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
 	desired_force_factor(200.0),
 	interaction_force_factor(6000.0), // interaction_force_factor(6000.0),
-	force_max(2000.0), force_min(500.0) {
+	force_max(2000.0), force_min(800.0) // force_min(500.0)
+{
 
 	SetParameterValues();
 
@@ -470,6 +470,12 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		/* Kind of a hack connected with very strong repulsion when actors are close to each other
 		 * whereas in bigger distances the force is quite weak;
 		 * Truncate very big forces from single objects */
+		if ( is_an_actor ) {
+			f_alpha_beta *= 0.50;
+		}
+
+		// truncate if force is too big -> causes immediate speed-up
+		// or `sliding` when rotation smoothing is disabled (getNewPose())
 		if ( f_alpha_beta.Length() > 1000.0 ) {
 			f_alpha_beta = f_alpha_beta.Normalized() * 1000.0;
 		}
@@ -900,8 +906,11 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> SocialForceModel:
 	/* locate the actor_shifted just around the intersection point (this will force
 	 * a very short distance between the actor and the object) */
 	ignition::math::Vector3d actor_shifted = _actor_pos;
-	actor_shifted.X( _actor_pos.X() + 0.97 * line_actor_intersection.Length() * cos(line_slope.Radian() ));
-	actor_shifted.Y( _actor_pos.Y() + 0.97 * line_actor_intersection.Length() * sin(line_slope.Radian() ));
+
+	/* initially a factor was 0.97 but the smaller the distance between actor and an obstacle
+	 * the smaller repulsion is produced */
+	actor_shifted.X( _actor_pos.X() + 0.6 * line_actor_intersection.Length() * cos(line_slope.Radian() ));
+	actor_shifted.Y( _actor_pos.Y() + 0.6 * line_actor_intersection.Length() * sin(line_slope.Radian() ));
 
 #ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
 	if ( debug_current_actor_name == "actor1" ) {
@@ -1416,16 +1425,20 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	/* recalculation pros:
 	 *  	o smooth rotational motion,
 	 *  	o prevents getting stuck in 1 place (observed few times),
+	 *  	o prevents sliding (usually caused by rise of v_rel between actors
+	 *  	  which causes big interaction)
 	 * cons:
-	 * 		o prevents immediate action when actor is moving toward an obstacle. */
+	 * 		o prevents immediate action when actor is moving toward an obstacle.
+	 * recalculation acts as a inertial force here */
 
 	/* TODO: make recalculation vector length be a function of how much the angle is forced to be changed based
 	 * on social force; if the social force is completely different compared to current movement direction
-	 * then truncate the result_vel vector */
+	 * then truncate the result_vel vector,
+	 * The aim of the above idea was to prevent oscillations which turned out to be caused
+	 * by actor velocity rises and falls - if will probably be deprecated? */
 
-	// FIXME: uncommenting this will not allow visualizing the grid properly
-//	result_vel.X( +sin(yaw_new.Radian()) * result_vel.Length() );
-//	result_vel.Y( -cos(yaw_new.Radian()) * result_vel.Length() );
+	result_vel.X( +sin(yaw_new.Radian()) * result_vel.Length() );
+	result_vel.Y( -cos(yaw_new.Radian()) * result_vel.Length() );
 
 	if ( print_info ) {
 		std::cout << "\n\tSMOOTHING ROTATION - RECALCULATED VEL\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << '\n' << std::endl;
@@ -2275,7 +2288,8 @@ ignition::math::Vector3d SocialForceModel::GetForceFromStaticObstacle(
 			    2*w_alpha_i) * 0.5 * (d_alpha_i.Normalized() + (d_alpha_i - y_alpha_i).Normalized());
 
 	// FIXME: temp mass factor
-	f_alpha_i *= 10.0;
+	// setting too high produces noticeable accelerations around objects
+	f_alpha_i *= 30.0;
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
 

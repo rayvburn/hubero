@@ -148,7 +148,7 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	actor_common_info.SetBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
 #elif defined(INFLATE_BOUNDING_CIRCLE)
 	bounding_circle.SetCenter(this->pose_actor.Pos());
-	bounding_circle.SetRadius(1.0f);
+	bounding_circle.SetRadius(0.75f);
 	actor_common_info.SetBoundingCircle(bounding_circle);
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
 
@@ -199,26 +199,139 @@ void ActorPlugin::Reset()
 }
 
 /////////////////////////////////////////////////
-void ActorPlugin::ChooseNewTarget()
-{
-  ignition::math::Vector3d newTarget(this->target);
-  while ((newTarget - this->target).Length() < 2.0)
-  {
-    newTarget.X(ignition::math::Rand::DblUniform(-3, 3.5));
-    newTarget.Y(ignition::math::Rand::DblUniform(-10, 2));
 
-    for (unsigned int i = 0; i < this->world->ModelCount(); ++i)
-    {
-      double dist = (this->world->ModelByIndex(i)->WorldPose().Pos()
-          - newTarget).Length();
-      if (dist < 2.0)
-      {
-        newTarget = this->target;
-        break;
-      }
-    }
-  }
-  this->target = newTarget;
+bool ActorPlugin::isTargetStillReachable(const common::UpdateInfo &_info) {
+
+	// check periodically, no need to do this in each iteration
+	if ( (_info.simTime - this->last_reachability_time).Double() > 2.0 ) {
+
+		// save event time
+		this->last_reachability_time = _info.simTime;
+
+		// iterate over all models
+		for (unsigned int i = 0; i < this->world->ModelCount(); ++i) {
+
+			// FIXME: cafe is a specific model that represents whole world
+			if ( this->world->ModelByIndex(i)->GetName() == "cafe" ) {
+				continue;
+			}
+
+			// check if model's bounding box contains target point
+			if ( this->doesBoundingBoxContainPoint(this->world->ModelByIndex(i)->BoundingBox(), this->target) ) {
+
+				std::cout << "isTargetStillReachable()" << std::endl;
+				std::cout << "\t" << this->actor->GetName() << "\tDETECTED TARGET UNREACHABLE!" << std::endl;
+				std::cout << "\ttarget: " << this->target << "\tmodel containing: " << this->world->ModelByIndex(i)->GetName() << std::endl;
+				std::cout << std::endl;
+				std::cout << std::endl;
+				std::cout << std::endl;
+				return (false);
+
+			}
+
+		}
+
+	}
+
+	return (true);
+}
+
+/////////////////////////////////////////////////
+
+bool ActorPlugin::isTargetNotReachedForTooLong(const common::UpdateInfo &_info) const {
+
+	// TODO: make the time a parameter
+	if ( (_info.simTime - this->last_target_selection_time).Double() > 60.0 ) {
+
+		std::cout << "isTargetNotReachedForTooLong()" << std::endl;
+		std::cout << "\t" << this->actor->GetName() << "\tDETECTED TARGET UNREACHABLE IN FINITE TIME!" << std::endl;
+		std::cout << std::endl;
+		std::cout << std::endl;
+		std::cout << std::endl;
+		return (true);
+
+	}
+	return (false);
+
+}
+
+/////////////////////////////////////////////////
+
+bool ActorPlugin::doesBoundingBoxContainPoint(const ignition::math::Box &_bb, const ignition::math::Vector3d &_pt) const {
+
+	// check if model's bounding box is valid (not 0-length - for actors it is - || NaN || inf)
+	if ( !std::isnan(_bb.Max().Length()) && !std::isinf(_bb.Max().Length()) && (_bb.Max().Length() > 1e-06) ) {
+
+		// check if model's bounding box contains target point
+		if ( _bb.Contains(_pt) ) {
+			return (true);
+		}
+
+	}
+	return (false);
+
+}
+
+/////////////////////////////////////////////////
+
+void ActorPlugin::chooseNewTarget(const common::UpdateInfo &_info) {
+
+	/* TODO: periodically check if current target is still available
+	 * for example: new model added in Gazebo */
+	ignition::math::Vector3d new_target(this->target);
+
+	// look for target that is located at least 2 meters from current one
+	while ((new_target - this->target).Length() < 2.0) {
+
+		// get random coordinates based on world limits
+		// TODO: world limits loaded as a parameter
+		new_target.X(ignition::math::Rand::DblUniform(-3, 3.5));
+		new_target.Y(ignition::math::Rand::DblUniform(-10, 2));
+
+		// check distance to all world's objects
+		for (unsigned int i = 0; i < this->world->ModelCount(); ++i) {
+
+			/* distance-based target selection - could fail for very big objects
+			 *
+			//double dist = (this->world->ModelByIndex(i)->WorldPose().Pos() - newTarget).Length();
+			if (dist < 2.0) {
+				// if distance to some object is less than 2 meters
+				// discard - discard current target and look
+				// for another one
+				newTarget = this->target;
+				break;
+			}
+			*
+			*/
+
+			/* bounding-box-based target selection - more safe for big obstacles,
+			 * accounting some tolerance for a target accomplishment - an actor should
+			 * not step into an object */
+
+			// FIXME: cafe is a specific model that represents whole world
+			if ( this->world->ModelByIndex(i)->GetName() == "cafe" ) {
+				continue;
+			}
+
+			// check if model's bounding box contains target point
+			if ( this->doesBoundingBoxContainPoint(this->world->ModelByIndex(i)->BoundingBox(), this->target) ) {
+				// TODO: make this an error log message
+				std::cout << "chooseNewTarget() - selection failed -> model containing target's pos: " << this->world->ModelByIndex(i)->GetName() << std::endl;
+				std::cout << std::endl;
+				new_target = this->target;
+				break;
+			}
+
+		} // for
+
+	} // while
+
+	// finally found a new target
+	this->target = new_target;
+
+	// save event time
+	last_target_selection_time = _info.simTime;
+
 }
 
 
@@ -234,22 +347,29 @@ ignition::math::Box ActorPlugin::GenerateBoundingBox(const ignition::math::Pose3
 	static const double ACTOR_Y_BB_HALF_LENGTH = 0.45;
 	static const double ACTOR_Z_BB_HALF_LENGTH = 1.0;
 
-	// TODO: add roll rotation handling (as actor lies down X and Z changes)
-
 	// forced calculations in 0-90 deg range
-	double angle_truncated = std::fabs(_actor_pose.Rot().Yaw());
-	angle_truncated -= static_cast<int>(angle_truncated / IGN_PI_2) * IGN_PI_2;
+	double yaw_truncated = std::fabs(_actor_pose.Rot().Yaw());
+	yaw_truncated -= static_cast<int>(yaw_truncated / IGN_PI_2) * IGN_PI_2;
+
+	/* TODO: Add roll and pitch rotation handling (as actor lies down X and Z changes);
+	 * 		 it won't be used in move_around state but at last will be nice
+	 * 		 to have such a feature */
+//	double roll_truncated = std::fabs(_actor_pose.Rot().Roll());
+//	roll_truncated -= static_cast<int>(roll_truncated / IGN_PI_2) * IGN_PI_2;
+//
+//	double pitch_truncated = std::fabs(_actor_pose.Rot().Pitch());
+//	pitch_truncated -= static_cast<int>(pitch_truncated / IGN_PI_2) * IGN_PI_2;
 
 	// x-projection on x-axis
-	double xp = ACTOR_X_BB_HALF_LENGTH * cos(angle_truncated);
+	double xp = ACTOR_X_BB_HALF_LENGTH * cos(yaw_truncated);
 	// line projected on x-axis that extends basic x-projection
-	double xp_ext = ACTOR_Y_BB_HALF_LENGTH * sin(angle_truncated);
+	double xp_ext = ACTOR_Y_BB_HALF_LENGTH * sin(yaw_truncated);
 	// sum of xp's gives total length of x-component of BB
 	double x_total = xp + xp_ext;
 
 	// the same for y-axis
-	double yp = ACTOR_Y_BB_HALF_LENGTH * cos(angle_truncated);
-	double yp_ext = ACTOR_X_BB_HALF_LENGTH * sin(angle_truncated);
+	double yp = ACTOR_Y_BB_HALF_LENGTH * cos(yaw_truncated);
+	double yp_ext = ACTOR_X_BB_HALF_LENGTH * sin(yaw_truncated);
 	double y_total = yp + yp_ext;
 
 	ignition::math::Box bb(	_actor_pose.Pos().X() - x_total,
@@ -300,6 +420,20 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 		return;
 	};
 
+
+	if ( !isTargetStillReachable(_info) ) {
+		this->chooseNewTarget(_info);
+		// after setting new target, first let's rotate to its direction
+		state_actor = ACTOR_STATE_ALIGN_TARGET;
+	}
+
+	if ( isTargetNotReachedForTooLong(_info) ) {
+		this->chooseNewTarget(_info);
+		// after setting new target, first let's rotate to its direction
+		state_actor = ACTOR_STATE_ALIGN_TARGET;
+	}
+
+
 #ifdef CREATE_ROS_NODE
 	PublishActorTf();
 #elif defined(CREATE_ROS_INTERFACE)
@@ -315,7 +449,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	static common::Time vis_time;
 	static int counter = 0;
 
-	if ( (_info.simTime - vis_time).Double() > 0.05 ) {
+	if ( (_info.simTime - vis_time).Double() > 0.25 ) {
 
 		//std::cout << "ACTOR FOR VIS: " << this->actor_id << "\tname: " << this->actor->GetName() << std::endl;
 		VisualizeForceField();
@@ -512,7 +646,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 		if ( print_info ) {
 			std::cout << "CHOOSE NEW TARGET! \t current: " << this->target;
 		}
-		this->ChooseNewTarget();
+		this->chooseNewTarget();
 		if ( print_info ) {
 			std::cout << " \t new: " << this->target << std::endl;
 		}
@@ -1179,7 +1313,7 @@ void ActorPlugin::VisualizeForceField() {
 
 #endif
 
-/*
+/* */
 	// calculate grid for actor1
 
 	if ( this->actor->GetName() == "actor1" ) {
@@ -1195,7 +1329,7 @@ void ActorPlugin::VisualizeForceField() {
 
 			// Remember to artificially place the actor (along with his bounding) in current grid cell!
 	#if	defined(INFLATE_BOUNDING_BOX)
-			actor_common_info.SetBoundingBox( this->GenerateBoundingBox(pose) );
+			this->actor_common_info.SetBoundingBox( this->GenerateBoundingBox(pose) );
 	#elif defined(INFLATE_BOUNDING_CIRCLE)
 			this->bounding_circle.SetCenter(pose.Pos());
 			this->actor_common_info.SetBoundingCircle(this->bounding_circle);
@@ -1220,7 +1354,7 @@ void ActorPlugin::VisualizeForceField() {
 		grid_vis.ResetGridIndex();
 
 	}
-*/
+
 
 }
 
@@ -1291,7 +1425,7 @@ void ActorPlugin::ApplyUpdate(const common::UpdateInfo &_info, const double &_di
 	// update script time to set proper animation speed
 	this->actor->SetScriptTime(this->actor->ScriptTime() + (_dist_traveled * this->animation_factor));
 
-	// udpdate time
+	// update time
 	this->last_update = _info.simTime;
 
 	// debug info
@@ -1377,10 +1511,11 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 	// choose a new target position if the actor has reached its current target
 //	if (to_target_distance < 0.3) {
 
-	// with very small to-target distance tolerance the actor reaches near-to-zero velocity
-	if (to_target_distance < 1.3) {
+	/* the smaller tolerance the bigger probability that actor will
+	 * step into some obstacle */
+	if (to_target_distance < 1.25) {
 
-		this->ChooseNewTarget();
+		this->chooseNewTarget(_info);
 		// after setting new target, first let's rotate to its direction
 		state_actor = ACTOR_STATE_ALIGN_TARGET;
 

@@ -70,8 +70,8 @@
 
 // -------------------------
 
-#define INFLATE_BOUNDING_BOX
-//#define INFLATE_BOUNDING_CIRCLE
+//#define INFLATE_BOUNDING_BOX
+#define INFLATE_BOUNDING_CIRCLE
 // #define INFLATE_BOUNDING_ELLIPSE
 
 // -------------------------
@@ -117,7 +117,24 @@ namespace gazebo
     private: void OnUpdate(const common::UpdateInfo &_info);
 
     /// \brief Helper function to choose a new target location
-    private: void ChooseNewTarget();
+    private: void chooseNewTarget(const common::UpdateInfo &_info);
+
+    /// \brief Time of the last new target selection
+	private: common::Time last_target_selection_time;
+
+    /// \brief Helper function to check if target is still
+    /// reachable (for example after addition of a new model
+    /// a current target may not be reachable any more)
+    private: bool isTargetStillReachable(const common::UpdateInfo &_info);
+
+    /// \brief Time of the last reachability test.
+	private: common::Time last_reachability_time;
+
+    /// \brief Helper function to check if target is not
+    /// reached for a certain amount of time
+    private: bool isTargetNotReachedForTooLong(const common::UpdateInfo &_info) const;
+
+    private: bool doesBoundingBoxContainPoint(const ignition::math::Box &_bb, const ignition::math::Vector3d &_pt) const;
 
     /// \brief Helper function to avoid obstacles. This implements a very
     /// simple vector-field algorithm.

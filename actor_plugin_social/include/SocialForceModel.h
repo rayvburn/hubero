@@ -62,14 +62,17 @@
  * but without BB the situation is the same
  */
 
-#define BOUNDING_BOX_CALCULATION
+//#define BOUNDING_BOX_CALCULATION
 
 #ifdef BOUNDING_BOX_CALCULATION
 	#define BOUNDING_BOX_ONLY_FROM_OTHER_OBJECTS
 	// #define BOUNDING_BOX_ALL_OBJECTS
 #endif
 
-// #define BOUNDING_CIRCLE_CALCULATION	// bounding circle around actors only
+#define BOUNDING_CIRCLE_CALCULATION	// bounding circle around actors only
+									// BOUNDING CIRCLE provides smoother force transitions while actor moves around obstacles
+									// compared to bounding box
+
 
 // ----------------------------------------------------------------------------------------------- //
 /* References:
