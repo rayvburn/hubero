@@ -11,6 +11,7 @@
 #include <ignition/math/Box.hh>
 #include <ignition/math/Vector3.hh>
 #include "BoundingCircle.h"
+#include "BoundingEllipse.h"
 #include "Enums.h"
 #include <vector>
 #include <string>
@@ -44,15 +45,18 @@ public:
 
 	void SetBoundingBox		(const ignition::math::Box &_bb);
 	void SetBoundingCircle	(const BoundingCircle &_bc);
+	void SetBoundingEllipse	(const BoundingEllipse &_be);
 	void SetLinearVel		(const ignition::math::Vector3d &_vel);
 
 	unsigned int							GetActorID() const;
 	ignition::math::Box						GetBoundingBox() const;
 	BoundingCircle							GetBoundingCircle() const;
+	BoundingEllipse							GetBoundingEllipse() const;
 	ignition::math::Vector3d				GetLinearVelocity() const;
 
 	std::vector<ignition::math::Box> 		GetBoundingBoxesVector() const;
 	std::vector<BoundingCircle> 	 		GetBoundingCirclesVector() const;
+	std::vector<BoundingEllipse> 	 		GetBoundingEllipsesVector() const;
 	std::vector<ignition::math::Vector3d>	GetLinearVelocitiesVector() const;
 	std::map<std::string, unsigned int>		GetNameIDMap() const;
 
@@ -67,6 +71,7 @@ private:
 
 	static std::vector<ignition::math::Box> 	  bounding_box_vector;
 	static std::vector<BoundingCircle> 			  bounding_circle_vector;
+	static std::vector<BoundingEllipse> 		  bounding_ellipse_vector;
 	static std::vector<ignition::math::Vector3d>  lin_vel_vector;
 	static std::map<std::string, unsigned int>    name_id_map;
 

@@ -26,6 +26,8 @@ public:
 
 	ignition::math::Vector3d GetIntersection(const ignition::math::Vector3d &_pt_dest) const;
 	double GetRadius() const;
+	ignition::math::Vector3d GetCenter() const;
+	bool isWithin(const ignition::math::Vector3d &_pt_dest) const;
 	visualization_msgs::Marker GetMarkerConversion() const;
 
 	virtual ~BoundingCircle();

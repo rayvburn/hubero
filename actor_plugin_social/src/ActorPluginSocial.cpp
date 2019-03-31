@@ -151,7 +151,12 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	bounding_circle.SetRadius(0.75f);
 	actor_common_info.SetBoundingCircle(bounding_circle);
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
-
+	bounding_ellipse.setCenter(this->pose_actor.Pos());
+	bounding_ellipse.setCenterOffset(ignition::math::Vector3d(0.0, 0.0, 0.0));
+	bounding_ellipse.setSemiMajorAxis(1.50);
+	bounding_ellipse.setSemiMinorAxis(0.75);
+	bounding_ellipse.setYaw(this->pose_actor.Rot().Yaw());
+	actor_common_info.SetBoundingEllipse(bounding_ellipse);
 #endif
 
 
@@ -442,6 +447,8 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	ros_interface.PublishMarker(bounding_circle.GetMarkerConversion());
 	#elif defined(INFLATE_BOUNDING_BOX)
 	ros_interface.PublishMarker(sfm_vis.GetBBMarkerConversion(actor_common_info.GetBoundingBox()));
+#elif defined(INFLATE_BOUNDING_ELLIPSE)
+	ros_interface.PublishMarker(bounding_ellipse.getMarkerConversion());
 	#endif
 #endif
 
@@ -1283,7 +1290,8 @@ void ActorPlugin::VisualizeForceField() {
 		this->bounding_circle.SetCenter(pose.Pos());
 		this->actor_common_info.SetBoundingCircle(this->bounding_circle);
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
-
+		bounding_ellipse.updatePose(this->pose_actor);
+		actor_common_info.SetBoundingEllipse(bounding_ellipse);
 #endif
 
 
@@ -1313,45 +1321,51 @@ void ActorPlugin::VisualizeForceField() {
 
 #endif
 
-/* */
+	/* */
 	// calculate grid for actor1
 
 	if ( this->actor->GetName() == "actor1" ) {
 
-		grid_vis.CreateGrid(-5.0, 5.5, -12.0, 4.0, 0.75);
+		// don't calculate when no subscribing node
+		if ( ros_interface.getGridSubscribersNum() > 0 ) {
 
-		ignition::math::Pose3d pose;
-		ignition::math::Vector3d sf;
+			grid_vis.CreateGrid(-5.0, 5.5, -12.0, 4.0, 0.75);
 
-		while ( !grid_vis.IsWholeGridChecked() ) {
+			ignition::math::Pose3d pose;
+			ignition::math::Vector3d sf;
 
-			pose = ignition::math::Pose3d(grid_vis.GetNextGridElement(), this->pose_actor.Rot());
+			while ( !grid_vis.IsWholeGridChecked() ) {
 
-			// Remember to artificially place the actor (along with his bounding) in current grid cell!
-	#if	defined(INFLATE_BOUNDING_BOX)
-			this->actor_common_info.SetBoundingBox( this->GenerateBoundingBox(pose) );
-	#elif defined(INFLATE_BOUNDING_CIRCLE)
-			this->bounding_circle.SetCenter(pose.Pos());
-			this->actor_common_info.SetBoundingCircle(this->bounding_circle);
-	#elif defined(INFLATE_BOUNDING_ELLIPSE)
+				pose = ignition::math::Pose3d(grid_vis.GetNextGridElement(), this->pose_actor.Rot());
 
-	#endif
-
-			sf = sfm.GetSocialForce( this->world,
-									 this->actor->GetName(),
-									 pose,
-									 this->velocity_actual,
-									 this->target,
-									 this->actor_common_info);
-			grid_vis.SetForce(sf);
-
-		}
-
-		#if defined(CREATE_ROS_INTERFACE)
-		ros_interface.PublishMarkerArrayGrid(grid_vis.GetMarkerArray());
+				// Remember to artificially place the actor (along with his bounding) in current grid cell!
+		#if	defined(INFLATE_BOUNDING_BOX)
+				this->actor_common_info.SetBoundingBox( this->GenerateBoundingBox(pose) );
+		#elif defined(INFLATE_BOUNDING_CIRCLE)
+				this->bounding_circle.SetCenter(pose.Pos());
+				this->actor_common_info.SetBoundingCircle(this->bounding_circle);
+		#elif defined(INFLATE_BOUNDING_ELLIPSE)
+				this->bounding_ellipse.setYaw(this->pose_actor.Rot().Yaw());
+				this->actor_common_info.SetBoundingEllipse(bounding_ellipse);
 		#endif
 
-		grid_vis.ResetGridIndex();
+				sf = sfm.GetSocialForce( this->world,
+										 this->actor->GetName(),
+										 pose,
+										 this->velocity_actual,
+										 this->target,
+										 this->actor_common_info);
+				grid_vis.SetForce(sf);
+
+			}
+
+			#if defined(CREATE_ROS_INTERFACE)
+			ros_interface.PublishMarkerArrayGrid(grid_vis.GetMarkerArray());
+			#endif
+
+			grid_vis.ResetGridIndex();
+
+		}
 
 	}
 
@@ -1389,7 +1403,8 @@ double ActorPlugin::PrepareForUpdate(const common::UpdateInfo &_info) {
 	bounding_circle.SetCenter(this->pose_actor.Pos());
 	actor_common_info.SetBoundingCircle(bounding_circle);
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
-
+	bounding_ellipse.updatePose(this->pose_actor);
+	actor_common_info.SetBoundingEllipse(bounding_ellipse);
 #endif
 
 	// dt is helpful for further calculations

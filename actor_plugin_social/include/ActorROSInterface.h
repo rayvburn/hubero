@@ -51,6 +51,7 @@ public:
 	void PublishClosestPoints(const visualization_msgs::MarkerArray &_marker_array);	// debugging purposes only
 	void PublishSFArrows(const visualization_msgs::MarkerArray &_marker_array);			// debugging purposes only
 
+	unsigned int getGridSubscribersNum() const;
 	void LoadParameters();
 	bool AreParametersLoaded() const;
 

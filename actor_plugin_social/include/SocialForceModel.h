@@ -13,6 +13,7 @@
 
 #include <SocialForceModelUtils.h>
 #include "BoundingCircle.h"
+#include "BoundingEllipse.h"
 #include "CommonInfo.h"
 
 // #include <gazebo/physics/World.hh>
@@ -72,7 +73,7 @@
 #define BOUNDING_CIRCLE_CALCULATION	// bounding circle around actors only
 									// BOUNDING CIRCLE provides smoother force transitions while actor moves around obstacles
 									// compared to bounding box
-
+//#define BOUNDING_ELLIPSE_CALCULATION
 
 // ----------------------------------------------------------------------------------------------- //
 /* References:
@@ -160,6 +161,17 @@ public:
 			const std::vector<ActorUtils::BoundingCircle> _actors_bounding_circles
 	) const;
 
+#elif defined (BOUNDING_ELLIPSE_CALCULATION)
+
+	ActorUtils::BoundingEllipse GetActorBoundingEllipse(
+			const unsigned int _actor_id,
+			const std::vector<ActorUtils::BoundingEllipse> _actors_bounding_ellipses
+	) const;
+
+#endif
+
+#if defined(BOUNDING_CIRCLE_CALCULATION)
+
 	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
 			const ignition::math::Pose3d &_actor_pose,
 			const ActorUtils::BoundingCircle &_actor_bc,
@@ -176,7 +188,27 @@ public:
 			const std::string &_object_name // debug only
 			) const;
 
+#elif defined (BOUNDING_ELLIPSE_CALCULATION)
+
+	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
+			const ignition::math::Pose3d &_actor_pose,
+			const ActorUtils::BoundingEllipse &_actor_be,
+			const ignition::math::Pose3d &_object_pose,
+			const ignition::math::Box &_object_bb,
+			const std::string &_object_name // debug only
+			) const;
+
+	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
+			const ignition::math::Pose3d &_actor_pose,
+			const ActorUtils::BoundingEllipse &_actor_be,
+			const ignition::math::Pose3d &_object_pose,
+			const ActorUtils::BoundingEllipse &_object_be,
+			const std::string &_object_name // debug only
+			) const;
+
 #endif
+
+
 
 
 	ignition::math::Angle GetYawMovementDirection(

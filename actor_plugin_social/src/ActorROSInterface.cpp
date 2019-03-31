@@ -112,6 +112,12 @@ void ActorROSInterface::PublishSFArrows(const visualization_msgs::MarkerArray &_
 
 // ------------------------------------------------------------------- //
 
+unsigned int ActorROSInterface::getGridSubscribersNum() const {
+	return ( pub_array_grid.getNumSubscribers() );
+}
+
+// ------------------------------------------------------------------- //
+
 ActorROSInterface::~ActorROSInterface() {
 	// TODO Auto-generated destructor stub
 }

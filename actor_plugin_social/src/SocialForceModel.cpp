@@ -46,7 +46,7 @@ namespace SocialForceModel {
 #endif
 
 
-// #define DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
+#define DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
 // #define DEBUG_FORCE_EACH_OBJECT 									// each iteration
 // #define DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 
@@ -200,6 +200,7 @@ ignition::math::Box SocialForceModel::GetActorBoundingBox(
 // ------------------------------------------------------------------- //
 
 #ifdef BOUNDING_CIRCLE_CALCULATION
+
 ActorUtils::BoundingCircle SocialForceModel::GetActorBoundingCircle(
 		const unsigned int _actor_id,
 		const std::vector<ActorUtils::BoundingCircle> _actors_bounding_circles
@@ -212,6 +213,22 @@ ActorUtils::BoundingCircle SocialForceModel::GetActorBoundingCircle(
 	return _actors_bounding_circles[_actor_id];
 
 }
+
+#elif defined(BOUNDING_ELLIPSE_CALCULATION)
+
+ActorUtils::BoundingEllipse SocialForceModel::GetActorBoundingEllipse(
+		const unsigned int _actor_id,
+		const std::vector<ActorUtils::BoundingEllipse> _actors_bounding_ellipses
+) const
+{
+
+	if ( _actor_id == ACTOR_ID_NOT_FOUND ) {
+		return (ActorUtils::BoundingEllipse());
+	}
+	return _actors_bounding_ellipses[_actor_id];
+
+}
+
 #endif
 
 // ------------------------------------------------------------------- //
@@ -270,6 +287,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	ignition::math::Vector3d model_vel;
 	ignition::math::Box model_box;
 	ActorUtils::BoundingCircle model_circle;
+	ActorUtils::BoundingEllipse model_ellipse;
 
 	/* below flag is used as a workaround for the problem connected with being unable to set actor's
 	 * velocity and acceleration in the gazebo::physics::WorldPtr */
@@ -316,11 +334,13 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			// CommonInfo class
 			unsigned int actor_id = this->GetActorID(model_ptr->GetName(), _actor_info.GetNameIDMap());
 
-			model_vel    = this->GetActorVelocity      (actor_id, _actor_info.GetLinearVelocitiesVector());
+			model_vel     = this->GetActorVelocity      (actor_id, _actor_info.GetLinearVelocitiesVector());
 			#ifdef BOUNDING_CIRCLE_CALCULATION
-			model_circle = this->GetActorBoundingCircle(actor_id, _actor_info.GetBoundingCirclesVector());
+			model_circle  = this->GetActorBoundingCircle(actor_id, _actor_info.GetBoundingCirclesVector());
+			#elif defined(BOUNDING_ELLIPSE_CALCULATION)
+			model_ellipse = this->GetActorBoundingEllipse(actor_id, _actor_info.GetBoundingEllipsesVector());
 			#endif
-			model_box    = this->GetActorBoundingBox   (actor_id, _actor_info.GetBoundingBoxesVector());
+			model_box     = this->GetActorBoundingBox   (actor_id, _actor_info.GetBoundingBoxesVector());
 
 		} else {
 
@@ -372,7 +392,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			std::cout << "actor_center: " << _actor_pose.Pos() << "\tobstacle_closest_pt: " << model_closest_point << "\tdist: " << (model_closest_point-_actor_pose.Pos()).Length() << std::endl;
 		}
 
-#elif defined (BOUNDING_CIRCLE_CALCULATION)
+#elif defined (BOUNDING_CIRCLE_CALCULATION) || defined(BOUNDING_ELLIPSE_CALCULATION)
 
 
 		ignition::math::Pose3d actor_closest_to_model_pose;
@@ -380,19 +400,35 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 
 		if ( is_an_actor ) {
 
+			#ifdef BOUNDING_CIRCLE_CALCULATION
 			std::tie(actor_closest_to_model_pose, model_closest_point) = this->GetActorModelBBsClosestPoints(_actor_pose,
 																											 _actor_info.GetBoundingCircle(),
 																											 model_ptr->WorldPose(),
 																											 model_circle,
 																											 model_ptr->GetName() );
+			#elif defined(BOUNDING_ELLIPSE_CALCULATION)
+			std::tie(actor_closest_to_model_pose, model_closest_point) = this->GetActorModelBBsClosestPoints(_actor_pose,
+																											 _actor_info.GetBoundingEllipse(),
+																											 model_ptr->WorldPose(),
+																											 model_ellipse,
+																											 model_ptr->GetName() );
+			#endif
 
 		} else {
 
+			#ifdef BOUNDING_CIRCLE_CALCULATION
 			std::tie(actor_closest_to_model_pose, model_closest_point) = this->GetActorModelBBsClosestPoints(_actor_pose,
 																											 _actor_info.GetBoundingCircle(),
 																											 model_ptr->WorldPose(),
 																											 model_box,
 																											 model_ptr->GetName() );
+			#elif defined(BOUNDING_ELLIPSE_CALCULATION)
+			std::tie(actor_closest_to_model_pose, model_closest_point) = this->GetActorModelBBsClosestPoints(_actor_pose,
+																											 _actor_info.GetBoundingEllipse(),
+																											 model_ptr->WorldPose(),
+																											 model_box,
+																											 model_ptr->GetName() );
+			#endif
 
 		}
 
@@ -757,6 +793,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 
 #ifdef BOUNDING_CIRCLE_CALCULATION
 
+// ACTOR -> STATIC OBJECT | BoundingCircle
 std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::GetActorModelBBsClosestPoints(
 		const ignition::math::Pose3d &_actor_pose,
 		const ActorUtils::BoundingCircle &_actor_bc,
@@ -792,11 +829,16 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 
 	/* now there is an ability to check whether actor has stepped into some obstacle
 	 * (its bounding box - to be specific) */
-	ignition::math::Vector3d dist_to_compare;
-	dist_to_compare = point_intersect - _actor_pose.Pos();
-	dist_to_compare.Z(0.0); // will be compared to planar radius
+//	ignition::math::Vector3d dist_to_compare;
+//	dist_to_compare = point_intersect - _actor_pose.Pos();
+//	dist_to_compare.Z(0.0); // will be compared to planar radius
+//
+//	std::cout << debug_current_actor_name << "'s center: " <<_actor_pose.Pos() << "\tBC's center: " << _actor_bc.GetCenter() << std::endl;
 
-	if ( dist_to_compare.Length() <= _actor_bc.GetRadius() ) {
+//	if ( dist_to_compare.Length() <= _actor_bc.GetRadius() ) {
+
+	// above commented -> instead isWithin method created
+	if ( _actor_bc.isWithin(point_intersect) ) {
 
 		#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
 		std::cout << "\n\n\n\n\n1\tACTOR STEPPED INTO OBSTACLE\n\n\n\n\n\t" << debug_current_actor_name << "\t" << debug_current_object_name << "\n" << std::endl;
@@ -831,8 +873,10 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 
 }
 
-// --------------------------
 
+ //-------------------------------------------
+
+// ACTOR -> ACTOR | BoundingCircle
 std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::GetActorModelBBsClosestPoints(
 		const ignition::math::Pose3d &_actor_pose,
 		const ActorUtils::BoundingCircle &_actor_bc,
@@ -854,11 +898,15 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	 * compare the length of a vector from actor's center to the object's position
 	 * shifted. When it's longer than radius then both bounding circles are safe -
 	 * they are not intersecting each other. */
-	ignition::math::Vector3d connection;
-	connection = object_pos_shifted - _actor_pose.Pos();
-	connection.Z(0.0); // planar
+//	ignition::math::Vector3d connection;
+//	connection = object_pos_shifted - _actor_pose.Pos();
+//	connection.Z(0.0); // planar
+//
+//	if ( connection.Length() <= _actor_bc.GetRadius() ) {
+//	std::cout << debug_current_actor_name << "'s center: " << _actor_pose.Pos() << "\tBC's center: " << _actor_bc.GetCenter() << std::endl;
 
-	if ( connection.Length() <= _actor_bc.GetRadius() ) {
+	// above commented -> instead isWithin method created
+	if ( _actor_bc.isWithin(object_pos_shifted) ) {
 
 		std::tie(actor_pose_shifted.Pos(), object_pos_shifted) = this->GetClosestPointsOfIntersectedModelsActors(_actor_pose.Pos(), _object_pose.Pos());
 
@@ -878,7 +926,143 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	return ( std::make_tuple(actor_pose_shifted, object_pos_shifted) );
 
 }
+
+
+//-------------------------------------------
+
+
+#elif defined(BOUNDING_ELLIPSE_CALCULATION)
+
+// ACTOR -> STATIC OBJECT | BoundingEllipse
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::GetActorModelBBsClosestPoints(
+		const ignition::math::Pose3d &_actor_pose,
+		const ActorUtils::BoundingEllipse &_actor_be,
+		const ignition::math::Pose3d &_object_pose,
+		const ignition::math::Box &_object_bb,
+		const std::string &_object_name // debug only
+		) const
+{
+
+	/* BoundingEllipse and BoundingBox -> actor and static object */
+
+	/* this function finds points that are located within the bounding
+	 * box/circle range that are further treated as a real position
+	 * of objects in the world - this provides some kind of a inflation
+	 * around the objects */
+
+	ignition::math::Pose3d actor_pose_shifted = _actor_pose;
+	ignition::math::Line3d line;
+	ignition::math::Vector3d point_intersect;
+
+	// Intersect() method returns a tuple
+	bool does_intersect = false;
+	double dist_intersect = 0.0;
+
+	// object's bounding box point that is closest to actor's bounding box
+	/* create the line from the actor's center to the object's center and check
+	 * the intersection point of that line with the object's bounding box */
+	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _object_pose.Pos().X(), _object_pose.Pos().Y(), _object_bb.Center().Z() );
+	std::tie(does_intersect, dist_intersect, point_intersect) = _object_bb.Intersect(line);
+
+	/* `does_intersect` flag check gave up here (will be false if actor's fully within
+	 * object's BB and true otherwise (most cases) */
+
+	/* now there is an ability to check whether actor has stepped into some obstacle
+	 * (its bounding box - to be specific) */
+//	ignition::math::Vector3d dist_to_compare;
+//	dist_to_compare = point_intersect - _actor_pose.Pos();
+//	dist_to_compare.Z(0.0); // will be compared to planar radius
+//
+//	if ( dist_to_compare.Length() <= _actor_be.GetRadius() ) {
+	if ( _actor_be.isWithin(point_intersect) ) {
+
+		#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
+		std::cout << "\n\n\n\n\n1\tACTOR STEPPED INTO OBSTACLE\n\n\n\n\n\t" << debug_current_actor_name << "\t" << debug_current_object_name << "\n" << std::endl;
+		#endif
+		std::tie(actor_pose_shifted.Pos(), point_intersect) = this->GetClosestPointsOfIntersectedModelsActorObject(_actor_pose.Pos(), point_intersect);
+		return ( std::make_tuple(actor_pose_shifted, point_intersect) );
+
+	}
+
+#ifdef DEBUG_CLOSEST_POINTS
+	if ( _object_name == "table1" ) {
+		std::cout << "GetClosestPoints()\t" << _object_name << "'s BB point of intersection: " << point_intersect;
+	}
 #endif
+
+	// intersection of the actor's circle
+	actor_pose_shifted.Pos() = _actor_be.getIntersection(point_intersect);
+
+#ifdef DEBUG_CLOSEST_POINTS
+	if ( _object_name == "table1" ) {
+		std::cout << "\t\tACTOR's BC point of intersection: " << actor_pose_shifted.Pos() << std::endl;
+	}
+#endif
+
+
+	#ifdef DEBUG_BOUNDING_CIRCLE
+	std::cout << "\n\nBOUND - actor & object | actor pos: " << _actor_pose.Pos() << "\tintersection: " << actor_pose_shifted.Pos() << std::endl;
+	std::cout << "BOUND - actor & object |" << _object_name << "'s pos: " << _object_pose.Pos() << "\tintersection: " << point_intersect << std::endl;
+	#endif
+
+	return ( std::make_tuple(actor_pose_shifted, point_intersect) );
+
+}
+
+
+// -- - - - - -- - - - - - - ---- - -- -- - - -- --
+
+// ACTOR -> ACTOR | BoundingEllipse
+
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::GetActorModelBBsClosestPoints(
+		const ignition::math::Pose3d &_actor_pose,
+		const ActorUtils::BoundingEllipse &_actor_be,
+		const ignition::math::Pose3d &_object_pose,
+		const ActorUtils::BoundingEllipse &_object_be,
+		const std::string &_object_name // debug only
+		) const
+{
+
+	/* BoundingEllipse and BoundingEllipse -> 2 actors */
+	// intersection of the 1st actor's circle (currently processed)
+	ignition::math::Pose3d actor_pose_shifted = _actor_pose;
+	actor_pose_shifted.Pos() = _actor_be.getIntersection(_object_pose.Pos());
+
+	// intersection of the 2nd actor's circle (another one)
+	ignition::math::Vector3d object_pos_shifted = _object_be.getIntersection(_actor_pose.Pos());
+
+	/* Let's check whether the bounding circles are not intruding each other -
+	 * compare the length of a vector from actor's center to the object's position
+	 * shifted. When it's longer than radius then both bounding circles are safe -
+	 * they are not intersecting each other. */
+//	ignition::math::Vector3d connection;
+//	connection = object_pos_shifted - _actor_pose.Pos();
+//	connection.Z(0.0); // planar
+//
+//	if ( connection.Length() <= _actor_be.GetRadius() ) {
+	if ( _actor_be.isWithin(object_pos_shifted) ) {
+
+		std::tie(actor_pose_shifted.Pos(), object_pos_shifted) = this->GetClosestPointsOfIntersectedModelsActors(_actor_pose.Pos(), _object_pose.Pos());
+
+	} else {
+
+		#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX
+		std::cout << "\nINFO - " << debug_current_actor_name << "'s bounding circle IS SAFE\tlength: " << connection.Length() << "\tradius: " << _actor_bc.GetRadius() << std::endl;
+		#endif
+
+	}
+
+	#ifdef DEBUG_BOUNDING_CIRCLE
+	std::cout << "\n\nBOUND - 2 actors | 1 pos: " << _actor_pose.Pos() << "\tintersection: " << actor_pose_shifted.Pos() << std::endl;
+	std::cout << "BOUND - 2 actors |" << _object_name << "'s pos: " << _object_pose.Pos() << "\tintersection: " << object_pos_shifted << std::endl;
+	#endif
+
+	return ( std::make_tuple(actor_pose_shifted, object_pos_shifted) );
+
+}
+
+#endif  // defined(BOUNDING_ELLIPSE_CALCULATION)
+
 
 // ------------------------------------------------------------------- //
 
@@ -908,7 +1092,8 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> SocialForceModel:
 	ignition::math::Vector3d actor_shifted = _actor_pos;
 
 	/* initially a factor was 0.97 but the smaller the distance between actor and an obstacle
-	 * the smaller repulsion is produced */
+	 * the smaller repulsion is produced; when the repulsion in small distances from an obstacle
+	 * is too weak then the factor should be a little smaller  */
 	actor_shifted.X( _actor_pos.X() + 0.6 * line_actor_intersection.Length() * cos(line_slope.Radian() ));
 	actor_shifted.Y( _actor_pos.Y() + 0.6 * line_actor_intersection.Length() * sin(line_slope.Radian() ));
 

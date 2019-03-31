@@ -39,7 +39,17 @@ add_library(social_force_model include/SocialForceModel.h src/SocialForceModel.c
 add_library(social_force_model_utils include/SocialForceModelUtils.h src/SocialForceModelUtils.cpp)
 #add_library(actor_bounding_circle include/BoundingCircle.h src/BoundingCircle.cpp)
 #add_library(actor_common_info include/CommonInfo.h src/CommonInfo.cpp)
-add_library(actor_utils include/BoundingCircle.h include/CommonInfo.h src/BoundingCircle.cpp src/CommonInfo.cpp include/ActorROSInterface.h src/ActorROSInterface.cpp)
+
+add_library(actor_utils 
+  include/BoundingEllipse.h 
+  include/BoundingCircle.h 
+  include/CommonInfo.h 
+  src/BoundingEllipse.cpp
+  src/BoundingCircle.cpp 
+  src/CommonInfo.cpp 
+  include/ActorROSInterface.h 
+  src/ActorROSInterface.cpp)
+
 #add_library(enums include/Enums.h)
 
 target_link_libraries( ${PROJECT_NAME} 

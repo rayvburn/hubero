@@ -50,7 +50,7 @@ ignition::math::Vector3d BoundingCircle::GetIntersection(const ignition::math::V
 	 *
 	 */
 
-	// 1st calculate the angle from center to dest point
+	// 1st calculate the angle from center to the dest point
 	ignition::math::Angle theta;
 	ignition::math::Vector3d dest_center;
 	dest_center = _pt_dest - center;
@@ -75,13 +75,35 @@ double BoundingCircle::GetRadius() const {
 
 // ------------------------------------------------------------------- //
 
+// temp - debugging
+ignition::math::Vector3d BoundingCircle::GetCenter() const {
+	return (this->center);
+}
+
+// ------------------------------------------------------------------- //
+
+bool BoundingCircle::isWithin(const ignition::math::Vector3d &_pt) const {
+
+	ignition::math::Vector3d dist_to_compare;
+	dist_to_compare = _pt - this->center;
+	dist_to_compare.Z(0.0); // 3d vector comparison with planar radius
+
+	if ( dist_to_compare.Length() <= this->radius ) {
+		return (true);
+	}
+
+	return (false);
+}
+
+// ------------------------------------------------------------------- //
+
 visualization_msgs::Marker BoundingCircle::GetMarkerConversion() const {
 
 	visualization_msgs::Marker marker;
 
 	marker.header.frame_id = "map";
 	//marker.header.stamp = 0.0;
-	marker.ns = "test";
+	marker.ns = "test"; // TODO: change ns name
 	marker.id = 0;
 	marker.type = visualization_msgs::Marker::CYLINDER;
 	marker.action = visualization_msgs::Marker::MODIFY;

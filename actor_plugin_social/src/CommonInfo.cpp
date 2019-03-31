@@ -13,6 +13,7 @@ namespace ActorUtils {
 
 std::vector<ignition::math::Box> 	  	CommonInfo::bounding_box_vector;
 std::vector<BoundingCircle> 			CommonInfo::bounding_circle_vector;
+std::vector<BoundingEllipse> 		  	CommonInfo::bounding_ellipse_vector;
 std::vector<ignition::math::Vector3d>  	CommonInfo::lin_vel_vector;
 std::map<std::string, unsigned int>    	CommonInfo::name_id_map;
 
@@ -33,6 +34,7 @@ void CommonInfo::AddActor (const std::string &_name) {
 	this->id = static_cast<unsigned int>(lin_vel_vector.size() - 1);
 	bounding_box_vector.push_back(ignition::math::Box(0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
 	bounding_circle_vector.push_back(BoundingCircle());
+	bounding_ellipse_vector.push_back(BoundingEllipse());
 	name_id_map.insert(std::make_pair(_name, this->id));
 
 }
@@ -47,6 +49,12 @@ void CommonInfo::SetBoundingBox (const ignition::math::Box &_bb) {
 
 void CommonInfo::SetBoundingCircle (const BoundingCircle &_bc) {
 	bounding_circle_vector.at(this->id) = _bc;
+}
+
+// ------------------------------------------------------------------- //
+
+void CommonInfo::SetBoundingEllipse	(const BoundingEllipse &_be) {
+	bounding_ellipse_vector.at(this->id) = _be;
 }
 
 // ------------------------------------------------------------------- //
@@ -75,6 +83,12 @@ BoundingCircle CommonInfo::GetBoundingCircle() const {
 
 // ------------------------------------------------------------------- //
 
+BoundingEllipse CommonInfo::GetBoundingEllipse() const {
+	return (bounding_ellipse_vector.at(this->id));
+}
+
+// ------------------------------------------------------------------- //
+
 ignition::math::Vector3d CommonInfo::GetLinearVelocity() const {
 	return (lin_vel_vector.at(this->id));
 }
@@ -89,6 +103,12 @@ std::vector<ignition::math::Box> CommonInfo::GetBoundingBoxesVector() const {
 
 std::vector<BoundingCircle> CommonInfo::GetBoundingCirclesVector() const {
 	return (bounding_circle_vector);
+}
+
+// ------------------------------------------------------------------- //
+
+std::vector<BoundingEllipse> CommonInfo::GetBoundingEllipsesVector() const {
+	return (bounding_ellipse_vector);
 }
 
 // ------------------------------------------------------------------- //
@@ -110,6 +130,7 @@ void CommonInfo::ClearInternalMemory() {
 	lin_vel_vector.clear();
 	bounding_box_vector.clear();
 	bounding_circle_vector.clear();
+	bounding_ellipse_vector.clear();
 	name_id_map.clear();
 
 }
