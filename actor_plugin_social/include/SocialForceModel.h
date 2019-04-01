@@ -70,10 +70,10 @@
 	// #define BOUNDING_BOX_ALL_OBJECTS
 #endif
 
-#define BOUNDING_CIRCLE_CALCULATION	// bounding circle around actors only
+// #define BOUNDING_CIRCLE_CALCULATION	// bounding circle around actors only
 									// BOUNDING CIRCLE provides smoother force transitions while actor moves around obstacles
 									// compared to bounding box
-//#define BOUNDING_ELLIPSE_CALCULATION
+#define BOUNDING_ELLIPSE_CALCULATION
 
 // ----------------------------------------------------------------------------------------------- //
 /* References:
@@ -205,6 +205,15 @@ public:
 			const ActorUtils::BoundingEllipse &_object_be,
 			const std::string &_object_name // debug only
 			) const;
+
+//	template <typename T1, typename T2>
+//	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
+//			const ignition::math::Pose3d &_actor_pose,
+//			T1 _actor_be,
+//			const ignition::math::Pose3d &_object_pose,
+//			T2 _object_bb,
+//			const std::string &_object_name // debug only
+//			) const;
 
 #endif
 

@@ -31,22 +31,28 @@ public:
 	void setCenter(const ignition::math::Vector3d &center_point);
 	void setCenterOffset(const ignition::math::Vector3d &offset_vector);
 	void updatePose(const ignition::math::Pose3d &pose);
-	ignition::math::Vector3d getIntersection(const ignition::math::Vector3d &pt_dest) const;
+	std::tuple<bool, ignition::math::Vector3d> getIntersection(const ignition::math::Vector3d &pt_dest) const;
 	bool isWithin(const ignition::math::Vector3d &pt) const;
 	ignition::math::Vector3d getCenter() const;
-	ignition::math::Vector3d getCenterOffsets() const;
+	ignition::math::Vector3d getCenterOffset() const;
 	visualization_msgs::Marker getMarkerConversion() const;
 
 	virtual ~BoundingEllipse();
 
 private:
 
-	std::tuple<ignition::math::Vector3d, double> getIntersectionExt(const ignition::math::Vector3d &pt_dest) const;
+	std::tuple<ignition::math::Vector3d, double> getIntersectionExtended(const ignition::math::Vector3d &pt_dest) const;
+	std::tuple<unsigned int, ignition::math::Vector3d, ignition::math::Vector3d> getIntersectionWithLine(const double &to_dest_angle) const;
+	void updateShiftedCenter();
+
 	double a_major_;
 	double b_minor_;
-	double yaw_;
+	double yaw_ellipse_;
+	double yaw_offset_;
+
 	ignition::math::Vector3d center_;
 	ignition::math::Vector3d offset_;
+	ignition::math::Vector3d center_shifted_; // shifted center of the ellipse (center + offset with current yaw taken into consideration)
 
 };
 
