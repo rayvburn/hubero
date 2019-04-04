@@ -10,6 +10,10 @@
 #include <ignition/math/Quaternion.hh>
 #include <math.h> // fabs(), pow(), atan2(), tan()
 
+#include "BoundingEllipseDebug.h"
+
+// #define DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+
 namespace ActorUtils {
 
 // ------------------------------------------------------------------- //
@@ -53,7 +57,8 @@ void BoundingEllipse::setSemiMinorAxis(const double &b_minor) {
 // ------------------------------------------------------------------- //
 
 void BoundingEllipse::setYaw(const double &yaw_ellipse) {
-	yaw_ellipse_ = yaw_ellipse;
+	//yaw_ellipse_ = yaw_ellipse;
+	yaw_ellipse_ = yaw_ellipse - IGN_PI_2; // coordinate systems transformation (ActorPlugin-specific)
 	updateShiftedCenter();
 }
 
@@ -74,7 +79,7 @@ void BoundingEllipse::setCenterOffset(const ignition::math::Vector3d &offset_vec
 	 * must be investigated */
 
 	// FIXME: shouldn't offset_ be set before isWithin?
-	if ( offset_vector.Length() > 1e-06 && isWithin(offset_vector) ) {
+	if ( offset_vector.Length() > 1e-06 && doesContain(offset_vector) ) {
 
 		offset_ = offset_vector;
 
@@ -98,7 +103,7 @@ void BoundingEllipse::setCenterOffset(const ignition::math::Vector3d &offset_vec
 /// a conversion from actor's coordinate system must be done!
 void BoundingEllipse::updatePose(const ignition::math::Pose3d &pose) {
 	center_ = pose.Pos();
-	yaw_ellipse_ = pose.Rot().Yaw() - IGN_PI_2; // coordinate systems transformation
+	yaw_ellipse_ = pose.Rot().Yaw() - IGN_PI_2; // coordinate systems transformation (ActorPlugin-specific)
 	updateShiftedCenter();
 }
 
@@ -120,6 +125,7 @@ std::tuple<bool, ignition::math::Vector3d> BoundingEllipse::getIntersection(cons
 //	 *
 //	 */
 //
+
 //	// V1
 //	// 1st calculate the angle from center to the dest point
 //	ignition::math::Angle theta;
@@ -159,6 +165,13 @@ std::tuple<bool, ignition::math::Vector3d> BoundingEllipse::getIntersection(cons
 	psi.Radian(std::atan2(to_dest.Y(), to_dest.X()));
 	psi.Normalize();
 
+#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+	if ( debugEllipseGet() ) {
+	std::cout << "\n\nBoundingEllipse::getIntersection() with point: " << pt_dest << "\tellipse's center: " << center_ << "  center_shifted: " << center_shifted_ << std::endl;
+	std::cout << "\t\t\tpsi_to_dest from center shifted: " << psi.Radian() << std::endl;
+	}
+#endif
+
 	/* find line's points of intersection with ellipse;
 	 * line is created based on psi value (from the shifted
 	 * center to the destination point */
@@ -168,39 +181,94 @@ std::tuple<bool, ignition::math::Vector3d> BoundingEllipse::getIntersection(cons
 	ignition::math::Vector3d pt_of_intersection1, pt_of_intersection2;
 	std::tie(solution_num, pt_of_intersection1, pt_of_intersection2) = getIntersectionWithLine(psi.Radian());
 
+#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+	if ( debugEllipseGet() ) {
+	std::cout << "\tsolutions: " << solution_num << "\tintersection with p1: " << pt_of_intersection1 << "\tor p2: " << pt_of_intersection2 << std::endl;
+	}
+#endif
+
 	/* check which intersection point is 'correct' based on psi */
 	ignition::math::Vector3d *pt_proper;
 	ignition::math::Angle angle_test( std::atan2( (pt_of_intersection1 - center_shifted_).Y(),
 												  (pt_of_intersection1 - center_shifted_).X()) );
 	angle_test.Normalize();
 
+
 	/* correct angle will be nearly equal to 0, wrong point's vector
 	 * will produce doubled angle */
 
+#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+	ignition::math::Angle angle_test_backup;
+	angle_test_backup.Radian( std::atan2( (pt_of_intersection2 - center_shifted_).Y(),
+								   	   	   (pt_of_intersection2 - center_shifted_).X() ) );
+	if ( debugEllipseGet() ) {
+	std::cout << "\tangle_test_p1: " << angle_test.Radian() << "\tangle_test_p2: " << angle_test_backup.Radian() << "\tpsi: " << psi.Radian() << std::endl;
+	}
+#endif
+
 	// TODO: some error handling? 1 solution?
-	if ( (angle_test - psi) < 1e-03 ) {
+	if ( std::fabs(angle_test.Radian() - psi.Radian()) < 1e-03 ) {
 		pt_proper = &pt_of_intersection1;
-		std::cout << "BoundingEllipse::getIntersection - ANGLE TEST PASSED" << std::endl;
+
+		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+		if ( debugEllipseGet() ) {
+		std::cout << "\tp1 - PASSED" << std::endl;
+		}
+		#endif
+
 	} else {
 
-		// debug
+		// debug ------------------------- -------------------------
 		angle_test.Radian( std::atan2( (pt_of_intersection2 - center_shifted_).Y(),
 									   (pt_of_intersection2 - center_shifted_).X() ) );
-		if ( (angle_test - psi) < 1e-03 ) {
-			std::cout << "BoundingEllipse::getIntersection - ANGLE TEST PASSED" << std::endl;
+		if ( std::fabs(angle_test.Radian() - psi.Radian()) < 1e-03 ) {
+
+			#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+			if ( debugEllipseGet() ) {
+			std::cout << "\tp2 - PASSED" << std::endl;
+			}
+			#endif
+
+		} else {
+
+			#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+			if ( debugEllipseGet() ) {
+			std::cout << "\tFAILED" << std::endl;
+			}
+			#endif
+
 		}
-		//
+		// ------------------------- -------------------------
 
 		pt_proper = &pt_of_intersection2;
 	}
 
+#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+	if ( debugEllipseGet() ) {
+	std::cout << "\tproper point: " << *pt_proper << std::endl;
+	std::cout << "\tpoint location test - pt_dest to center len: " << (pt_dest - center_shifted_).Length() << "\tpoint on ellipse to center len: " << (*pt_proper - center_shifted_).Length();
+	}
+#endif
+
 	/* check if destination point lies within the ellipse */
 	bool is_within = false;
 	if ( (pt_dest - center_shifted_).Length() - (*pt_proper - center_shifted_).Length() <= 0.0 ) {
-		std::cout << "BoundingEllipse::getIntersection - POINT IS WITHIN" << std::endl;
+
+		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+		if ( debugEllipseGet() ) {
+		std::cout << "  WITHIN!" << std::endl;
+		}
+		#endif
+
 		is_within = true;
 	} else {
-		std::cout << "BoundingEllipse::getIntersection - POINT IS SAFE" << std::endl;
+
+		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+		if ( debugEllipseGet() ) {
+		std::cout << "  PT is OUTSIDE ELLIPSE!" << std::endl;
+		}
+		#endif
+
 	}
 
 	return (std::make_tuple(is_within, *pt_proper));
@@ -209,7 +277,7 @@ std::tuple<bool, ignition::math::Vector3d> BoundingEllipse::getIntersection(cons
 
 // ------------------------------------------------------------------- //
 
-bool BoundingEllipse::isWithin(const ignition::math::Vector3d &pt) const {
+bool BoundingEllipse::doesContain(const ignition::math::Vector3d &pt) const {
 
 //	ignition::math::Vector3d pt_to_check;
 //	double angle_center_dest;
@@ -274,8 +342,8 @@ visualization_msgs::Marker BoundingEllipse::getMarkerConversion() const {
 	marker.pose.orientation.w = rot.W();
 
 	// scale
-	marker.scale.x = a_major_;
-	marker.scale.y = b_minor_;
+	marker.scale.x = 2.0 * a_major_;
+	marker.scale.y = 2.0 * b_minor_;
 	marker.scale.z = 1.8f; 	// typical person height
 
 	marker.color.a = 0.3; 	// alpha channel
@@ -293,7 +361,7 @@ void BoundingEllipse::updateShiftedCenter() {
 
 	center_shifted_.X(center_.X() + offset_.X() * cos(yaw_offset_ + yaw_ellipse_));
 	center_shifted_.Y(center_.Y() + offset_.Y() * sin(yaw_offset_ + yaw_ellipse_));
-	//center_shifted_.Z(0.0);
+	center_shifted_.Z(center_.Z());
 
 }
 
@@ -343,7 +411,11 @@ std::tuple<ignition::math::Vector3d, double> BoundingEllipse::getIntersectionExt
 
 std::tuple<unsigned int, ignition::math::Vector3d, ignition::math::Vector3d> BoundingEllipse::getIntersectionWithLine(const double &to_dest_angle) const {
 
-	std::cout << "getIntersectionWithLine()";
+#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+	if ( debugEllipseGet() ) {
+	std::cout << "\ngetIntersectionWithLine()\t\t\t\tSTART\n";
+	}
+#endif
 
 	// number of solutions indicator
 	unsigned int solution_num = 0;
@@ -352,53 +424,134 @@ std::tuple<unsigned int, ignition::math::Vector3d, ignition::math::Vector3d> Bou
 	double a_l = std::tan(to_dest_angle);
 
 	// intercept
-	double b_l = offset_.Y() + center_shifted_.X() * a_l;
+	//double b_l = offset_.Y() + center_shifted_.X() * a_l;
+	//double b_l = center_shifted_.Y() + center_shifted_.X() * a_l;
+	// compute intercept knowing the line passes through the shifted center of the ellipse
+	double b_l = center_shifted_.Y() - center_shifted_.X() * a_l;
 
 	/* based on ellipse parametric equation, using quadratic equation,
 	 * find intersection points of the line and the ellipse */
-	double delta = std::pow(a_major_, 4.0)*std::pow(a_l, 2.0) - 4.0 * std::pow(b_minor_, 2.0) * std::pow(a_major_, 2.0) * b_l;
+//	double delta = std::pow(a_major_, 4.0)*std::pow(a_l, 2.0) - 4.0 * std::pow(b_minor_, 2.0) * std::pow(a_major_, 2.0) * b_l;
+
+	// V1 - manual calculations
+	//double delta = std::pow(a_major_, 4.0) * std::pow(a_l, 2.0) - 4.0 * std::pow(b_minor_, 2.0) * std::pow(a_major_, 2.0) * ( b_l - std::pow(b_minor_, 2.0) );
+
+	// V2
+	/* calculations made with Matlab using symbolic variables -
+	 * details could be found in documentation */
+
+	// quadratic equation coefficients
+	double a_q = std::pow( (cos(yaw_ellipse_) + a_l*sin(yaw_ellipse_)), 2.00) / std::pow(a_major_, 2.00) +
+				 std::pow( (sin(yaw_ellipse_) - a_l*cos(yaw_ellipse_)), 2.00) / std::pow(b_minor_, 2.00);
+
+	double b_q = -(2.0 * (center_shifted_.X()*cos(yaw_ellipse_) - sin(yaw_ellipse_) * (b_l - center_shifted_.Y())) * (cos(yaw_ellipse_) + a_l*sin(yaw_ellipse_))) / std::pow(a_major_, 2.00)
+				 -(2.0 * (center_shifted_.X()*sin(yaw_ellipse_) + cos(yaw_ellipse_) * (b_l - center_shifted_.Y())) * (sin(yaw_ellipse_) - a_l*cos(yaw_ellipse_))) / std::pow(b_minor_, 2.00);
+
+	double c_q = std::pow(( center_shifted_.X() * cos(yaw_ellipse_) - sin(yaw_ellipse_) * (b_l - center_shifted_.Y()) ), 2.00) / std::pow(a_major_, 2.00) +
+				 std::pow(( center_shifted_.X() * sin(yaw_ellipse_) + cos(yaw_ellipse_) * (b_l - center_shifted_.Y()) ), 2.00) / std::pow(b_minor_, 2.00) - 1.00;
+
+	double delta = std::pow(b_q, 2.00) - (4.00 * a_q * c_q);
+
+#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+	if ( debugEllipseGet() ) {
+	std::cout << "\n\tLINE - a: " << a_l << "   b: " << b_l << "   delta: " << delta << "   to_dest_ang: " << to_dest_angle;
+	} else {
+		//std::cout << "\n\n\n\n\nELLIPSE TO NOT PRINT DEBUG\n\n\n\n\n";
+	}
+#endif
 
 	// check number of solutions
 	if ( std::fabs(delta) < 1e-06 ) {
+		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+		if ( debugEllipseGet() ) {
 		std::cout << "\t1 solution\n";
+		}
+		#endif
 		solution_num = 1;
 	} else if ( delta > 0.0 ) {
+		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+		if ( debugEllipseGet() ) {
 		std::cout << "\t2 solutions\n";
+		}
+		#endif
+
 		solution_num = 2;
 	} else {
+		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+		if ( debugEllipseGet() ) {
 		std::cout << "\t0 solutions\n";
+		}
+		#endif
 		solution_num = 0;
 	}
 
-	/* always 2 solutions are expected so in advance calculate numerator's
-	 * first element and denominator for x-coordinate computation */
-	double num_elem = - std::pow(a_major_, 2.0) * a_l;
-	double denom = 2.0 * std::pow(b_minor_, 2.0);
+	// V1
+	// always 2 solutions are expected so in advance calculate numerator's
+	// first element and denominator for x-coordinate computation
+//	double num_elem = - std::pow(a_major_, 2.0) * a_l;
+//	double denom = 2.0 * std::pow(b_minor_, 2.0);
 
 	// calculate intersection point(s) based on solution_num
 	if ( solution_num == 2 ) {
 
 		ignition::math::Vector3d pt_of_intersection1, pt_of_intersection2;
-		pt_of_intersection1.X( num_elem - std::sqrt(delta) );
+//		V1
+//		pt_of_intersection1.X( (num_elem - std::sqrt(delta)) / denom );
+//		pt_of_intersection1.Y( a_l * pt_of_intersection1.X() + b_l );
+//
+//		pt_of_intersection2.X( (num_elem + std::sqrt(delta)) / denom );
+//		pt_of_intersection2.Y( a_l * pt_of_intersection2.X() + b_l );
+
+		pt_of_intersection1.X( (-b_q - std::sqrt(delta)) / (2.00 * a_q) );
 		pt_of_intersection1.Y( a_l * pt_of_intersection1.X() + b_l );
 
-		pt_of_intersection2.X( num_elem + std::sqrt(delta) );
+		pt_of_intersection2.X( (-b_q + std::sqrt(delta)) / (2.00 * a_q) );
 		pt_of_intersection2.Y( a_l * pt_of_intersection2.X() + b_l );
+
+		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+		if ( debugEllipseGet() ) {
+		std::cout << "\n\tQUADRATIC EQUATION" << std::endl;
+		std::cout << "\tparams: a_major: " << a_major_ << "  b_minor: " << b_minor_ << "  center_shifted: " << center_shifted_ << std::endl;
+//		V1
+//		std::cout << "\tdelta: " << delta << "  sqrt_delta: " << sqrt(delta) << "  -a^2*tg(psi): " << num_elem << "  2b^2: " << denom << std::endl;
+//		V2
+		std::cout << "\tdelta: " << delta << "  sqrt_delta: " << sqrt(delta) << "  a_q: " << a_q << "  b_q: " << b_q << "  c_q: " << c_q << std::endl;
+		std::cout << "\n";
+		std::cout << "\ngetIntersectionWithLine()\t\t\t\tEND\n";
+		}
+		#endif
 
 		return ( std::make_tuple( 2, pt_of_intersection1, pt_of_intersection2 ) );
 
 	} else if ( solution_num == 1 ) {
 
 		ignition::math::Vector3d pt_of_intersection;
-		pt_of_intersection.X( num_elem / denom );
+//		V1
+//		pt_of_intersection.X( num_elem / denom );
+//		pt_of_intersection.Y( a_l * pt_of_intersection.X() + b_l );
+
+		pt_of_intersection.X( (-b_q) / (2.00 * a_q) );
 		pt_of_intersection.Y( a_l * pt_of_intersection.X() + b_l );
+
+		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+		if ( debugEllipseGet() ) {
+		std::cout << "\ngetIntersectionWithLine() -------------------- END --------------------\n";
+		}
+		#endif
+
 		return ( std::make_tuple( 1, pt_of_intersection, ignition::math::Vector3d() ) );
 
 	} else {
 
+		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+		if ( debugEllipseGet() ) {
+		std::cout << "\ngetIntersectionWithLine() -------------------- END --------------------\n";
+		}
+		#endif
 		return ( std::make_tuple( 0, ignition::math::Vector3d(), ignition::math::Vector3d() ) );
 
 	}
+
 
 }
 

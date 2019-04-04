@@ -32,7 +32,7 @@ public:
 	void setCenterOffset(const ignition::math::Vector3d &offset_vector);
 	void updatePose(const ignition::math::Pose3d &pose);
 	std::tuple<bool, ignition::math::Vector3d> getIntersection(const ignition::math::Vector3d &pt_dest) const;
-	bool isWithin(const ignition::math::Vector3d &pt) const;
+	bool doesContain(const ignition::math::Vector3d &pt) const;
 	ignition::math::Vector3d getCenter() const;
 	ignition::math::Vector3d getCenterOffset() const;
 	visualization_msgs::Marker getMarkerConversion() const;

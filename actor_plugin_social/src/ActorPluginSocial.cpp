@@ -153,8 +153,8 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
 	bounding_ellipse.setCenter(this->pose_actor.Pos());
 	bounding_ellipse.setCenterOffset(ignition::math::Vector3d(0.0, 0.0, 0.0));
-	bounding_ellipse.setSemiMajorAxis(1.50);
-	bounding_ellipse.setSemiMinorAxis(0.75);
+	bounding_ellipse.setSemiMajorAxis(1.00);
+	bounding_ellipse.setSemiMinorAxis(0.50);
 	bounding_ellipse.setYaw(this->pose_actor.Rot().Yaw());
 	actor_common_info.SetBoundingEllipse(bounding_ellipse);
 #endif
@@ -1329,6 +1329,7 @@ void ActorPlugin::VisualizeForceField() {
 		// don't calculate when no subscribing node
 		if ( ros_interface.getGridSubscribersNum() > 0 ) {
 
+			std::cout << "SOCIAL FORCE GRID" << std::endl;
 			grid_vis.CreateGrid(-5.0, 5.5, -12.0, 4.0, 0.75);
 
 			ignition::math::Pose3d pose;
