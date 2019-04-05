@@ -53,9 +53,10 @@ namespace SocialForceModel {
 //#define DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 
 
-
-#define DEBUG_FORCE_EACH_OBJECT 									// each iteration
+//#define DEBUG_FORCE_EACH_OBJECT 									// each iteration
 #define DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+
+
 
 //#define DEBUG_SHORT_DISTANCE	// force printing info when distance to an obstacle is small
 
@@ -1391,20 +1392,21 @@ ignition::math::Vector3d SocialForceModel::GetNormalToAlphaDirection(const ignit
 	 * On the other hand in 2014 paper (that Rudloff is co-author of) they say: "n α is the direction of movement
 	 * of pedestrian α". */
 
-	// all calculations here are based on world coordinate system data
+	/* all calculations here are based on world coordinate system data -
+	 * n_alpha from actor's coordinate system is projected onto
+	 * world's coordinate system axes */
 	ignition::math::Angle yaw_norm(this->GetYawFromPose(_actor_pose));
 	yaw_norm.Normalize();
 
 #ifdef N_ALPHA_V2011
 	yaw_norm -= yaw_norm.Pi; // opposite pointing
+	yaw_norm.Normalize();
 #endif
 
-	yaw_norm.Normalize();
-
 	ignition::math::Vector3d n_alpha;
-	n_alpha.X(+sin(yaw_norm.Radian()));
-	n_alpha.Y(-cos(yaw_norm.Radian())); // TODO: why there is a need to negate the value? is it start-pose-dependent?
-	n_alpha.Z(0.0); // in-plane movement only at the moment
+	n_alpha.X( +sin(yaw_norm.Radian()) );
+	n_alpha.Y( -cos(yaw_norm.Radian()) ); 	// sine and cosine relation the same as in GetNewPose()
+	n_alpha.Z(0.0); 						// in-plane movement only at the moment
 	n_alpha.Normalize();
 
 	if ( print_info ) {
@@ -1559,9 +1561,8 @@ ignition::math::Angle SocialForceModel::GetYawMovementDirection(
 	ignition::math::Angle yaw_target(std::atan2(_sf_vel.Y(), _sf_vel.X()) + (IGN_PI/2));
 	yaw_target.Normalize();
 
-	//double yaw_start = _actor_pose.Rot().Yaw();
 	double yaw_start = GetYawFromPose(_actor_pose);
-	ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );	// correct
+	ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );
 
 	/* With the below version there is such a debug info printed:
 	 * yaw_start: -2.761	yaw_target: 0.380506	angle_change: -0.001	yaw_new: -2.762
@@ -1596,7 +1597,6 @@ ignition::math::Angle SocialForceModel::GetYawMovementDirection(
 	// -----------------------------------------
 	// STEP 3
 	ignition::math::Angle yaw_new;
-	// yaw_new.Radian(_actor_pose.Rot().Euler().Z() + angle_change);
 	yaw_new.Radian(yaw_start + angle_change);
 	yaw_new.Normalize();
 
@@ -1629,6 +1629,7 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	 * Straight-line movement equation 	v = a * t
 	 * with the use of 2 above - calculate the resulting ideal velocity caused by social forces */
 	ignition::math::Vector3d result_vel = (_social_force / this->mass_person) * _dt;
+	ignition::math::Vector3d result_vel_backup = result_vel; // debugging purposes
 
 #ifdef DEBUG_NEW_POSE
 	if ( print_info ) {
@@ -1670,10 +1671,6 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	 * which is based on social force */
 	ignition::math::Angle yaw_new = this->GetYawMovementDirection(_actor_pose, result_vel);
 
-	/* calculate velocity components according to the yaw_new (that was likely truncated to prevent jumps
-	 * in rotational movement - this provides smoothed rotation)
-	 * only on-plane motions are supported, thus X and Y calculations */
-
 	/* recalculation pros:
 	 *  	o smooth rotational motion,
 	 *  	o prevents getting stuck in 1 place (observed few times),
@@ -1681,13 +1678,18 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	 *  	  which causes big interaction)
 	 * cons:
 	 * 		o prevents immediate action when actor is moving toward an obstacle.
-	 * recalculation acts as a inertial force here */
+	 * recalculation acts as a inertia force here */
 
-	/* TODO: make recalculation vector length be a function of how much the angle is forced to be changed based
-	 * on social force; if the social force is completely different compared to current movement direction
-	 * then truncate the result_vel vector,
-	 * The aim of the above idea was to prevent oscillations which turned out to be caused
-	 * by actor velocity rises and falls - if will probably be deprecated? */
+	/* calculate velocity components according to the yaw_new (that was
+	 * likely truncated to prevent jumps in rotational movement -
+	 * this provides smoothed rotation)
+	 * only on-plane motions are supported, thus X and Y calculations */
+
+	/* result_vel vector is projected onto world's coordinate system axes
+	 * according to yaw_new (expresses actor's direction in actor's system);
+	 * because actor's coord. system is rotated (-90 deg) the projection onto
+	 * 	o	x axis: cos(yaw_new - 90 deg) * Len = +sin(yaw_new) * Len
+	 * 	o	y axis: sin(yaw_new - 90 deg) * Len = -cos(yaw_new) * Len  */
 
 	result_vel.X( +sin(yaw_new.Radian()) * result_vel.Length() );
 	result_vel.Y( -cos(yaw_new.Radian()) * result_vel.Length() );
@@ -1735,8 +1737,8 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 
 #ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	std::cout <<  debug_current_actor_name << " | GetNewPose() CALCULATION\n";
-	std::cout << "\tresult_vel: " << result_vel;
-	std::cout << "\nPOSITION2 \torig: " << _actor_pose.Pos() << "\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << "\tnew_position: " << new_pose.Pos(); // << std::endl;
+	std::cout << "\t\tsf: " << _social_force << "\tresult_vel_init: " << result_vel_backup << "\tresult_vel_mod: " << result_vel;
+	std::cout << "\nPOSITION \torig: " << _actor_pose.Pos() << "\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << "\tnew_position: " << new_pose.Pos(); // << std::endl;
 	std::cout << std::endl;
 	std::cout << "---------------------------------------------------------------------------------\n";
 #endif
@@ -1885,9 +1887,7 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 	// TODO: only 6 closest actors taken into consideration?
 	ignition::math::Vector3d f_alpha_beta(0.0, 0.0, 0.0);
 
-	/* Force is zeroed in 2 cases:
-	 * 	- distance between actors is bigger than 5 meters
-	 * 	- the other actor is more than 0.5 m behind */
+	// check length to other object (beta)
 	if ( _d_alpha_beta.Length() > 10.0 ) {
 
 		// TODO: if no objects nearby the threshold should be increased
@@ -1913,6 +1913,7 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 	ignition::math::Angle actor_yaw(GetYawFromPose(_actor_pose));
 	actor_yaw.Normalize();
 
+	// FIXME: OBJECT_YAW DEPRECATED
 	/* this is a simplified version - object's yaw could be taken from world's info indeed,
 	 * but the object's coordinate system orientation is not known, so velocity calculation
 	 * still may need to be performed (if needed depending on θ αβ calculation method);
@@ -1955,7 +1956,6 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 	/* check whether beta is within the field of view
 	 * to determine proper factor for force in case
 	 * beta is behind alpha */
-
 	if ( this->IsOutOfFOV(beta_angle_rel) ) {
 
 		// e^(-0.5*x)
@@ -1965,7 +1965,7 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 			std::cout << debug_current_actor_name;
 			#endif
 			std::cout << "\nDYNAMIC OBSTACLE (*) --- OUT OF FOV!" << std::endl;
-			std::cout << "\t" << debug_current_object_name << " is BEHIND, dist: " << _d_alpha_beta.Length() << ",   force multiplied by: " << total_force_factor << std::endl;
+			std::cout << "\t" << debug_current_object_name << " is BEHIND, dist: " << _d_alpha_beta.Length() << ",   force will be multiplied by: " << total_force_factor << std::endl;
 		#endif
 
 	}
@@ -2004,11 +2004,6 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 	 * 		o there are no obstacles in the environment that will make the object not move along a straight line. */
 	double theta_alpha_beta = this->GetAngleBetweenObjectsVelocities(_actor_pose, &actor_yaw, _object_pose, &object_yaw);
 #endif
-
-
-	/* NOTE: kind of a hack to prevent an interaction force wind-up which happens while 2 pedestrians
-	 *  are close to each other - bigger v_rel will reduce this complaint */
-	//v_rel *= 0.25;
 
 	ignition::math::Vector3d p_alpha = GetPerpendicularToNormal(_n_alpha, beta_rel_location); 	// actor's perpendicular (based on velocity vector)
 	double exp_normal = ( (-Bn * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn * _d_alpha_beta.Length();
@@ -2451,8 +2446,16 @@ std::tuple<RelativeLocation, double> SocialForceModel::GetBetaRelativeLocation(
 #endif
 
 	// SFM_FRONT ~ hysteresis regulator
+	/*
 	if ( angle_relative.Radian() >= -IGN_DTOR(9) &&
 		 angle_relative.Radian() <= +IGN_DTOR(9) ) {
+	*/
+
+	/* SFM FRONT or SFM_BACK to be specific - added exponentially decreasing
+	 * interaction for objects that are behind so relative angle calculations
+	 * extended with close to Pi value case */
+	if ( std::fabs(angle_relative.Radian()) <= IGN_DTOR(9) ||
+		 std::fabs(angle_relative.Radian()) >= (IGN_PI - IGN_DTOR(9)) ) {
 
 		rel_loc = SFM_FRONT;
 #ifdef DEBUG_GEOMETRY_2

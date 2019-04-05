@@ -82,7 +82,7 @@ ignition::math::Vector3d BoundingCircle::GetCenter() const {
 
 // ------------------------------------------------------------------- //
 
-bool BoundingCircle::isWithin(const ignition::math::Vector3d &_pt) const {
+bool BoundingCircle::doesContain(const ignition::math::Vector3d &_pt) const {
 
 	ignition::math::Vector3d dist_to_compare;
 	dist_to_compare = _pt - this->center;
