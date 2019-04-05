@@ -222,6 +222,7 @@ public:
 
 	ignition::math::Angle GetYawMovementDirection(
 			const ignition::math::Pose3d &_actor_pose,
+			const ignition::math::Vector3d &_actor_vel,
 			const ignition::math::Vector3d &_sf_vel);
 
 	void Init(const unsigned short int _mass_person,
@@ -363,6 +364,9 @@ public:
 			const double &_dt);
 	// dt needed to be passed!
 
+	void SetPrintFlag(const bool &_flag);
+
+
 	virtual ~SocialForceModel();
 
 private:
@@ -396,6 +400,8 @@ private:
 	unsigned short int mass_person; 		// to evaluate if helpful
 	float desired_force_factor;
 	float interaction_force_factor;
+
+	bool print_data;
 
 #ifdef DEBUG_TF
 	ignition::math::Pose3d actor_current_pose;	// needed to reference the tf to

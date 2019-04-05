@@ -135,10 +135,10 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	actor_common_info.SetBoundingCircle(bounding_circle);
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
 	bounding_ellipse.setCenter(this->pose_actor.Pos());
-	bounding_ellipse.setCenterOffset(ignition::math::Vector3d(0.0, 0.0, 0.0));
+	bounding_ellipse.setYaw(this->pose_actor.Rot().Yaw());
 	bounding_ellipse.setSemiMajorAxis(1.00);
 	bounding_ellipse.setSemiMinorAxis(0.50);
-	bounding_ellipse.setYaw(this->pose_actor.Rot().Yaw());
+	bounding_ellipse.setCenterOffset(ignition::math::Vector3d(0.0, 0.490, 0.0)); // FIXME: center does not shift
 	actor_common_info.SetBoundingEllipse(bounding_ellipse);
 #endif
 
@@ -408,6 +408,8 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 		return;
 	};
 
+	// print only when vis is updated
+	sfm.SetPrintFlag(false);
 
 	if ( !isTargetStillReachable(_info) ) {
 		this->chooseNewTarget(_info);
@@ -443,7 +445,9 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	if ( (_info.simTime - vis_time).Double() > 0.25 ) {
 
 		//std::cout << "ACTOR FOR VIS: " << this->actor_id << "\tname: " << this->actor->GetName() << std::endl;
+
 		VisualizeForceField();
+		sfm.SetPrintFlag(true); // print only when vis is updated
 		counter++;
 		if ( counter == 2 ) {
 			vis_time = _info.simTime;
@@ -1206,6 +1210,7 @@ void ActorPlugin::PublishActorTf() {
 #ifdef VISUALIZE_SFM
 
 void ActorPlugin::VisualizeForceField() {
+
 
 #ifdef VIS_SFM_POINT
 

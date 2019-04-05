@@ -75,10 +75,8 @@ void BoundingEllipse::setCenter(const ignition::math::Vector3d &center_point) {
 void BoundingEllipse::setCenterOffset(const ignition::math::Vector3d &offset_vector) {
 
 	/* check if offset is lying down within the ellipse's bound -
-	 * at this moment the offset is 0 and location of offset point
+	 * at this moment the offset is 0 and location of the offset point
 	 * must be investigated */
-
-	// FIXME: shouldn't offset_ be set before isWithin?
 	if ( offset_vector.Length() > 1e-06 && doesContain(offset_vector) ) {
 
 		offset_ = offset_vector;
@@ -88,10 +86,12 @@ void BoundingEllipse::setCenterOffset(const ignition::math::Vector3d &offset_vec
 		yaw_offset_angle.Radian( std::atan2(offset_vector.Y(), offset_vector.X()) );
 		yaw_offset_angle.Normalize();
 		yaw_offset_ = yaw_offset_angle.Radian();
+		std::cout << "BoundingEllipse::setCenterOffset() set successfully!" << std::endl;
 
 	} else {
 
 		// TODO: some error message
+		std::cout << "BoundingEllipse::setCenterOffset() couldn't be set!" << std::endl;
 
 	}
 
