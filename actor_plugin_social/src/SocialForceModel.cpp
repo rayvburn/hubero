@@ -54,8 +54,8 @@ namespace SocialForceModel {
 
 
 
-// #define DEBUG_FORCE_EACH_OBJECT 									// each iteration
-// #define DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+#define DEBUG_FORCE_EACH_OBJECT 									// each iteration
+#define DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 
 //#define DEBUG_SHORT_DISTANCE	// force printing info when distance to an obstacle is small
 
@@ -1920,8 +1920,11 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 	ignition::math::Angle object_yaw(GetYawFromPose(_object_pose));
 	object_yaw.Normalize();
 
-	RelativeLocation beta_rel_location = this->GetBetaRelativeLocation(actor_yaw, _d_alpha_beta);
+	RelativeLocation beta_rel_location = SFM_UNKNOWN;
+	double beta_angle_rel = 0.0;
+	std::tie(beta_rel_location, beta_angle_rel) = this->GetBetaRelativeLocation(actor_yaw, _d_alpha_beta);
 
+	/* V1 - SFM_BEHIND used
 	if ( beta_rel_location == SFM_BEHIND && _d_alpha_beta.Length() > 1.0 ) {
 	// if ( beta_rel_location == SFM_BEHIND ) {
 
@@ -1942,6 +1945,31 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 
 		return f_alpha_beta;
 	}
+	*/
+
+	// V2 - SFM_BEHIND deprecated - instead an exp function used
+	/* total force factor is used to make objects'
+	 * that are behind actor interactions weaker */
+	double total_force_factor = 1.00;
+
+	/* check whether beta is within the field of view
+	 * to determine proper factor for force in case
+	 * beta is behind alpha */
+
+	if ( this->IsOutOfFOV(beta_angle_rel) ) {
+
+		// e^(-0.5*x)
+		total_force_factor = std::exp( -0.5 * _d_alpha_beta.Length() );
+		#ifdef DEBUG_FORCE_EACH_OBJECT
+			#ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+			std::cout << debug_current_actor_name;
+			#endif
+			std::cout << "\nDYNAMIC OBSTACLE (*) --- OUT OF FOV!" << std::endl;
+			std::cout << "\t" << debug_current_object_name << " is BEHIND, dist: " << _d_alpha_beta.Length() << ",   force multiplied by: " << total_force_factor << std::endl;
+		#endif
+
+	}
+
 
 	double v_rel = GetRelativeSpeed(_actor_velocity, _object_velocity);
 
@@ -1986,6 +2014,9 @@ ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
 	double exp_normal = ( (-Bn * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn * _d_alpha_beta.Length();
 	double exp_perpendicular = ( (-Bp * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp * _d_alpha_beta.Length();
 	f_alpha_beta = _n_alpha * An * exp(exp_normal) + p_alpha * Ap * exp(exp_perpendicular);
+
+	// weaken the interaction force when beta is behind alpha
+	f_alpha_beta *= total_force_factor;
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
 
@@ -2377,7 +2408,7 @@ ignition::math::Vector3d SocialForceModel::GetPerpendicularToNormal(
 // ------------------------------------------------------------------- //
 
 // TODO: make it return a tuple <RelativeLocation rel_loc, double rel_angle> - for detailed info connected with BEHIND objects?
-RelativeLocation SocialForceModel::GetBetaRelativeLocation(
+std::tuple<RelativeLocation, double> SocialForceModel::GetBetaRelativeLocation(
 		const ignition::math::Angle &_actor_yaw,
 		const ignition::math::Vector3d &_d_alpha_beta)
 {
@@ -2427,13 +2458,14 @@ RelativeLocation SocialForceModel::GetBetaRelativeLocation(
 #ifdef DEBUG_GEOMETRY_2
 		txt_dbg = "FRONT";
 #endif
+	/* // SFM_BEHIND DEPRECATED HERE
 	} else if ( IsOutOfFOV(angle_relative.Radian() ) ) { // consider FOV
 
 		rel_loc = SFM_BEHIND;
 #ifdef DEBUG_GEOMETRY_2
 		txt_dbg = "BEHIND";
 #endif
-
+	*/
 	} else if ( angle_relative.Radian() <= 0.0 ) { // 0.0 ) {
 
 		rel_loc = SFM_RIGHT_SIDE;
@@ -2487,10 +2519,10 @@ RelativeLocation SocialForceModel::GetBetaRelativeLocation(
 #ifdef DEBUG_OSCILLATIONS
 		std::cout << "\t:::::::::::::::::::::::::HIST REL ANG!:::::::::::::::::::::::::::::::::::::::::::\t";
 #endif
-		return (map_models_rel_locations[debug_current_object_name]);
+		return ( std::make_tuple(map_models_rel_locations[debug_current_object_name], angle_relative.Radian()) );
 	}
 
-	return rel_loc;
+	return ( std::make_tuple(rel_loc, angle_relative.Radian()) );
 
 }
 

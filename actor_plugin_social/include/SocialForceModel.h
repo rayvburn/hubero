@@ -289,7 +289,7 @@ public:
 
 
 
-	RelativeLocation GetBetaRelativeLocation(
+	std::tuple<RelativeLocation, double> GetBetaRelativeLocation(
 			const ignition::math::Angle &_actor_yaw,
 			const ignition::math::Vector3d &_d_alpha_beta);
 

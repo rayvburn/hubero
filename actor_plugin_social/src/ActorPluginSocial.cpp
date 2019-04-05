@@ -1312,7 +1312,7 @@ void ActorPlugin::VisualizeForceField() {
 		// don't calculate when no subscribing node
 		if ( ros_interface.getGridSubscribersNum() > 0 ) {
 
-			std::cout << "SOCIAL FORCE GRID" << std::endl;
+			// std::cout << "SOCIAL FORCE GRID" << std::endl;
 			grid_vis.CreateGrid(-5.0, 5.5, -12.0, 4.0, 0.75);
 
 			ignition::math::Pose3d pose;
