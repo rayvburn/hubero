@@ -70,6 +70,32 @@ void ActorROSInterface::PublishActorTf(const ignition::math::Pose3d &_actor_pose
 
 // ------------------------------------------------------------------- //
 
+void ActorROSInterface::PublishTargetTf(const ignition::math::Vector3d &_target_pos) {
+
+	geometry_msgs::TransformStamped msg;
+
+	std::string frame = this->actor_name;
+	frame.append("_goal");
+
+	msg.header.frame_id = "map";
+	msg.header.stamp = ros::Time::now();
+	msg.child_frame_id = frame;
+
+	msg.transform.translation.x = _target_pos.X();
+	msg.transform.translation.y = _target_pos.Y();
+	msg.transform.translation.z = 0.0f; // _actor_pose.Pos().Z();
+
+	msg.transform.rotation.x = 0.0;
+	msg.transform.rotation.y = 0.0;
+	msg.transform.rotation.z = 0.0;
+	msg.transform.rotation.w = 1.0;
+
+	tf_broadcaster.sendTransform(msg);
+
+}
+
+// ------------------------------------------------------------------- //
+
 void ActorROSInterface::PublishMarker(const visualization_msgs::Marker &_marker) {
 
 	/*

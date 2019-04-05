@@ -45,6 +45,7 @@ public:
 	 * create a publisher for each enum member */
 
 	void PublishActorTf(const ignition::math::Pose3d &_actor_pose);
+	void PublishTargetTf(const ignition::math::Vector3d &_target_pos);
 	void PublishMarker(const visualization_msgs::Marker &_marker);						// better name?
 	void PublishMarkerArray(const visualization_msgs::MarkerArray &_marker_array);		// better name?
 	void PublishMarkerArrayGrid(const visualization_msgs::MarkerArray &_marker_array);

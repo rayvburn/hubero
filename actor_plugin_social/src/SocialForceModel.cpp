@@ -53,7 +53,7 @@ namespace SocialForceModel {
 //#define DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 
 
-//#define DEBUG_FORCE_EACH_OBJECT 									// each iteration
+#define DEBUG_FORCE_EACH_OBJECT 									// detailed info in each iteration
 #define DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 
 
@@ -1691,8 +1691,8 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 	 * 	o	x axis: cos(yaw_new - 90 deg) * Len = +sin(yaw_new) * Len
 	 * 	o	y axis: sin(yaw_new - 90 deg) * Len = -cos(yaw_new) * Len  */
 
-	result_vel.X( +sin(yaw_new.Radian()) * result_vel.Length() );
-	result_vel.Y( -cos(yaw_new.Radian()) * result_vel.Length() );
+//	result_vel.X( +sin(yaw_new.Radian()) * result_vel.Length() );
+//	result_vel.Y( -cos(yaw_new.Radian()) * result_vel.Length() );
 
 	if ( print_info ) {
 		std::cout << "\n\tSMOOTHING ROTATION - RECALCULATED VEL\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << '\n' << std::endl;

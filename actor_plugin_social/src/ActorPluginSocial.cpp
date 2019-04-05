@@ -426,6 +426,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	PublishActorTf();
 #elif defined(CREATE_ROS_INTERFACE)
 	ros_interface.PublishActorTf(this->pose_actor);
+	ros_interface.PublishTargetTf(this->target);
 	#ifdef INFLATE_BOUNDING_CIRCLE
 	ros_interface.PublishMarker(bounding_circle.GetMarkerConversion());
 	#elif defined(INFLATE_BOUNDING_BOX)
