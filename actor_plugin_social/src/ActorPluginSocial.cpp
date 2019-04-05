@@ -30,32 +30,14 @@ GZ_REGISTER_MODEL_PLUGIN(ActorPlugin)
 
 #define WALKING_ANIMATION "walking"
 
-// ==========================================================================================
-// ========================= CRASH / BUG / FAIL (?) note ====================================
-// ==========================================================================================
-/* static std::vector creates some crash (couldn't find anything wrong in .log)				=
- * every operation on the vector (even try of printing the address) causes:					=
- * 		o  	actor's pose calculation is completely different compared to the one			=
- * 			presented in the plugin's code,													=
- *		o	no std::cout debug info is printed (even placed in the plugin's constructor)	=
- *		o 	pure declaration of the vector does not do any harm								=
- * As a workaround there is a global vector of the same type in class' .cpp file			=
- * Below was in the header:																	=
- * //	private: static std::vector<ignition::math::Vector3d> lin_vels_vector;				=
- *///																						=
-/* static std::map - same as above															=
-	 * // 	private: static std::map<std::string, unsigned int> map_of_names; *///			=
-// ==========================================================================================
-/*
-std::vector<ignition::math::Vector3d> lin_vels_vector;
-std::map<std::string, unsigned int> map_of_names;
-*/
 
 #if defined(CREATE_ROS_NODE) || defined(CREATE_ROS_INTERFACE)
 #include <visualization_msgs/MarkerArray.h>
 #endif
 
+
 #define SILENT_
+
 
 #ifdef VISUALIZE_SFM
 	#ifdef VIS_SFM_POINT
@@ -65,6 +47,7 @@ std::map<std::string, unsigned int> map_of_names;
 	#endif
 	SocialForceModel::SFMVisGrid ActorPlugin::grid_vis;
 #endif
+
 
 /////////////////////////////////////////////////
 ActorPlugin::ActorPlugin()
@@ -245,7 +228,7 @@ bool ActorPlugin::isTargetStillReachable(const common::UpdateInfo &_info) {
 
 bool ActorPlugin::isTargetNotReachedForTooLong(const common::UpdateInfo &_info) const {
 
-	// TODO: make the time a parameter
+	// TODO: make the time a YAML parameter
 	if ( (_info.simTime - this->last_target_selection_time).Double() > 60.0 ) {
 
 		std::cout << "isTargetNotReachedForTooLong()" << std::endl;
@@ -313,7 +296,7 @@ void ActorPlugin::chooseNewTarget(const common::UpdateInfo &_info) {
 			 * accounting some tolerance for a target accomplishment - an actor should
 			 * not step into an object */
 
-			// FIXME: cafe is a specific model that represents whole world
+			// FIXME: cafe is a specific model that represents a whole world
 			if ( this->world->ModelByIndex(i)->GetName() == "cafe" ) {
 				continue;
 			}

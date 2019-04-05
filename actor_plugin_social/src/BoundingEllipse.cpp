@@ -279,25 +279,6 @@ std::tuple<bool, ignition::math::Vector3d> BoundingEllipse::getIntersection(cons
 
 bool BoundingEllipse::doesContain(const ignition::math::Vector3d &pt) const {
 
-//	ignition::math::Vector3d pt_to_check;
-//	double angle_center_dest;
-//	std::tie(pt_to_check, angle_center_dest) = getIntersectionExtended(pt);
-//
-//	// pt_to_check length of (from center)
-//	pt_to_check.Z(0.0);
-//
-//	ignition::math::Vector3d pt_on_ellipse;
-//	pt_on_ellipse.X( center_.X() + ( offset_.X() + (a_major_ * cos(angle_center_dest)) ) );
-//	pt_on_ellipse.Y( center_.Y() + ( offset_.Y() + (b_minor_ * sin(angle_center_dest)) ) );
-//	pt_on_ellipse.Z(0.0f);
-//
-//	// compare length from the `center` of an ellipse to both points
-//	if ( (pt_to_check - (center_ + offset_)).Length() <= (pt_on_ellipse - (center_ + offset_)).Length()  ) {
-//		return (true);
-//	}
-//
-//	return (false);
-
 	bool is_within;
 	std::tie(is_within, std::ignore) = getIntersection(pt);
 	return (is_within);
@@ -409,7 +390,8 @@ std::tuple<ignition::math::Vector3d, double> BoundingEllipse::getIntersectionExt
 /// return: number of solutions; 1st intersection point; 2nd intersection point
 /// when 0 solutions found returns 0,0,0 vectors
 
-std::tuple<unsigned int, ignition::math::Vector3d, ignition::math::Vector3d> BoundingEllipse::getIntersectionWithLine(const double &to_dest_angle) const {
+std::tuple<unsigned int, ignition::math::Vector3d, ignition::math::Vector3d>
+BoundingEllipse::getIntersectionWithLine(const double &to_dest_angle) const {
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 	if ( debugEllipseGet() ) {
@@ -430,14 +412,8 @@ std::tuple<unsigned int, ignition::math::Vector3d, ignition::math::Vector3d> Bou
 	double b_l = center_shifted_.Y() - center_shifted_.X() * a_l;
 
 	/* based on ellipse parametric equation, using quadratic equation,
-	 * find intersection points of the line and the ellipse */
-//	double delta = std::pow(a_major_, 4.0)*std::pow(a_l, 2.0) - 4.0 * std::pow(b_minor_, 2.0) * std::pow(a_major_, 2.0) * b_l;
-
-	// V1 - manual calculations
-	//double delta = std::pow(a_major_, 4.0) * std::pow(a_l, 2.0) - 4.0 * std::pow(b_minor_, 2.0) * std::pow(a_major_, 2.0) * ( b_l - std::pow(b_minor_, 2.0) );
-
-	// V2
-	/* calculations made with Matlab using symbolic variables -
+	 * find intersection points of the line and the ellipse;
+	 * calculations made with Matlab using symbolic variables -
 	 * details could be found in documentation */
 
 	// quadratic equation coefficients
@@ -485,23 +461,10 @@ std::tuple<unsigned int, ignition::math::Vector3d, ignition::math::Vector3d> Bou
 		solution_num = 0;
 	}
 
-	// V1
-	// always 2 solutions are expected so in advance calculate numerator's
-	// first element and denominator for x-coordinate computation
-//	double num_elem = - std::pow(a_major_, 2.0) * a_l;
-//	double denom = 2.0 * std::pow(b_minor_, 2.0);
-
 	// calculate intersection point(s) based on solution_num
 	if ( solution_num == 2 ) {
 
 		ignition::math::Vector3d pt_of_intersection1, pt_of_intersection2;
-//		V1
-//		pt_of_intersection1.X( (num_elem - std::sqrt(delta)) / denom );
-//		pt_of_intersection1.Y( a_l * pt_of_intersection1.X() + b_l );
-//
-//		pt_of_intersection2.X( (num_elem + std::sqrt(delta)) / denom );
-//		pt_of_intersection2.Y( a_l * pt_of_intersection2.X() + b_l );
-
 		pt_of_intersection1.X( (-b_q - std::sqrt(delta)) / (2.00 * a_q) );
 		pt_of_intersection1.Y( a_l * pt_of_intersection1.X() + b_l );
 
@@ -512,9 +475,6 @@ std::tuple<unsigned int, ignition::math::Vector3d, ignition::math::Vector3d> Bou
 		if ( debugEllipseGet() ) {
 		std::cout << "\n\tQUADRATIC EQUATION" << std::endl;
 		std::cout << "\tparams: a_major: " << a_major_ << "  b_minor: " << b_minor_ << "  center_shifted: " << center_shifted_ << std::endl;
-//		V1
-//		std::cout << "\tdelta: " << delta << "  sqrt_delta: " << sqrt(delta) << "  -a^2*tg(psi): " << num_elem << "  2b^2: " << denom << std::endl;
-//		V2
 		std::cout << "\tdelta: " << delta << "  sqrt_delta: " << sqrt(delta) << "  a_q: " << a_q << "  b_q: " << b_q << "  c_q: " << c_q << std::endl;
 		std::cout << "\n";
 		std::cout << "\ngetIntersectionWithLine()\t\t\t\tEND\n";
@@ -526,10 +486,6 @@ std::tuple<unsigned int, ignition::math::Vector3d, ignition::math::Vector3d> Bou
 	} else if ( solution_num == 1 ) {
 
 		ignition::math::Vector3d pt_of_intersection;
-//		V1
-//		pt_of_intersection.X( num_elem / denom );
-//		pt_of_intersection.Y( a_l * pt_of_intersection.X() + b_l );
-
 		pt_of_intersection.X( (-b_q) / (2.00 * a_q) );
 		pt_of_intersection.Y( a_l * pt_of_intersection.X() + b_l );
 
