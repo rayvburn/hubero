@@ -134,11 +134,11 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	bounding_circle.SetRadius(0.75f);
 	actor_common_info.SetBoundingCircle(bounding_circle);
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
-	bounding_ellipse.setCenter(this->pose_actor.Pos());
+	bounding_ellipse.setPosition(this->pose_actor.Pos());
 	bounding_ellipse.setYaw(this->pose_actor.Rot().Yaw());
 	bounding_ellipse.setSemiMajorAxis(1.00);
 	bounding_ellipse.setSemiMinorAxis(0.50);
-	bounding_ellipse.setCenterOffset(ignition::math::Vector3d(0.0, 0.490, 0.0)); // FIXME: center does not shift
+	bounding_ellipse.setCenterOffset(ignition::math::Vector3d(0.5, 0.0, 0.0));
 	actor_common_info.SetBoundingEllipse(bounding_ellipse);
 #endif
 
@@ -453,6 +453,8 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 		VisualizeForceField();
 		if ( actor->GetName() == "actor1" ) {
 			sfm.SetPrintFlag(true);
+			// debug ellipse's center
+			std::cout << "\n\n\n\nACTOR1 - BOUNDING ELLIPSE\ncenter: " << bounding_ellipse.getCenter() << "\tcenter_offset: " << bounding_ellipse.getCenterOffset() << "\tcenter_shifted: " << bounding_ellipse.getCenterShifted() << "\n\n\n\n";
 		}
 		counter++;
 		if ( counter == 2 ) {
@@ -1285,7 +1287,12 @@ void ActorPlugin::VisualizeForceField() {
 		this->bounding_circle.SetCenter(pose.Pos());
 		this->actor_common_info.SetBoundingCircle(this->bounding_circle);
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
-		bounding_ellipse.updatePose(this->pose_actor);
+		ignition::math::Angle yaw_world( this->pose_actor.Rot().Yaw() - IGN_PI_2);
+		yaw_world.Normalize();
+		bounding_ellipse.updatePose(ignition::math::Pose3d(	this->pose_actor.Pos(),
+															ignition::math::Quaterniond(this->pose_actor.Rot().Roll(),
+																						this->pose_actor.Rot().Pitch(),
+																						yaw_world.Radian()) ));
 		actor_common_info.SetBoundingEllipse(bounding_ellipse);
 #endif
 
@@ -1399,7 +1406,12 @@ double ActorPlugin::PrepareForUpdate(const common::UpdateInfo &_info) {
 	bounding_circle.SetCenter(this->pose_actor.Pos());
 	actor_common_info.SetBoundingCircle(bounding_circle);
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
-	bounding_ellipse.updatePose(this->pose_actor);
+	ignition::math::Angle yaw_world( this->pose_actor.Rot().Yaw() - IGN_PI_2);
+	yaw_world.Normalize();
+	bounding_ellipse.updatePose(ignition::math::Pose3d(	this->pose_actor.Pos(),
+														ignition::math::Quaterniond(this->pose_actor.Rot().Roll(),
+																					this->pose_actor.Rot().Pitch(),
+																					yaw_world.Radian()) ));
 	actor_common_info.SetBoundingEllipse(bounding_ellipse);
 #endif
 
