@@ -47,17 +47,21 @@ namespace SocialForceModel {
 
 #endif
 
-//#define DEBUG_LOG_ALL_INTERACTIONS
+// each iteration but only when print_data is true!
 
 
-//#define DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
+
+#define DEBUG_LOG_ALL_INTERACTIONS
+//
+////#define DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
 //#define DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-
-
-#define DEBUG_FORCE_EACH_OBJECT 									// detailed info in each iteration
-#define DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+//
+//#define DEBUG_FORCE_EACH_OBJECT 									// detailed info in each iteration
+//#define DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 
 #define DEBUG_YAW_MOVEMENT_DIR	// each iteration
+
+
 
 
 //#define DEBUG_SHORT_DISTANCE	// force printing info when distance to an obstacle is small
@@ -98,10 +102,11 @@ static std::string debug_current_actor_name;
 
 SocialForceModel::SocialForceModel():
 
+//		yaw_increment_sign_prev(1),
 	fov(2.00), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
 	desired_force_factor(200.0),
 	interaction_force_factor(6000.0), // interaction_force_factor(6000.0),
-	force_max(2000.0), force_min(800.0) // force_min(500.0)
+	force_max(2000.0), force_min(500.0) // force_min(800.0)
 {
 
 	SetParameterValues();
@@ -547,13 +552,16 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		}
 
 #ifdef DEBUG_LOG_ALL_INTERACTIONS
+		if ( print_data ) {
 		log_msg << "\t" << model_ptr->GetName();
 		log_msg << "\t" << f_alpha_beta * interaction_force_factor << "\n";
+		}
 #endif
 
 	} // for
 
 #ifdef DEBUG_LOG_ALL_INTERACTIONS
+	if ( print_data ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "**************************************************************************\n";
 		std::cout << "LOG_MESSAGE - ALL OBJECTS ----- " << debug_current_actor_name << std::endl;
@@ -561,6 +569,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		std::cout << log_msg.str() << std::endl;
 		std::cout << "\tTOTAL FORCE: " << desired_force_factor * f_alpha + interaction_force_factor * f_interaction_total << std::endl;
 		std::cout << "**************************************************************************\n\n\n";
+	}
 	}
 #endif
 
@@ -604,7 +613,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			std::cout << "\tTRUNCATED";
 		}
 
-	} else if ( force_length < force_min ) {
+	} /* */ else if ( force_length < force_min ) {
 
 		f_total = f_total.Normalize() * force_min;
 
@@ -997,10 +1006,12 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	ignition::math::Vector3d point_intersect;
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+	if ( print_data ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\n---------------------------------------------------------------------------------\n";
 		std::cout << "in GetActorModelBBsClosestPoints() - ACTOR & OBJECT - checking intersection\n";
 		std::cout << "\t" << debug_current_actor_name << "'s pos: " << _actor_pose.Pos() << "\t" << debug_current_object_name << "'s pos: " << _object_pose.Pos() << std::endl;
+	}
 	}
 #endif
 
@@ -1011,8 +1022,10 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	std::tie(std::ignore, std::ignore, point_intersect) = _object_bb.Intersect(line);
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+	if ( print_data ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\n\tObject's BBox intersection result: " << point_intersect;
+	}
 	}
 #endif
 
@@ -1021,14 +1034,18 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 
 	if ( _actor_be.doesContain(point_intersect) ) {
 
-		#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
+		#if defined(DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB) || defined(DEBUG_BOUNDING_ELLIPSE_INTERSECTION)
+		if ( print_data ) {
 		std::cout << "\n\n\n\n\n1\tACTOR STEPPED INTO OBSTACLE\n\n\n\n\n\t" << debug_current_actor_name << "\t" << debug_current_object_name << "\n" << std::endl;
+		}
 		#endif
 		std::tie(actor_pose_shifted.Pos(), point_intersect) = this->GetClosestPointsOfIntersectedModelsActorObject(_actor_pose.Pos(), point_intersect);
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+		if ( print_data ) {
 		if ( debug_current_actor_name == "actor1" ) {
 			std::cout << "\n---------------------------------------------------------------------------------\n\n\n";
+		}
 		}
 		#endif
 
@@ -1046,8 +1063,10 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	std::tie(std::ignore, actor_pose_shifted.Pos()) = _actor_be.getIntersection(point_intersect);
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+	if ( print_data ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\nactor's BE intersection result - new actor's pose: " << actor_pose_shifted.Pos();
+	}
 	}
 #endif
 
@@ -1064,8 +1083,10 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	#endif
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+	if ( print_data ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\n---------------------------------------------------------------------------------\n\n\n";
+	}
 	}
 #endif
 
@@ -1092,18 +1113,22 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	ignition::math::Pose3d actor_pose_shifted = _actor_pose;
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+	if ( print_data ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\n*******************************************************************************\n";
 		std::cout << "in GetActorModelBBsClosestPoints() - 2 ACTORS - checking intersection\n";
 		std::cout << "\t" << debug_current_actor_name << "'s pos: " << _actor_pose.Pos() << "\t" << debug_current_object_name << "'s pos: " << _object_pose.Pos() << std::endl;
+	}
 	}
 #endif
 
 	std::tie(std::ignore, actor_pose_shifted.Pos()) = _actor_be.getIntersection(_object_pose.Pos());
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+	if ( print_data ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\n\tActor's BE intersection result: " << actor_pose_shifted.Pos();
+	}
 	}
 #endif
 
@@ -1112,8 +1137,10 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	std::tie(std::ignore, object_pos_shifted) = _object_be.getIntersection(_actor_pose.Pos());
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+	if ( print_data ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\n\tObject's BE intersection result: " << object_pos_shifted;
+	}
 	}
 #endif
 
@@ -1125,8 +1152,10 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	if ( _actor_be.doesContain(object_pos_shifted) ) {
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+		if ( print_data ) {
 		if ( debug_current_actor_name == "actor1" ) {
 			std::cout << "\n\n\tACTOR'S BE CONTAINS " << debug_current_object_name << "'s POINT!!!!\n";
+		}
 		}
 		#endif
 		std::tie(actor_pose_shifted.Pos(), object_pos_shifted) = this->GetClosestPointsOfIntersectedModelsActors(_actor_pose.Pos(), _object_pose.Pos());
@@ -1145,8 +1174,10 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	#endif
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+	if ( print_data ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\n*******************************************************************************\n\n\n";
+	}
 	}
 #endif
 
@@ -1642,8 +1673,42 @@ ignition::math::Angle SocialForceModel::GetYawMovementDirection(
 	// 1
 	ignition::math::Angle yaw_sf( std::atan2(_sf_vel.Y(), _sf_vel.X()) );
 	yaw_sf.Normalize();
-	double yaw_start = GetYawFromPose(_actor_pose) - IGN_PI_2;
-	ignition::math::Angle yaw_diff( yaw_sf.Radian() - yaw_start );
+	double yaw_alpha_w = GetYawFromPose(_actor_pose) - IGN_PI_2; // V1
+	// V2
+//	ignition::math::Angle yaw_start( GetYawFromPose(_actor_pose) - IGN_PI_2 );
+//	yaw_start.Normalize();
+
+	// manual transformation (normalization) as something goes wrong
+	// with overflow in Angle class
+	//double yaw_start = GetYawFromPose(_actor_pose) - IGN_PI_2;
+//	double yaw_start;
+//	if ( GetYawFromPose(_actor_pose) < -IGN_PI_2 ) {
+//		yaw_start = - IGN_PI_2 - GetYawFromPose(_actor_pose);
+//	} else {
+//		yaw_start = GetYawFromPose(_actor_pose) - IGN_PI_2;
+//	}
+	// test - normalization problems
+//	if ( yaw_start.Radian() < 0.0 ) {
+//		yaw_start.Radian( IGN_PI + yaw_start.Radian() );
+//		yaw_start.Normalize();
+//
+//		#ifdef DEBUG_YAW_MOVEMENT_DIR
+//		( print_data ) ? (print_info = true) : (0);
+//		#endif
+//		if ( print_info ) {
+//			#ifdef DEBUG_YAW_MOVEMENT_DIR
+//			std::cout << "----------------------------------------\n";
+//			std::cout << "YAW START SWITCHED SIGNS! now it's: " << yaw_start.Radian() << std::endl;
+//			#endif
+//		}
+//		#ifdef DEBUG_YAW_MOVEMENT_DIR
+//		( print_data ) ? (print_info = false) : (0);
+//		#endif
+//
+//	}
+
+	ignition::math::Angle yaw_diff( yaw_sf.Radian() - yaw_alpha_w );
+	// ignition::math::Angle yaw_diff( yaw_sf.Radian() - yaw_start.Radian() ); // V1
 	yaw_diff.Normalize();
 
 	// 2
@@ -1651,19 +1716,38 @@ ignition::math::Angle SocialForceModel::GetYawMovementDirection(
 	 * the less maneuverability he has and less rotations will make	*/
 	/// @yaw_increment the less the value is the more reluctant actor
 	/// will be to immediate rotations
-	double yaw_increment = 0.005 * std::exp( -1.0 * _actor_vel.Length() );
+	double yaw_increment = 0.009 * std::exp( -_actor_vel.Length() );
+
+	// sign determines angle increment direction
 	short int sign = -1;
 	( yaw_diff.Radian() >= 0.0 ) ? (sign = +1) : (0);
 
+	// MAKES THINGS WORSE
+//	// avoid angular speed oscillations while moving forward
+//	if ( std::fabs(yaw_diff.Radian()) <= (IGN_DTOR(20)) ||
+//		 std::fabs(yaw_diff.Radian()) >= (IGN_PI - IGN_DTOR(20)) ) {
+//		sign = yaw_increment_sign_prev;
+//	} else if ( yaw_diff.Radian() >= 0.0 ) {
+//		sign = +1;
+//		yaw_increment_sign_prev = sign;
+//	} else {
+//		// i.e. yaw_diff.Radian() < 0.0
+//		yaw_increment_sign_prev = sign;
+//	}
+
 	double angle_change = 0.0;
 	if ( std::fabs(yaw_diff.Radian()) < yaw_increment ) {
+		// only small rotation adjustment needed
 		angle_change = static_cast<double>(sign) * yaw_diff.Radian();
 	} else {
+		// truncate big angle change desired by SF
 		angle_change = static_cast<double>(sign) * yaw_increment;
 	}
 
 	// 3
-	ignition::math::Angle yaw_new(yaw_start + angle_change);
+	//ignition::math::Angle yaw_new(yaw_start + angle_change);
+	//ignition::math::Angle yaw_new( yaw_start.Radian() + angle_change ); // V1
+	ignition::math::Angle yaw_new( yaw_alpha_w + angle_change );
 	yaw_new.Normalize();
 
 	// END
@@ -1679,14 +1763,19 @@ ignition::math::Angle SocialForceModel::GetYawMovementDirection(
 		#ifdef DEBUG_YAW_MOVEMENT_DIR
 		std::cout << "///////////////////////////////////////////////////////////\n";
 		std::cout << debug_current_actor_name << "\tGetYawMovementDirection()" << std::endl;
-		#endif
+		std::cout << "\tyaw_alpha: " << GetYawFromPose(_actor_pose) << "\tyaw_alpha_W: " << yaw_alpha_w << "\tyaw_sf: " << yaw_sf.Radian() << "\tsf: " << _sf_vel << std::endl;
+		std::cout << "\tyaw_diff NOT norm.: " << (yaw_sf.Radian() - yaw_alpha_w) << "\tyaw_diff_norm: " << yaw_diff.Radian() << std::endl;
+		std::cout << "\tangle_change: " << angle_change << "\tyaw_new NOT norm: " << yaw_alpha_w + angle_change << "\tyaw_new norm: " << yaw_new.Radian() << std::endl;
 
-		// V1
-//		std::cout << "\t\tyaw_start: " << _actor_pose.Rot().Euler().Z() << "\tyaw_target: " << yaw_target.Radian() << "\tangle_change: " << angle_change << "\tyaw_new: " << yaw_new.Radian() << std::endl;
+		ignition::math::Vector3d test_vector;
+		test_vector.X( cos(yaw_new.Radian()) * _sf_vel.Length() );
+		test_vector.Y( sin(yaw_new.Radian()) * _sf_vel.Length() );
+		std::cout << "\tSUCCESS TEST\tX: " << ((test_vector.X() * _sf_vel.X()) >= 0.0) << "\tY: " << ((test_vector.Y() * _sf_vel.Y()) >= 0.0) << std::endl;
 
-		std::cout << "\tyaw_start: " << yaw_start << "\tyaw_target: " << yaw_sf.Radian() << "\tyaw_diff: " << yaw_diff.Radian() << "\tsf_vel: " << _sf_vel << "\tangle_change: " << angle_change << "\tyaw_new: " << yaw_new.Radian() << std::endl;
+// V1	std::cout << "\t\tyaw_start: " << _actor_pose.Rot().Euler().Z() << "\tyaw_target: " << yaw_target.Radian() << "\tangle_change: " << angle_change << "\tyaw_new: " << yaw_new.Radian() << std::endl;
+// V1 	std::cout << "\tBEF NORM: yaw_start: " << (GetYawFromPose(_actor_pose) - IGN_PI_2) << "\tyaw_diff: " << (yaw_sf.Radian() - yaw_start.Radian()) << std::endl;
+// V1 	std::cout << "\tyaw_actor_raw: " << GetYawFromPose(_actor_pose) << "\tyaw_start: " << yaw_start.Radian() << "\tyaw_sf: " << yaw_sf.Radian() << "\tyaw_diff: " << yaw_diff.Radian() << "\n";
 
-		#ifdef DEBUG_YAW_MOVEMENT_DIR
 		std::cout << "///////////////////////////////////////////////////////////\n";
 		#endif
 
@@ -1845,9 +1934,18 @@ ignition::math::Pose3d SocialForceModel::GetNewPose(
 #ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	if ( print_data ) {
 	std::cout <<  debug_current_actor_name << " | GetNewPose() CALCULATION\n";
-	std::cout << "\tactor_yaw_init: " << (_actor_pose.Rot().Yaw()-IGN_PI_2) << "\tactor_yaw_mod: " << (yaw_new.Radian()-IGN_PI_2) << std::endl;
-	std::cout << "\tresult_vel_angle: " << std::atan2(result_vel.Y(), result_vel.X()) << "\trequired jump: " << (std::atan2(result_vel.Y(), result_vel.X()) - (_actor_pose.Rot().Yaw()-IGN_PI_2)) << std::endl;
+	std::cout << "\tactor_yaw_init: " << (_actor_pose.Rot().Yaw()-IGN_PI_2) << "\tactor_yaw_mod: " << yaw_new.Radian() << std::endl;
+	std::cout << "\tresult_vel_angle: " << std::atan2(result_vel.Y(), result_vel.X()) << std::endl;
 	std::cout << "\t\tsf: " << _social_force << "\tresult_vel_init: " << result_vel_backup << "\tresult_vel_mod: " << result_vel;
+	if ( result_vel.X() > 0.0 && result_vel.Y() > 0.0 ) {
+		std::cout << "\tI QUARTER";
+	} else if ( result_vel.X() > 0.0 && result_vel.Y() < 0.0 ) {
+		std::cout << "\tIV QUARTER";
+	} else if ( result_vel.X() < 0.0 && result_vel.Y() > 0.0 ) {
+		std::cout << "\tII QUARTER";
+	} else if ( result_vel.X() < 0.0 && result_vel.Y() < 0.0 ) {
+		std::cout << "\tIII QUARTER";
+	}
 	std::cout << "\nPOSITION \torig: " << _actor_pose.Pos() << "\tdelta_x: " << result_vel.X() * _dt << "\tdelta_y: " << result_vel.Y() * _dt << "\tnew_position: " << new_pose.Pos(); // << std::endl;
 	std::cout << std::endl;
 	std::cout << "---------------------------------------------------------------------------------\n";
@@ -2708,6 +2806,12 @@ ignition::math::Vector3d SocialForceModel::GetForceFromStaticObstacle(
 	return (f_alpha_i);
 
 }
+
+// ------------------------------------------------------------------- //
+
+//double SocialForceModel::NormalizeAngle0_2Pi(const double &_angle) {
+//
+//}
 
 // ------------------------------------------------------------------- //
 

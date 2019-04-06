@@ -390,6 +390,9 @@ private:
 	// stores previous location of a model relative to an actor
 	std::map<std::string, RelativeLocation> map_models_rel_locations;
 
+	// stores previous sign of a yaw increment angle - DESTRUCTIVE EFFECT
+//	short int yaw_increment_sign_prev;
+
 	float relaxation_time;
 	float speed_desired;
 	float speed_max;
