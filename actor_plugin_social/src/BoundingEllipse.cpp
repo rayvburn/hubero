@@ -70,8 +70,9 @@ void BoundingEllipse::setPosition(const ignition::math::Vector3d &center_point) 
 
 // ------------------------------------------------------------------- //
 
-// this must be set after setCenter and both setAxis
-// expressed in m along semi-axis (must be smaller than corresponding axis value)
+/// expressed in m along semi-axes
+/// @offset_vector - positive X shifts towards actor's back
+/// @offset_vector - positive Y shifts towards actor's right-hand side
 void BoundingEllipse::setCenterOffset(const ignition::math::Vector3d &offset_vector) {
 
 	/* check if offset is lying down within the ellipse's bound -
@@ -81,7 +82,7 @@ void BoundingEllipse::setCenterOffset(const ignition::math::Vector3d &offset_vec
 
 		offset_ = offset_vector;
 
-		// calculate yaw_offset based on offset vector
+		// calculate yaw_offset based on the offset vector
 		ignition::math::Angle yaw_offset_angle;
 		yaw_offset_angle.Radian( std::atan2(offset_vector.Y(), offset_vector.X()) );
 		yaw_offset_angle.Normalize();
