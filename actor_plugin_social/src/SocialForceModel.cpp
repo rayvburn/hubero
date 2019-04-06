@@ -54,12 +54,12 @@ namespace SocialForceModel {
 #define DEBUG_LOG_ALL_INTERACTIONS
 //
 ////#define DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
-//#define DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+#define DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 //
-//#define DEBUG_FORCE_EACH_OBJECT 									// detailed info in each iteration
-//#define DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+#define DEBUG_FORCE_EACH_OBJECT 									// detailed info in each iteration
+#define DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 
-#define DEBUG_YAW_MOVEMENT_DIR	// each iteration
+//#define DEBUG_YAW_MOVEMENT_DIR	// each iteration
 
 
 
@@ -102,11 +102,21 @@ static std::string debug_current_actor_name;
 
 SocialForceModel::SocialForceModel():
 
-//		yaw_increment_sign_prev(1),
+	/* 		TUNING TIPS:
+	 * 	o 	the higher the desired force factor set the more actor will not notice
+	 * 		surrounding obstacles, trying to achieve a goal as fast as possible
+	 * 	o	the higher the interaction force factor set the more actor will try to
+	 * 		avoid obstacles - he will pass them safer
+	 * 	o 	the higher the yaw_increment coefficient set the less inertia actor will have
+	 * 		and will react immediately to social force changes - this will lead to many
+	 * 		rotations; on the other hand setting this parameter too low will create
+	 * 		a very conservative movement style (possibly cause stepping into obstacles
+	 * 		in cluttered world) */
+
 	fov(2.00), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
-	desired_force_factor(200.0),
-	interaction_force_factor(6000.0), // interaction_force_factor(6000.0),
-	force_max(2000.0), force_min(500.0) // force_min(800.0)
+	desired_force_factor(100.0), // desired_force_factor(200.0),
+	interaction_force_factor(3000.0), // interaction_force_factor(6000.0),
+	force_max(2000.0), force_min(300.0) // force_min(800.0)
 {
 
 	SetParameterValues();
@@ -296,11 +306,11 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	}
 
 
-	if ( _actor_name == "actor1" ) {
-		debugEllipseSet(true);
-	} else {
-		debugEllipseSet(false);
-	}
+//	if ( _actor_name == "actor1" && print_data) {
+//		debugEllipseSet(true);
+//	} else {
+//		debugEllipseSet(false);
+//	}
 
 
 	// allocate all variables needed in loop
@@ -537,6 +547,8 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		 * Truncate very big forces from single objects */
 		if ( is_an_actor ) {
 			f_alpha_beta *= 0.50;
+		} else {
+			f_alpha_beta *= 1.75;
 		}
 
 		// truncate if force is too big -> causes immediate speed-up
@@ -998,7 +1010,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 
 	/* this function finds points that are located within the bounding
 	 * box/circle range that are further treated as a real position
-	 * of objects in the world - this provides some kind of a inflation
+	 * of objects in the world - this provides some kind of an inflation
 	 * around the objects */
 
 	ignition::math::Pose3d actor_pose_shifted = _actor_pose;
@@ -1019,12 +1031,30 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	/* create the line from the actor's center to the object's center and check
 	 * the intersection point of that line with the object's bounding box */
 	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _object_pose.Pos().X(), _object_pose.Pos().Y(), _object_bb.Center().Z() );
-	std::tie(std::ignore, std::ignore, point_intersect) = _object_bb.Intersect(line);
+	bool intersects = false;
+	std::tie(intersects, std::ignore, point_intersect) = _object_bb.Intersect(line);
+
+	/* bb's Intersect returns intersection point whose X and Y are equal
+	 * to actor's X and Y thus 0 distance between points and no solutions
+	 * are generated in quadratic equation (happens when actor steps into
+	 * obstacle; as a hack - set intersection point as a object's center */
+	if ( (point_intersect.X() == _actor_pose.Pos().X()) && (point_intersect.Y() == _actor_pose.Pos().Y()) ) {
+		point_intersect = _object_pose.Pos();
+	}
+
+	// when centers are aligned, move a little in arbitrary direction
+	// just to avoid zeroing force
+	// FIXME: apply this to BoundingCircle too
+	if ( (point_intersect.X() == _actor_pose.Pos().X()) && (point_intersect.Y() == _actor_pose.Pos().Y()) ) {
+		point_intersect.X( point_intersect.X() + 0.005 ); point_intersect.Y( point_intersect.Y() - 0.005 );
+	}
+
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 	if ( print_data ) {
 	if ( debug_current_actor_name == "actor1" ) {
-		std::cout << "\n\tObject's BBox intersection result: " << point_intersect;
+		std::cout << "\n\tObject's BBox intersection result: " << intersects << "\tpt: "<< point_intersect;
+		std::cout << "\n\tline len: " << line.Length();
 	}
 	}
 #endif
@@ -1632,7 +1662,8 @@ ignition::math::Angle SocialForceModel::GetYawMovementDirection(
 	 * the less maneuverability he has and less rotations will make	*/
 	/// @yaw_increment the less the value is the more reluctant actor
 	/// will be to immediate rotations
-	double yaw_increment = 0.009 * std::exp( -_actor_vel.Length() );
+	/// correlated with parameter @force_min
+	double yaw_increment = 0.003 * std::exp( -_actor_vel.Length() ); // 0.009 before - many rotations
 
 	// sign determines angle increment direction
 	short int sign = -1;
@@ -2706,7 +2737,18 @@ ignition::math::Vector3d SocialForceModel::GetForceFromStaticObstacle(
 
 // ------------------------------------------------------------------- //
 
-//double SocialForceModel::NormalizeAngle0_2Pi(const double &_angle) {
+//ignition::math::Vector3d SocialForceModel::GetShiftedPointsAlongLine(const ignition::math::Line3d &_line,
+//		const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_pt_to_shift ) {
+//
+//	// compute line direction
+//	double a_l = std::tan( std::atan2(_line.Direction().Y(), _line.Direction().X()) );
+//
+//	// line goes through _actor_pos point
+//	double b_l = _actor_pos.Y() - _actor_pos.X() * a_l;
+//
+//	// knowing line equation and line's length - calculate
+//	// the point-to-be-shifted's new location
+//	ignition::math::Vector3d pt_shifted
 //
 //}
 

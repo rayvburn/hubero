@@ -409,7 +409,9 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	};
 
 	// print only when vis is updated
-	//sfm.SetPrintFlag(false);
+	//if ( actor->GetName() == "actor1" ) {
+		sfm.SetPrintFlag(false);
+	//}
 
 	if ( !isTargetStillReachable(_info) ) {
 		this->chooseNewTarget(_info);
@@ -445,9 +447,9 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	if ( (_info.simTime - vis_time).Double() >= 0.25 ) {
 
 		//std::cout << "ACTOR FOR VIS: " << this->actor_id << "\tname: " << this->actor->GetName() << std::endl;
-		if ( actor->GetName() == "actor1" ) {
-			sfm.SetPrintFlag(false); // print in each iteration
-		}
+//		if ( actor->GetName() == "actor1" ) {
+//			sfm.SetPrintFlag(false); // print in each iteration
+//		}
 		VisualizeForceField();
 		if ( actor->GetName() == "actor1" ) {
 			sfm.SetPrintFlag(true);

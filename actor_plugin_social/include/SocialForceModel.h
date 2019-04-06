@@ -364,6 +364,9 @@ public:
 			const double &_dt);
 	// dt needed to be passed!
 
+//	ignition::math::Vector3d GetShiftedPointsAlongLine(const ignition::math::Line3d &_line,
+//			const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_pt_to_shift );
+
 	void SetPrintFlag(const bool &_flag);
 
 

@@ -12,7 +12,7 @@
 
 #include "BoundingEllipseDebug.h"
 
-// #define DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+#define DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 
 namespace ActorUtils {
 
@@ -72,6 +72,7 @@ void BoundingEllipse::setCenter(const ignition::math::Vector3d &center_point) {
 // ------------------------------------------------------------------- //
 
 // this must be set after setCenter and both setAxis
+// expressed in m along semi-axis (must be smaller than corresponding axis value)
 void BoundingEllipse::setCenterOffset(const ignition::math::Vector3d &offset_vector) {
 
 	/* check if offset is lying down within the ellipse's bound -
