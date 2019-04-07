@@ -9,6 +9,7 @@
 #define SRC_SFMVISGRID_H_
 
 #include <ignition/math.hh>	// include whole math
+#include <string>
 #include <vector>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>

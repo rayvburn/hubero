@@ -48,7 +48,17 @@ add_library(actor_utils
   src/BoundingCircle.cpp 
   src/CommonInfo.cpp 
   include/ActorROSInterface.h 
-  src/ActorROSInterface.cpp)
+  src/ActorROSInterface.cpp
+)
+
+add_library(actor_inflation
+  src/inflation/Box.h
+  src/inflation/Box.cpp
+  src/inflation/Circle.h
+  src/inflation/Circle.cpp
+  src/inflation/Ellipse.h
+  src/inflation/Ellipse.cpp
+)
 
 #add_library(enums include/Enums.h)
 
@@ -58,6 +68,7 @@ target_link_libraries( ${PROJECT_NAME}
   #actor_bounding_circle
   #actor_common_info
   actor_utils
+  actor_inflation
   #enums
   ${GAZEBO_LIBRARIES}  
   ${roscpp_LIBRARIES} 
