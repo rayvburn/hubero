@@ -38,8 +38,10 @@ add_library(${PROJECT_NAME} SHARED include/ActorPluginSocial.h src/ActorPluginSo
 add_library(social_force_model 
   include/sfm/core/SocialForceModel.h 
   include/sfm/core/Inflation.h 
+  include/sfm/core/SFMDebug.h
   src/sfm/core/SocialForceModel.cpp
   src/sfm/core/Inflation.cpp
+  src/sfm/core/SFMDebug.cpp
 )
 
 add_library(social_force_model_utils include/SocialForceModelUtils.h src/SocialForceModelUtils.cpp)

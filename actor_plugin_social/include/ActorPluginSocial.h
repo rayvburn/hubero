@@ -29,6 +29,7 @@
 #include "gazebo/util/system.hh"
 
 #include "sfm/core/SocialForceModel.h"
+#include "sfm/core/SFMDebug.h"
 
 // -------------------------
 

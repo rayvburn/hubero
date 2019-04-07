@@ -5,7 +5,8 @@
  *      Author: rayvburn
  */
 
-#include <sfm/core/Inflation.h>
+#include "sfm/core/Inflation.h"
+#include "sfm/core/SFMDebug.h"
 
 namespace sfm {
 namespace core {
@@ -439,11 +440,11 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 	ignition::math::Vector3d point_intersect;
 
 	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( print_data ) {
+	if ( SfmGetPrintData() ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\n---------------------------------------------------------------------------------\n";
 		std::cout << "in GetActorModelBBsClosestPoints() - ACTOR & OBJECT - checking intersection\n";
-		std::cout << "\t" << debug_current_actor_name << "'s pos: " << _actor_pose.Pos() << "\t" << debug_current_object_name << "'s pos: " << _object_pose.Pos() << std::endl;
+		std::cout << "\t" << debug_current_actor_name << "'s pos: " << actor_pose.Pos() << "\t" << debug_current_object_name << "'s pos: " << object_pose.Pos() << std::endl;
 	}
 	}
 	#endif
@@ -471,7 +472,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 
 
 	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( print_data ) {
+	if ( SfmGetPrintData() ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\n\tObject's BBox intersection result: " << intersects << "\tpt: "<< point_intersect;
 		std::cout << "\n\tline len: " << line.Length();
@@ -485,14 +486,14 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 	if ( actor_ellipse.doesContain(point_intersect) ) {
 
 		#if defined(DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB) || defined(DEBUG_BOUNDING_ELLIPSE_INTERSECTION)
-		if ( print_data ) {
+		if ( SfmGetPrintData() ) {
 		std::cout << "\n\n\n\n\n1\tACTOR STEPPED INTO OBSTACLE\n\n\n\n\n\t" << debug_current_actor_name << "\t" << debug_current_object_name << "\n" << std::endl;
 		}
 		#endif
 		std::tie(actor_pose_shifted.Pos(), point_intersect) = calculateIntersectedModelsClosestPoints(actor_pose.Pos(), point_intersect, INTERSECTION_ACTOR_OBJECT);
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-		if ( print_data ) {
+		if ( SfmGetPrintData() ) {
 		if ( debug_current_actor_name == "actor1" ) {
 			std::cout << "\n---------------------------------------------------------------------------------\n\n\n";
 		}
@@ -513,7 +514,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 	std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_ellipse.getIntersection(point_intersect);
 
 	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( print_data ) {
+	if ( SfmGetPrintData() ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\nactor's BE intersection result - new actor's pose: " << actor_pose_shifted.Pos();
 	}
@@ -533,7 +534,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 	#endif
 
 	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( print_data ) {
+	if ( SfmGetPrintData() ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\n---------------------------------------------------------------------------------\n\n\n";
 	}
@@ -701,7 +702,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 	ignition::math::Pose3d actor_pose_shifted = actor_pose;
 
 	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( print_data ) {
+	if ( SfmGetPrintData() ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\n*******************************************************************************\n";
 		std::cout << "in GetActorModelBBsClosestPoints() - 2 ACTORS - checking intersection\n";
@@ -713,7 +714,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 	std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_ellipse.getIntersection(object_pose.Pos());
 
 	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( print_data ) {
+	if ( SfmGetPrintData() ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\n\tActor's BE intersection result: " << actor_pose_shifted.Pos();
 	}
@@ -725,7 +726,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 	std::tie(std::ignore, object_pos_shifted) = object_ellipse.getIntersection(actor_pose.Pos());
 
 	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( print_data ) {
+	if ( SfmGetPrintData() ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\n\tObject's BE intersection result: " << object_pos_shifted;
 	}
@@ -740,7 +741,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 	if ( actor_ellipse.doesContain(object_pos_shifted) ) {
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-		if ( print_data ) {
+		if ( SfmGetPrintData() ) {
 		if ( debug_current_actor_name == "actor1" ) {
 			std::cout << "\n\n\tACTOR'S BE CONTAINS " << debug_current_object_name << "'s POINT!!!!\n";
 		}
@@ -762,7 +763,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 	#endif
 
 	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( print_data ) {
+	if ( SfmGetPrintData() ) {
 	if ( debug_current_actor_name == "actor1" ) {
 		std::cout << "\n*******************************************************************************\n\n\n";
 	}

@@ -27,13 +27,6 @@
 #include <gazebo-8/gazebo/physics/Model.hh>
 #include <ignition/math.hh> 		// is it still needed??
 
-#ifdef DEBUG_TF
-#include <tf2_ros/transform_broadcaster.h>
-#include <tf2/LinearMath/Matrix3x3.h>
-#include <tf2/LinearMath/Quaternion.h>
-#include <geometry_msgs/TransformStamped.h>
-#endif
-
 // debug closest points
 #include <vector>
 
@@ -133,114 +126,15 @@ public:
 	SocialForceModel();
 
 
-#ifdef BOUNDING_BOX_CALCULATION
-
-// DEPRECATED
-//	ignition::math::Line3d SocialForceModel::GetPossibleIntersectionLine(
-//			const ignition::math::Pose3d &_actor_pose,
-//			const ignition::math::Box &_bb,
-//			const unsigned short int &_flag
-//	);
-
-	std::vector<ignition::math::Vector3d> CreateVerticesVector(
-			const actor::inflation::Box &_bb
-	);
-
-	std::vector<double> CalculateLengthToVertices(
-			const ignition::math::Vector3d &_actor_pos,
-			const std::vector<ignition::math::Vector3d> &_vertices_pts
-	);
-
-	ignition::math::Vector3d GetModelPointClosestToActor(
-			const ignition::math::Pose3d &_actor_pose,
-			const actor::inflation::Box &_bb,
-			const std::string &_model_name,				// debug only
-			const ignition::math::Pose3d &_object_pose 	// debug only
-	);
-
-	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
-			const ignition::math::Pose3d &_actor_pose,
-			//ignition::math::Pose3d *_actor_closest_to_model_pose,
-			const actor::inflation::Box &_actor_bb,
-			const ignition::math::Pose3d &_object_pose,
-			//ignition::math::Vector3d *_object_closest_to_actor_pos,
-			const actor::inflation::Box &_object_bb,
-			const std::string &_object_name // debug only
-	);
-
-#endif
-
-	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> GetClosestPointsOfIntersectedModelsActors(
-			const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_object_pos) const;
-
-	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> GetClosestPointsOfIntersectedModelsActorObject(
-			const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_bb_intersection_pt) const;
-
-//#ifdef BOUNDING_CIRCLE_CALCULATION
-
 	actor::inflation::Circle GetActorBoundingCircle(
 			const unsigned int _actor_id,
 			const std::vector<actor::inflation::Circle> _actors_bounding_circles
 	) const;
 
-//#elif defined (BOUNDING_ELLIPSE_CALCULATION)
-
 	actor::inflation::Ellipse GetActorBoundingEllipse(
 			const unsigned int _actor_id,
 			const std::vector<actor::inflation::Ellipse> _actors_bounding_ellipses
 	) const;
-
-//#endif
-
-#if defined(BOUNDING_CIRCLE_CALCULATION)
-
-	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
-			const ignition::math::Pose3d &_actor_pose,
-			const actor::inflation::Circle &_actor_bc,
-			const ignition::math::Pose3d &_object_pose,
-			const actor::inflation::Box &_object_bb,
-			const std::string &_object_name // debug only
-			) const;
-
-	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
-			const ignition::math::Pose3d &_actor_pose,
-			const actor::inflation::Circle &_actor_bc,
-			const ignition::math::Pose3d &_object_pose,
-			const actor::inflation::Circle &_object_bc,
-			const std::string &_object_name // debug only
-			) const;
-
-#elif defined (BOUNDING_ELLIPSE_CALCULATION)
-
-	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
-			const ignition::math::Pose3d &_actor_pose,
-			const actor::inflation::Ellipse &_actor_be,
-			const ignition::math::Pose3d &_object_pose,
-			const actor::inflation::Box &_object_bb,
-			const std::string &_object_name // debug only
-			) const;
-
-	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
-			const ignition::math::Pose3d &_actor_pose,
-			const actor::inflation::Ellipse &_actor_be,
-			const ignition::math::Pose3d &_object_pose,
-			const actor::inflation::Ellipse &_object_be,
-			const std::string &_object_name // debug only
-			) const;
-
-//	template <typename T1, typename T2>
-//	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
-//			const ignition::math::Pose3d &_actor_pose,
-//			T1 _actor_be,
-//			const ignition::math::Pose3d &_object_pose,
-//			T2 _object_bb,
-//			const std::string &_object_name // debug only
-//			) const;
-
-#endif
-
-
-
 
 	ignition::math::Angle GetYawMovementDirection(
 			const ignition::math::Pose3d &_actor_pose,
@@ -261,13 +155,9 @@ public:
 	ignition::math::Vector3d GetInteractionComponent(
 			const ignition::math::Pose3d &_actor_pose,
 			const ignition::math::Vector3d &_actor_vel,
-			// const ignition::math::Pose3d &_actor_target,
-			// const ignition::math::Vector3d &_n_alpha,
-			// const SFMObjectType &_object_type,
 			const ignition::math::Pose3d &_object_pose,
 			const ignition::math::Vector3d &_object_vel,
 			const ignition::math::Vector3d &_object_closest_point,
-			//const ignition::math::Box &_object_bb = ignition::math::Box()); // gazebo::math::Box is deprecated (Gazebo 8.0 and above))
 			const bool &_is_actor
 	);
 
@@ -310,8 +200,6 @@ public:
 
 #endif
 
-
-
 	std::tuple<RelativeLocation, double> GetBetaRelativeLocation(
 			const ignition::math::Angle &_actor_yaw,
 			const ignition::math::Vector3d &_d_alpha_beta);
@@ -343,7 +231,6 @@ public:
 			const ignition::math::Vector3d &_object_velocity,
 			const ignition::math::Vector3d &_n_alpha, 		// actor's normal (based on velocity vector)
 			const ignition::math::Vector3d &_d_alpha_beta,
-			//const ignition::math::Vector3d &_closest_point,
 			const bool &_is_actor );
 
 	ignition::math::Vector3d GetSocialForce(
@@ -353,17 +240,10 @@ public:
 		const ignition::math::Vector3d _actor_velocity,
 		const ignition::math::Vector3d _actor_target, // );
 		const ActorUtils::CommonInfo &_actor_info);
-//		const std::map<std::string, unsigned int>  _map_actor_name_id,
-//		const std::vector<ignition::math::Vector3d> _actors_velocities,
-//		const std::vector<ignition::math::Box> _actors_bounding_boxes);
 
 	unsigned int GetActorID(const std::string _name, const std::map<std::string, unsigned int> _map);
 
 	bool IsActor(const std::string &_name);
-
-//	ignition::math::Vector3d GetActorVelocity(const gazebo::physics::ModelPtr &_model_ptr,
-//			const std::map<std::string, unsigned int>  _map,
-//			const std::vector<ignition::math::Vector3d> _actors_velocities);
 
 	ignition::math::Vector3d GetActorVelocity(
 			const unsigned int _actor_id,
@@ -376,21 +256,13 @@ public:
 	);
 
 	// debug closest points
-//	std::vector<ignition::math::Pose3d> GetModelClosestPointsVector() const;
-//	std::vector<ignition::math::Pose3d> GetActorClosestPointsVector() const;
 	std::vector<ignition::math::Pose3d> GetClosestPointsVector() const;
 
 	ignition::math::Vector3d GetForceFromStaticObstacle(const ignition::math::Pose3d &_actor_pose,
 			const ignition::math::Vector3d &_actor_velocity,
 			const ignition::math::Pose3d &_object_pose,
 			const double &_dt);
-	// dt needed to be passed!
-
-//	ignition::math::Vector3d GetShiftedPointsAlongLine(const ignition::math::Line3d &_line,
-//			const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_pt_to_shift );
-
-	void SetPrintFlag(const bool &_flag);
-
+	// FIXME: dt needed to be passed!
 
 	virtual ~SocialForceModel();
 
@@ -398,28 +270,11 @@ private:
 
 	void 	SetParameterValues(void);
 
-			//const ignition::math::Pose3d &_actor_pose,
-			//const ignition::math::Pose3d &_actor_target,
-			//const ignition::math::Vector3d &_n_beta,
-			//const double &_angle_alpha,
-			//const double &_angle_beta
-
-
-
-
-
-	static constexpr double BOUNDING_BOX_Z_FIXED = 0.5; // on-plane objects considered
-
-	// debug closest points
-//	std::vector<ignition::math::Pose3d> models_closest_points;
-//	std::vector<ignition::math::Pose3d> actor_closest_points;
 	std::vector<ignition::math::Pose3d> closest_points;
 
 	// stores previous location of a model relative to an actor
 	std::map<std::string, RelativeLocation> map_models_rel_locations;
 
-	// stores previous sign of a yaw increment angle - DESTRUCTIVE EFFECT
-//	short int yaw_increment_sign_prev;
 
 	float relaxation_time;
 	float speed_desired;
@@ -432,19 +287,9 @@ private:
 	float desired_force_factor;
 	float interaction_force_factor;
 
-	bool print_data;
-
 	sfm::core::StaticObjectInteraction interaction_static_type;
 	sfm::core::InflationType inflation_type;
 	sfm::core::Inflation inflate;
-
-#ifdef DEBUG_TF
-	ignition::math::Pose3d actor_current_pose;	// needed to reference the tf to
-	tf2_ros::TransformBroadcaster tf_broadcaster;
-	geometry_msgs::TransformStamped tf_stamped;
-	tf2::Matrix3x3 tf_mat_rot;
-	tf2::Quaternion tf_quat;
-#endif
 
 #ifndef SFM_HOMOGENOUS_POPULATION
 
