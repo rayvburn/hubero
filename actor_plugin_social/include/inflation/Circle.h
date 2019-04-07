@@ -11,9 +11,8 @@
 
 #include <ignition/math/Vector3.hh>
 #include <string>
-#include <map>
 #include <visualization_msgs/Marker.h>
-
+#include <tuple>
 
 namespace actor {
 namespace inflation {
@@ -27,7 +26,7 @@ public:
 	void setRadius(const double &radius);
 	void setCenter(const ignition::math::Vector3d &center_point);
 
-	ignition::math::Vector3d getIntersection(const ignition::math::Vector3d &pt_dest) const;
+	std::tuple<bool, ignition::math::Vector3d> getIntersection(const ignition::math::Vector3d &pt_dest) const;
 	double getRadius() const;
 	ignition::math::Vector3d getCenter() const;
 	bool doesContain(const ignition::math::Vector3d &pt_dest) const;

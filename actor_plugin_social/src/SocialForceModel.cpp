@@ -924,7 +924,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 #endif
 
 	// intersection of the actor's circle
-	actor_pose_shifted.Pos() = _actor_bc.getIntersection(point_intersect);
+	std::tie(std::ignore, actor_pose_shifted.Pos()) = _actor_bc.getIntersection(point_intersect);
 
 #ifdef DEBUG_CLOSEST_POINTS
 	if ( _object_name == "table1" ) {
@@ -958,10 +958,11 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	/* BoundingCircle and BoundingCircle -> 2 actors */
 	// intersection of the 1st actor's circle (currently processed)
 	ignition::math::Pose3d actor_pose_shifted = _actor_pose;
-	actor_pose_shifted.Pos() = _actor_bc.getIntersection(_object_pose.Pos());
+	std::tie(std::ignore, actor_pose_shifted.Pos()) = _actor_bc.getIntersection(_object_pose.Pos());
 
 	// intersection of the 2nd actor's circle (another one)
-	ignition::math::Vector3d object_pos_shifted = _object_bc.getIntersection(_actor_pose.Pos());
+	ignition::math::Vector3d object_pos_shifted;
+	std::tie(std::ignore, object_pos_shifted) = _object_bc.getIntersection(_actor_pose.Pos());
 
 	/* Let's check whether the bounding circles are not intruding each other -
 	 * compare the length of a vector from actor's center to the object's position

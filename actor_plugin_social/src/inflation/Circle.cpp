@@ -39,7 +39,7 @@ void Circle::setCenter(const ignition::math::Vector3d &center_point) {
  * GetIntersection takes a destination point and calculates the intersection point on the circle which
  * creates a line from circle's center (actor's center) to destination point while passing through the circle
  */
-ignition::math::Vector3d Circle::getIntersection(const ignition::math::Vector3d &pt_dest) const {
+std::tuple<bool, ignition::math::Vector3d> Circle::getIntersection(const ignition::math::Vector3d &pt_dest) const {
 
 	/*
 	 * circle equation in parametric form:
@@ -65,7 +65,9 @@ ignition::math::Vector3d Circle::getIntersection(const ignition::math::Vector3d 
 	pt_intersection.Y( center_.Y() + radius_ * sin(theta.Radian()) );
 	pt_intersection.Z(0.0f);
 
-	return (pt_intersection);
+	// intersection with circle is always found - tuple here just for equality
+	// with Ellipse class' method
+	return ( std::make_tuple(true, pt_intersection) );
 
 }
 
