@@ -14,6 +14,7 @@
 #include <ignition/math/Box.hh>
 #include <ignition/math/Line3.hh>
 #include <tuple>
+#include <visualization_msgs/Marker.h>
 
 namespace actor {
 namespace inflation {
@@ -25,6 +26,7 @@ public:
 	Box();
 	Box(const ignition::math::Box &bb);
 	void init(const double &x_half_len, const double &y_half_len, const double &z_half_len);
+	void setBox(const ignition::math::Box &bb);
 	void updatePose(const ignition::math::Pose3d &new_pose);
 	bool doesContain(const ignition::math::Vector3d &pt) const;
 	std::tuple<bool, ignition::math::Vector3d> doesIntersect(const ignition::math::Line3d &line) const;
@@ -32,6 +34,7 @@ public:
 	ignition::math::Vector3d getMin() const;
 	ignition::math::Vector3d getMax() const;
 	ignition::math::Box getBox() const;
+	visualization_msgs::Marker getMarkerConversion() const;
 	virtual ~Box();
 
 private:

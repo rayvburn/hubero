@@ -434,7 +434,8 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	#ifdef INFLATE_BOUNDING_CIRCLE
 	ros_interface.PublishMarker(bounding_circle.getMarkerConversion());
 	#elif defined(INFLATE_BOUNDING_BOX)
-	ros_interface.PublishMarker(sfm_vis.GetBBMarkerConversion(actor_common_info.GetBoundingBox()));
+	//ros_interface.PublishMarker(sfm_vis.GetBBMarkerConversion(actor_common_info.GetBoundingBox()));
+	ros_interface.PublishMarker(bounding_box.getMarkerConversion());
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
 	ros_interface.PublishMarker(bounding_ellipse.getMarkerConversion());
 	#endif

@@ -324,7 +324,8 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	/* model_vel contains model's velocity (world's object or actor) - for the actor this is set differently
 	 * it was impossible to set actor's linear velocity by setting it by the model's class method */
 	ignition::math::Vector3d model_vel;
-	actor::inflation::Box model_box;
+	//actor::inflation::Box model_box;
+	ignition::math::Box model_box;
 	actor::inflation::Circle model_circle;
 	actor::inflation::Ellipse model_ellipse;
 
@@ -379,12 +380,16 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			#elif defined(BOUNDING_ELLIPSE_CALCULATION)
 			model_ellipse = this->GetActorBoundingEllipse(actor_id, _actor_info.GetBoundingEllipsesVector());
 			#endif
-			model_box     = this->GetActorBoundingBox   (actor_id, _actor_info.GetBoundingBoxesVector());
+			actor::inflation::Box box_temp;
+			box_temp = this->GetActorBoundingBox   (actor_id, _actor_info.GetBoundingBoxesVector());
+			//model_box     = this->GetActorBoundingBox   (actor_id, _actor_info.GetBoundingBoxesVector());
+			model_box = box_temp.getBox();
 
 		} else {
 
 			model_vel = model_ptr->WorldLinearVel();
-			model_box = actor::inflation::Box(model_ptr->BoundingBox()); // conversion
+			model_box = model_ptr->BoundingBox();
+			//model_box.setBox(model_ptr->BoundingBox()); // conversion
 
 		}
 

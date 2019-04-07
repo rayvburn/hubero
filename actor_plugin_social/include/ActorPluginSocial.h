@@ -70,8 +70,8 @@
 
 // -------------------------
 
-//#define INFLATE_BOUNDING_BOX
-#define INFLATE_BOUNDING_CIRCLE
+#define INFLATE_BOUNDING_BOX
+//#define INFLATE_BOUNDING_CIRCLE
 //#define INFLATE_BOUNDING_ELLIPSE
 
 // -------------------------
@@ -196,6 +196,7 @@ namespace gazebo
 
 #if	defined(INFLATE_BOUNDING_BOX)
 
+    private: actor::inflation::Box bounding_box;
     private: static ignition::math::Box GenerateBoundingBox(const ignition::math::Pose3d &_actor_pose);
 
 #elif defined(INFLATE_BOUNDING_CIRCLE)

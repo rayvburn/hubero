@@ -40,6 +40,12 @@ void Box::init(const double &x_half_len, const double &y_half_len, const double 
 
 // ------------------------------------------------------------------- //
 
+void Box::setBox(const ignition::math::Box &bb) {
+	bb_ = bb;
+}
+
+// ------------------------------------------------------------------- //
+
 void Box::updatePose(const ignition::math::Pose3d &new_pose) {
 
 	// forced calculations in 0-90 deg range
@@ -105,6 +111,43 @@ std::tuple<bool, ignition::math::Vector3d> Box::doesIntersect(const ignition::ma
 	ignition::math::Vector3d pt_intersection;
 	std::tie(does_intersect, std::ignore, pt_intersection) = bb_.Intersect(line);
 	return ( std::make_tuple(does_intersect, pt_intersection) );
+}
+
+// ------------------------------------------------------------------- //
+
+visualization_msgs::Marker Box::getMarkerConversion() const {
+
+	visualization_msgs::Marker marker;
+
+	marker.header.frame_id = "map";
+	marker.header.stamp = ros::Time();
+	marker.ns = "test";
+	// marker.id = marker_arr_index;
+	marker.type = visualization_msgs::Marker::CUBE;
+	marker.action = visualization_msgs::Marker::MODIFY;
+
+	// assign marker coordinates according to current point that is pointed by grid index
+	marker.pose.position.x = bb_.Center().X();
+	marker.pose.position.y = bb_.Center().Y();
+	marker.pose.position.z = bb_.Center().Z();
+
+	marker.pose.orientation.x = 0.00;
+	marker.pose.orientation.y = 0.00;
+	marker.pose.orientation.z = 0.00;
+	marker.pose.orientation.w = 1.00;
+
+	// scale
+	marker.scale.x = std::fabs(bb_.Max().X() - bb_.Min().X());
+	marker.scale.y = std::fabs(bb_.Max().Y() - bb_.Min().Y());
+	marker.scale.z = std::fabs(bb_.Max().Z() - bb_.Min().Z());
+
+	marker.color.a = 0.3; // alpha channel
+	marker.color.r = 1.0;
+	marker.color.g = 1.0;
+	marker.color.b = 1.0;
+
+	return (marker);
+
 }
 
 // ------------------------------------------------------------------- //
