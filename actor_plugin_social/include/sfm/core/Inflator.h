@@ -5,8 +5,8 @@
  *      Author: rayvburn
  */
 
-#ifndef INCLUDE_SFM_CORE_INFLATION_H_
-#define INCLUDE_SFM_CORE_INFLATION_H_
+#ifndef INCLUDE_SFM_CORE_INFLATOR_H_
+#define INCLUDE_SFM_CORE_INFLATOR_H_
 
 
 #include <ignition/math/Pose3.hh>
@@ -35,13 +35,13 @@ typedef enum {
 
 // ---------------------------------
 
-class Inflation {
+class Inflator {
 
 public:
 
 	/// helper class which provides methods to calculate distances between
 	/// objects taking their bounding figures into consideration
-	Inflation();
+	Inflator();
 
 	// only other objects bounding box considered
 	ignition::math::Vector3d calculateModelsClosestPoints(const ignition::math::Pose3d &actor_pose,
@@ -91,7 +91,7 @@ public:
 			const ignition::math::Pose3d &object_pose,	const actor::inflation::Ellipse &object_ellipse,
 			const std::string &object_name /* debug only */ ) const;
 
-	virtual ~Inflation();
+	virtual ~Inflator();
 
 private:
 
@@ -109,4 +109,4 @@ private:
 } /* namespace core */
 } /* namespace sfm */
 
-#endif /* INCLUDE_SFM_CORE_INFLATION_H_ */
+#endif /* INCLUDE_SFM_CORE_INFLATOR_H_ */

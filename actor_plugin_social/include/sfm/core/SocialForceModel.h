@@ -20,12 +20,10 @@
 #include "inflation/Circle.h"
 #include "inflation/Box.h"
 
-#include "sfm/core/Inflation.h"
-
-// #include <gazebo/physics/World.hh>
 #include <gazebo-8/gazebo/physics/World.hh>
 #include <gazebo-8/gazebo/physics/Model.hh>
 #include <ignition/math.hh> 		// is it still needed??
+#include <sfm/core/Inflator.h>
 
 // debug closest points
 #include <vector>
@@ -289,7 +287,7 @@ private:
 
 	sfm::core::StaticObjectInteraction interaction_static_type;
 	sfm::core::InflationType inflation_type;
-	sfm::core::Inflation inflate;
+	sfm::core::Inflator inflate;
 
 #ifndef SFM_HOMOGENOUS_POPULATION
 

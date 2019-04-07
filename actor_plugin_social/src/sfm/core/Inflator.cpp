@@ -1,11 +1,11 @@
 /*
- * Inflation.cpp
+ * Inflator.cpp
  *
  *  Created on: Apr 7, 2019
  *      Author: rayvburn
  */
 
-#include "sfm/core/Inflation.h"
+#include <sfm/core/Inflator.h>
 #include "sfm/core/SFMDebug.h"
 
 namespace sfm {
@@ -13,14 +13,14 @@ namespace core {
 
 // ------------------------------------------------------------------- //
 
-Inflation::Inflation() {
+Inflator::Inflator() {
 	// TODO Auto-generated constructor stub
 
 }
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d Inflation::calculateModelsClosestPoints(const ignition::math::Pose3d &actor_pose,
+ignition::math::Vector3d Inflator::calculateModelsClosestPoints(const ignition::math::Pose3d &actor_pose,
 		const ignition::math::Pose3d &object_pose, const actor::inflation::Box &bb) const
 {
 
@@ -141,7 +141,7 @@ ignition::math::Vector3d Inflation::calculateModelsClosestPoints(const ignition:
 
 // ------------------------------------------------------------------- //
 
-std::vector<ignition::math::Vector3d> Inflation::createVerticesVector(const actor::inflation::Box &bb) const
+std::vector<ignition::math::Vector3d> Inflator::createVerticesVector(const actor::inflation::Box &bb) const
 {
 	// 4 vertices only (on-plane)
 	std::vector<ignition::math::Vector3d> temp_container;
@@ -174,7 +174,7 @@ std::vector<ignition::math::Vector3d> Inflation::createVerticesVector(const acto
 
 // ------------------------------------------------------------------- //
 
-std::vector<double> Inflation::calculateLengthToVertices(const ignition::math::Vector3d &actor_pos,
+std::vector<double> Inflator::calculateLengthToVertices(const ignition::math::Vector3d &actor_pos,
 		const std::vector<ignition::math::Vector3d> &vertices_pts) const
 {
 
@@ -188,7 +188,7 @@ std::vector<double> Inflation::calculateLengthToVertices(const ignition::math::V
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculateModelsClosestPoints(
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculateModelsClosestPoints(
 		const ignition::math::Pose3d &actor_pose,  const actor::inflation::Box &actor_box,
 		const ignition::math::Pose3d &object_pose, const actor::inflation::Box &object_box,
 		const std::string &_object_name /* debug only */ ) const
@@ -337,7 +337,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculateModelsClosestPoints(
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculateModelsClosestPoints(
 		const ignition::math::Pose3d &actor_pose, const actor::inflation::Circle &actor_circle,
 		const ignition::math::Pose3d &object_pose,const actor::inflation::Box &object_box,
 		const std::string &object_name /* debug only */) const
@@ -421,7 +421,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculateModelsClosestPoints(
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculateModelsClosestPoints(
 		const ignition::math::Pose3d &actor_pose, const actor::inflation::Ellipse &actor_ellipse,
 		const ignition::math::Pose3d &object_pose,const actor::inflation::Box &object_box,
 		const std::string &object_name /* debug only */) const
@@ -547,7 +547,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflation::calculateIntersectedModelsClosestPoints(
+std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::calculateIntersectedModelsClosestPoints(
 		const ignition::math::Vector3d &actor_pos, const ignition::math::Vector3d &pt_intersect,
 		const IntersectionType &type) const
 {
@@ -637,7 +637,7 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflation::calcul
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculateModelsClosestPoints(
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculateModelsClosestPoints(
 		const ignition::math::Pose3d &actor_pose,
 		const actor::inflation::Circle &actor_circle,
 		const ignition::math::Pose3d &object_pose,
@@ -689,7 +689,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculateModelsClosestPoints(
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculateModelsClosestPoints(
 		const ignition::math::Pose3d &actor_pose,
 		const actor::inflation::Ellipse &actor_ellipse,
 		const ignition::math::Pose3d &object_pose,
@@ -776,7 +776,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflation::calculat
 
 // ------------------------------------------------------------------- //
 
-Inflation::~Inflation() {
+Inflator::~Inflator() {
 	// TODO Auto-generated destructor stub
 }
 
