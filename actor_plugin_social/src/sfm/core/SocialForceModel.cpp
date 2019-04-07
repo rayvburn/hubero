@@ -5,7 +5,7 @@
  *      Author: rayvburn
  */
 
-#include <SocialForceModel.h>
+#include "sfm/core/SocialForceModel.h"
 #include <cmath>		// atan2()
 #include <tgmath.h>		// fabs()
 #include <tuple>		// std::tuple
@@ -87,7 +87,7 @@ unsigned int curr_actor = 3;				// TODO: couldn't catch an event to debug this
 
 // - - - - - - - - - - - - - - - - -
 
-#include "print_info.h"
+#include "../../print_info.h"
 static bool print_info = false;
 static int print_counter = 0;
 

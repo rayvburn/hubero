@@ -28,7 +28,7 @@
 #include "gazebo/physics/physics.hh"
 #include "gazebo/util/system.hh"
 
-#include "SocialForceModel.h"
+#include "sfm/core/SocialForceModel.h"
 
 // -------------------------
 
@@ -70,9 +70,9 @@
 
 // -------------------------
 
-#define INFLATE_BOUNDING_BOX
+//#define INFLATE_BOUNDING_BOX
 //#define INFLATE_BOUNDING_CIRCLE
-//#define INFLATE_BOUNDING_ELLIPSE
+#define INFLATE_BOUNDING_ELLIPSE
 
 // -------------------------
 
