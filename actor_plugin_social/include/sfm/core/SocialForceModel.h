@@ -24,6 +24,7 @@
 #include <gazebo-8/gazebo/physics/Model.hh>
 #include <ignition/math.hh> 		// is it still needed??
 #include <sfm/core/Inflator.h>
+#include <sfm/core/ActorInfoDecoder.h>
 
 // debug closest points
 #include <vector>
@@ -122,17 +123,6 @@ class SocialForceModel {
 public:
 
 	SocialForceModel();
-
-
-	actor::inflation::Circle GetActorBoundingCircle(
-			const unsigned int _actor_id,
-			const std::vector<actor::inflation::Circle> _actors_bounding_circles
-	) const;
-
-	actor::inflation::Ellipse GetActorBoundingEllipse(
-			const unsigned int _actor_id,
-			const std::vector<actor::inflation::Ellipse> _actors_bounding_ellipses
-	) const;
 
 	ignition::math::Angle GetYawMovementDirection(
 			const ignition::math::Pose3d &_actor_pose,
@@ -239,20 +229,6 @@ public:
 		const ignition::math::Vector3d _actor_target, // );
 		const ActorUtils::CommonInfo &_actor_info);
 
-	unsigned int GetActorID(const std::string _name, const std::map<std::string, unsigned int> _map);
-
-	bool IsActor(const std::string &_name);
-
-	ignition::math::Vector3d GetActorVelocity(
-			const unsigned int _actor_id,
-			const std::vector<ignition::math::Vector3d> _actors_velocities
-	);
-
-	actor::inflation::Box GetActorBoundingBox(
-			const unsigned int _actor_id,
-			const std::vector<actor::inflation::Box> _actors_bounding_boxes
-	);
-
 	// debug closest points
 	std::vector<ignition::math::Pose3d> GetClosestPointsVector() const;
 
@@ -288,6 +264,7 @@ private:
 	sfm::core::StaticObjectInteraction interaction_static_type;
 	sfm::core::InflationType inflation_type;
 	sfm::core::Inflator inflate;
+	sfm::core::ActorInfoDecoder actor_decoder;
 
 #ifndef SFM_HOMOGENOUS_POPULATION
 

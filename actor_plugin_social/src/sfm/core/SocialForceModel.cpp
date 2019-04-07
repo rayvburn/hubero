@@ -23,8 +23,6 @@ namespace core {
 #define ACTOR_ID_NOT_FOUND	255u
 #define ACTOR_MODEL_TYPE_ID 	32771
 
-#define BOUNDING_BOX_INTERSECTION_X 0
-#define BOUNDING_BOX_INTERSECTION_Y 1
 
 // - - - - - - - - - - - - - - - - -
 
@@ -94,97 +92,6 @@ void SocialForceModel::Init(const unsigned short int _mass_person,
 
 // ------------------------------------------------------------------- //
 
-unsigned int SocialForceModel::GetActorID(const std::string _name, const std::map<std::string, unsigned int> _map) {
-
-	std::map<std::string, unsigned int>::const_iterator it;
-	it = _map.find(_name);
-	if ( it != _map.end() ) {
-//		std::cout << "GetActorID - " << it->first << "\t id: " << it->second << std::endl;
-	} else {
-		return ACTOR_ID_NOT_FOUND;
-	}
-	return it->second;
-
-}
-
-// ------------------------------------------------------------------- //
-
-bool SocialForceModel::IsActor(const std::string &_name) {
-
-	std::size_t found_pos = _name.find("actor");
-	if ( found_pos != std::string::npos ) {
-		return true;
-	}
-	return false;
-
-}
-
-// ------------------------------------------------------------------- //
-
-//ignition::math::Vector3d SocialForceModel::GetActorVelocity(const gazebo::physics::ModelPtr &_model_ptr,
-//		const std::map<std::string, unsigned int>  _map,
-//		const std::vector<ignition::math::Vector3d> _actors_velocities) {
-
-ignition::math::Vector3d SocialForceModel::GetActorVelocity(unsigned int _actor_id,
-		const std::vector<ignition::math::Vector3d> _actors_velocities) {
-
-	if ( _actor_id == ACTOR_ID_NOT_FOUND ) {
-		return ignition::math::Vector3d(0.0, 0.0, 0.0);
-	}
-	return _actors_velocities[_actor_id];
-
-}
-
-// ------------------------------------------------------------------- //
-
-actor::inflation::Box SocialForceModel::GetActorBoundingBox(
-		const unsigned int _actor_id,
-		const std::vector<actor::inflation::Box> _actors_bounding_boxes
-) {
-
-	if ( _actor_id == ACTOR_ID_NOT_FOUND ) {
-		return actor::inflation::Box();
-	}
-	return _actors_bounding_boxes[_actor_id];
-
-}
-
-// ------------------------------------------------------------------- //
-
-//#ifdef BOUNDING_CIRCLE_CALCULATION
-
-actor::inflation::Circle SocialForceModel::GetActorBoundingCircle(
-		const unsigned int _actor_id,
-		const std::vector<actor::inflation::Circle> _actors_bounding_circles
-) const
-{
-
-	if ( _actor_id == ACTOR_ID_NOT_FOUND ) {
-		return (actor::inflation::Circle());
-	}
-	return _actors_bounding_circles[_actor_id];
-
-}
-
-//#elif defined(BOUNDING_ELLIPSE_CALCULATION)
-
-actor::inflation::Ellipse SocialForceModel::GetActorBoundingEllipse(
-		const unsigned int _actor_id,
-		const std::vector<actor::inflation::Ellipse> _actors_bounding_ellipses
-) const
-{
-
-	if ( _actor_id == ACTOR_ID_NOT_FOUND ) {
-		return (actor::inflation::Ellipse());
-	}
-	return _actors_bounding_ellipses[_actor_id];
-
-}
-
-//#endif
-
-// ------------------------------------------------------------------- //
-
 ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	const gazebo::physics::WorldPtr _world_ptr,
 	const std::string _actor_name,
@@ -192,10 +99,6 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	const ignition::math::Vector3d _actor_velocity,
 	const ignition::math::Vector3d _actor_target,
 	const ActorUtils::CommonInfo &_actor_info)
-
-//	const std::map<std::string, unsigned int>  _map_actor_name_id,
-//	const std::vector<ignition::math::Vector3d> _actors_velocities,
-//	const std::vector<ignition::math::Box> _actors_bounding_boxes)
 
 {
 
@@ -279,21 +182,21 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
 		}
 
-		if ( (is_an_actor = model_ptr->GetType() == ACTOR_MODEL_TYPE_ID) ) {
+		if ( (is_an_actor = actor_decoder.isActor(model_ptr->GetType())) ) {
 
-			// CommonInfo class
-			unsigned int actor_id = this->GetActorID(model_ptr->GetName(), _actor_info.GetNameIDMap());
+			// decoder of the CommonInfo class
+			actor_decoder.setID(model_ptr->GetName(), _actor_info.GetNameIDMap());
 
 			// load data from CommonInfo based on actor's id
-			model_vel     = GetActorVelocity      (actor_id, _actor_info.GetLinearVelocitiesVector());
+			model_vel     = actor_decoder.getVelocity(_actor_info.GetLinearVelocitiesVector());
 
 			// select proper inflation model
 			if ( inflation_type == INFLATION_CIRCLE ) {
-				model_circle  = GetActorBoundingCircle(actor_id, _actor_info.GetBoundingCirclesVector());
+				model_circle  = actor_decoder.getBoundingCircle(_actor_info.GetBoundingCirclesVector());
 			} else if ( inflation_type == INFLATION_ELLIPSE ) {
-				model_ellipse = GetActorBoundingEllipse(actor_id, _actor_info.GetBoundingEllipsesVector());
+				model_ellipse = actor_decoder.getBoundingEllipse(_actor_info.GetBoundingEllipsesVector());
 			} else if ( inflation_type == INFLATION_BOX_ALL_OBJECTS || inflation_type == INFLATION_BOX_OTHER_OBJECTS ) {
-				model_box = GetActorBoundingBox(actor_id, _actor_info.GetBoundingBoxesVector());
+				model_box = actor_decoder.getBoundingBox(_actor_info.GetBoundingBoxesVector());
 			}
 
 		} else {

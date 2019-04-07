@@ -37,11 +37,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 add_library(${PROJECT_NAME} SHARED include/ActorPluginSocial.h src/ActorPluginSocial.cpp)
 add_library(social_force_model 
   include/sfm/core/SocialForceModel.h 
-  include/sfm/core/Inflation.h 
+  include/sfm/core/Inflator.h 
   include/sfm/core/SFMDebug.h
+  include/sfm/core/ActorInfoDecoder.h
   src/sfm/core/SocialForceModel.cpp
-  src/sfm/core/Inflation.cpp
+  src/sfm/core/Inflator.cpp
   src/sfm/core/SFMDebug.cpp
+  src/sfm/core/ActorInfoDecoder.cpp
 )
 
 add_library(social_force_model_utils include/SocialForceModelUtils.h src/SocialForceModelUtils.cpp)
