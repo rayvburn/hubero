@@ -80,7 +80,7 @@ unsigned int curr_actor = 3;				// TODO: couldn't catch an event to debug this
 
 #define ACTOR_ID_NOT_FOUND	255u
 
-#define ACTOR_MODEL_TYPE 	32771
+#define ACTOR_MODEL_TYPE_ID 	32771
 
 #define BOUNDING_BOX_INTERSECTION_X 0
 #define BOUNDING_BOX_INTERSECTION_Y 1
@@ -117,7 +117,10 @@ SocialForceModel::SocialForceModel():
 	fov(2.00), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
 	desired_force_factor(100.0), // desired_force_factor(200.0),
 	interaction_force_factor(3000.0), // interaction_force_factor(6000.0),
-	force_max(2000.0), force_min(300.0) // force_min(800.0)
+	force_max(2000.0), force_min(300.0), // force_min(800.0)
+	inflation_type(INFLATION_ELLIPSE),
+	interaction_static_type(INTERACTION_ELLIPTICAL)
+
 {
 
 	SetParameterValues();
@@ -225,7 +228,7 @@ actor::inflation::Box SocialForceModel::GetActorBoundingBox(
 
 // ------------------------------------------------------------------- //
 
-#ifdef BOUNDING_CIRCLE_CALCULATION
+//#ifdef BOUNDING_CIRCLE_CALCULATION
 
 actor::inflation::Circle SocialForceModel::GetActorBoundingCircle(
 		const unsigned int _actor_id,
@@ -240,7 +243,7 @@ actor::inflation::Circle SocialForceModel::GetActorBoundingCircle(
 
 }
 
-#elif defined(BOUNDING_ELLIPSE_CALCULATION)
+//#elif defined(BOUNDING_ELLIPSE_CALCULATION)
 
 actor::inflation::Ellipse SocialForceModel::GetActorBoundingEllipse(
 		const unsigned int _actor_id,
@@ -255,7 +258,7 @@ actor::inflation::Ellipse SocialForceModel::GetActorBoundingEllipse(
 
 }
 
-#endif
+//#endif
 
 // ------------------------------------------------------------------- //
 
@@ -283,12 +286,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	curr_actor = this->GetActorID(_actor_name, _actor_info.GetNameIDMap());
 #endif
 
-//	unsigned int actor_id = this->GetActorID(_actor_name, _map_actor_name_id);
-//	if ( actor_id == ACTOR_ID_NOT_FOUND ) {
-//		return ignition::math::Vector3d(0.0, 0.0, 0.0);
-//	}
-
-	// easier to debug
+	// easier to debug single actor
 	if ( _actor_name == "actor1" ) {
 
 #ifndef SILENT_
@@ -314,19 +312,17 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 //	}
 
 
-	// allocate all variables needed in loop
-	ignition::math::Vector3d f_alpha = this->GetInternalAcceleration(_actor_pose,
-																	 _actor_velocity,
-																	 _actor_target);
+	// allocate variables needed in loop
+	ignition::math::Vector3d f_alpha = GetInternalAcceleration(_actor_pose, _actor_velocity, _actor_target);
 	ignition::math::Vector3d f_interaction_total(0.0, 0.0, 0.0);
 	ignition::math::Vector3d f_alpha_beta(0.0, 0.0, 0.0);
 
 #ifdef CALCULATE_INTERACTION
+
 	/* model_vel contains model's velocity (world's object or actor) - for the actor this is set differently
 	 * it was impossible to set actor's linear velocity by setting it by the model's class method */
 	ignition::math::Vector3d model_vel;
 	actor::inflation::Box model_box;
-	//ignition::math::Box model_box;
 	actor::inflation::Circle model_circle;
 	actor::inflation::Ellipse model_ellipse;
 
@@ -360,216 +356,132 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
 		}
 
-		//if ( (is_an_actor = this->IsActor(model_ptr->GetName())) ) {
-
-		if ( (is_an_actor = model_ptr->GetType() == ACTOR_MODEL_TYPE) ) {
-
-//			unsigned int actor_id = this->GetActorID(_model_ptr->GetName(), _map);
-//			model_vel = GetActorVelocity(model_ptr, _map_actor_name_id, _actors_velocities);
-
-			// no CommonInfo class
-//			unsigned int actor_id = this->GetActorID(model_ptr->GetName(), _map_actor_name_id);
-//			model_vel = GetActorVelocity(actor_id, _actors_velocities);
-//			model_box = GetActorBoundingBox(actor_id, _actors_bounding_boxes);
+		if ( (is_an_actor = model_ptr->GetType() == ACTOR_MODEL_TYPE_ID) ) {
 
 			// CommonInfo class
 			unsigned int actor_id = this->GetActorID(model_ptr->GetName(), _actor_info.GetNameIDMap());
 
-			model_vel     = this->GetActorVelocity      (actor_id, _actor_info.GetLinearVelocitiesVector());
-			#ifdef BOUNDING_CIRCLE_CALCULATION
-			model_circle  = this->GetActorBoundingCircle(actor_id, _actor_info.GetBoundingCirclesVector());
-			#elif defined(BOUNDING_ELLIPSE_CALCULATION)
-			model_ellipse = this->GetActorBoundingEllipse(actor_id, _actor_info.GetBoundingEllipsesVector());
-			#endif
-//			actor::inflation::Box box_temp;
-//			box_temp = this->GetActorBoundingBox   (actor_id, _actor_info.GetBoundingBoxesVector());
-//			model_box = box_temp.getBox();
+			// load data from CommonInfo based on actor's id
+			model_vel     = GetActorVelocity      (actor_id, _actor_info.GetLinearVelocitiesVector());
 
-			//model_box     = this->GetActorBoundingBox   (actor_id, _actor_info.GetBoundingBoxesVector());
+			// select proper inflation model
+			if ( inflation_type == INFLATION_CIRCLE ) {
+				model_circle  = GetActorBoundingCircle(actor_id, _actor_info.GetBoundingCirclesVector());
+			} else if ( inflation_type == INFLATION_ELLIPSE ) {
+				model_ellipse = GetActorBoundingEllipse(actor_id, _actor_info.GetBoundingEllipsesVector());
+			} else if ( inflation_type == INFLATION_BOX_ALL_OBJECTS || inflation_type == INFLATION_BOX_OTHER_OBJECTS ) {
+				model_box = GetActorBoundingBox(actor_id, _actor_info.GetBoundingBoxesVector());
+			}
 
 		} else {
 
 			model_vel = model_ptr->WorldLinearVel();
-			//model_box = model_ptr->BoundingBox();
 			model_box.setBox(model_ptr->BoundingBox()); // conversion
 
 		}
 
-#ifdef BOUNDING_BOX_CALCULATION
+		// ============================================================================
 
-		// model_closest_point i.e. closest to the actor or the actor's bounding box
-
-	#ifdef BOUNDING_BOX_ONLY_FROM_OTHER_OBJECTS
-
-		ignition::math::Vector3d model_closest_point = this->GetModelPointClosestToActor( 	_actor_pose,
-																							//model_ptr->BoundingBox(),
-																							model_box,
-																							model_ptr->GetName(),
-																							model_ptr->WorldPose() );
-
-		// what if velocity is actually non-zero but Gazebo sees 0?
-		f_alpha_beta = this->GetInteractionComponent(	_actor_pose,
-														_actor_velocity,
-														model_ptr->WorldPose(),
-														model_vel,
-														model_closest_point,
-														is_an_actor);
-
-	#elif defined(BOUNDING_BOX_ALL_OBJECTS)
-
+		// model_closest i.e. closest to an actor or an actor's bounding
 		ignition::math::Pose3d actor_closest_to_model_pose;
-		ignition::math::Vector3d model_closest_point;
-		std::tie(actor_closest_to_model_pose, model_closest_point) = this->GetActorModelBBsClosestPoints(_actor_pose,
-																										 _actor_info.GetBoundingBox(),
-																										 model_ptr->WorldPose(),
-																										 model_box,
-																										 model_ptr->GetName() );
-		// what if velocity is actually non-zero but Gazebo sees 0?
-		f_alpha_beta = this->GetInteractionComponent(	actor_closest_to_model_pose, // _actor_pose,
-														_actor_velocity,
-														model_ptr->WorldPose(),
-														model_vel,
-														model_closest_point,
-														is_an_actor);
+		ignition::math::Pose3d model_closest_point_pose;
 
-	#endif
+//		std::cout << "START DEBUGGING\n\t" << debug_current_actor_name << "\t\t" << debug_current_object_name << std::endl;
+//		std::cout << "\tinitial actor_pose: " << _actor_pose << "\tmodel_pose: " << model_ptr->WorldPose() << std::endl;
 
-		if ( print_info ) {
-			std::cout << "actor_center: " << _actor_pose.Pos() << "\tobstacle_closest_pt: " << model_closest_point << "\tdist: " << (model_closest_point-_actor_pose.Pos()).Length() << std::endl;
-		}
+		// calculate closest points
+		switch(inflation_type) {
 
-#elif defined (BOUNDING_CIRCLE_CALCULATION) || defined(BOUNDING_ELLIPSE_CALCULATION)
+		case(INFLATION_BOX_OTHER_OBJECTS):
 
+//				std::cout << "\tINFLATION - BOX - OTHER OBJECTS" << std::endl;
+				actor_closest_to_model_pose = _actor_pose;
+				model_closest_point_pose.Pos() = inflate.calculateModelsClosestPoints(_actor_pose, model_ptr->WorldPose(), model_box);
+				break;
 
-		ignition::math::Pose3d actor_closest_to_model_pose;
-		ignition::math::Vector3d model_closest_point;
+		case(INFLATION_BOX_ALL_OBJECTS):
 
-		if ( is_an_actor ) {
+//				std::cout << "\tINFLATION - BOX - ALL OBJECTS" << std::endl;
+				std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
+						inflate.calculateModelsClosestPoints(_actor_pose, _actor_info.GetBoundingBox(),
+															 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
+				break;
 
-			#ifdef BOUNDING_CIRCLE_CALCULATION
-			std::tie(actor_closest_to_model_pose, model_closest_point) = this->GetActorModelBBsClosestPoints(_actor_pose,
-																											 _actor_info.GetBoundingCircle(),
-																											 model_ptr->WorldPose(),
-																											 model_circle,
-																											 model_ptr->GetName() );
-			#elif defined(BOUNDING_ELLIPSE_CALCULATION)
-			std::tie(actor_closest_to_model_pose, model_closest_point) = this->GetActorModelBBsClosestPoints(_actor_pose,
-																											 _actor_info.GetBoundingEllipse(),
-																											 model_ptr->WorldPose(),
-																											 model_ellipse,
-																											 model_ptr->GetName() );
-			std::cout << "\n\n\nINFLATION CLASS TEST ==== 2 ACTORS\nOLD";
-			std::cout << "\tactor_closest: " << actor_closest_to_model_pose << "\tmodel_closest: " << model_closest_point << std::endl;
-			std::tie(actor_closest_to_model_pose, model_closest_point) = inflate.calculateModelsClosestPoints(_actor_pose,
-																											 _actor_info.GetBoundingEllipse(),
-																											 model_ptr->WorldPose(),
-																											 model_ellipse,
-																											 model_ptr->GetName() );
-			std::cout << "\nNEW";
-			std::cout << "\tactor_closest: " << actor_closest_to_model_pose << "\tmodel_closest: " << model_closest_point << std::endl;
-			std::cout << "\n\n\n\n\n\n";
-			#endif
+		case(INFLATION_CIRCLE):
 
-		} else {
+				if ( is_an_actor ) {
+//					std::cout << "\tINFLATION - CIRCLE - actor" << std::endl;
+					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
+							inflate.calculateModelsClosestPoints(_actor_pose, _actor_info.GetBoundingCircle(),
+																 model_ptr->WorldPose(), model_circle, model_ptr->GetName() );
+				} else {
+//					std::cout << "\tINFLATION - CIRCLE - non-actor" << std::endl;
+					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
+							inflate.calculateModelsClosestPoints(_actor_pose, _actor_info.GetBoundingCircle(),
+																 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
+				}
+				break;
 
-			#ifdef BOUNDING_CIRCLE_CALCULATION
-			std::tie(actor_closest_to_model_pose, model_closest_point) = this->GetActorModelBBsClosestPoints(_actor_pose,
-																											 _actor_info.GetBoundingCircle(),
-																											 model_ptr->WorldPose(),
-																											 model_box,
-																											 model_ptr->GetName() );
-			#elif defined(BOUNDING_ELLIPSE_CALCULATION)
-			std::tie(actor_closest_to_model_pose, model_closest_point) = this->GetActorModelBBsClosestPoints(_actor_pose,
-																											 _actor_info.GetBoundingEllipse(),
-																											 model_ptr->WorldPose(),
-																											 model_box,
-																											 model_ptr->GetName() );
+		case(INFLATION_ELLIPSE):
 
-			std::cout << "\n\n\nINFLATION CLASS TEST ==== ACTOR AND BOX\nOLD";
-			std::cout << "\tactor_closest: " << actor_closest_to_model_pose << "\tmodel_closest: " << model_closest_point << std::endl;
-			std::tie(actor_closest_to_model_pose, model_closest_point) = inflate.calculateModelsClosestPoints(_actor_pose,
-																											 _actor_info.GetBoundingEllipse(),
-																											 model_ptr->WorldPose(),
-																											 model_box,
-																											 model_ptr->GetName() );
-			std::cout << "\nNEW";
-			std::cout << "\tactor_closest: " << actor_closest_to_model_pose << "\tmodel_closest: " << model_closest_point << std::endl;
-			std::cout << "\n\n\n\n\n\n";
+				if ( is_an_actor ) {
+//					std::cout << "\tINFLATION - ELLIPSE - actor" << std::endl;
+					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
+							inflate.calculateModelsClosestPoints(_actor_pose, _actor_info.GetBoundingEllipse(),
+																 model_ptr->WorldPose(), model_ellipse, model_ptr->GetName() );
+				} else {
+//					std::cout << "\tINFLATION - ELLIPSE - non actor" << std::endl;
+					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
+							inflate.calculateModelsClosestPoints(_actor_pose, _actor_info.GetBoundingEllipse(),
+																 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
 
-			#endif
+				}
+				break;
+
+		default:
+
+//				std::cout << "\tINFLATION - DEFAULT" << std::endl;
+				actor_closest_to_model_pose = _actor_pose;
+				model_closest_point_pose = model_ptr->WorldPose();
+				break;
 
 		}
 
-		ignition::math::Pose3d model_pose_shifted = model_ptr->WorldPose();
-		model_pose_shifted.Pos() = model_closest_point;
-		#ifdef DEBUG_BOUNDING_CIRCLE
-		std::cout << "AFTER: actor pos: " << actor_closest_to_model_pose << "\t" << model_ptr->GetName() << "'s pos: " << model_closest_point << std::endl;
-		#endif
+//		std::cout << "\tFINAL actor_pose: " << actor_closest_to_model_pose << "\tmodel_pose: " << model_closest_point_pose << std::endl;
+
+		// debug txt
+		if ( print_info ) { std::cout << "actor_center: " << _actor_pose.Pos() << "\tobstacle_closest_pt: " << model_closest_point_pose.Pos() << "\tdist: " << (model_closest_point_pose.Pos()-_actor_pose.Pos()).Length() << std::endl; }
 
 		// debug closest points
-		closest_points.push_back(model_pose_shifted);
+		closest_points.push_back(model_closest_point_pose);
 		closest_points.push_back(actor_closest_to_model_pose);
 
-		#if defined(INTERACTION_FORCE_STATIC_OBJ_V2011)
+		// based on a parameter and an object type - calculate a force from a static object properly
+		if ( is_an_actor || interaction_static_type == INTERACTION_REPULSIVE_EVASIVE ) {
 
-		// what if velocity is actually non-zero but Gazebo sees 0?
-		f_alpha_beta = this->GetInteractionComponent(	actor_closest_to_model_pose,
-														_actor_velocity,
-														model_pose_shifted, // model_ptr->WorldPose(),
-														model_vel,
-														model_closest_point,
-														is_an_actor);
+//			std::cout << "\tf_alpha_beta - NON STATIC" << std::endl;
+			// calculate interaction force
+			f_alpha_beta = GetInteractionComponent(	actor_closest_to_model_pose, _actor_velocity,
+								model_ptr->WorldPose(), model_vel, model_closest_point_pose.Pos(), is_an_actor);
 
-		#elif defined(INTERACTION_FORCE_STATIC_OBJ_V2014)
-		// simplified version - actor or not -> no other dynamic objects considered
-		if ( is_an_actor) {
-			f_alpha_beta = this->GetInteractionComponent(	actor_closest_to_model_pose,
-															_actor_velocity,
-															model_pose_shifted, // model_ptr->WorldPose(),
-															model_vel,
-															model_closest_point,
-															is_an_actor);
 		} else {
-			// TODO: dt arbitrary ATM!
-			f_alpha_beta = this->GetForceFromStaticObstacle(actor_closest_to_model_pose,
-															_actor_velocity, model_pose_shifted, 0.001);
-		}
-		#endif
-#else
-		ignition::math::Vector3d model_closest_point(0.0f, 0.0f, 0.0f);
-		// --------------------------------- NO BOUNDING CIRCLE USED ---------------------------------
-		#if defined(INTERACTION_FORCE_STATIC_OBJ_V2011)
 
-		f_alpha_beta = this->GetInteractionComponent(	_actor_pose,
-														_actor_velocity,
-														model_ptr->WorldPose(),
-														model_vel,
-														model_closest_point, // not used then
-														is_an_actor);
-		#elif defined(INTERACTION_FORCE_STATIC_OBJ_V2014)
-		// simplified version - actor or not -> no other dynamic objects considered
-		if ( is_an_actor) {
-			f_alpha_beta = this->GetInteractionComponent(	_actor_pose,
-															_actor_velocity,
-															model_ptr->WorldPose(),
-															model_vel,
-															model_closest_point,
-															is_an_actor);
-		} else {
-			// TODO: dt arbitrary ATM!
-			f_alpha_beta = this->GetForceFromStaticObstacle(_actor_pose,
-															_actor_velocity, model_ptr->WorldPose(), 0.001);
-		}
-		#endif
+//			std::cout << "\tf_alpha_beta - STATIC" << std::endl;
+			// FIXME: dt arbitrary ATM!
+			f_alpha_beta = GetForceFromStaticObstacle(actor_closest_to_model_pose, _actor_velocity,
+													  model_closest_point_pose, 0.001);
 
-#endif
+		}
+
+//		std::cout << "\n\n\n" << std::endl;
+
+		// ============================================================================
 
 #ifdef DEBUG_OSCILLATIONS
 		if ( _actor_name == "actor1" && model_ptr->GetName() == "table1" ) {
 			std::cout << "\tactor1-table1 interaction vector: " << f_alpha_beta.X() << "\t" << f_alpha_beta.Y() << std::endl;
 		}
 #endif
-
 
 		/* Kind of a hack connected with very strong repulsion when actors are close to each other
 		 * whereas in bigger distances the force is quite weak;

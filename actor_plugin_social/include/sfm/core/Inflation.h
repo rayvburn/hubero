@@ -26,10 +26,14 @@
 namespace sfm {
 namespace core {
 
+// ---------------------------------
+
 typedef enum {
 	INTERSECTION_ACTORS = 0,
 	INTERSECTION_ACTOR_OBJECT
 } IntersectionType;
+
+// ---------------------------------
 
 class Inflation {
 

@@ -72,8 +72,8 @@
 //#define BOUNDING_BOX_CALCULATION
 
 #ifdef BOUNDING_BOX_CALCULATION
-	//#define BOUNDING_BOX_ONLY_FROM_OTHER_OBJECTS
-	#define BOUNDING_BOX_ALL_OBJECTS
+	#define BOUNDING_BOX_ONLY_FROM_OTHER_OBJECTS
+	//#define BOUNDING_BOX_ALL_OBJECTS
 #endif
 
 //#define BOUNDING_CIRCLE_CALCULATION	// bounding circle around actors only
@@ -97,6 +97,22 @@
 
 namespace sfm {
 namespace core {
+
+// ---------------------------------
+
+typedef enum {
+	INTERACTION_ELLIPTICAL = 0,		// a.k.a. v2014
+	INTERACTION_REPULSIVE_EVASIVE	// a.k.a. v2011
+} StaticObjectInteraction;
+
+// ---------------------------------
+
+typedef enum {
+	INFLATION_BOX_OTHER_OBJECTS = 0,
+	INFLATION_BOX_ALL_OBJECTS,
+	INFLATION_CIRCLE,
+	INFLATION_ELLIPSE
+} InflationType;
 
 // ---------------------------------
 
@@ -160,21 +176,21 @@ public:
 	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> GetClosestPointsOfIntersectedModelsActorObject(
 			const ignition::math::Vector3d &_actor_pos, const ignition::math::Vector3d &_bb_intersection_pt) const;
 
-#ifdef BOUNDING_CIRCLE_CALCULATION
+//#ifdef BOUNDING_CIRCLE_CALCULATION
 
 	actor::inflation::Circle GetActorBoundingCircle(
 			const unsigned int _actor_id,
 			const std::vector<actor::inflation::Circle> _actors_bounding_circles
 	) const;
 
-#elif defined (BOUNDING_ELLIPSE_CALCULATION)
+//#elif defined (BOUNDING_ELLIPSE_CALCULATION)
 
 	actor::inflation::Ellipse GetActorBoundingEllipse(
 			const unsigned int _actor_id,
 			const std::vector<actor::inflation::Ellipse> _actors_bounding_ellipses
 	) const;
 
-#endif
+//#endif
 
 #if defined(BOUNDING_CIRCLE_CALCULATION)
 
@@ -418,7 +434,8 @@ private:
 
 	bool print_data;
 
-
+	sfm::core::StaticObjectInteraction interaction_static_type;
+	sfm::core::InflationType inflation_type;
 	sfm::core::Inflation inflate;
 
 #ifdef DEBUG_TF
