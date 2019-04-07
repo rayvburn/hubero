@@ -20,6 +20,8 @@
 #include "inflation/Circle.h"
 #include "inflation/Box.h"
 
+#include "sfm/core/Inflation.h"
+
 // #include <gazebo/physics/World.hh>
 #include <gazebo-8/gazebo/physics/World.hh>
 #include <gazebo-8/gazebo/physics/Model.hh>
@@ -387,6 +389,9 @@ private:
 			//const double &_angle_beta
 
 
+
+
+
 	static constexpr double BOUNDING_BOX_Z_FIXED = 0.5; // on-plane objects considered
 
 	// debug closest points
@@ -412,6 +417,9 @@ private:
 	float interaction_force_factor;
 
 	bool print_data;
+
+
+	sfm::core::Inflation inflate;
 
 #ifdef DEBUG_TF
 	ignition::math::Pose3d actor_current_pose;	// needed to reference the tf to

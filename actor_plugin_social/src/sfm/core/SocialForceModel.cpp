@@ -458,6 +458,16 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 																											 model_ptr->WorldPose(),
 																											 model_ellipse,
 																											 model_ptr->GetName() );
+			std::cout << "\n\n\nINFLATION CLASS TEST ==== 2 ACTORS\nOLD";
+			std::cout << "\tactor_closest: " << actor_closest_to_model_pose << "\tmodel_closest: " << model_closest_point << std::endl;
+			std::tie(actor_closest_to_model_pose, model_closest_point) = inflate.calculateModelsClosestPoints(_actor_pose,
+																											 _actor_info.GetBoundingEllipse(),
+																											 model_ptr->WorldPose(),
+																											 model_ellipse,
+																											 model_ptr->GetName() );
+			std::cout << "\nNEW";
+			std::cout << "\tactor_closest: " << actor_closest_to_model_pose << "\tmodel_closest: " << model_closest_point << std::endl;
+			std::cout << "\n\n\n\n\n\n";
 			#endif
 
 		} else {
@@ -474,6 +484,18 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 																											 model_ptr->WorldPose(),
 																											 model_box,
 																											 model_ptr->GetName() );
+
+			std::cout << "\n\n\nINFLATION CLASS TEST ==== ACTOR AND BOX\nOLD";
+			std::cout << "\tactor_closest: " << actor_closest_to_model_pose << "\tmodel_closest: " << model_closest_point << std::endl;
+			std::tie(actor_closest_to_model_pose, model_closest_point) = inflate.calculateModelsClosestPoints(_actor_pose,
+																											 _actor_info.GetBoundingEllipse(),
+																											 model_ptr->WorldPose(),
+																											 model_box,
+																											 model_ptr->GetName() );
+			std::cout << "\nNEW";
+			std::cout << "\tactor_closest: " << actor_closest_to_model_pose << "\tmodel_closest: " << model_closest_point << std::endl;
+			std::cout << "\n\n\n\n\n\n";
+
 			#endif
 
 		}
