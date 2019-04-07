@@ -71,8 +71,8 @@
 // -------------------------
 
 //#define INFLATE_BOUNDING_BOX
-//#define INFLATE_BOUNDING_CIRCLE
-#define INFLATE_BOUNDING_ELLIPSE
+#define INFLATE_BOUNDING_CIRCLE
+//#define INFLATE_BOUNDING_ELLIPSE
 
 // -------------------------
 
@@ -200,7 +200,8 @@ namespace gazebo
 
 #elif defined(INFLATE_BOUNDING_CIRCLE)
 
-    private: ActorUtils::BoundingCircle bounding_circle;
+    //private: ActorUtils::BoundingCircle bounding_circle;
+    private: actor::inflation::Circle bounding_circle;
 
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
 

@@ -74,7 +74,7 @@
 	// #define BOUNDING_BOX_ALL_OBJECTS
 #endif
 
-//#define BOUNDING_CIRCLE_CALCULATION	// bounding circle around actors only
+#define BOUNDING_CIRCLE_CALCULATION	// bounding circle around actors only
 									// BOUNDING CIRCLE provides smoother force transitions while actor moves around obstacles
 									// compared to bounding box
 #define BOUNDING_ELLIPSE_CALCULATION
@@ -159,9 +159,9 @@ public:
 
 #ifdef BOUNDING_CIRCLE_CALCULATION
 
-	ActorUtils::BoundingCircle GetActorBoundingCircle(
+	actor::inflation::Circle GetActorBoundingCircle(
 			const unsigned int _actor_id,
-			const std::vector<ActorUtils::BoundingCircle> _actors_bounding_circles
+			const std::vector<actor::inflation::Circle> _actors_bounding_circles
 	) const;
 
 #elif defined (BOUNDING_ELLIPSE_CALCULATION)
@@ -177,17 +177,17 @@ public:
 
 	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
 			const ignition::math::Pose3d &_actor_pose,
-			const ActorUtils::BoundingCircle &_actor_bc,
+			const actor::inflation::Circle &_actor_bc,
 			const ignition::math::Pose3d &_object_pose,
-			const ignition::math::Box &_object_bb,
+			const actor::inflation::Box &_object_bb,
 			const std::string &_object_name // debug only
 			) const;
 
 	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
 			const ignition::math::Pose3d &_actor_pose,
-			const ActorUtils::BoundingCircle &_actor_bc,
+			const actor::inflation::Circle &_actor_bc,
 			const ignition::math::Pose3d &_object_pose,
-			const ActorUtils::BoundingCircle &_object_bc,
+			const actor::inflation::Circle &_object_bc,
 			const std::string &_object_name // debug only
 			) const;
 

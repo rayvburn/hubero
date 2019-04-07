@@ -130,8 +130,8 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 #if	defined(INFLATE_BOUNDING_BOX)
 	actor_common_info.SetBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
 #elif defined(INFLATE_BOUNDING_CIRCLE)
-	bounding_circle.SetCenter(this->pose_actor.Pos());
-	bounding_circle.SetRadius(0.75f);
+	bounding_circle.setCenter(this->pose_actor.Pos());
+	bounding_circle.setRadius(0.75f);
 	actor_common_info.SetBoundingCircle(bounding_circle);
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
 	bounding_ellipse.setPosition(this->pose_actor.Pos());
@@ -432,7 +432,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	ros_interface.PublishActorTf(this->pose_actor);
 	ros_interface.PublishTargetTf(this->target);
 	#ifdef INFLATE_BOUNDING_CIRCLE
-	ros_interface.PublishMarker(bounding_circle.GetMarkerConversion());
+	ros_interface.PublishMarker(bounding_circle.getMarkerConversion());
 	#elif defined(INFLATE_BOUNDING_BOX)
 	ros_interface.PublishMarker(sfm_vis.GetBBMarkerConversion(actor_common_info.GetBoundingBox()));
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
@@ -1343,7 +1343,7 @@ void ActorPlugin::VisualizeForceField() {
 		#if	defined(INFLATE_BOUNDING_BOX)
 				this->actor_common_info.SetBoundingBox( this->GenerateBoundingBox(pose) );
 		#elif defined(INFLATE_BOUNDING_CIRCLE)
-				this->bounding_circle.SetCenter(pose.Pos());
+				this->bounding_circle.setCenter(pose.Pos());
 				this->actor_common_info.SetBoundingCircle(this->bounding_circle);
 		#elif defined(INFLATE_BOUNDING_ELLIPSE)
 				ignition::math::Angle yaw_world( this->pose_actor.Rot().Yaw() - IGN_PI_2);
@@ -1407,7 +1407,7 @@ double ActorPlugin::PrepareForUpdate(const common::UpdateInfo &_info) {
 #if	defined(INFLATE_BOUNDING_BOX)
 	actor_common_info.SetBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
 #elif defined(INFLATE_BOUNDING_CIRCLE)
-	bounding_circle.SetCenter(this->pose_actor.Pos());
+	bounding_circle.setCenter(this->pose_actor.Pos());
 	actor_common_info.SetBoundingCircle(bounding_circle);
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
 	ignition::math::Angle yaw_world( this->pose_actor.Rot().Yaw() - IGN_PI_2);

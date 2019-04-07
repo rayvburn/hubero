@@ -226,14 +226,14 @@ actor::inflation::Box SocialForceModel::GetActorBoundingBox(
 
 #ifdef BOUNDING_CIRCLE_CALCULATION
 
-ActorUtils::BoundingCircle SocialForceModel::GetActorBoundingCircle(
+actor::inflation::Circle SocialForceModel::GetActorBoundingCircle(
 		const unsigned int _actor_id,
-		const std::vector<ActorUtils::BoundingCircle> _actors_bounding_circles
+		const std::vector<actor::inflation::Circle> _actors_bounding_circles
 ) const
 {
 
 	if ( _actor_id == ACTOR_ID_NOT_FOUND ) {
-		return (ActorUtils::BoundingCircle());
+		return (actor::inflation::Circle());
 	}
 	return _actors_bounding_circles[_actor_id];
 
@@ -859,9 +859,9 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 // ACTOR -> STATIC OBJECT | BoundingCircle
 std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::GetActorModelBBsClosestPoints(
 		const ignition::math::Pose3d &_actor_pose,
-		const ActorUtils::BoundingCircle &_actor_bc,
+		const actor::inflation::Circle &_actor_bc,
 		const ignition::math::Pose3d &_object_pose,
-		const ignition::math::Box &_object_bb,
+		const actor::inflation::Box &_object_bb,
 		const std::string &_object_name // debug only
 		) const
 {
@@ -884,8 +884,8 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	// object's bounding box point that is closest to actor's bounding box
 	/* create the line from the actor's center to the object's center and check
 	 * the intersection point of that line with the object's bounding box */
-	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _object_pose.Pos().X(), _object_pose.Pos().Y(), _object_bb.Center().Z() );
-	std::tie(does_intersect, dist_intersect, point_intersect) = _object_bb.Intersect(line);
+	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _object_pose.Pos().X(), _object_pose.Pos().Y(), _object_bb.getCenter().Z() );
+	std::tie(does_intersect, point_intersect) = _object_bb.doesIntersect(line);
 
 	/* `does_intersect` flag check gave up here (will be false if actor's fully within
 	 * object's BB and true otherwise (most cases) */
@@ -918,7 +918,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 #endif
 
 	// intersection of the actor's circle
-	actor_pose_shifted.Pos() = _actor_bc.GetIntersection(point_intersect);
+	actor_pose_shifted.Pos() = _actor_bc.getIntersection(point_intersect);
 
 #ifdef DEBUG_CLOSEST_POINTS
 	if ( _object_name == "table1" ) {
@@ -942,9 +942,9 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 // ACTOR -> ACTOR | BoundingCircle
 std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::GetActorModelBBsClosestPoints(
 		const ignition::math::Pose3d &_actor_pose,
-		const ActorUtils::BoundingCircle &_actor_bc,
+		const actor::inflation::Circle &_actor_bc,
 		const ignition::math::Pose3d &_object_pose,
-		const ActorUtils::BoundingCircle &_object_bc,
+		const actor::inflation::Circle &_object_bc,
 		const std::string &_object_name // debug only
 		) const
 {
@@ -952,10 +952,10 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	/* BoundingCircle and BoundingCircle -> 2 actors */
 	// intersection of the 1st actor's circle (currently processed)
 	ignition::math::Pose3d actor_pose_shifted = _actor_pose;
-	actor_pose_shifted.Pos() = _actor_bc.GetIntersection(_object_pose.Pos());
+	actor_pose_shifted.Pos() = _actor_bc.getIntersection(_object_pose.Pos());
 
 	// intersection of the 2nd actor's circle (another one)
-	ignition::math::Vector3d object_pos_shifted = _object_bc.GetIntersection(_actor_pose.Pos());
+	ignition::math::Vector3d object_pos_shifted = _object_bc.getIntersection(_actor_pose.Pos());
 
 	/* Let's check whether the bounding circles are not intruding each other -
 	 * compare the length of a vector from actor's center to the object's position
