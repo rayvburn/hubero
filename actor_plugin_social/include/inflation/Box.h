@@ -23,6 +23,7 @@ class Box {
 public:
 
 	Box();
+	Box(const ignition::math::Box &bb);
 	void init(const double &x_half_len, const double &y_half_len, const double &z_half_len);
 	void updatePose(const ignition::math::Pose3d &new_pose);
 	bool doesContain(const ignition::math::Vector3d &pt) const;

@@ -210,13 +210,13 @@ ignition::math::Vector3d SocialForceModel::GetActorVelocity(unsigned int _actor_
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Box SocialForceModel::GetActorBoundingBox(
+actor::inflation::Box SocialForceModel::GetActorBoundingBox(
 		const unsigned int _actor_id,
-		const std::vector<ignition::math::Box> _actors_bounding_boxes
+		const std::vector<actor::inflation::Box> _actors_bounding_boxes
 ) {
 
 	if ( _actor_id == ACTOR_ID_NOT_FOUND ) {
-		return ignition::math::Box(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+		return actor::inflation::Box();
 	}
 	return _actors_bounding_boxes[_actor_id];
 
@@ -241,14 +241,14 @@ ActorUtils::BoundingCircle SocialForceModel::GetActorBoundingCircle(
 
 #elif defined(BOUNDING_ELLIPSE_CALCULATION)
 
-ActorUtils::BoundingEllipse SocialForceModel::GetActorBoundingEllipse(
+actor::inflation::Ellipse SocialForceModel::GetActorBoundingEllipse(
 		const unsigned int _actor_id,
-		const std::vector<ActorUtils::BoundingEllipse> _actors_bounding_ellipses
+		const std::vector<actor::inflation::Ellipse> _actors_bounding_ellipses
 ) const
 {
 
 	if ( _actor_id == ACTOR_ID_NOT_FOUND ) {
-		return (ActorUtils::BoundingEllipse());
+		return (actor::inflation::Ellipse());
 	}
 	return _actors_bounding_ellipses[_actor_id];
 
@@ -324,9 +324,9 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	/* model_vel contains model's velocity (world's object or actor) - for the actor this is set differently
 	 * it was impossible to set actor's linear velocity by setting it by the model's class method */
 	ignition::math::Vector3d model_vel;
-	ignition::math::Box model_box;
-	ActorUtils::BoundingCircle model_circle;
-	ActorUtils::BoundingEllipse model_ellipse;
+	actor::inflation::Box model_box;
+	actor::inflation::Circle model_circle;
+	actor::inflation::Ellipse model_ellipse;
 
 	/* below flag is used as a workaround for the problem connected with being unable to set actor's
 	 * velocity and acceleration in the gazebo::physics::WorldPtr */
@@ -384,7 +384,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		} else {
 
 			model_vel = model_ptr->WorldLinearVel();
-			model_box = model_ptr->BoundingBox();
+			model_box = actor::inflation::Box(model_ptr->BoundingBox()); // conversion
 
 		}
 
@@ -999,9 +999,9 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 // ACTOR -> STATIC OBJECT | BoundingEllipse
 std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::GetActorModelBBsClosestPoints(
 		const ignition::math::Pose3d &_actor_pose,
-		const ActorUtils::BoundingEllipse &_actor_be,
+		const actor::inflation::Ellipse &_actor_be,
 		const ignition::math::Pose3d &_object_pose,
-		const ignition::math::Box &_object_bb,
+		const actor::inflation::Box &_object_bb,
 		const std::string &_object_name // debug only
 		) const
 {
@@ -1030,9 +1030,9 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	// object's bounding box point that is closest to actor's bounding box
 	/* create the line from the actor's center to the object's center and check
 	 * the intersection point of that line with the object's bounding box */
-	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _object_pose.Pos().X(), _object_pose.Pos().Y(), _object_bb.Center().Z() );
+	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _object_pose.Pos().X(), _object_pose.Pos().Y(), _object_bb.getCenter().Z() );
 	bool intersects = false;
-	std::tie(intersects, std::ignore, point_intersect) = _object_bb.Intersect(line);
+	std::tie(intersects, point_intersect) = _object_bb.doesIntersect(line);
 
 	/* bb's Intersect returns intersection point whose X and Y are equal
 	 * to actor's X and Y thus 0 distance between points and no solutions
@@ -1131,9 +1131,9 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 
 std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::GetActorModelBBsClosestPoints(
 		const ignition::math::Pose3d &_actor_pose,
-		const ActorUtils::BoundingEllipse &_actor_be,
+		const actor::inflation::Ellipse &_actor_be,
 		const ignition::math::Pose3d &_object_pose,
-		const ActorUtils::BoundingEllipse &_object_be,
+		const actor::inflation::Ellipse &_object_be,
 		const std::string &_object_name // debug only
 		) const
 {

@@ -16,6 +16,10 @@
 #include "BoundingEllipse.h"
 #include "CommonInfo.h"
 
+#include "inflation/Ellipse.h"
+#include "inflation/Circle.h"
+#include "inflation/Box.h"
+
 // #include <gazebo/physics/World.hh>
 #include <gazebo-8/gazebo/physics/World.hh>
 #include <gazebo-8/gazebo/physics/Model.hh>
@@ -162,9 +166,9 @@ public:
 
 #elif defined (BOUNDING_ELLIPSE_CALCULATION)
 
-	ActorUtils::BoundingEllipse GetActorBoundingEllipse(
+	actor::inflation::Ellipse GetActorBoundingEllipse(
 			const unsigned int _actor_id,
-			const std::vector<ActorUtils::BoundingEllipse> _actors_bounding_ellipses
+			const std::vector<actor::inflation::Ellipse> _actors_bounding_ellipses
 	) const;
 
 #endif
@@ -191,17 +195,17 @@ public:
 
 	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
 			const ignition::math::Pose3d &_actor_pose,
-			const ActorUtils::BoundingEllipse &_actor_be,
+			const actor::inflation::Ellipse &_actor_be,
 			const ignition::math::Pose3d &_object_pose,
-			const ignition::math::Box &_object_bb,
+			const actor::inflation::Box &_object_bb,
 			const std::string &_object_name // debug only
 			) const;
 
 	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
 			const ignition::math::Pose3d &_actor_pose,
-			const ActorUtils::BoundingEllipse &_actor_be,
+			const actor::inflation::Ellipse &_actor_be,
 			const ignition::math::Pose3d &_object_pose,
-			const ActorUtils::BoundingEllipse &_object_be,
+			const actor::inflation::Ellipse &_object_be,
 			const std::string &_object_name // debug only
 			) const;
 
@@ -347,9 +351,9 @@ public:
 			const std::vector<ignition::math::Vector3d> _actors_velocities
 	);
 
-	ignition::math::Box GetActorBoundingBox(
+	actor::inflation::Box GetActorBoundingBox(
 			const unsigned int _actor_id,
-			const std::vector<ignition::math::Box> _actors_bounding_boxes
+			const std::vector<actor::inflation::Box> _actors_bounding_boxes
 	);
 
 	// debug closest points

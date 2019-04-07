@@ -5,7 +5,7 @@
  *      Author: rayvburn
  */
 
-#include "Circle.h"
+#include "inflation/Circle.h"
 #include <ignition/math/Angle.hh>
 #include <cmath> // atan2()
 

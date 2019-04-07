@@ -6,7 +6,7 @@
  */
 
 
-#include "Box.h"
+#include "inflation/Box.h"
 #include <math.h>
 #include <iostream> // debugging
 
@@ -20,6 +20,14 @@ Box::Box():	bb_(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
 			bb_x_half_(0.45), bb_y_half_(0.45), bb_z_half_(1.00)
 {
 
+}
+
+// ------------------------------------------------------------------- //
+
+// conversion
+Box::Box(const ignition::math::Box &bb):
+		bb_(bb),bb_x_half_(0.45), bb_y_half_(0.45), bb_z_half_(1.00)
+{
 }
 
 // ------------------------------------------------------------------- //

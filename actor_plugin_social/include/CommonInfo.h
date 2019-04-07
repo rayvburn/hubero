@@ -12,6 +12,11 @@
 #include <ignition/math/Vector3.hh>
 #include "BoundingCircle.h"
 #include "BoundingEllipse.h"
+
+#include "inflation/Ellipse.h"
+#include "inflation/Circle.h"
+#include "inflation/Box.h"
+
 #include "Enums.h"
 #include <vector>
 #include <string>
@@ -43,20 +48,20 @@ public:
 	/// \brief Method that assigns an ID for the actor that is invoked by (must be called for each actor)
 	void AddActor 			(const std::string &_name);
 
-	void SetBoundingBox		(const ignition::math::Box &_bb);
-	void SetBoundingCircle	(const BoundingCircle &_bc);
-	void SetBoundingEllipse	(const BoundingEllipse &_be);
+	void SetBoundingBox		(const actor::inflation::Box &_bb);
+	void SetBoundingCircle	(const actor::inflation::Circle &_bc);
+	void SetBoundingEllipse	(const actor::inflation::Ellipse &_be);
 	void SetLinearVel		(const ignition::math::Vector3d &_vel);
 
 	unsigned int							GetActorID() const;
-	ignition::math::Box						GetBoundingBox() const;
-	BoundingCircle							GetBoundingCircle() const;
-	BoundingEllipse							GetBoundingEllipse() const;
+	actor::inflation::Box					GetBoundingBox() const;
+	actor::inflation::Circle				GetBoundingCircle() const;
+	actor::inflation::Ellipse				GetBoundingEllipse() const;
 	ignition::math::Vector3d				GetLinearVelocity() const;
 
-	std::vector<ignition::math::Box> 		GetBoundingBoxesVector() const;
-	std::vector<BoundingCircle> 	 		GetBoundingCirclesVector() const;
-	std::vector<BoundingEllipse> 	 		GetBoundingEllipsesVector() const;
+	std::vector<actor::inflation::Box> 		GetBoundingBoxesVector() const;
+	std::vector<actor::inflation::Circle> 	GetBoundingCirclesVector() const;
+	std::vector<actor::inflation::Ellipse> 	GetBoundingEllipsesVector() const;
 	std::vector<ignition::math::Vector3d>	GetLinearVelocitiesVector() const;
 	std::map<std::string, unsigned int>		GetNameIDMap() const;
 
@@ -69,9 +74,9 @@ private:
 	/// \brief Actor's ID for indexing the vectors
 	unsigned int id;
 
-	static std::vector<ignition::math::Box> 	  bounding_box_vector;
-	static std::vector<BoundingCircle> 			  bounding_circle_vector;
-	static std::vector<BoundingEllipse> 		  bounding_ellipse_vector;
+	static std::vector<actor::inflation::Box> 	  bounding_box_vector;
+	static std::vector<actor::inflation::Circle>  bounding_circle_vector;
+	static std::vector<actor::inflation::Ellipse> bounding_ellipse_vector;
 	static std::vector<ignition::math::Vector3d>  lin_vel_vector;
 	static std::map<std::string, unsigned int>    name_id_map;
 

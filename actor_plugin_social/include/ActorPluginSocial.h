@@ -76,10 +76,14 @@
 
 // -------------------------
 
-#if 	defined(INFLATE_BOUNDING_CIRCLE)
+#if		defined(INFLATE_BOUNDING_BOX)
+#include "inflation/Box.h"
+#elif 	defined(INFLATE_BOUNDING_CIRCLE)
 #include "BoundingCircle.h"
+#include "inflation/Circle.h"
 #elif 	defined(INFLATE_BOUNDING_ELLIPSE)
 #include "BoundingEllipse.h"
+#include "inflation/Ellipse.h"
 #endif
 
 // -------------------------
@@ -200,7 +204,8 @@ namespace gazebo
 
 #elif defined(INFLATE_BOUNDING_ELLIPSE)
 
-    private: ActorUtils::BoundingEllipse bounding_ellipse;
+    //private: ActorUtils::BoundingEllipse bounding_ellipse;
+    private: actor::inflation::Ellipse bounding_ellipse;
 
 #endif
 

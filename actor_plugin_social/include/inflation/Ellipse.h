@@ -19,7 +19,6 @@ namespace actor {
 namespace inflation {
 
 class Ellipse {
-public:
 
 public:
 

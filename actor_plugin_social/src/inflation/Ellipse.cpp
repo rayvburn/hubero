@@ -5,7 +5,7 @@
  *      Author: rayvburn
  */
 
-#include "Ellipse.h"
+#include "inflation/Ellipse.h"
 #include <ignition/math/Angle.hh>
 #include <ignition/math/Quaternion.hh>
 #include <math.h> // fabs(), pow(), atan2(), tan()

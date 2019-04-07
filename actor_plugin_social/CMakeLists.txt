@@ -40,7 +40,19 @@ add_library(social_force_model_utils include/SocialForceModelUtils.h src/SocialF
 #add_library(actor_bounding_circle include/BoundingCircle.h src/BoundingCircle.cpp)
 #add_library(actor_common_info include/CommonInfo.h src/CommonInfo.cpp)
 
+# CommonInfo doesnt see Ellipse - namespace?
+# headers into include, sources into src
+add_library(actor_inflation
+  include/inflation/Box.h
+  src/inflation/Box.cpp
+  include/inflation/Circle.h
+  src/inflation/Circle.cpp
+  include/inflation/Ellipse.h
+  src/inflation/Ellipse.cpp
+)
+
 add_library(actor_utils 
+
   include/BoundingEllipse.h 
   include/BoundingCircle.h 
   include/CommonInfo.h 
@@ -49,16 +61,12 @@ add_library(actor_utils
   src/CommonInfo.cpp 
   include/ActorROSInterface.h 
   src/ActorROSInterface.cpp
+
 )
 
-add_library(actor_inflation
-  src/inflation/Box.h
-  src/inflation/Box.cpp
-  src/inflation/Circle.h
-  src/inflation/Circle.cpp
-  src/inflation/Ellipse.h
-  src/inflation/Ellipse.cpp
-)
+
+
+target_link_libraries( actor_inflation actor_utils)
 
 #add_library(enums include/Enums.h)
 
@@ -67,8 +75,9 @@ target_link_libraries( ${PROJECT_NAME}
   social_force_model_utils
   #actor_bounding_circle
   #actor_common_info
-  actor_utils
   actor_inflation
+  actor_utils
+  
   #enums
   ${GAZEBO_LIBRARIES}  
   ${roscpp_LIBRARIES} 

@@ -20,6 +20,8 @@ namespace inflation {
 
 class Circle {
 
+public:
+
 	Circle();
 
 	void setRadius(const double &radius);
