@@ -17,7 +17,7 @@
 
     <!-- =============================== start rViz ============================================ -->
     <group if="$(arg rviz)">
-    	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find social_force_vis)/rviz/debug1.rviz"/>
+    	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find social_force_vis)/rviz/debug2_group.rviz"/>
     </group>
     
     <!-- ========================= start Gazebo Client ========================================= -->

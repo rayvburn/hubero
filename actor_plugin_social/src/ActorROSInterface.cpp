@@ -36,11 +36,11 @@ void ActorROSInterface::Init(const std::string &_actor_name) {
 
 	}
 
-	pub_array_grid = nh->advertise<visualization_msgs::MarkerArray>("sfm_grid_"+_actor_name, 10);
-	pub_closest_points_array = nh->advertise<visualization_msgs::MarkerArray>("sfm_closest_"+_actor_name, 10);
-	pub_marker_array_sf = nh->advertise<visualization_msgs::MarkerArray>("sfm_mrkr_sf_"+_actor_name, 10);
-	pub_marker_array = nh->advertise<visualization_msgs::MarkerArray>("sfm_mrkr_"+_actor_name, 10);
-	pub_marker = nh->advertise<visualization_msgs::Marker>("sfm_mrkr_single_"+_actor_name, 10);
+	pub_array_grid = nh->advertise<visualization_msgs::MarkerArray>(_actor_name + "/sfm/grid", 10);
+	pub_closest_points_array = nh->advertise<visualization_msgs::MarkerArray>(_actor_name + "/sfm/closest", 10);
+	pub_marker_array_sf = nh->advertise<visualization_msgs::MarkerArray>(_actor_name + "/sfm/sf_marker", 10);
+	pub_marker_array = nh->advertise<visualization_msgs::MarkerArray>(_actor_name + "/sfm/marker_array", 10);// FIXME: these are closest in fact
+	pub_marker = nh->advertise<visualization_msgs::Marker>(_actor_name + "/sfm/marker_single", 10);
 	this->actor_name = _actor_name;
 
 }

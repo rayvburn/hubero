@@ -110,7 +110,6 @@ public:
 	SocialForceModel();
 
 
-
 #ifdef BOUNDING_BOX_CALCULATION
 
 // DEPRECATED
