@@ -324,8 +324,8 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	/* model_vel contains model's velocity (world's object or actor) - for the actor this is set differently
 	 * it was impossible to set actor's linear velocity by setting it by the model's class method */
 	ignition::math::Vector3d model_vel;
-	//actor::inflation::Box model_box;
-	ignition::math::Box model_box;
+	actor::inflation::Box model_box;
+	//ignition::math::Box model_box;
 	actor::inflation::Circle model_circle;
 	actor::inflation::Ellipse model_ellipse;
 
@@ -380,16 +380,17 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			#elif defined(BOUNDING_ELLIPSE_CALCULATION)
 			model_ellipse = this->GetActorBoundingEllipse(actor_id, _actor_info.GetBoundingEllipsesVector());
 			#endif
-			actor::inflation::Box box_temp;
-			box_temp = this->GetActorBoundingBox   (actor_id, _actor_info.GetBoundingBoxesVector());
+//			actor::inflation::Box box_temp;
+//			box_temp = this->GetActorBoundingBox   (actor_id, _actor_info.GetBoundingBoxesVector());
+//			model_box = box_temp.getBox();
+
 			//model_box     = this->GetActorBoundingBox   (actor_id, _actor_info.GetBoundingBoxesVector());
-			model_box = box_temp.getBox();
 
 		} else {
 
 			model_vel = model_ptr->WorldLinearVel();
-			model_box = model_ptr->BoundingBox();
-			//model_box.setBox(model_ptr->BoundingBox()); // conversion
+			//model_box = model_ptr->BoundingBox();
+			model_box.setBox(model_ptr->BoundingBox()); // conversion
 
 		}
 
@@ -661,7 +662,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 #ifdef BOUNDING_BOX_CALCULATION
 ignition::math::Vector3d SocialForceModel::GetModelPointClosestToActor(
 		const ignition::math::Pose3d &_actor_pose,
-		const ignition::math::Box &_bb,
+		const actor::inflation::Box &_bb,
 		const std::string &_model_name, 			// debug only
 		const ignition::math::Pose3d &_object_pose 	// debug only
 		)
@@ -689,7 +690,7 @@ ignition::math::Vector3d SocialForceModel::GetModelPointClosestToActor(
 
 	/* */
 	// inf has an object with no bounding box defined (for example - actor)
-	if ( std::fabs(_bb.Center().X()) > 1e+300 ) {
+	if ( std::fabs(_bb.getCenter().X()) > 1e+300 ) {
 		#ifdef DEBUG_BOUNDING_BOX
 		if ( print_info ) {
 			std::cout << "\tANOTHER ACTOR HERE!\n";
@@ -709,15 +710,15 @@ ignition::math::Vector3d SocialForceModel::GetModelPointClosestToActor(
 	// 0 case  -------------------------------------------------------------------
 	// if actor stepped into some obstacle then force its central point to be the closest - WIP
 	// otherwise actor will not see the obstacle (BEHIND flag will be raised)
-	if ( _bb.Contains(_actor_pose.Pos()) ) {
-		return (_bb.Center());
+	if ( _bb.doesContain(_actor_pose.Pos()) ) {
+		return (_bb.getCenter());
 	}
 
 	// 1st case -------------------------------------------------------------------
 	// create a line of which intersection with a bounding box will be checked, syntax: x1, y1, x2, y2, z_common
 //	line.Set(-1e+50, _actor_pose.Pos().Y(), +1e+50, _actor_pose.Pos().Y(), _bb.Center().Z() );
-	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _bb.Center().X(), _actor_pose.Pos().Y(), _bb.Center().Z() );
-	std::tie(does_intersect, dist_intersect, point_intersect) = _bb.Intersect(line);
+	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _bb.getCenter().X(), _actor_pose.Pos().Y(), _bb.getCenter().Z() );
+	std::tie(does_intersect, point_intersect) = _bb.doesIntersect(line);
 
 	if ( does_intersect ) {
 
@@ -733,8 +734,8 @@ ignition::math::Vector3d SocialForceModel::GetModelPointClosestToActor(
 
 	// 2nd case -------------------------------------------------------------------
 //	line.Set(_actor_pose.Pos().X(), -1e+50, _actor_pose.Pos().X(), +1e+50, _bb.Center().Z() );
-	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _actor_pose.Pos().X(), _bb.Center().Y(), _bb.Center().Z() );
-	std::tie(does_intersect, dist_intersect, point_intersect) = _bb.Intersect(line);
+	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _actor_pose.Pos().X(), _bb.getCenter().Y(), _bb.getCenter().Z() );
+	std::tie(does_intersect, point_intersect) = _bb.doesIntersect(line);
 
 	if ( does_intersect ) {
 
@@ -785,10 +786,10 @@ ignition::math::Vector3d SocialForceModel::GetModelPointClosestToActor(
 std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::GetActorModelBBsClosestPoints(
 		const ignition::math::Pose3d &_actor_pose,
 		//ignition::math::Pose3d *_actor_closest_to_model_pose,
-		const ignition::math::Box &_actor_bb,
+		const actor::inflation::Box &_actor_bb,
 		const ignition::math::Pose3d &_object_pose,
 		//ignition::math::Vector3d *_object_closest_to_actor_pos,
-		const ignition::math::Box &_object_bb,
+		const actor::inflation::Box &_object_bb,
 		const std::string &_object_name // debug only
 		)
 {
@@ -815,8 +816,8 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 	ignition::math::Vector3d point_intersect;
 
 	// actor's bounding box point that is closest to object's bounding box
-	line.Set(_object_pose.Pos().X(), _object_pose.Pos().Y(), _actor_pose.Pos().X(), _actor_pose.Pos().Y(), _actor_bb.Center().Z() );
-	std::tie(does_intersect, dist_intersect, point_intersect) = _actor_bb.Intersect(line);
+	line.Set(_object_pose.Pos().X(), _object_pose.Pos().Y(), _actor_pose.Pos().X(), _actor_pose.Pos().Y(), _actor_bb.getCenter().Z() );
+	std::tie(does_intersect, point_intersect) = _actor_bb.doesIntersect(line);
 
 	// create new pose based on actor's pose, POSSIBLY update only position component
 	ignition::math::Pose3d actor_pose_shifted = _actor_pose;
@@ -836,8 +837,8 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> SocialForceModel::G
 
 
 	// object's bounding box point that is closest to actor's bounding box
-	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _object_pose.Pos().X(), _object_pose.Pos().Y(), _object_bb.Center().Z() );
-	std::tie(does_intersect, dist_intersect, point_intersect) = _object_bb.Intersect(line);
+	line.Set(_actor_pose.Pos().X(), _actor_pose.Pos().Y(), _object_pose.Pos().X(), _object_pose.Pos().Y(), _object_bb.getCenter().Z() );
+	std::tie(does_intersect, point_intersect) = _object_bb.doesIntersect(line);
 
 	if ( !does_intersect ) {
 		#ifdef DEBUG_BOUNDING_BOX
@@ -1338,7 +1339,7 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> SocialForceModel:
 // ------------------------------------------------------------------- //
 
 #ifdef BOUNDING_BOX_CALCULATION
-std::vector<ignition::math::Vector3d> SocialForceModel::CreateVerticesVector(const ignition::math::Box &_bb) {
+std::vector<ignition::math::Vector3d> SocialForceModel::CreateVerticesVector(const actor::inflation::Box &_bb) {
 
 	// 4 vertices only (on-plane)
 	std::vector<ignition::math::Vector3d> temp_container;
@@ -1346,16 +1347,16 @@ std::vector<ignition::math::Vector3d> SocialForceModel::CreateVerticesVector(con
 
 	temp_vector.Z(BOUNDING_BOX_Z_FIXED);
 
-	temp_vector.X(_bb.Min().X()); 	temp_vector.Y(_bb.Min().Y());
+	temp_vector.X(_bb.getMin().X()); 	temp_vector.Y(_bb.getMin().Y());
 	temp_container.push_back(temp_vector);
 
-	temp_vector.X(_bb.Min().X()); 	temp_vector.Y(_bb.Max().Y());
+	temp_vector.X(_bb.getMin().X()); 	temp_vector.Y(_bb.getMax().Y());
 	temp_container.push_back(temp_vector);
 
-	temp_vector.X(_bb.Max().X()); 	temp_vector.Y(_bb.Min().Y());
+	temp_vector.X(_bb.getMax().X()); 	temp_vector.Y(_bb.getMin().Y());
 	temp_container.push_back(temp_vector);
 
-	temp_vector.X(_bb.Max().X()); 	temp_vector.Y(_bb.Max().Y());
+	temp_vector.X(_bb.getMax().X()); 	temp_vector.Y(_bb.getMax().Y());
 	temp_container.push_back(temp_vector);
 
 	/* // blocks stdio messages

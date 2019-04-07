@@ -124,7 +124,7 @@ public:
 //	);
 
 	std::vector<ignition::math::Vector3d> CreateVerticesVector(
-			const ignition::math::Box &_bb
+			const actor::inflation::Box &_bb
 	);
 
 	std::vector<double> CalculateLengthToVertices(
@@ -134,7 +134,7 @@ public:
 
 	ignition::math::Vector3d GetModelPointClosestToActor(
 			const ignition::math::Pose3d &_actor_pose,
-			const ignition::math::Box &_bb,
+			const actor::inflation::Box &_bb,
 			const std::string &_model_name,				// debug only
 			const ignition::math::Pose3d &_object_pose 	// debug only
 	);
@@ -142,10 +142,10 @@ public:
 	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> GetActorModelBBsClosestPoints(
 			const ignition::math::Pose3d &_actor_pose,
 			//ignition::math::Pose3d *_actor_closest_to_model_pose,
-			const ignition::math::Box &_actor_bb,
+			const actor::inflation::Box &_actor_bb,
 			const ignition::math::Pose3d &_object_pose,
 			//ignition::math::Vector3d *_object_closest_to_actor_pos,
-			const ignition::math::Box &_object_bb,
+			const actor::inflation::Box &_object_bb,
 			const std::string &_object_name // debug only
 	);
 
