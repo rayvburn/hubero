@@ -128,7 +128,8 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	actor_common_info.AddActor(this->actor->GetName());
 
 #if	defined(INFLATE_BOUNDING_BOX)
-	actor_common_info.SetBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
+	bounding_box.updatePose(this->pose_actor);
+	actor_common_info.SetBoundingBox(bounding_box);
 #elif defined(INFLATE_BOUNDING_CIRCLE)
 	bounding_circle.setCenter(this->pose_actor.Pos());
 	bounding_circle.setRadius(0.75f);
@@ -1342,7 +1343,8 @@ void ActorPlugin::VisualizeForceField() {
 
 				// Remember to artificially place the actor (along with his bounding) in current grid cell!
 		#if	defined(INFLATE_BOUNDING_BOX)
-				this->actor_common_info.SetBoundingBox( this->GenerateBoundingBox(pose) );
+				bounding_box.updatePose(pose);
+				actor_common_info.SetBoundingBox(bounding_box);
 		#elif defined(INFLATE_BOUNDING_CIRCLE)
 				this->bounding_circle.setCenter(pose.Pos());
 				this->actor_common_info.SetBoundingCircle(this->bounding_circle);
@@ -1406,7 +1408,8 @@ double ActorPlugin::PrepareForUpdate(const common::UpdateInfo &_info) {
 	 * (aim is to create a kind of inflation layer) */
 
 #if	defined(INFLATE_BOUNDING_BOX)
-	actor_common_info.SetBoundingBox( this->GenerateBoundingBox(this->pose_actor) );
+	bounding_box.updatePose(this->pose_actor);
+	actor_common_info.SetBoundingBox(bounding_box);
 #elif defined(INFLATE_BOUNDING_CIRCLE)
 	bounding_circle.setCenter(this->pose_actor.Pos());
 	actor_common_info.SetBoundingCircle(bounding_circle);
