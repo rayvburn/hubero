@@ -44,12 +44,12 @@ public:
 	Inflator();
 
 	// only other objects bounding box considered
-	ignition::math::Vector3d calculateModelsClosestPoints(const ignition::math::Pose3d &actor_pose,
+	ignition::math::Vector3d findModelsClosestPoints(const ignition::math::Pose3d &actor_pose,
 														  const ignition::math::Pose3d &object_pose,
 														  const actor::inflation::Box &bb) const;
 
 	// actor's bounding box and object's bounding box
-	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> calculateModelsClosestPoints(
+	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
 			const ignition::math::Pose3d &actor_pose,  const actor::inflation::Box &actor_box,
 			const ignition::math::Pose3d &object_pose, const actor::inflation::Box &object_box,
 			const std::string &object_name /* debug only */) const;
@@ -68,25 +68,25 @@ public:
 	*/
 
 	// actor's bounding Circle and object's Box
-	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> calculateModelsClosestPoints(
+	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
 			const ignition::math::Pose3d &actor_pose, const actor::inflation::Circle &actor_circle,
 			const ignition::math::Pose3d &object_pose,const actor::inflation::Box &object_box,
 			const std::string &object_name /* debug only */) const;
 
 	/// actor's bounding Ellipse and object's Box
-	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> calculateModelsClosestPoints(
+	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
 			const ignition::math::Pose3d &actor_pose, const actor::inflation::Ellipse &actor_ellipse,
 			const ignition::math::Pose3d &object_pose,const actor::inflation::Box &object_box,
 			const std::string &object_name /* debug only */) const;
 
 	// actors with bounding Circle
-	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> calculateModelsClosestPoints(
+	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
 			const ignition::math::Pose3d &actor_pose,  const actor::inflation::Circle &actor_circle,
 			const ignition::math::Pose3d &object_pose, const actor::inflation::Circle &object_circle,
 			const std::string &_object_name /* debug only */) const;
 
 	// actors with bounding Ellipse
-	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> calculateModelsClosestPoints(
+	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
 			const ignition::math::Pose3d &actor_pose,	const actor::inflation::Ellipse &actor_ellipse,
 			const ignition::math::Pose3d &object_pose,	const actor::inflation::Ellipse &object_ellipse,
 			const std::string &object_name /* debug only */ ) const;
@@ -100,7 +100,7 @@ private:
 	std::vector<double> calculateLengthToVertices(const ignition::math::Vector3d &actor_pos, const std::vector<ignition::math::Vector3d> &vertices_pts) const;
 
 	// intersected models - 2 actors or actor and box
-	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> calculateIntersectedModelsClosestPoints(
+	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> findIntersectedModelsClosestPoints(
 			const ignition::math::Vector3d &actor_pos, const ignition::math::Vector3d &pt_intersect,
 			const IntersectionType &type) const;
 

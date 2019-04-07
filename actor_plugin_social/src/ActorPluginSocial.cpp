@@ -125,7 +125,7 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	last_pose_actor.Pos() = this->actor->WorldPose().Pos();
 	std::cout << " -------- SET last_pos_actor! -------- " << last_pose_actor.Pos() << std::endl;
 
-	actor_common_info.AddActor(this->actor->GetName());
+	actor_common_info.addActor(this->actor->GetName());
 
 #if	defined(INFLATE_BOUNDING_BOX)
 	bounding_box.updatePose(this->pose_actor);
@@ -140,11 +140,11 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	bounding_ellipse.setSemiMajorAxis(1.00);
 	bounding_ellipse.setSemiMinorAxis(0.80);
 	bounding_ellipse.setCenterOffset(ignition::math::Vector3d(0.35, 0.0, 0.0));
-	actor_common_info.SetBoundingEllipse(bounding_ellipse);
+	actor_common_info.setBoundingEllipse(bounding_ellipse);
 #endif
 
 
-	std::cout << " -------- ACTOR ID -------- " << actor_common_info.GetActorID() << std::endl;
+	std::cout << " -------- ACTOR ID -------- " << actor_common_info.getActorID() << std::endl;
 	std::cout << " -------- MODEL TYPE -------- " << this->model->GetType() << std::endl;
 
 	// WARNING: HARD-CODED target coord
@@ -605,7 +605,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 //	std::cout << "AFTER  SetLinearVel()  " << this->world->ModelByName(this->actor->GetName())->WorldLinearVel() << std::endl;
 	*/
 
-  	this->actor->SetLinearVel(this->velocity_actual);
+  	this->actor->setLinearVel(this->velocity_actual);
 
 
 	ignition::math::Vector3d sf = sfm.GetSocialForce(this->world,
@@ -1252,7 +1252,7 @@ void ActorPlugin::VisualizeForceField() {
 	sf_vis.SetColor(1.0, 0.0, 0.0, 1.0);
 	sf_vis.SetForcePoint(	sf,
 							ignition::math::Vector3d(this->pose_actor.Pos().X(), this->pose_actor.Pos().Y(), 0.0f),
-							actor_common_info.GetActorID());
+							actor_common_info.getActorID());
 
 
 #ifdef CREATE_ROS_NODE
@@ -1293,7 +1293,7 @@ void ActorPlugin::VisualizeForceField() {
 															ignition::math::Quaterniond(this->pose_actor.Rot().Roll(),
 																						this->pose_actor.Rot().Pitch(),
 																						yaw_world.Radian()) ));
-		actor_common_info.SetBoundingEllipse(bounding_ellipse);
+		actor_common_info.setBoundingEllipse(bounding_ellipse);
 #endif
 
 
@@ -1356,7 +1356,7 @@ void ActorPlugin::VisualizeForceField() {
 																								this->pose_actor.Rot().Pitch(),
 																								yaw_world.Radian()) ));
 
-				this->actor_common_info.SetBoundingEllipse(bounding_ellipse);
+				this->actor_common_info.setBoundingEllipse(bounding_ellipse);
 		#endif
 
 				sf = sfm.GetSocialForce( this->world,
@@ -1400,7 +1400,7 @@ double ActorPlugin::PrepareForUpdate(const common::UpdateInfo &_info) {
 	double dt = (_info.simTime - this->last_update).Double();
 	CalculateVelocity(this->pose_actor.Pos(), dt);
 
-	actor_common_info.SetLinearVel(this->velocity_actual);
+	actor_common_info.setLinearVel(this->velocity_actual);
 
 	this->actor->SetLinearVel(this->velocity_actual);
 
@@ -1420,7 +1420,7 @@ double ActorPlugin::PrepareForUpdate(const common::UpdateInfo &_info) {
 														ignition::math::Quaterniond(this->pose_actor.Rot().Roll(),
 																					this->pose_actor.Rot().Pitch(),
 																					yaw_world.Radian()) ));
-	actor_common_info.SetBoundingEllipse(bounding_ellipse);
+	actor_common_info.setBoundingEllipse(bounding_ellipse);
 #endif
 
 	// dt is helpful for further calculations
@@ -1515,8 +1515,8 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 	if ( print_info ) {
 		std::cout << "\t TOTAL force: " << sf << std::endl;
 		std::cout << "\t lin_vels_vector: ";
-		for ( int i = 0; i < actor_common_info.GetLinearVelocitiesVector().size(); i++ ) {
-			std::cout << "\t" << actor_common_info.GetLinearVelocitiesVector()[i];
+		for ( int i = 0; i < actor_common_info.getLinearVelocitiesVector().size(); i++ ) {
+			std::cout << "\t" << actor_common_info.getLinearVelocitiesVector()[i];
 		}
 		std::cout << std::endl;
 		std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;

@@ -98,7 +98,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 	const ignition::math::Pose3d _actor_pose,
 	const ignition::math::Vector3d _actor_velocity,
 	const ignition::math::Vector3d _actor_target,
-	const ActorUtils::CommonInfo &_actor_info)
+	const actor::core::CommonInfo &_actor_info)
 
 {
 
@@ -107,10 +107,6 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 #endif
 
 	closest_points.clear();
-
-#ifdef DEBUG_JUMPING_POSITION
-	curr_actor = this->GetActorID(_actor_name, _actor_info.GetNameIDMap());
-#endif
 
 	// easier to debug single actor
 	if ( _actor_name == "actor1" ) {
@@ -185,18 +181,18 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		if ( (is_an_actor = actor_decoder.isActor(model_ptr->GetType())) ) {
 
 			// decoder of the CommonInfo class
-			actor_decoder.setID(model_ptr->GetName(), _actor_info.GetNameIDMap());
+			actor_decoder.setID(model_ptr->GetName(), _actor_info.getNameIDMap());
 
 			// load data from CommonInfo based on actor's id
-			model_vel     = actor_decoder.getVelocity(_actor_info.GetLinearVelocitiesVector());
+			model_vel     = actor_decoder.getVelocity(_actor_info.getLinearVelocitiesVector());
 
 			// select proper inflation model
 			if ( inflation_type == INFLATION_CIRCLE ) {
-				model_circle  = actor_decoder.getBoundingCircle(_actor_info.GetBoundingCirclesVector());
+				model_circle  = actor_decoder.getBoundingCircle(_actor_info.getBoundingCirclesVector());
 			} else if ( inflation_type == INFLATION_ELLIPSE ) {
-				model_ellipse = actor_decoder.getBoundingEllipse(_actor_info.GetBoundingEllipsesVector());
+				model_ellipse = actor_decoder.getBoundingEllipse(_actor_info.getBoundingEllipsesVector());
 			} else if ( inflation_type == INFLATION_BOX_ALL_OBJECTS || inflation_type == INFLATION_BOX_OTHER_OBJECTS ) {
-				model_box = actor_decoder.getBoundingBox(_actor_info.GetBoundingBoxesVector());
+				model_box = actor_decoder.getBoundingBox(_actor_info.getBoundingBoxesVector());
 			}
 
 		} else {
@@ -222,14 +218,14 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 
 //				std::cout << "\tINFLATION - BOX - OTHER OBJECTS" << std::endl;
 				actor_closest_to_model_pose = _actor_pose;
-				model_closest_point_pose.Pos() = inflate.calculateModelsClosestPoints(_actor_pose, model_ptr->WorldPose(), model_box);
+				model_closest_point_pose.Pos() = inflate.findModelsClosestPoints(_actor_pose, model_ptr->WorldPose(), model_box);
 				break;
 
 		case(INFLATION_BOX_ALL_OBJECTS):
 
 //				std::cout << "\tINFLATION - BOX - ALL OBJECTS" << std::endl;
 				std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-						inflate.calculateModelsClosestPoints(_actor_pose, _actor_info.GetBoundingBox(),
+						inflate.findModelsClosestPoints(_actor_pose, _actor_info.getBoundingBox(),
 															 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
 				break;
 
@@ -238,12 +234,12 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 				if ( is_an_actor ) {
 //					std::cout << "\tINFLATION - CIRCLE - actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflate.calculateModelsClosestPoints(_actor_pose, _actor_info.GetBoundingCircle(),
+							inflate.findModelsClosestPoints(_actor_pose, _actor_info.getBoundingCircle(),
 																 model_ptr->WorldPose(), model_circle, model_ptr->GetName() );
 				} else {
 //					std::cout << "\tINFLATION - CIRCLE - non-actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflate.calculateModelsClosestPoints(_actor_pose, _actor_info.GetBoundingCircle(),
+							inflate.findModelsClosestPoints(_actor_pose, _actor_info.getBoundingCircle(),
 																 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
 				}
 				break;
@@ -253,12 +249,12 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 				if ( is_an_actor ) {
 //					std::cout << "\tINFLATION - ELLIPSE - actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflate.calculateModelsClosestPoints(_actor_pose, _actor_info.GetBoundingEllipse(),
+							inflate.findModelsClosestPoints(_actor_pose, _actor_info.getBoundingEllipse(),
 																 model_ptr->WorldPose(), model_ellipse, model_ptr->GetName() );
 				} else {
 //					std::cout << "\tINFLATION - ELLIPSE - non actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflate.calculateModelsClosestPoints(_actor_pose, _actor_info.GetBoundingEllipse(),
+							inflate.findModelsClosestPoints(_actor_pose, _actor_info.getBoundingEllipse(),
 																 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
 
 				}

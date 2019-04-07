@@ -12,9 +12,8 @@
 // #define DEBUG_TF
 
 #include <SocialForceModelUtils.h>
-#include "BoundingCircle.h"
-#include "BoundingEllipse.h"
-#include "CommonInfo.h"
+
+#include "core/CommonInfo.h"
 
 #include "inflation/Ellipse.h"
 #include "inflation/Circle.h"
@@ -23,6 +22,7 @@
 #include <gazebo-8/gazebo/physics/World.hh>
 #include <gazebo-8/gazebo/physics/Model.hh>
 #include <ignition/math.hh> 		// is it still needed??
+
 #include <sfm/core/Inflator.h>
 #include <sfm/core/ActorInfoDecoder.h>
 
@@ -227,7 +227,7 @@ public:
 		const ignition::math::Pose3d _actor_pose,
 		const ignition::math::Vector3d _actor_velocity,
 		const ignition::math::Vector3d _actor_target, // );
-		const ActorUtils::CommonInfo &_actor_info);
+		const actor::core::CommonInfo &_actor_info);
 
 	// debug closest points
 	std::vector<ignition::math::Pose3d> GetClosestPointsVector() const;

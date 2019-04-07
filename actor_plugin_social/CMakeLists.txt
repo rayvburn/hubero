@@ -61,22 +61,20 @@ add_library(actor_inflation
   src/inflation/Ellipse.cpp
 )
 
-add_library(actor_utils 
+add_library(actor_core 
+  include/core/CommonInfo.h 
+  src/core/CommonInfo.cpp 
+)
 
-  include/BoundingEllipse.h 
-  include/BoundingCircle.h 
-  include/CommonInfo.h 
-  src/BoundingEllipse.cpp
-  src/BoundingCircle.cpp 
-  src/CommonInfo.cpp 
+add_library(actor_utils 
   include/ActorROSInterface.h 
   src/ActorROSInterface.cpp
-
 )
 
 
 
-target_link_libraries( actor_inflation actor_utils)
+target_link_libraries(actor_inflation    actor_utils actor_core)
+target_link_libraries(social_force_model actor_core)
 
 #add_library(enums include/Enums.h)
 
@@ -86,6 +84,7 @@ target_link_libraries( ${PROJECT_NAME}
   #actor_bounding_circle
   #actor_common_info
   actor_inflation
+  actor_core
   actor_utils
   
   #enums

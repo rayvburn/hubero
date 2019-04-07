@@ -22,7 +22,11 @@
 #include <vector>
 
 #include "Enums.h"
-#include "CommonInfo.h"
+#include "core/CommonInfo.h"
+
+#include "inflation/Box.h"
+#include "inflation/Circle.h"
+#include "inflation/Ellipse.h"
 
 #include "gazebo/common/Plugin.hh"
 #include "gazebo/physics/physics.hh"
@@ -77,15 +81,15 @@
 
 // -------------------------
 
-#if		defined(INFLATE_BOUNDING_BOX)
-#include "inflation/Box.h"
-#elif 	defined(INFLATE_BOUNDING_CIRCLE)
-#include "BoundingCircle.h"
-#include "inflation/Circle.h"
-#elif 	defined(INFLATE_BOUNDING_ELLIPSE)
-#include "BoundingEllipse.h"
-#include "inflation/Ellipse.h"
-#endif
+//#if		defined(INFLATE_BOUNDING_BOX)
+//
+//#elif 	defined(INFLATE_BOUNDING_CIRCLE)
+//#include "BoundingCircle.h"
+//
+//#elif 	defined(INFLATE_BOUNDING_ELLIPSE)
+//#include "BoundingEllipse.h"
+//
+//#endif
 
 // -------------------------
 
@@ -193,7 +197,7 @@ namespace gazebo
     private: bool ReadSDF();
 
 
-    private: ActorUtils::CommonInfo actor_common_info;
+    private: actor::core::CommonInfo actor_common_info;
 
 #if	defined(INFLATE_BOUNDING_BOX)
 

@@ -20,7 +20,7 @@ Inflator::Inflator() {
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d Inflator::calculateModelsClosestPoints(const ignition::math::Pose3d &actor_pose,
+ignition::math::Vector3d Inflator::findModelsClosestPoints(const ignition::math::Pose3d &actor_pose,
 		const ignition::math::Pose3d &object_pose, const actor::inflation::Box &bb) const
 {
 
@@ -188,7 +188,7 @@ std::vector<double> Inflator::calculateLengthToVertices(const ignition::math::Ve
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculateModelsClosestPoints(
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModelsClosestPoints(
 		const ignition::math::Pose3d &actor_pose,  const actor::inflation::Box &actor_box,
 		const ignition::math::Pose3d &object_pose, const actor::inflation::Box &object_box,
 		const std::string &_object_name /* debug only */ ) const
@@ -337,7 +337,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculate
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculateModelsClosestPoints(
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModelsClosestPoints(
 		const ignition::math::Pose3d &actor_pose, const actor::inflation::Circle &actor_circle,
 		const ignition::math::Pose3d &object_pose,const actor::inflation::Box &object_box,
 		const std::string &object_name /* debug only */) const
@@ -389,7 +389,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculate
 		#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
 		std::cout << "\n\n\n\n\n1\tACTOR STEPPED INTO OBSTACLE\n\n\n\n\n\t" << debug_current_actor_name << "\t" << debug_current_object_name << "\n" << std::endl;
 		#endif
-		std::tie(actor_pose_shifted.Pos(), point_intersect) = calculateIntersectedModelsClosestPoints(actor_pose.Pos(), point_intersect, INTERSECTION_ACTOR_OBJECT);
+		std::tie(actor_pose_shifted.Pos(), point_intersect) = findIntersectedModelsClosestPoints(actor_pose.Pos(), point_intersect, INTERSECTION_ACTOR_OBJECT);
 		return ( std::make_tuple(actor_pose_shifted, point_intersect) );
 
 	}
@@ -421,7 +421,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculate
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculateModelsClosestPoints(
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModelsClosestPoints(
 		const ignition::math::Pose3d &actor_pose, const actor::inflation::Ellipse &actor_ellipse,
 		const ignition::math::Pose3d &object_pose,const actor::inflation::Box &object_box,
 		const std::string &object_name /* debug only */) const
@@ -490,7 +490,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculate
 		std::cout << "\n\n\n\n\n1\tACTOR STEPPED INTO OBSTACLE\n\n\n\n\n\t" << debug_current_actor_name << "\t" << debug_current_object_name << "\n" << std::endl;
 		}
 		#endif
-		std::tie(actor_pose_shifted.Pos(), point_intersect) = calculateIntersectedModelsClosestPoints(actor_pose.Pos(), point_intersect, INTERSECTION_ACTOR_OBJECT);
+		std::tie(actor_pose_shifted.Pos(), point_intersect) = findIntersectedModelsClosestPoints(actor_pose.Pos(), point_intersect, INTERSECTION_ACTOR_OBJECT);
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 		if ( SfmGetPrintData() ) {
@@ -547,7 +547,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculate
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::calculateIntersectedModelsClosestPoints(
+std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findIntersectedModelsClosestPoints(
 		const ignition::math::Vector3d &actor_pos, const ignition::math::Vector3d &pt_intersect,
 		const IntersectionType &type) const
 {
@@ -637,7 +637,7 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::calcula
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculateModelsClosestPoints(
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModelsClosestPoints(
 		const ignition::math::Pose3d &actor_pose,
 		const actor::inflation::Circle &actor_circle,
 		const ignition::math::Pose3d &object_pose,
@@ -668,7 +668,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculate
 	// above commented -> instead isWithin method created
 	if ( actor_circle.doesContain(object_pos_shifted) ) {
 
-		std::tie(actor_pose_shifted.Pos(), object_pos_shifted) = calculateIntersectedModelsClosestPoints(actor_pose.Pos(), object_pose.Pos(), INTERSECTION_ACTORS);
+		std::tie(actor_pose_shifted.Pos(), object_pos_shifted) = findIntersectedModelsClosestPoints(actor_pose.Pos(), object_pose.Pos(), INTERSECTION_ACTORS);
 
 	} else {
 
@@ -689,7 +689,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculate
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculateModelsClosestPoints(
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModelsClosestPoints(
 		const ignition::math::Pose3d &actor_pose,
 		const actor::inflation::Ellipse &actor_ellipse,
 		const ignition::math::Pose3d &object_pose,
@@ -747,7 +747,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::calculate
 		}
 		}
 		#endif
-		std::tie(actor_pose_shifted.Pos(), object_pos_shifted) = calculateIntersectedModelsClosestPoints(actor_pose.Pos(), object_pose.Pos(), INTERSECTION_ACTORS);
+		std::tie(actor_pose_shifted.Pos(), object_pos_shifted) = findIntersectedModelsClosestPoints(actor_pose.Pos(), object_pose.Pos(), INTERSECTION_ACTORS);
 
 	} else {
 

@@ -52,7 +52,7 @@ ignition::math::Vector3d ActorInfoDecoder::getVelocity(const std::vector<ignitio
 	if ( id_actor_ == ACTOR_NOT_FOUND ) {
 		return (ignition::math::Vector3d(0.0, 0.0, 0.0));
 	}
-	return (actors_velocities[id_actor_]);
+	return ( actors_velocities.at(id_actor_) );
 
 }
 
@@ -63,7 +63,7 @@ actor::inflation::Box ActorInfoDecoder::getBoundingBox(const std::vector<actor::
 	if ( id_actor_ == ACTOR_NOT_FOUND ) {
 		return (actor::inflation::Box());
 	}
-	return (actors_bounding_boxes[id_actor_]);
+	return ( actors_bounding_boxes.at(id_actor_) );
 
 }
 
@@ -74,7 +74,7 @@ actor::inflation::Circle ActorInfoDecoder::getBoundingCircle(const std::vector<a
 	if ( id_actor_ == ACTOR_NOT_FOUND ) {
 		return (actor::inflation::Circle());
 	}
-	return (actors_bounding_circles[id_actor_]);
+	return ( actors_bounding_circles.at(id_actor_) );
 
 }
 
@@ -85,7 +85,7 @@ actor::inflation::Ellipse ActorInfoDecoder::getBoundingEllipse(const std::vector
 	if ( id_actor_ == ACTOR_NOT_FOUND ) {
 		return (actor::inflation::Ellipse());
 	}
-	return (actors_bounding_ellipses[id_actor_]);
+	return ( actors_bounding_ellipses.at(id_actor_) );
 
 }
 
