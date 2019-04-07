@@ -8,7 +8,7 @@
 #include "inflation/Circle.h"
 #include <ignition/math/Angle.hh>
 #include <cmath> // atan2()
-
+#include <string>
 
 namespace actor {
 namespace inflation {

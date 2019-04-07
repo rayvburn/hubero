@@ -10,7 +10,6 @@
 
 
 #include <ignition/math/Vector3.hh>
-#include <string>
 #include <visualization_msgs/Marker.h>
 #include <tuple>
 

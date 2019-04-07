@@ -70,9 +70,9 @@
 
 // -------------------------
 
-//#define INFLATE_BOUNDING_BOX
+#define INFLATE_BOUNDING_BOX
 //#define INFLATE_BOUNDING_CIRCLE
-#define INFLATE_BOUNDING_ELLIPSE
+//#define INFLATE_BOUNDING_ELLIPSE
 
 // -------------------------
 
@@ -253,7 +253,7 @@ namespace gazebo
     private: bool CalculateVelocity(const ignition::math::Vector3d &_pos, const double &_dt);
 
     /// \brief Social Force Model interface object
-    private: SocialForceModel::SocialForceModel sfm;
+    private: sfm::core::SocialForceModel sfm;
 
 
 

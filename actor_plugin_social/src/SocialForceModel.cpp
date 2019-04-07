@@ -14,7 +14,8 @@
 
 #include "BoundingEllipseDebug.h"
 
-namespace SocialForceModel {
+namespace sfm {
+namespace core {
 
 #define SILENT_
 
@@ -419,7 +420,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		ignition::math::Pose3d actor_closest_to_model_pose;
 		ignition::math::Vector3d model_closest_point;
 		std::tie(actor_closest_to_model_pose, model_closest_point) = this->GetActorModelBBsClosestPoints(_actor_pose,
-																										 _actor_info.getBoundingBox(),
+																										 _actor_info.GetBoundingBox(),
 																										 model_ptr->WorldPose(),
 																										 model_box,
 																										 model_ptr->GetName() );
@@ -2769,4 +2770,7 @@ void SocialForceModel::SetPrintFlag(const bool &_flag) {
 
 SocialForceModel::~SocialForceModel() { }
 
-}
+// ------------------------------------------------------------------- //
+
+} /* namespace core */
+} /* namespace sfm */
