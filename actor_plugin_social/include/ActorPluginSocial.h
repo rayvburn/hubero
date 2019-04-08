@@ -21,8 +21,9 @@
 #include <string>
 #include <vector>
 
-#include "Enums.h"
+#include "core/Enums.h"
 #include "core/CommonInfo.h"
+#include "core/FSM.h"
 
 #include "inflation/Box.h"
 #include "inflation/Circle.h"
@@ -227,11 +228,11 @@ namespace gazebo
     private: ignition::math::Vector3d UpdateActorOrientation(const ignition::math::Pose3d &_pose);
 
     /// \brief Type of current stance of the actor
-    private: ActorStance stance_actor;
+    private: actor::ActorStance stance_actor;
 
     /// \brief Current state of the actor
-    private: ActorState state_actor;
-    private: ActorState prev_state_actor;
+    private: actor::ActorState state_actor;
+    private: actor::ActorState prev_state_actor;
 
     private: bool AlignToTargetDirection(ignition::math::Vector3d *_rpy);
 

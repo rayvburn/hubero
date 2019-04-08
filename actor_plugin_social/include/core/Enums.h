@@ -5,20 +5,10 @@
  *      Author: rayvburn
  */
 
-#ifndef INCLUDE_ENUMS_H_
-#define INCLUDE_ENUMS_H_
+#ifndef INCLUDE_ACTOR_ENUMS_H_
+#define INCLUDE_ACTOR_ENUMS_H_
 
-// -------------------------
-
-const unsigned int ACTOR_MODEL_TYPE = 32771;
-
-// -------------------------
-
-typedef enum {
-	ACTOR_STANCE_WALK = 0,
-	ACTOR_STANCE_STAND,
-	ACTOR_STANCE_LIE,
-} ActorStance;
+namespace actor {
 
 // -------------------------
 
@@ -30,6 +20,14 @@ typedef enum {
 	ACTOR_STATE_FOLLOW_OBJECT,
 	ACTOR_STATE_TELEOPERATION,
 } ActorState;
+
+// -------------------------
+
+typedef enum {
+	ACTOR_STANCE_WALK = 0,
+	ACTOR_STANCE_STAND,
+	ACTOR_STANCE_LIE,
+} ActorStance;
 
 // -------------------------
 
@@ -50,4 +48,6 @@ typedef enum {
 
 // -------------------------
 
-#endif /* INCLUDE_ENUMS_H_ */
+} /* namespace actor */
+
+#endif /* INCLUDE_ACTOR_ENUMS_H_ */

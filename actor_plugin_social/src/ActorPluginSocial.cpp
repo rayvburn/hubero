@@ -153,7 +153,7 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 		this->target.Y(-4.00);
 	}
 
-	prev_state_actor = ACTOR_STATE_MOVE_AROUND;
+	prev_state_actor = actor::ACTOR_STATE_MOVE_AROUND;
 	sfm.Init(80.0, 2.0, 1.0, this->world);
 
 }
@@ -181,7 +181,7 @@ void ActorPlugin::Reset()
     this->trajectoryInfo->type = WALKING_ANIMATION;
     this->trajectoryInfo->duration = 1.0;
 
-    stance_actor = ACTOR_STANCE_WALK;
+    stance_actor = actor::ACTOR_STANCE_WALK;
 
     this->actor->SetCustomTrajectory(this->trajectoryInfo);
   }
@@ -323,70 +323,6 @@ void ActorPlugin::chooseNewTarget(const common::UpdateInfo &_info) {
 
 }
 
-
-/////////////////////////////////////////////////
-
-
-#if	defined(INFLATE_BOUNDING_BOX)
-
-ignition::math::Box ActorPlugin::GenerateBoundingBox(const ignition::math::Pose3d &_actor_pose) {
-
-	// lengths expressed in actor's coordinate system - x-axis is pointing forward (from face)
-	static const double ACTOR_X_BB_HALF_LENGTH = 0.45;
-	static const double ACTOR_Y_BB_HALF_LENGTH = 0.45;
-	static const double ACTOR_Z_BB_HALF_LENGTH = 1.0;
-
-	// forced calculations in 0-90 deg range
-	double yaw_truncated = std::fabs(_actor_pose.Rot().Yaw());
-	yaw_truncated -= static_cast<int>(yaw_truncated / IGN_PI_2) * IGN_PI_2;
-
-	/* TODO: Add roll and pitch rotation handling (as actor lies down X and Z changes);
-	 * 		 it won't be used in move_around state but at last will be nice
-	 * 		 to have such a feature */
-//	double roll_truncated = std::fabs(_actor_pose.Rot().Roll());
-//	roll_truncated -= static_cast<int>(roll_truncated / IGN_PI_2) * IGN_PI_2;
-//
-//	double pitch_truncated = std::fabs(_actor_pose.Rot().Pitch());
-//	pitch_truncated -= static_cast<int>(pitch_truncated / IGN_PI_2) * IGN_PI_2;
-
-	// x-projection on x-axis
-	double xp = ACTOR_X_BB_HALF_LENGTH * cos(yaw_truncated);
-	// line projected on x-axis that extends basic x-projection
-	double xp_ext = ACTOR_Y_BB_HALF_LENGTH * sin(yaw_truncated);
-	// sum of xp's gives total length of x-component of BB
-	double x_total = xp + xp_ext;
-
-	// the same for y-axis
-	double yp = ACTOR_Y_BB_HALF_LENGTH * cos(yaw_truncated);
-	double yp_ext = ACTOR_X_BB_HALF_LENGTH * sin(yaw_truncated);
-	double y_total = yp + yp_ext;
-
-	ignition::math::Box bb(	_actor_pose.Pos().X() - x_total,
-							_actor_pose.Pos().Y() - y_total,
-							_actor_pose.Pos().Z() - ACTOR_Z_BB_HALF_LENGTH,
-							_actor_pose.Pos().X() + x_total,
-							_actor_pose.Pos().Y() + y_total,
-							_actor_pose.Pos().Z() + ACTOR_Z_BB_HALF_LENGTH );
-
-	if ( (bb.Max().X() - bb.Min().X()) < 0.90 || (bb.Max().X() - bb.Min().X()) > 1.272793 ) {
-		std::cout << "\tBB min: " << bb.Min() << "\tmax: " << bb.Max() << std::endl;
-		std::cout << "\t\tcenter: " << bb.Center() << "\tRAW x: " << _actor_pose.Pos().X() - ACTOR_X_BB_HALF_LENGTH << "\tRAW y: " << _actor_pose.Pos().Y() + ACTOR_Y_BB_HALF_LENGTH << std::endl;
-		std::cout << "\t\tyaw: " << _actor_pose.Rot().Yaw() << std::endl;
-		std::cout << "\t\txp: " << xp << "\txp_ext: " << xp_ext << "\tx_total: " << x_total << std::endl;
-		std::cout << "\t\typ: " << yp << "\typ_ext: " << yp_ext << "\ty_total: " << y_total << std::endl;
-		std::cout << "\t\tlen: " << bb.Max().X() - bb.Min().X() << std::endl;
-		std::cout << "\t\tWRONG LENGTH\n\n" << std::endl;
-		std::cout << std::endl;
-		std::cout << std::endl;
-		std::cout << std::endl;
-	}
-
-	return (bb);
-
-}
-#endif
-
-
 /////////////////////////////////////////////////
 
 void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
@@ -402,7 +338,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
 		}
 		to_start = false;
-		state_actor = ACTOR_STATE_ALIGN_TARGET;
+		state_actor = actor::ACTOR_STATE_ALIGN_TARGET;
 	}
 
 	if ( !to_start ) {
@@ -417,13 +353,13 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	if ( !isTargetStillReachable(_info) ) {
 		this->chooseNewTarget(_info);
 		// after setting new target, first let's rotate to its direction
-		state_actor = ACTOR_STATE_ALIGN_TARGET;
+		state_actor = actor::ACTOR_STATE_ALIGN_TARGET;
 	}
 
 	if ( isTargetNotReachedForTooLong(_info) ) {
 		this->chooseNewTarget(_info);
 		// after setting new target, first let's rotate to its direction
-		state_actor = ACTOR_STATE_ALIGN_TARGET;
+		state_actor = actor::ACTOR_STATE_ALIGN_TARGET;
 	}
 
 
@@ -479,42 +415,42 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
 	switch(state_actor) {
 
-	case(ACTOR_STATE_ALIGN_TARGET):
+	case(actor::ACTOR_STATE_ALIGN_TARGET):
 
-			if ( prev_state_actor != ACTOR_STATE_ALIGN_TARGET ) {
+			if ( prev_state_actor != actor::ACTOR_STATE_ALIGN_TARGET ) {
 #ifndef SILENT_
 				std::cout << "\tACTOR_STATE_ALIGN_TARGET" << std::endl;
 #endif
-				prev_state_actor =  ACTOR_STATE_ALIGN_TARGET;
+				prev_state_actor =  actor::ACTOR_STATE_ALIGN_TARGET;
 			}
 
 			ActorStateAlignTargetHandler(_info);
 			break;
 
-	case(ACTOR_STATE_MOVE_AROUND):
+	case(actor::ACTOR_STATE_MOVE_AROUND):
 
-			if ( prev_state_actor != ACTOR_STATE_MOVE_AROUND ) {
+			if ( prev_state_actor != actor::ACTOR_STATE_MOVE_AROUND ) {
 #ifndef SILENT_
 				std::cout << "\tACTOR_STATE_MOVE_AROUND" << std::endl;
 #endif
-				prev_state_actor =  ACTOR_STATE_MOVE_AROUND;
+				prev_state_actor =  actor::ACTOR_STATE_MOVE_AROUND;
 			}
 
 			ActorStateMoveAroundHandler(_info);
 			break;
 
-	case(ACTOR_STATE_STOP_AND_STARE):
+	case(actor::ACTOR_STATE_STOP_AND_STARE):
 #ifndef SILENT_
 			std::cout << "\tACTOR_STATE_STOP_AND_STARE" << std::endl;
 #endif
 			break;
-	case(ACTOR_STATE_FOLLOW_OBJECT):
+	case(actor::ACTOR_STATE_FOLLOW_OBJECT):
 #ifndef SILENT_
 			std::cout << "\tACTOR_STATE_FOLLOW_OBJECT" << std::endl;
 #endif
 			ActorStateFollowObjectHandler(_info);
 			break;
-	case(ACTOR_STATE_TELEOPERATION):
+	case(actor::ACTOR_STATE_TELEOPERATION):
 #ifndef SILENT_
 			std::cout << "\tACTOR_STATE_TELEOPERATION" << std::endl;
 #endif
@@ -1168,15 +1104,15 @@ ignition::math::Vector3d ActorPlugin::UpdateActorOrientation() {
 	switch (stance_actor) {
 
 		// Yaw alignment with X-axis DEPRECATED //
-		case(ACTOR_STANCE_WALK):
+		case(actor::ACTOR_STANCE_WALK):
 				rpy.X(1.5707);
 //				rpy.Z() += IGN_DTOR(90);
 				break;
-		case(ACTOR_STANCE_STAND):
+		case(actor::ACTOR_STANCE_STAND):
 				rpy.X(1.5707);
 //				rpy.Z() += IGN_DTOR(90);
 				break;
-		case(ACTOR_STANCE_LIE):
+		case(actor::ACTOR_STANCE_LIE):
 				rpy.X(0.0000);
 //				rpy.Z() += IGN_DTOR(90);
 				break;
@@ -1480,7 +1416,7 @@ void ActorPlugin::ActorStateAlignTargetHandler(const common::UpdateInfo &_info) 
 #ifndef SILENT_
 		std::cout << "\n\n\t\t\tALIGNED\n\n";
 #endif
-		state_actor = ACTOR_STATE_MOVE_AROUND;
+		state_actor = actor::ACTOR_STATE_MOVE_AROUND;
 	}
 
 	// update the local copy of the actor's pose
@@ -1548,7 +1484,7 @@ void ActorPlugin::ActorStateMoveAroundHandler(const common::UpdateInfo &_info) {
 
 		this->chooseNewTarget(_info);
 		// after setting new target, first let's rotate to its direction
-		state_actor = ACTOR_STATE_ALIGN_TARGET;
+		state_actor = actor::ACTOR_STATE_ALIGN_TARGET;
 
 	}
 

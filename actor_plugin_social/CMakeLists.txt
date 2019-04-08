@@ -63,7 +63,9 @@ add_library(actor_inflation
 
 add_library(actor_core 
   include/core/CommonInfo.h 
+  include/core/FSM.h 
   src/core/CommonInfo.cpp 
+  src/core/FSM.cpp
 )
 
 add_library(actor_utils 
@@ -71,10 +73,8 @@ add_library(actor_utils
   src/ActorROSInterface.cpp
 )
 
-
-
 target_link_libraries(actor_inflation    actor_utils actor_core)
-target_link_libraries(social_force_model actor_core)
+#target_link_libraries(social_force_model actor_core)
 
 #add_library(enums include/Enums.h)
 
@@ -86,7 +86,6 @@ target_link_libraries( ${PROJECT_NAME}
   actor_inflation
   actor_core
   actor_utils
-  
   #enums
   ${GAZEBO_LIBRARIES}  
   ${roscpp_LIBRARIES} 
