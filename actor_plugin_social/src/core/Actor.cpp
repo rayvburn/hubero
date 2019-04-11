@@ -6,8 +6,6 @@
  */
 
 #include "core/Actor.h"
-#include <sdf/Element.hh> 	// TODO: not used at the moment
-
 
 namespace actor {
 namespace core {
@@ -19,25 +17,6 @@ Actor::Actor():
 		stance_(ACTOR_STANCE_STAND),	animation_factor_(4.50),
 		trans_function_ptr(nullptr)
 {
-
-	//fsm_.addState(ACTOR_STATE_ALIGN_TARGET,  this->&stateHandlerAlignTarget(gazebo::common::UpdateInfo));
-	// https://arduino.stackexchange.com/questions/14157/passing-class-member-function-as-argument
-	//std::_Bind_helper<void (*)(const gazebo::common::UpdateInfo&)> abc = std::bind(Actor::stateHandlerAlignTarget, this);
-//	fsm_.addState(ACTOR_STATE_ALIGN_TARGET,  std::bind(Actor::stateHandlerAlignTarget, this));
-//	fsm_.addState(ACTOR_STATE_ALIGN_TARGET,  this->stateHandlerAlignTarget);
-//	fsm_.addState(ACTOR_STATE_ALIGN_TARGET,  &stateHandlerAlignTarget);
-
-	// compiles but throws "terminate called after throwing an instance of 'std::bad_function_call'
-	//						what():  bad_function_call"
-	// + #include <functional>
-//	fsm_.addState(ACTOR_STATE_ALIGN_TARGET,  std::bind(&Actor::stateHandlerAlignTarget,   this, std::placeholders::_1));
-//	fsm_.addState(ACTOR_STATE_MOVE_AROUND,   std::bind(&Actor::stateHandlerMoveAround, 	  this, std::placeholders::_1));
-//	fsm_.addState(ACTOR_STATE_FOLLOW_OBJECT, std::bind(&Actor::stateHandlerFollowObject,  this, std::placeholders::_1));
-//	fsm_.addState(ACTOR_STATE_TELEOPERATION, std::bind(&Actor::stateHandlerTeleoperation, this, std::placeholders::_1));
-
-
-
-	std::cout << "ActorCLASS_CONSTRUCTOR FINISH - alignTarget address: " << &Actor::stateHandlerAlignTarget << std::endl;
 
 }
 
@@ -118,25 +97,29 @@ std::array<double, 3> Actor::getVelocity() const {
 
 void Actor::setStance(const actor::ActorStance &stance_type) {
 
-	stance_ = stance_type;
-	std::string animation = convertStanceToAnimationName();
-	gazebo::physics::Actor::SkeletonAnimation_M skeleton_anims = actor_ptr_->SkeletonAnimations();
+	if ( stance_ != stance_type ) {
 
-	for (auto& x: skeleton_anims) {
-		std::cout << "Skeleton animation: " <<  x.first << std::endl;
-	}
+		stance_ = stance_type;
+		std::string animation = convertStanceToAnimationName();
+		gazebo::physics::Actor::SkeletonAnimation_M skeleton_anims = actor_ptr_->SkeletonAnimations();
 
-	if ( skeleton_anims.find(animation) == skeleton_anims.end() ) {
+		/* To print available animations:
+		for (auto& x: skeleton_anims) { std::cout << "Skel. animation: " << x.first << std::endl; }
+		*/
 
-		std::cout << "Skeleton animation " << animation << " not found.\n";
+		if ( skeleton_anims.find(animation) == skeleton_anims.end() ) {
 
-	} else {
+			std::cout << "Skeleton animation " << animation << " not found.\n";
 
-		// Create custom trajectory
-		trajectory_info_.reset(new gazebo::physics::TrajectoryInfo());
-		trajectory_info_->type = animation;
-		trajectory_info_->duration = 1.0;
-		actor_ptr_->SetCustomTrajectory(trajectory_info_);
+		} else {
+
+			// Create custom trajectory
+			trajectory_info_.reset(new gazebo::physics::TrajectoryInfo());
+			trajectory_info_->type = animation;
+			trajectory_info_->duration = 1.0;
+			actor_ptr_->SetCustomTrajectory(trajectory_info_);
+
+		}
 
 	}
 
@@ -151,10 +134,6 @@ void Actor::setState(const actor::ActorState &new_state) {
 // ------------------------------------------------------------------- //
 
 void Actor::executeTransitionFunction(const gazebo::common::UpdateInfo &info) {
-//	gazebo::common::UpdateInfo cpy;
-//	cpy = info;
-//	fsm_.executeCurrentState(info);
-	// FIXME
 	(this->*trans_function_ptr)(info);
 }
 
@@ -172,7 +151,6 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 	/* if already aligned - switch to a certain state, otherwise proceed to the next
 	 * rotation procedure */
 	if ( alignToTargetDirection(&new_rpy) ) {
-		std::cout << "\n\n\t\t\tALIGNED\n\n";
 #ifndef SILENT_
 		std::cout << "\n\n\t\t\tALIGNED\n\n";
 #endif
@@ -180,12 +158,8 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 	}
 
 	// update the local copy of the actor's pose (orientation only)
-	// FIXME: that was changed - TO CHECK
 	ignition::math::Quaterniond quat(new_rpy);
 	pose_world_.Rot() = quat;
-
-//	pose_actor.Set(pose_actor.Pos(), new_rpy);
-//	SetActorPose(ignition::math::Pose3d(pose_world.Pos(), ignition::math::Quaterniond(new_rpy)));
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
@@ -465,8 +439,6 @@ void Actor::updateStanceOrientation() {
 
 bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 
-	//std::cout << "alignToTargetDirection()" << std::endl;
-
 	// calculate the yaw angle actor need to rotate around world's Z axis
 	// NOTE: +90 deg because actor's coordinate system is rotated 90 deg counter clockwise
 	// V1 ------------------------------------------------------------------------------------------------------
@@ -673,7 +645,6 @@ void Actor::calculateVelocity(const double &dt) {
 	 * social force algorithm execution - the main reason of such behavior were changes
 	 * in speed which cause relative velocity fluctuations which on turn affects final
 	 * result a lot */
-
 	std::rotate( velocities_lin_to_avg_.begin(), velocities_lin_to_avg_.begin()+1, velocities_lin_to_avg_.end() );
 	velocities_lin_to_avg_.at(velocities_lin_to_avg_.size()-1) = new_velocity;
 
@@ -805,9 +776,7 @@ std::string Actor::convertStanceToAnimationName() {
 
 // ------------------------------------------------------------------- //
 
-Actor::~Actor() {
-	// TODO Auto-generated destructor stub
-}
+Actor::~Actor() { }
 
 // ------------------------------------------------------------------- //
 
