@@ -59,9 +59,103 @@ void Actor::initGazeboInterface(const gazebo::physics::ActorPtr &actor, const ga
 											  init_orient.Z()));
 	actor_ptr_->SetWorldPose(init_pose);
 
-
+	// set previous pose to prevent velocity overshoot
+	pose_world_prev_ = actor_ptr_->WorldPose();
 
 }
+
+// ------------------------------------------------------------------- //
+
+void Actor::initInflator(const double &circle_radius) {
+
+	// circle
+	bounding_type_ = ACTOR_BOUNDING_CIRCLE;
+	bounding_circle_.setRadius(circle_radius);
+	bounding_circle_.setCenter(pose_world_.Pos());
+	common_info_.setBoundingCircle(bounding_circle_);
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Actor::initInflator(const double &box_x_half, const double &box_y_half, const double &box_z_half) {
+
+	// box
+	bounding_type_ = ACTOR_BOUNDING_BOX;
+	bounding_box_.init(box_x_half, box_y_half, box_z_half);
+	bounding_box_.updatePose(pose_world_);
+	common_info_.setBoundingBox(bounding_box_);
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Actor::initInflator(const double &semi_major, const double &semi_minor, const double &center_offset_x,
+						 const double &center_offset_y) {
+
+	// ellipse
+	bounding_type_ = ACTOR_BOUNDING_ELLIPSE;
+
+	// correct yaw angle to make ellipse abstract from Actor coordinate system's orientation
+	ignition::math::Angle yaw_world( pose_world_.Rot().Yaw() - IGN_PI_2);
+	yaw_world.Normalize();
+	bounding_ellipse_.init( 1.00, 0.80, yaw_world.Radian(), pose_world_.Pos(),
+							ignition::math::Vector3d(0.35, 0.0, 0.0) );
+	common_info_.setBoundingEllipse(bounding_ellipse_);
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Actor::initSFM(const double &param) {
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Actor::readSDFParameters(const sdf::ElementPtr sdf) {
+
+//	if ( sdf && sdf->HasElement("target") ) {
+//		this->target = sdf->Get<ignition::math::Vector3d>("target");
+//	} else {
+//		this->target = ignition::math::Vector3d(0, -5, 1.2138);
+//	}
+//
+//	// Read in the target weight
+//	if ( sdf->HasElement("target_weight") ) {
+//		this->targetWeight = sdf->Get<double>("target_weight");
+//	} else {
+//		this->targetWeight = 1.15;
+//	}
+//
+//	// Read in the obstacle weight
+//	if ( sdf ->HasElement("obstacle_weight") ) {
+//		this->obstacleWeight = sdf ->Get<double>("obstacle_weight");
+//	} else {
+//		this->obstacleWeight = 1.5;
+//	}
+//
+//	// Read in the animation factor (applied in the OnUpdate function).
+//	if ( sdf ->HasElement("animation_factor") ) {
+//		this->animation_factor = sdf ->Get<double>("animation_factor");
+//	} else {
+//		this->animation_factor = 4.5;
+//	}
+//
+//	// Add our own name to models we should ignore when avoiding obstacles.
+//	this->ignoreModels.push_back(this->actor->GetName());
+//
+//	// Read in the other obstacles to ignore
+//	if ( sdf ->HasElement("ignore_obstacles") ) {
+//		sdf::ElementPtr modelElem =	sdf->GetElement("ignore_obstacles")->GetElement("model");
+//		while (modelElem) {
+//			this->ignoreModels.push_back(modelElem->Get<std::string>());
+//			modelElem = modelElem->GetNextElement("model");
+//		}
+//	}
+
+}
+
 
 // ------------------------------------------------------------------- //
 
@@ -541,7 +635,7 @@ double Actor::prepareForUpdate(const gazebo::common::UpdateInfo &info) {
 
 	/* update the bounding box/circle/ellipse of the actor
 	 * (aim is to create a kind of an inflation layer) */
-	switch(	bounding_type_ ) {
+	switch ( bounding_type_ ) {
 
 	case(ACTOR_BOUNDING_BOX):
 			bounding_box_.updatePose(pose_world_);
@@ -577,6 +671,10 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 
   	// save last position to calculate velocity
 	pose_world_prev_ = actor_ptr_->WorldPose();
+
+//	// FIXME: make sure the actor won't go out of bounds
+//	pose_world_.Pos().X(std::max(-3.0, std::min(3.5, pose_world_.Pos().X())));
+//	pose_world_.Pos().Y(std::max(-10.0, std::min(2.0, pose_world_.Pos().Y())));
 
 	// update the global pose
 	actor_ptr_->SetWorldPose(pose_world_, false, false);

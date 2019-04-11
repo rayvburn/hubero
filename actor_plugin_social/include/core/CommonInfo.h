@@ -28,6 +28,15 @@ namespace core {
  * couldn't be read from the world pointer.
  */
 
+// http://answers.gazebosim.org/question/22114/actor-related-information-in-gazebophysicsworldptr-and-collision-of-actors/
+
+/*
+ * Setting the linear velocity for actor or actor's model HAS NO EFFECT!
+ * couldn't find source files on disk and based on bitbucket's Gazebo sources all seems
+ * to be fine (32 joints detected so link pointer is not NULL)
+ * Thus a workaround with static std::vector that stores all actor's velocities (and more)
+ */
+
 /*
  * Setting the linear velocity for actor or actor's model HAS NO EFFECT, don't know why,
  * couldn't find source files on disk and based on bitbucket's Gazebo sources all seems
@@ -40,7 +49,7 @@ namespace core {
  */
 
 /*
- * Bounding types could be switched dynamically if needed
+ * Bounding types could be switched dynamically if needed (if previously properly initialized)
  */
 
 class CommonInfo {

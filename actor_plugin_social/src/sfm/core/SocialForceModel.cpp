@@ -34,6 +34,18 @@ static int print_counter = 0;
 
 // TODO: add references to arguments to avoid copy
 
+// ------------------------------------------------------------------- //
+
+/* TODO: from ActorPlugin HandleObstacles:
+if (std::find(this->ignoreModels.begin(), this->ignoreModels.end(),
+          model->GetName()) == this->ignoreModels.end())
+{
+
+}
+*/
+
+// ------------------------------------------------------------------- //
+
 SocialForceModel::SocialForceModel():
 
 	/* 		TUNING TIPS:

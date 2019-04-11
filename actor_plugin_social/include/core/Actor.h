@@ -32,6 +32,7 @@
 #include <gazebo-8/gazebo/physics/Model.hh>
 #include <gazebo-8/gazebo/physics/Actor.hh>
 #include <gazebo-8/gazebo/physics/World.hh>
+#include <sdformat-5.3/sdf/Element.hh>
 
 // ignition
 #include <ignition/math/Angle.hh>
@@ -56,6 +57,32 @@ public:
 
 	/// @brief Passes World and Actor pointers for use within Actor controller class
 	void initGazeboInterface(const gazebo::physics::ActorPtr &actor, const gazebo::physics::WorldPtr &world);
+
+	/// @brief Read bounding type parameter and set accordingly bounding model's parameters
+	/// @brief Set circular shape as an inflator
+	/// @param[in] radius length of a circle
+	void initInflator(const double &circle_radius);
+
+	/// @brief Set rectangular shape as an inflator (uses axis aligned bounding box)
+	/// @param[in] Half length of a side along X axis
+	/// @param[in] Half length of a side along Y axis
+	/// @param[in] Half length of a side along Z axis (height)
+	void initInflator(const double &box_x_half, const double &box_y_half, const double &box_z_half);
+
+	/// @brief Set circular shape as an inflator
+	/// @param[in] Length of a semi-major axis (a)
+	/// @param[in] Length of a semi-minor axis (b)
+	/// @param[in] Offset from center along the X axis (positive shifts
+	///            ellipse's center in front of the Actor
+	/// @param[in] Offset from center along the Y axis (positive shifts
+	/// 		   ellipse's center towards Actor's right-hand side
+	void initInflator(const double &semi_major, const double &semi_minor, const double &center_offset_x, const double &center_offset_y);
+
+	/// TODO:
+	void initSFM(const double &param);
+
+	/// @brief Search for actor-related fields in the .world file to load parameters
+	void readSDFParameters(const sdf::ElementPtr sdf);
 
 	/// @brief Method to set new target for actor - static objet's pose
 	void setNewTarget(const ignition::math::Pose3d &pose);

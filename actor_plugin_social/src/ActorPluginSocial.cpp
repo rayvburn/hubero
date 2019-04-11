@@ -25,19 +25,17 @@
 
 bool print_info = false;
 
-using namespace gazebo;
+using namespace gazebo; // FIXME?
+
 GZ_REGISTER_MODEL_PLUGIN(ActorPlugin)
 
 #define WALKING_ANIMATION "walking"
-
 
 #if defined(CREATE_ROS_NODE) || defined(CREATE_ROS_INTERFACE)
 #include <visualization_msgs/MarkerArray.h>
 #endif
 
-
 #define SILENT_
-
 
 #ifdef VISUALIZE_SFM
 	#ifdef VIS_SFM_POINT
@@ -50,17 +48,11 @@ GZ_REGISTER_MODEL_PLUGIN(ActorPlugin)
 
 
 /////////////////////////////////////////////////
-ActorPlugin::ActorPlugin()
-{
-	std::cout << "CONSTRUCTOR HERE, hello" << std::endl;
-}
+ActorPlugin::ActorPlugin() { }
 
 /////////////////////////////////////////////////
 void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
-
-	std::cout << "ACTOR PLUGIN::LOAD!" << std::endl;
-//	std::cout << "LOAD()   lin vels address" << &lin_vels_vector << std::endl;
 
 	this->sdf = _sdf;
 	this->model = _model;
@@ -68,29 +60,13 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	this->world = this->actor->GetWorld();
 	this->connections.push_back(event::Events::ConnectWorldUpdateBegin(
 		  std::bind(&ActorPlugin::OnUpdate, this, std::placeholders::_1)));
-	this->Reset();
 
-	if ( this->ReadSDF() ) { /* TODO: Exception Handling */ }
+//	this->Reset();
+//	if ( this->ReadSDF() ) {}
 
 	// - - - - - - - - - - - - - - - - - - - - - -  - - - -- - - -- - - -- -  -- -
 
-#ifdef CREATE_ROS_NODE
-
-	if (!ros::isInitialized())
-	{
-		int argc = 0;
-		char **argv = nullptr;
-		ros::Init(argc, argv, "gazebo_ros", ros::init_options::NoSigintHandler);
-	}
-
-	ros_nh.reset(new ros::NodeHandle());
-	vis_pub = ros_nh->advertise<visualization_msgs::MarkerArray>("sfm_mrkr", 1000);
-
-	if(!vis_pub) {
-		ROS_FATAL_STREAM("Unable to create publisher for topic ``sfm_mrkr``");
-	}
-
-#elif defined(CREATE_ROS_INTERFACE)
+#if defined(CREATE_ROS_INTERFACE)
 	ros_interface.Init(this->actor->GetName());
 #endif
 
@@ -100,96 +76,49 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 #endif
 
 	// - - - - - - - - - - - - - - - - - - - - - -  - - - -- - - -- - - -- -  -- -
+
     std::cout << "LOADED POSE: " << this->actor->WorldPose() << std::endl;
 
-//  	ignition::math::Vector3d init_orient = this->actor->WorldPose().Rot().Euler();
-//  	ignition::math::Pose3d init_pose;
-//  	ignition::math::Vector3d init_position;
-//  	init_position = this->actor->WorldPose().Pos();
-//  	init_position.Z(1.2138);
-//
-//  	init_pose.Set(init_position,
-//				  ignition::math::Quaterniond(init_orient.X() + IGN_PI/2,
-//											  init_orient.Y(),
-//											  // init_orient.Z() + 1.5707));
-//											  init_orient.Z()));
-//
-//	// WARNING: initial pose changed!
-//  	this->actor->SetWorldPose(init_pose, false, false);
-//	std::cout << " -------- SET WorldPose() actor! -------- " << init_pose << std::endl;
-//
-//	// conversions between Euler and Quaternion will finally produce the result that converges to 0...
-//	// above is deprecated, yaw will be set in each OnUpdate()
-//
-//	// Set last_pos_actor to prevent velocity shootout
-//	last_pose_actor.Pos() = this->actor->WorldPose().Pos();
-//	std::cout << " -------- SET last_pos_actor! -------- " << last_pose_actor.Pos() << std::endl;
-//
-//	actor_common_info.addActor(this->actor->GetName());
-//
-//#if	defined(INFLATE_BOUNDING_BOX)
-//	bounding_box.updatePose(this->pose_actor);
-//	actor_common_info.SetBoundingBox(bounding_box);
-//#elif defined(INFLATE_BOUNDING_CIRCLE)
-//	bounding_circle.setCenter(this->pose_actor.Pos());
-//	bounding_circle.setRadius(0.75f);
-//	actor_common_info.SetBoundingCircle(bounding_circle);
-//#elif defined(INFLATE_BOUNDING_ELLIPSE)
-//	bounding_ellipse.setPosition(this->pose_actor.Pos());
-//	bounding_ellipse.setYaw(this->pose_actor.Rot().Yaw());
-//	bounding_ellipse.setSemiMajorAxis(1.00);
-//	bounding_ellipse.setSemiMinorAxis(0.80);
-//	bounding_ellipse.setCenterOffset(ignition::math::Vector3d(0.35, 0.0, 0.0));
-//	actor_common_info.setBoundingEllipse(bounding_ellipse);
-//#endif
-//
-//
-//	std::cout << " -------- ACTOR ID -------- " << actor_common_info.getActorID() << std::endl;
-//	std::cout << " -------- MODEL TYPE -------- " << this->model->GetType() << std::endl;
-
-	// WARNING: HARD-CODED target coord
-	if ( this->actor->GetName() == "actor1" ) {
-		this->target.X(+0.00);
-		this->target.Y(-4.00);
-	}
-
-	//sfm.Init(80.0, 2.0, 1.0, this->world);
-
 	actor_object.initGazeboInterface(actor, world);
-	actor_object.setNewTarget(ignition::math::Pose3d(target, ignition::math::Quaterniond(0.0, 0.0, 0.0)));
+	actor_object.initInflator(1.00, 0.80, 0.35, 0.0);
+
+	ignition::math::Vector3d target_init;
+	target_init.X(ignition::math::Rand::DblUniform(-3, 3.5));
+	target_init.Y(ignition::math::Rand::DblUniform(-10, 2));
+	target_init.Z(1.21);
+	actor_object.setNewTarget(ignition::math::Pose3d(target_init, ignition::math::Quaterniond(0.0, 0.0, 0.0)));
+
 
 }
 
 /////////////////////////////////////////////////
 void ActorPlugin::Reset()
 {
-  this->velocity_desired = 0.8;
-  this->last_update = 0;
-
-  if (this->sdf && this->sdf->HasElement("target"))
-    this->target = this->sdf->Get<ignition::math::Vector3d>("target");
-  else
-    this->target = ignition::math::Vector3d(0, -5, 1.2138);
-
-  auto skelAnims = this->actor->SkeletonAnimations();
-  if (skelAnims.find(WALKING_ANIMATION) == skelAnims.end())
-  {
-    gzerr << "Skeleton animation " << WALKING_ANIMATION << " not found.\n";
-  }
-  else
-  {
-    // Create custom trajectory
-    this->trajectoryInfo.reset(new physics::TrajectoryInfo());
-    this->trajectoryInfo->type = WALKING_ANIMATION;
-    this->trajectoryInfo->duration = 1.0;
-
-    this->actor->SetCustomTrajectory(this->trajectoryInfo);
-  }
+//  this->velocity_desired = 0.8;
+//  this->last_update = 0;
+//
+//  if (this->sdf && this->sdf->HasElement("target"))
+//    this->target = this->sdf->Get<ignition::math::Vector3d>("target");
+//  else
+//    this->target = ignition::math::Vector3d(0, -5, 1.2138);
+//
+//  auto skelAnims = this->actor->SkeletonAnimations();
+//  if (skelAnims.find(WALKING_ANIMATION) == skelAnims.end())
+//  {
+//    gzerr << "Skeleton animation " << WALKING_ANIMATION << " not found.\n";
+//  }
+//  else
+//  {
+//    // Create custom trajectory
+//    this->trajectoryInfo.reset(new physics::TrajectoryInfo());
+//    this->trajectoryInfo->type = WALKING_ANIMATION;
+//    this->trajectoryInfo->duration = 1.0;
+//
+//    this->actor->SetCustomTrajectory(this->trajectoryInfo);
+//  }
 }
 
 /////////////////////////////////////////////////
-
-
 
 /////////////////////////////////////////////////
 
@@ -217,12 +146,10 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 		SfmSetPrintData(false);
 	//}
 
-	common::UpdateInfo info_cpy = _info;
-	//std::cout << "BEF UPDATE" << std::endl;
 	actor_object.executeTransitionFunction(_info);
-	//std::cout << "UPDATED" << std::endl;
 
-
+	// ==================================================================================================
+	/* ROS Interface & Visualization related */
 //#ifdef CREATE_ROS_NODE
 //	PublishActorTf();
 //#elif defined(CREATE_ROS_INTERFACE)
@@ -268,11 +195,38 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 //	}
 //
 //#endif
+
+	// ==================================================================================================
+
 //
 //#ifdef SILENT_
 //	print_info = false;
 //#endif
 
+//
+//	// debugging purposes
+//
+//  	static common::Time print_time;
+//
+//  	if ( (_info.simTime - print_time).Double() > 0.2 ) {
+//
+//#ifndef SILENT_
+//		if ( this->actor->GetName() == "actor1" ) {
+//
+//			print_info = true;
+//			Print_Set(true);
+//			print_time = _info.simTime;
+//			std::cout << "\n\n**************************************************** ACTOR1 ***********************************************" << std::endl;
+//			std::cout << "**** INITIAL pose: " << this->actor->WorldPose() << "\t\t actor1 velocity: \t" << this->velocity_actual << "\t target: " << this->target << std::endl;
+//			ignition::math::Angle yaw_from_vel_world( std::atan2(this->velocity_actual.Y(), this->velocity_actual.X()) + (IGN_PI/2) );
+//			yaw_from_vel_world.Normalize();
+//			std::cout << "**** YAW vs VEL comparison\t\tyaw_from_vel_act: " << std::atan2(this->velocity_actual.Y(), this->velocity_actual.X()) << "\tyaw_from_vel_vec: " << std::atan2( lin_vels_vector[this->actor_id].Y(), lin_vels_vector[this->actor_id].X() ) << "\tyaw_from_vel_WORLD: " << yaw_from_vel_world.Radian() << "\tyaw_from_pose: " << this->actor->WorldPose().Rot().Euler().Z() << std::endl;
+//		}
+//#endif
+//
+//	} else {
+//		print_info = false;
+//	}
 
   	return; // OnUpdate testing
 
@@ -280,46 +234,6 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
 // ===============================================================================================
 // ===============================================================================================
-
-bool ActorPlugin::ReadSDF() {
-
-	  // Read in the target weight
-	  if (this->sdf ->HasElement("target_weight"))
-	    this->targetWeight = this->sdf ->Get<double>("target_weight");
-	  else
-	    this->targetWeight = 1.15;
-
-	  // Read in the obstacle weight
-	  if (this->sdf ->HasElement("obstacle_weight"))
-	    this->obstacleWeight = this->sdf ->Get<double>("obstacle_weight");
-	  else
-	    this->obstacleWeight = 1.5;
-
-	  // Read in the animation factor (applied in the OnUpdate function).
-	  if (this->sdf ->HasElement("animation_factor"))
-	    this->animation_factor = this->sdf ->Get<double>("animation_factor");
-	  else
-	    this->animation_factor = 4.5;
-
-	  // Add our own name to models we should ignore when avoiding obstacles.
-	  this->ignoreModels.push_back(this->actor->GetName());
-
-	  // Read in the other obstacles to ignore
-	  if (this->sdf ->HasElement("ignore_obstacles"))
-	  {
-	    sdf::ElementPtr modelElem =
-	    		this->sdf ->GetElement("ignore_obstacles")->GetElement("model");
-	    while (modelElem)
-	    {
-	      this->ignoreModels.push_back(modelElem->Get<std::string>());
-	      modelElem = modelElem->GetNextElement("model");
-	    }
-	  }
-
-	  return true;
-
-}
-
 // ===============================================================================================
 // ===============================================================================================
 

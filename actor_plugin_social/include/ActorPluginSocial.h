@@ -41,7 +41,6 @@
 // -------------------------
 
 //#define VISUALIZE_SFM
-////////#define CREATE_ROS_NODE
 //#define CREATE_ROS_INTERFACE
 
 // -------------------------
@@ -81,6 +80,7 @@ namespace gazebo
     /// \brief Constructor
     public: ActorPlugin();
 
+    /// \brief Actor class object
     public: actor::core::Actor actor_object;
 
     /// \brief Load the actor plugin.
@@ -96,11 +96,13 @@ namespace gazebo
     private: void OnUpdate(const common::UpdateInfo &_info);
 
 
+
     /// \brief Time of the last new target selection
 	private: common::Time last_target_selection_time;
 
     /// \brief Time of the last reachability test.
 	private: common::Time last_reachability_time;
+
 
     /// \brief Pointer to the model.
     private: physics::ModelPtr model;
@@ -114,38 +116,15 @@ namespace gazebo
     /// \brief Pointer to the sdf element.
     private: sdf::ElementPtr sdf;
 
-    /// \brief Desired velocity of the actor
-    private: ignition::math::Vector3d velocity_desired;
-
     /// \brief List of connections
     private: std::vector<event::ConnectionPtr> connections;
-
-    /// \brief Current target location
-    private: ignition::math::Vector3d target;
-
-    /// \brief Target location weight (used for vector field)
-    private: double targetWeight = 1.0;
-
-    /// \brief Obstacle weight (used for vector field)
-    private: double obstacleWeight = 1.0;
-
-    /// \brief Time scaling factor. Used to coordinate translational motion
-    /// with the actor's walking animation.
-    private: double animation_factor = 1.0;
-
-    /// \brief Time of the last update.
-    private: common::Time last_update;
 
     /// \brief List of models to ignore. Used for vector field
     private: std::vector<std::string> ignoreModels;
 
-    /// \brief Custom trajectory info.
-    private: physics::TrajectoryInfoPtr trajectoryInfo;
-
-    // ----------------------------------------------------------
-
     /// \brief TODO
     private: bool ReadSDF();
+
 
 #ifdef VISUALIZE_SFM
 
