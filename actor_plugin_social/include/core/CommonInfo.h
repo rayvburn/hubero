@@ -29,6 +29,13 @@ namespace core {
  */
 
 /*
+ * Setting the linear velocity for actor or actor's model HAS NO EFFECT, don't know why,
+ * couldn't find source files on disk and based on bitbucket's Gazebo sources all seems
+ * to be fine (32 joints detected so link pointer is not NULL)
+ * Thus a workaround with static std::vector that stores all actor's velocities
+ */
+
+/*
  * Actor has no collision thus no bounding box could be defined - it will be done artificially.
  */
 

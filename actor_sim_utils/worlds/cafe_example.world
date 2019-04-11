@@ -144,7 +144,7 @@
                         
 
       <plugin name="actor1_plugin" filename="libactor_plugin_social.so">
-        <target>0 -5 1.2138</target>
+        <target>0 -4 1.2138</target>
         <target_weight>1.15</target_weight>
         <obstacle_weight>1.8</obstacle_weight>
         <animation_factor>5.1</animation_factor>
