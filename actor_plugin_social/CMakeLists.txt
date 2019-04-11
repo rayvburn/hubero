@@ -62,8 +62,10 @@ add_library(actor_inflation
 )
 
 add_library(actor_core 
+  include/core/Actor.h 
   include/core/CommonInfo.h 
   include/core/FSM.h 
+  src/core/Actor.cpp 
   src/core/CommonInfo.cpp 
   src/core/FSM.cpp
 )

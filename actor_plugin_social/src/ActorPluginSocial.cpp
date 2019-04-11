@@ -102,50 +102,50 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	// - - - - - - - - - - - - - - - - - - - - - -  - - - -- - - -- - - -- -  -- -
     std::cout << "LOADED POSE: " << this->actor->WorldPose() << std::endl;
 
-  	ignition::math::Vector3d init_orient = this->actor->WorldPose().Rot().Euler();
-  	ignition::math::Pose3d init_pose;
-  	ignition::math::Vector3d init_position;
-  	init_position = this->actor->WorldPose().Pos();
-  	init_position.Z(1.2138);
-
-  	init_pose.Set(init_position,
-				  ignition::math::Quaterniond(init_orient.X() + IGN_PI/2,
-											  init_orient.Y(),
-											  // init_orient.Z() + 1.5707));
-											  init_orient.Z()));
-
-	// WARNING: initial pose changed!
-  	this->actor->SetWorldPose(init_pose, false, false);
-	std::cout << " -------- SET WorldPose() actor! -------- " << init_pose << std::endl;
-
-	// conversions between Euler and Quaternion will finally produce the result that converges to 0...
-	// above is deprecated, yaw will be set in each OnUpdate()
-
-	// Set last_pos_actor to prevent velocity shootout
-	last_pose_actor.Pos() = this->actor->WorldPose().Pos();
-	std::cout << " -------- SET last_pos_actor! -------- " << last_pose_actor.Pos() << std::endl;
-
-	actor_common_info.addActor(this->actor->GetName());
-
-#if	defined(INFLATE_BOUNDING_BOX)
-	bounding_box.updatePose(this->pose_actor);
-	actor_common_info.SetBoundingBox(bounding_box);
-#elif defined(INFLATE_BOUNDING_CIRCLE)
-	bounding_circle.setCenter(this->pose_actor.Pos());
-	bounding_circle.setRadius(0.75f);
-	actor_common_info.SetBoundingCircle(bounding_circle);
-#elif defined(INFLATE_BOUNDING_ELLIPSE)
-	bounding_ellipse.setPosition(this->pose_actor.Pos());
-	bounding_ellipse.setYaw(this->pose_actor.Rot().Yaw());
-	bounding_ellipse.setSemiMajorAxis(1.00);
-	bounding_ellipse.setSemiMinorAxis(0.80);
-	bounding_ellipse.setCenterOffset(ignition::math::Vector3d(0.35, 0.0, 0.0));
-	actor_common_info.setBoundingEllipse(bounding_ellipse);
-#endif
-
-
-	std::cout << " -------- ACTOR ID -------- " << actor_common_info.getActorID() << std::endl;
-	std::cout << " -------- MODEL TYPE -------- " << this->model->GetType() << std::endl;
+//  	ignition::math::Vector3d init_orient = this->actor->WorldPose().Rot().Euler();
+//  	ignition::math::Pose3d init_pose;
+//  	ignition::math::Vector3d init_position;
+//  	init_position = this->actor->WorldPose().Pos();
+//  	init_position.Z(1.2138);
+//
+//  	init_pose.Set(init_position,
+//				  ignition::math::Quaterniond(init_orient.X() + IGN_PI/2,
+//											  init_orient.Y(),
+//											  // init_orient.Z() + 1.5707));
+//											  init_orient.Z()));
+//
+//	// WARNING: initial pose changed!
+//  	this->actor->SetWorldPose(init_pose, false, false);
+//	std::cout << " -------- SET WorldPose() actor! -------- " << init_pose << std::endl;
+//
+//	// conversions between Euler and Quaternion will finally produce the result that converges to 0...
+//	// above is deprecated, yaw will be set in each OnUpdate()
+//
+//	// Set last_pos_actor to prevent velocity shootout
+//	last_pose_actor.Pos() = this->actor->WorldPose().Pos();
+//	std::cout << " -------- SET last_pos_actor! -------- " << last_pose_actor.Pos() << std::endl;
+//
+//	actor_common_info.addActor(this->actor->GetName());
+//
+//#if	defined(INFLATE_BOUNDING_BOX)
+//	bounding_box.updatePose(this->pose_actor);
+//	actor_common_info.SetBoundingBox(bounding_box);
+//#elif defined(INFLATE_BOUNDING_CIRCLE)
+//	bounding_circle.setCenter(this->pose_actor.Pos());
+//	bounding_circle.setRadius(0.75f);
+//	actor_common_info.SetBoundingCircle(bounding_circle);
+//#elif defined(INFLATE_BOUNDING_ELLIPSE)
+//	bounding_ellipse.setPosition(this->pose_actor.Pos());
+//	bounding_ellipse.setYaw(this->pose_actor.Rot().Yaw());
+//	bounding_ellipse.setSemiMajorAxis(1.00);
+//	bounding_ellipse.setSemiMinorAxis(0.80);
+//	bounding_ellipse.setCenterOffset(ignition::math::Vector3d(0.35, 0.0, 0.0));
+//	actor_common_info.setBoundingEllipse(bounding_ellipse);
+//#endif
+//
+//
+//	std::cout << " -------- ACTOR ID -------- " << actor_common_info.getActorID() << std::endl;
+//	std::cout << " -------- MODEL TYPE -------- " << this->model->GetType() << std::endl;
 
 	// WARNING: HARD-CODED target coord
 	if ( this->actor->GetName() == "actor1" ) {
@@ -154,7 +154,10 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	}
 
 	prev_state_actor = actor::ACTOR_STATE_MOVE_AROUND;
-	sfm.Init(80.0, 2.0, 1.0, this->world);
+	//sfm.Init(80.0, 2.0, 1.0, this->world);
+
+	actor_object.initGazeboInterface(actor, world);
+	actor_object.setNewTarget(ignition::math::Pose3d(target, ignition::math::Quaterniond(0.0, 0.0, 0.0)));
 
 }
 
@@ -350,140 +353,145 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 		SfmSetPrintData(false);
 	//}
 
-	if ( !isTargetStillReachable(_info) ) {
-		this->chooseNewTarget(_info);
-		// after setting new target, first let's rotate to its direction
-		state_actor = actor::ACTOR_STATE_ALIGN_TARGET;
-	}
+	common::UpdateInfo info_cpy = _info;
+	//std::cout << "BEF UPDATE" << std::endl;
+	actor_object.executeTransitionFunction(_info);
+	//std::cout << "UPDATED" << std::endl;
 
-	if ( isTargetNotReachedForTooLong(_info) ) {
-		this->chooseNewTarget(_info);
-		// after setting new target, first let's rotate to its direction
-		state_actor = actor::ACTOR_STATE_ALIGN_TARGET;
-	}
-
-
-#ifdef CREATE_ROS_NODE
-	PublishActorTf();
-#elif defined(CREATE_ROS_INTERFACE)
-	ros_interface.PublishActorTf(this->pose_actor);
-	ros_interface.PublishTargetTf(this->target);
-	#ifdef INFLATE_BOUNDING_CIRCLE
-	ros_interface.PublishMarker(bounding_circle.getMarkerConversion());
-	#elif defined(INFLATE_BOUNDING_BOX)
-	//ros_interface.PublishMarker(sfm_vis.GetBBMarkerConversion(actor_common_info.GetBoundingBox()));
-	ros_interface.PublishMarker(bounding_box.getMarkerConversion());
-#elif defined(INFLATE_BOUNDING_ELLIPSE)
-	ros_interface.PublishMarker(bounding_ellipse.getMarkerConversion());
-	#endif
-#endif
-
-#if defined(VISUALIZE_SFM) && defined(VIS_SFM_POINT)
-	static common::Time vis_time;
-	static int counter = 0;
-
-	if ( (_info.simTime - vis_time).Double() >= 0.25 ) {
-
-		//std::cout << "ACTOR FOR VIS: " << this->actor_id << "\tname: " << this->actor->GetName() << std::endl;
+//	if ( !isTargetStillReachable(_info) ) {
+//		this->chooseNewTarget(_info);
+//		// after setting new target, first let's rotate to its direction
+//		state_actor = actor::ACTOR_STATE_ALIGN_TARGET;
+//	}
+//
+//	if ( isTargetNotReachedForTooLong(_info) ) {
+//		this->chooseNewTarget(_info);
+//		// after setting new target, first let's rotate to its direction
+//		state_actor = actor::ACTOR_STATE_ALIGN_TARGET;
+//	}
+//
+//
+//#ifdef CREATE_ROS_NODE
+//	PublishActorTf();
+//#elif defined(CREATE_ROS_INTERFACE)
+//	ros_interface.PublishActorTf(this->pose_actor);
+//	ros_interface.PublishTargetTf(this->target);
+//	#ifdef INFLATE_BOUNDING_CIRCLE
+//	ros_interface.PublishMarker(bounding_circle.getMarkerConversion());
+//	#elif defined(INFLATE_BOUNDING_BOX)
+//	//ros_interface.PublishMarker(sfm_vis.GetBBMarkerConversion(actor_common_info.GetBoundingBox()));
+//	ros_interface.PublishMarker(bounding_box.getMarkerConversion());
+//#elif defined(INFLATE_BOUNDING_ELLIPSE)
+//	ros_interface.PublishMarker(bounding_ellipse.getMarkerConversion());
+//	#endif
+//#endif
+//
+//#if defined(VISUALIZE_SFM) && defined(VIS_SFM_POINT)
+//	static common::Time vis_time;
+//	static int counter = 0;
+//
+//	if ( (_info.simTime - vis_time).Double() >= 0.25 ) {
+//
+//		//std::cout << "ACTOR FOR VIS: " << this->actor_id << "\tname: " << this->actor->GetName() << std::endl;
+////		if ( actor->GetName() == "actor1" ) {
+////			SfmSetPrintData(false); // print in each iteration
+////		}
+//		VisualizeForceField();
 //		if ( actor->GetName() == "actor1" ) {
-//			SfmSetPrintData(false); // print in each iteration
+//			SfmSetPrintData(true);
 //		}
-		VisualizeForceField();
-		if ( actor->GetName() == "actor1" ) {
-			SfmSetPrintData(true);
-		}
-		counter++;
-		if ( counter == 2 ) {
-			vis_time = _info.simTime;
-			counter = 0;
-		}
+//		counter++;
+//		if ( counter == 2 ) {
+//			vis_time = _info.simTime;
+//			counter = 0;
+//		}
+//
+//	}
+//#elif defined(VISUALIZE_SFM) && defined(VIS_SFM_GRID)
+//
+//	static common::Time vis_time;
+//	if ( (_info.simTime - vis_time).Double() > 0.05 ) {
+//		VisualizeForceField();
+//		vis_time = _info.simTime;
+//	}
+//
+//#endif
+//
+//#ifdef SILENT_
+//	print_info = false;
+//#endif
+//
+//	switch(state_actor) {
+//
+//	case(actor::ACTOR_STATE_ALIGN_TARGET):
+//
+//			if ( prev_state_actor != actor::ACTOR_STATE_ALIGN_TARGET ) {
+//#ifndef SILENT_
+//				std::cout << "\tACTOR_STATE_ALIGN_TARGET" << std::endl;
+//#endif
+//				prev_state_actor =  actor::ACTOR_STATE_ALIGN_TARGET;
+//			}
+//
+//			ActorStateAlignTargetHandler(_info);
+//			break;
+//
+//	case(actor::ACTOR_STATE_MOVE_AROUND):
+//
+//			if ( prev_state_actor != actor::ACTOR_STATE_MOVE_AROUND ) {
+//#ifndef SILENT_
+//				std::cout << "\tACTOR_STATE_MOVE_AROUND" << std::endl;
+//#endif
+//				prev_state_actor =  actor::ACTOR_STATE_MOVE_AROUND;
+//			}
+//
+//			ActorStateMoveAroundHandler(_info);
+//			break;
+//
+//	case(actor::ACTOR_STATE_STOP_AND_STARE):
+//#ifndef SILENT_
+//			std::cout << "\tACTOR_STATE_STOP_AND_STARE" << std::endl;
+//#endif
+//			break;
+//	case(actor::ACTOR_STATE_FOLLOW_OBJECT):
+//#ifndef SILENT_
+//			std::cout << "\tACTOR_STATE_FOLLOW_OBJECT" << std::endl;
+//#endif
+//			ActorStateFollowObjectHandler(_info);
+//			break;
+//	case(actor::ACTOR_STATE_TELEOPERATION):
+//#ifndef SILENT_
+//			std::cout << "\tACTOR_STATE_TELEOPERATION" << std::endl;
+//#endif
+//			ActorStateTeleoperationHandler(_info);
+//			break;
+//	}
+//
+//
+//	// debugging purposes
+//
+//  	static common::Time print_time;
+//
+//  	if ( (_info.simTime - print_time).Double() > 0.2 ) {
+//
+//#ifndef SILENT_
+//		if ( this->actor->GetName() == "actor1" ) {
+//
+//			print_info = true;
+//			Print_Set(true);
+//			print_time = _info.simTime;
+//			std::cout << "\n\n**************************************************** ACTOR1 ***********************************************" << std::endl;
+//			std::cout << "**** INITIAL pose: " << this->actor->WorldPose() << "\t\t actor1 velocity: \t" << this->velocity_actual << "\t target: " << this->target << std::endl;
+//			ignition::math::Angle yaw_from_vel_world( std::atan2(this->velocity_actual.Y(), this->velocity_actual.X()) + (IGN_PI/2) );
+//			yaw_from_vel_world.Normalize();
+//			std::cout << "**** YAW vs VEL comparison\t\tyaw_from_vel_act: " << std::atan2(this->velocity_actual.Y(), this->velocity_actual.X()) << "\tyaw_from_vel_vec: " << std::atan2( lin_vels_vector[this->actor_id].Y(), lin_vels_vector[this->actor_id].X() ) << "\tyaw_from_vel_WORLD: " << yaw_from_vel_world.Radian() << "\tyaw_from_pose: " << this->actor->WorldPose().Rot().Euler().Z() << std::endl;
+//		}
+//#endif
+//
+//	} else {
+//		print_info = false;
+//	}
 
-	}
-#elif defined(VISUALIZE_SFM) && defined(VIS_SFM_GRID)
-
-	static common::Time vis_time;
-	if ( (_info.simTime - vis_time).Double() > 0.05 ) {
-		VisualizeForceField();
-		vis_time = _info.simTime;
-	}
-
-#endif
-
-#ifdef SILENT_
-	print_info = false;
-#endif
-
-	switch(state_actor) {
-
-	case(actor::ACTOR_STATE_ALIGN_TARGET):
-
-			if ( prev_state_actor != actor::ACTOR_STATE_ALIGN_TARGET ) {
-#ifndef SILENT_
-				std::cout << "\tACTOR_STATE_ALIGN_TARGET" << std::endl;
-#endif
-				prev_state_actor =  actor::ACTOR_STATE_ALIGN_TARGET;
-			}
-
-			ActorStateAlignTargetHandler(_info);
-			break;
-
-	case(actor::ACTOR_STATE_MOVE_AROUND):
-
-			if ( prev_state_actor != actor::ACTOR_STATE_MOVE_AROUND ) {
-#ifndef SILENT_
-				std::cout << "\tACTOR_STATE_MOVE_AROUND" << std::endl;
-#endif
-				prev_state_actor =  actor::ACTOR_STATE_MOVE_AROUND;
-			}
-
-			ActorStateMoveAroundHandler(_info);
-			break;
-
-	case(actor::ACTOR_STATE_STOP_AND_STARE):
-#ifndef SILENT_
-			std::cout << "\tACTOR_STATE_STOP_AND_STARE" << std::endl;
-#endif
-			break;
-	case(actor::ACTOR_STATE_FOLLOW_OBJECT):
-#ifndef SILENT_
-			std::cout << "\tACTOR_STATE_FOLLOW_OBJECT" << std::endl;
-#endif
-			ActorStateFollowObjectHandler(_info);
-			break;
-	case(actor::ACTOR_STATE_TELEOPERATION):
-#ifndef SILENT_
-			std::cout << "\tACTOR_STATE_TELEOPERATION" << std::endl;
-#endif
-			ActorStateTeleoperationHandler(_info);
-			break;
-	}
-
-
-	// debugging purposes
-
-  	static common::Time print_time;
-
-  	if ( (_info.simTime - print_time).Double() > 0.2 ) {
-
-#ifndef SILENT_
-		if ( this->actor->GetName() == "actor1" ) {
-
-			print_info = true;
-			Print_Set(true);
-			print_time = _info.simTime;
-			std::cout << "\n\n**************************************************** ACTOR1 ***********************************************" << std::endl;
-			std::cout << "**** INITIAL pose: " << this->actor->WorldPose() << "\t\t actor1 velocity: \t" << this->velocity_actual << "\t target: " << this->target << std::endl;
-			ignition::math::Angle yaw_from_vel_world( std::atan2(this->velocity_actual.Y(), this->velocity_actual.X()) + (IGN_PI/2) );
-			yaw_from_vel_world.Normalize();
-			std::cout << "**** YAW vs VEL comparison\t\tyaw_from_vel_act: " << std::atan2(this->velocity_actual.Y(), this->velocity_actual.X()) << "\tyaw_from_vel_vec: " << std::atan2( lin_vels_vector[this->actor_id].Y(), lin_vels_vector[this->actor_id].X() ) << "\tyaw_from_vel_WORLD: " << yaw_from_vel_world.Radian() << "\tyaw_from_pose: " << this->actor->WorldPose().Rot().Euler().Z() << std::endl;
-		}
-#endif
-
-	} else {
-		print_info = false;
-	}
-
-  	return;
+  	return; // OnUpdate testing
 
 
 
@@ -846,7 +854,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 
 #endif
 
-}
+} /* OnUpdate */
 
 #ifndef REFACTOR_COMMON
 

@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "core/Actor.h"
 #include "core/Enums.h"
 #include "core/CommonInfo.h"
 #include "core/FSM.h"
@@ -36,11 +37,12 @@
 #include "sfm/core/SocialForceModel.h"
 #include "sfm/core/SFMDebug.h"
 
+
 // -------------------------
 
-#define VISUALIZE_SFM
-//#define CREATE_ROS_NODE
-#define CREATE_ROS_INTERFACE
+//#define VISUALIZE_SFM
+////////#define CREATE_ROS_NODE
+//#define CREATE_ROS_INTERFACE
 
 // -------------------------
 
@@ -113,6 +115,8 @@ namespace gazebo
   {
     /// \brief Constructor
     public: ActorPlugin();
+
+    public: actor::core::Actor actor_object;
 
     /// \brief Load the actor plugin.
     /// \param[in] _model Pointer to the parent model.
