@@ -6,6 +6,7 @@
  */
 
 #include <core/FSM.h>
+#include <iostream> // debugging only
 
 namespace actor {
 namespace core {
@@ -14,49 +15,12 @@ namespace core {
 
 FSM::FSM(): state_changed_flag_(true) {
 
-#ifndef FSM_DO_NOT_WRAP_ACTOR_METHODS
-	state_curr_.name = ACTOR_STATE_ALIGN_TARGET;
-#ifdef FSM_VOID_PTR
-	state_curr_.handler = nullptr;
-#else
-	//state_curr_.fn = 0;
-#endif
-
-#else
 	addState(ACTOR_STATE_INITIAL);
 	state_curr_ = ACTOR_STATE_INITIAL;
-#endif
 
 }
 
 // ------------------------------------------------------------------- //
-
-#ifndef FSM_DO_NOT_WRAP_ACTOR_METHODS
-
-#ifdef FSM_VOID_PTR
-void FSM::addState(const actor::ActorState &state, void (*handler)(gazebo::common::UpdateInfo)) {
-#else
-
-//void FSM::addState(const actor::ActorState &state, std::function<void (gazebo::common::UpdateInfo)> fn) {
-void addState(const actor::ActorState &state, boost::function<void (gazebo::common::UpdateInfo)> fn) {
-#endif
-
-	bool state_already_added = false;
-	std::tie(state_already_added, std::ignore) = isStateValid(state);
-
-	if ( !state_already_added ) {
-		actor::core::State new_state;
-		new_state.name = state;
-#ifdef FSM_VOID_PTR
-		new_state.handler = handler;
-#else
-		new_state.fn = fn;
-#endif
-		states_.push_back(new_state);
-	}
-
-}
-#else
 
 void FSM::addState(const actor::ActorState &state) {
 
@@ -68,8 +32,6 @@ void FSM::addState(const actor::ActorState &state) {
 	}
 
 }
-
-#endif
 
 // ------------------------------------------------------------------- //
 
@@ -104,26 +66,8 @@ bool FSM::didStateChange() {
 
 // ------------------------------------------------------------------- //
 
-#ifndef FSM_DO_NOT_WRAP_ACTOR_METHODS
-void FSM::executeCurrentState(const gazebo::common::UpdateInfo &info) {
-	gazebo::common::UpdateInfo copy = info;
-	std::cout << "FSM::executeCurrentState - fn address: " << &(state_curr_.fn) << "\t" << std::endl;
-#ifdef FSM_VOID_PTR
-	state_curr_.handler(copy);
-#else
-	state_curr_.fn(copy);
-#endif
-}
-#endif
-
-// ------------------------------------------------------------------- //
-
 actor::ActorState FSM::getState() const {
-#ifndef FSM_DO_NOT_WRAP_ACTOR_METHODS
-	return (state_curr_.name);
-#else
 	return (state_curr_);
-#endif
 }
 
 // ------------------------------------------------------------------- //
@@ -132,12 +76,7 @@ actor::ActorState FSM::getState() const {
 std::tuple<bool, unsigned int> FSM::isStateValid(const actor::ActorState &new_state) {
 
 	for ( unsigned int i = 0; i < states_.size(); i++ ) {
-
-#ifndef FSM_DO_NOT_WRAP_ACTOR_METHODS
-		if ( states_.at(i).name == new_state ) {
-#else
 		if ( states_.at(i) == new_state ) {
-#endif
 			return ( std::make_tuple(true, i) );
 		}
 	}

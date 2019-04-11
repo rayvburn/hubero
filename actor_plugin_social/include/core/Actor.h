@@ -48,6 +48,7 @@ namespace core {
 
 class Actor {
 
+
 public:
 
 	/// @brief Default contructor
@@ -84,6 +85,7 @@ public:
     void stateHandlerTeleoperation 	(const gazebo::common::UpdateInfo &info);
 
 	virtual ~Actor();
+
 
 private:
 
