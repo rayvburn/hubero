@@ -84,12 +84,64 @@
         <filename>walk.dae</filename>
         <scale>1.0</scale>
       </skin>
-      <animation name="walking">
-        <!-- <filename>walk.dae</filename>  -->
+
+      <!--  Animations could be added within animation tag
+            The ones available by default are listed in
+            /usr/share/gazebo-8/media/models -->
+      <animation name="walk">
         <filename>walk.dae</filename>
         <scale>1.000000</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
+
+      <animation name="stand">
+        <filename>stand.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sit_down">
+        <filename>sit_down.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sitting">
+        <filename>sitting.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="run">
+        <filename>run.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_a">
+        <filename>talk_a.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_b">
+        <filename>talk_b.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+                        
 
       <plugin name="actor1_plugin" filename="libactor_plugin_social.so">
         <target>0 -5 1.2138</target>
@@ -111,11 +163,61 @@
         <filename>walk.dae</filename>
         <scale>1.0</scale>
       </skin>
-      <animation name="walking">
+
+      <animation name="walk">
         <filename>walk.dae</filename>
         <scale>1.000000</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
+
+      <animation name="stand">
+        <filename>stand.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sit_down">
+        <filename>sit_down.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sitting">
+        <filename>sitting.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="run">
+        <filename>run.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_a">
+        <filename>talk_a.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_b">
+        <filename>talk_b.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
       <plugin name="actor2_plugin" filename="libactor_plugin_social.so">
         <target>3 2 1.24</target>
         <target_weight>1.15</target_weight>
@@ -134,11 +236,62 @@
         <filename>walk.dae</filename>
         <scale>1.0</scale>
       </skin>
-      <animation name="walking">
+
+
+      <animation name="walk">
         <filename>walk.dae</filename>
         <scale>1.000000</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
+
+      <animation name="stand">
+        <filename>stand.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sit_down">
+        <filename>sit_down.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sitting">
+        <filename>sitting.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="run">
+        <filename>run.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_a">
+        <filename>talk_a.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_b">
+        <filename>talk_b.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      
       <plugin name="actor3_plugin" filename="libactor_plugin_social.so">
         <target>-3 2 1.24</target>
         <target_weight>1.15</target_weight>
@@ -158,11 +311,62 @@
         <filename>walk.dae</filename>
         <scale>1.0</scale>
       </skin>
-      <animation name="walking">
+
+
+      <animation name="walk">
         <filename>walk.dae</filename>
         <scale>1.000000</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
+
+      <animation name="stand">
+        <filename>stand.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sit_down">
+        <filename>sit_down.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sitting">
+        <filename>sitting.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="run">
+        <filename>run.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_a">
+        <filename>talk_a.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_b">
+        <filename>talk_b.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
       <plugin name="actor4_plugin" filename="libactor_plugin_social.so">
         <target>-3 -8 1.24</target>
         <target_weight>1.15</target_weight>

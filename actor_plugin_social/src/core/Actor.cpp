@@ -16,7 +16,7 @@ namespace core {
 
 Actor::Actor():
 		target_tolerance_(1.25), 		bounding_type_(ACTOR_BOUNDING_ELLIPSE),
-		stance_(ACTOR_STANCE_STAND),	animation_factor_(1.00),
+		stance_(ACTOR_STANCE_STAND),	animation_factor_(4.50),
 		trans_function_ptr(nullptr)
 {
 
