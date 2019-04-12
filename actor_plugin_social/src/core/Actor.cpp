@@ -16,9 +16,7 @@ Actor::Actor():
 		target_tolerance_(1.25), 		bounding_type_(ACTOR_BOUNDING_ELLIPSE),
 		stance_(ACTOR_STANCE_STAND),	animation_factor_(4.50),
 		trans_function_ptr(nullptr)
-{
-
-}
+{ }
 
 // ------------------------------------------------------------------- //
 
@@ -61,6 +59,9 @@ void Actor::initGazeboInterface(const gazebo::physics::ActorPtr &actor, const ga
 
 	// set previous pose to prevent velocity overshoot
 	pose_world_prev_ = actor_ptr_->WorldPose();
+
+	// initialize ROS interface to allow publishing and receiving messages
+	initRosInterface();
 
 }
 
@@ -721,6 +722,12 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 		updateTransitionFunctionPtr();
 	}
 
+	// publish data for visualization
+	stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_ellipse_.getMarkerConversion());
+	stream_.publishData(ActorTfType::ACTOR_TF_SELF, pose_world_);
+	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_),
+																			 ignition::math::Quaterniond(0.0, 0.0, 0.0, 1.0)));
+
 	// debug info
 //	print_info = false;
 //	Print_Set(false);
@@ -820,7 +827,7 @@ void Actor::updateTransitionFunctionPtr() {
 
 // ------------------------------------------------------------------- //
 
-std::string Actor::convertStanceToAnimationName() {
+std::string Actor::convertStanceToAnimationName() const {
 
 	std::string anim_name;
 
@@ -869,6 +876,18 @@ std::string Actor::convertStanceToAnimationName() {
 	}
 
 	return (anim_name);
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Actor::initRosInterface() {
+
+	stream_.setNodeHandle(node_.getNodeHandlePtr());
+	stream_.setNamespace(actor_ptr_->GetName());
+	stream_.initPublisher(ActorMarkerType::ACTOR_MARKER_BOUNDING, "ellipse");
+
+	//connection_.setNodeHandle(node_.getNodeHandlePtr());
 
 }
 

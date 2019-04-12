@@ -17,6 +17,9 @@
 #include "core/Enums.h"
 #include "core/CommonInfo.h"
 #include "core/FSM.h"
+#include "ros_interface/Node.h"
+#include "ros_interface/Stream.h"
+#include "ros_interface/Connection.h"
 
 // Social Force Model
 #include "sfm/core/SocialForceModel.h"
@@ -156,7 +159,10 @@ private:
     void updateTransitionFunctionPtr();
 
     /// @brief Helper function that converts a stance type to associated animation
-    std::string convertStanceToAnimationName();
+    std::string convertStanceToAnimationName() const;
+
+    /// @brief Helper function that initializes publishers, services etc.
+    void initRosInterface();
 
     /// @brief Pointer to the parent actor.
     gazebo::physics::ActorPtr actor_ptr_;
@@ -239,6 +245,19 @@ private:
     /// @brief Time scaling factor. Used to coordinate translational motion
     /// with the actor_ptr_'s walking animation.
     double animation_factor_;
+
+    /// @brief Node for ROS Interface
+    actor::ros_interface::Node node_;
+
+    /// @brief Stream class instance used for ROS Interface
+    /// acts as an output buffer of the inter-agent
+    /// communication channel
+    actor::ros_interface::Stream stream_;
+
+    /// @brief Connection class instance used for ROS Interface
+    /// acts as an input buffer of the inter-agent
+    /// communication channel
+    actor::ros_interface::Connection connection_;
 
 };
 

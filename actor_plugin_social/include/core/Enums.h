@@ -56,6 +56,34 @@ typedef enum {
 
 // -------------------------
 
+/// \brief Block of enums connected with actor::ros_interface::Stream class;
+/// according to type, a proper message type is published;
+/// due to the fact that all publishers are stored in std::vector container
+/// the number, which enum expands, must be UNIQUE (based on number the
+/// publisher will be chosen);
+/// this solution is marked as FIXME
+
+typedef enum {
+	ACTOR_MARKER_BOUNDING = 0u,
+	ACTOR_MARKER_SF_VECTOR,
+} ActorMarkerType;
+
+// -------------------------
+
+typedef enum {
+	ACTOR_MARKER_ARRAY_CLOSEST_POINTS = 100u,
+	ACTOR_MARKER_ARRAY_GRID
+} ActorMarkerArrayType;
+
+// -------------------------
+
+typedef enum {
+	ACTOR_TF_SELF = 200u,
+	ACTOR_TF_TARGET
+} ActorTfType;
+
+// -------------------------
+
 } /* namespace actor */
 
 #endif /* INCLUDE_ACTOR_ENUMS_H_ */
