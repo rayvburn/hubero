@@ -43,8 +43,7 @@ public:
 	/// \brief Loads a ros::NodeHandle pointer;
 	/// A shared node is used for communication with ROS
 	/// to avoid creating a separate node for each Actor
-	// FIXME: const ptr?
-	void setNodeHandle(const std::shared_ptr<ros::NodeHandle> nh_ptr);
+	void setNodeHandle(std::shared_ptr<ros::NodeHandle> nh_ptr);
 
 	/// \brief Sets a namespace within all topics will be published;
 	/// Usually namespace will be the actor's name

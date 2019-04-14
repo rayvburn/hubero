@@ -16,7 +16,7 @@ Stream::Stream() { }
 
 // ------------------------------------------------------------------- //
 
-void Stream::setNodeHandle(const std::shared_ptr<::ros::NodeHandle> nh_ptr) {
+void Stream::setNodeHandle(std::shared_ptr<::ros::NodeHandle> nh_ptr) {
 	nh_ptr_ = nh_ptr;
 }
 

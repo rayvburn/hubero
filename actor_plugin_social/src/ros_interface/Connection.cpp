@@ -26,7 +26,7 @@ Connection::Connection(): nh_ptr_(nullptr) // , actor_ptr_(nullptr)
 
 // ------------------------------------------------------------------- //
 
-void Connection::setNodeHandle(const std::shared_ptr<ros::NodeHandle> nh_ptr) {
+void Connection::setNodeHandle(std::shared_ptr<ros::NodeHandle> nh_ptr) {
 	nh_ptr_ = nh_ptr;
 }
 
