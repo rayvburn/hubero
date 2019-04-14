@@ -91,19 +91,24 @@ public:
 	void setNewTarget(const ignition::math::Pose3d &pose);
 
 	/// @brief Method to set new target for actor - object's name
-	void setNewTarget(const std::string &object_name);
+	/// \return True if object is valid
+	bool setNewTarget(const std::string &object_name);
 
 	/// @brief Method to set new target for actor - object's name
-	void followObject(const std::string &object_name);
+	/// \return True if object is valid
+	// TODO: stop_after_arrival handling
+	bool followObject(const std::string &object_name, const bool &stop_after_arrival);
 
 	/// @brief Get velocity vector (linear x, linear y and angular `yaw`)
 	std::array<double, 3> getVelocity() const;
 
 	/// @brief Set actor's new stance type (first see which are allowed)
-	void setStance(const actor::ActorStance &stance_type);
+	/// \return True if stance is valid
+	bool setStance(const actor::ActorStance &stance_type);
 
 	/// @brief Set actor's new state (first see which are allowed)
-	void setState(const actor::ActorState &new_state);
+	/// \return True if state is valid
+	bool setState(const actor::ActorState &new_state);
 
 	/// @brief Executes handler for currently set state
 	void executeTransitionFunction(const gazebo::common::UpdateInfo &info);
@@ -163,6 +168,9 @@ private:
 
     /// @brief Helper function that initializes publishers, services etc.
     void initRosInterface();
+
+    /// @brief Helper function that check if model of given name exists in the world
+    inline std::tuple<bool, gazebo::physics::ModelPtr> isModelValid(const std::string &object_name) const;
 
     /// @brief Pointer to the parent actor.
     gazebo::physics::ActorPtr actor_ptr_;

@@ -83,6 +83,7 @@ add_library(actor_ros
 
 target_link_libraries(actor_inflation actor_core actor_ros) # ros needed here?
 #target_link_libraries(social_force_model actor_core)
+target_link_libraries(actor_ros actor_core)
 
 #add_library(enums include/Enums.h)
 

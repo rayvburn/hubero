@@ -9,7 +9,7 @@
 #define INCLUDE_ROS_INTERFACE_STREAM_H_
 
 // C++ STL
-#include <memory> // std::unique_ptr
+#include <memory> // std::shared_ptr
 #include <map>
 #include <tuple>
 
@@ -40,7 +40,7 @@ public:
 	/// \brief Loads a ros::NodeHandle pointer;
 	/// A shared node is used for communication with ROS
 	/// to avoid creating a separate node for each Actor
-	void setNodeHandle(const std::shared_ptr<::ros::NodeHandle> nh_ptr);
+	void setNodeHandle(const std::shared_ptr<ros::NodeHandle> nh_ptr);
 
 	/// \brief Sets a namespace within all topics will be published;
 	/// Usually namespace will be the actor's name

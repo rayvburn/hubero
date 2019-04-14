@@ -166,16 +166,36 @@ void Actor::setNewTarget(const ignition::math::Pose3d &pose) {
 
 // ------------------------------------------------------------------- //
 
-void Actor::setNewTarget(const std::string &object_name) {
-	gazebo::physics::ModelPtr model = world_ptr_->ModelByName(object_name);
-	setNewTarget(model->WorldPose());
+bool Actor::setNewTarget(const std::string &object_name) {
+
+	bool is_valid = false;
+	gazebo::physics::ModelPtr model;
+	std::tie(is_valid, model) = isModelValid(object_name);
+
+	if ( !is_valid ) {
+		return (false);
+	} else {
+		setNewTarget(model->WorldPose());
+		return (true);
+	}
+
 }
 
 // ------------------------------------------------------------------- //
 
-void Actor::followObject(const std::string &object_name) {
+bool Actor::followObject(const std::string &object_name, const bool &stop_after_arrival) {
+
+	bool is_valid = false;
+	std::tie(is_valid, std::ignore) = isModelValid(object_name);
+
+	if ( !is_valid ) {
+		return (false);
+	}
+
 	object_to_follow_ = object_name;
 	fsm_.setState(ACTOR_STATE_FOLLOW_OBJECT);
+	return (true);
+
 }
 
 // ------------------------------------------------------------------- //
@@ -190,7 +210,7 @@ std::array<double, 3> Actor::getVelocity() const {
 
 // ------------------------------------------------------------------- //
 
-void Actor::setStance(const actor::ActorStance &stance_type) {
+bool Actor::setStance(const actor::ActorStance &stance_type) {
 
 	if ( stance_ != stance_type ) {
 
@@ -205,6 +225,7 @@ void Actor::setStance(const actor::ActorStance &stance_type) {
 		if ( skeleton_anims.find(animation) == skeleton_anims.end() ) {
 
 			std::cout << "Skeleton animation " << animation << " not found.\n";
+			return (false);
 
 		} else {
 
@@ -213,17 +234,33 @@ void Actor::setStance(const actor::ActorStance &stance_type) {
 			trajectory_info_->type = animation;
 			trajectory_info_->duration = 1.0;
 			actor_ptr_->SetCustomTrajectory(trajectory_info_);
+			return (true);
 
 		}
 
 	}
+	return (false);
 
 }
 
 // ------------------------------------------------------------------- //
 
-void Actor::setState(const actor::ActorState &new_state) {
-	fsm_.setState(new_state);
+bool Actor::setState(const actor::ActorState &new_state) {
+
+	// check if state is valid
+	unsigned int state_to_be = static_cast<unsigned int>(new_state);
+	unsigned int state_lower_bound = static_cast<unsigned int>(actor::ACTOR_STATE_ALIGN_TARGET);
+
+	// NOTE: below needs to be adjusted if new state will be added!
+	unsigned int state_upper_bound = static_cast<unsigned int>(actor::ACTOR_STATE_TELEOPERATION);
+
+	if ( (state_to_be >= state_lower_bound) && (state_to_be <= state_upper_bound) ) {
+		fsm_.setState(new_state);
+		return (true);
+	} else {
+		return (false);
+	}
+
 }
 
 // ------------------------------------------------------------------- //
@@ -888,6 +925,21 @@ void Actor::initRosInterface() {
 	stream_.initPublisher(ActorMarkerType::ACTOR_MARKER_BOUNDING, "ellipse");
 
 	//connection_.setNodeHandle(node_.getNodeHandlePtr());
+
+}
+
+// ------------------------------------------------------------------- //
+
+inline std::tuple<bool, gazebo::physics::ModelPtr> Actor::isModelValid(const std::string &object_name) const {
+
+	// Gazebo::Physics::World - ModelByName() says:
+	/// `\return A pointer to the Model, or NULL if no model was found.`
+	gazebo::physics::ModelPtr model_p = world_ptr_->ModelByName(object_name);
+
+	if ( model_p == NULL || model_p == nullptr ) {
+		return ( std::make_tuple(false, nullptr) );
+	}
+	return ( std::make_tuple(true, model_p) );
 
 }
 

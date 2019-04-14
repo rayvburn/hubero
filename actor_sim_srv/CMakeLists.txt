@@ -58,9 +58,12 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   FollowObject.srv
-  StopFollowing.srv
   GetVelocity.srv
+  SetGoal.srv
+  SetGoalName.srv
   SetInteractionType.srv
+  SetStance.srv
+  StopFollowing.srv
 )
 
 ## Generate actions in the 'action' folder
