@@ -73,6 +73,7 @@ add_library(actor_core
 add_library(actor_ros 
   include/ActorROSInterface.h 
   src/ActorROSInterface.cpp
+
   include/ros_interface/Connection.h
   src/ros_interface/Connection.cpp
   include/ros_interface/Stream.h
@@ -83,7 +84,7 @@ add_library(actor_ros
 
 target_link_libraries(actor_inflation actor_core actor_ros) # ros needed here?
 #target_link_libraries(social_force_model actor_core)
-target_link_libraries(actor_ros actor_core)
+#target_link_libraries(actor_core actor_ros)
 
 #add_library(enums include/Enums.h)
 

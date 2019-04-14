@@ -16,7 +16,9 @@ Actor::Actor():
 		target_tolerance_(1.25), 		bounding_type_(ACTOR_BOUNDING_ELLIPSE),
 		stance_(ACTOR_STANCE_STAND),	animation_factor_(4.50),
 		trans_function_ptr(nullptr)
-{ }
+{
+
+}
 
 // ------------------------------------------------------------------- //
 
@@ -925,6 +927,8 @@ void Actor::initRosInterface() {
 	stream_.initPublisher(ActorMarkerType::ACTOR_MARKER_BOUNDING, "ellipse");
 
 	//connection_.setNodeHandle(node_.getNodeHandlePtr());
+	//connection_.setActorPtr(shared_from_this());
+//	connection_.lock()->setActorPtr( shared_from_this() );
 
 }
 

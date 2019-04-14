@@ -11,15 +11,15 @@
 // C++ STL
 #include <memory> // std::shared_ptr
 #include <thread>
+#include <string>
 
 // ROS headers
 #include <ros/ros.h>
-
 #include <ros/service_server.h>
 #include <ros/callback_queue.h>
 
 // Actor
-#include "core/Actor.h"
+//#include <core/Actor.h>
 
 // service definitions
 #include <actor_sim_srv/FollowObject.h>
@@ -43,6 +43,7 @@ public:
 	/// \brief Loads a ros::NodeHandle pointer;
 	/// A shared node is used for communication with ROS
 	/// to avoid creating a separate node for each Actor
+	// FIXME: const ptr?
 	void setNodeHandle(const std::shared_ptr<ros::NodeHandle> nh_ptr);
 
 	/// \brief Sets a namespace within all topics will be published;
@@ -52,7 +53,9 @@ public:
 	/// \brief Sets pointer to an Actor as there is a need to invoke some
 	/// set() or get() methods on the Actor's object to further pass data
 	// TODO: pass shared_ptr
-	void setActorPtr(actor::core::Actor *actor_ptr);
+	// circular dependency problem
+//	void setActorPtr(std::shared_ptr<actor::core::Actor> actor_ptr);
+	//void setActorPtr(actor::core::Actor *actor_ptr);
 
 	/// \brief Advertises services if NodeHandle was previously set
 	void initServices();
@@ -81,7 +84,7 @@ private:
 
 	/// \brief Pointer to an Actor object
 	//std::shared_ptr<actor::core::Actor> actor_ptr_;
-	actor::core::Actor *actor_ptr_;
+	//actor::core::Actor *actor_ptr_;
 
 	/// \brief ROS Callback queue to process messages
 	ros::CallbackQueue cb_queue_;

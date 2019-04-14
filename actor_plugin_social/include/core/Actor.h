@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <tuple>
 
 // Actor-related
 #include "core/Enums.h"
@@ -50,8 +51,9 @@
 namespace actor {
 namespace core {
 
+// ref: https://stackoverflow.com/questions/11711034/stdshared-ptr-of-this
+//class Actor : std::enable_shared_from_this<actor::core::Actor> {
 class Actor {
-
 
 public:
 
@@ -266,6 +268,7 @@ private:
     /// acts as an input buffer of the inter-agent
     /// communication channel
     actor::ros_interface::Connection connection_;
+    //std::weak_ptr<actor::ros_interface::Connection> connection_;
 
 };
 
