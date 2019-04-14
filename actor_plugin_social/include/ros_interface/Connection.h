@@ -19,7 +19,8 @@
 #include <ros/callback_queue.h>
 
 // Actor
-//#include <core/Actor.h>
+#include "core/ActorFwd.h" // must be here due to circular dependency
+#include <core/Actor.h>
 
 // service definitions
 #include <actor_sim_srv/FollowObject.h>
@@ -52,9 +53,7 @@ public:
 	/// \brief Sets pointer to an Actor as there is a need to invoke some
 	/// set() or get() methods on the Actor's object to further pass data
 	// TODO: pass shared_ptr
-	// circular dependency problem
-//	void setActorPtr(std::shared_ptr<actor::core::Actor> actor_ptr);
-	//void setActorPtr(actor::core::Actor *actor_ptr);
+	void setActorPtr(std::shared_ptr<actor::core::Actor> actor_ptr);
 
 	/// \brief Advertises services if NodeHandle was previously set
 	void initServices();
@@ -82,8 +81,7 @@ private:
 	std::string namespace_;
 
 	/// \brief Pointer to an Actor object
-	//std::shared_ptr<actor::core::Actor> actor_ptr_;
-	//actor::core::Actor *actor_ptr_;
+	std::shared_ptr<actor::core::Actor> actor_ptr_;
 
 	/// \brief ROS Callback queue to process messages
 	ros::CallbackQueue cb_queue_;

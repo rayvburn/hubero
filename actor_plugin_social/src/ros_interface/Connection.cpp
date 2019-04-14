@@ -37,12 +37,11 @@ void Connection::setNamespace(const std::string &ns) {
 
 // ------------------------------------------------------------------- //
 
-//void Connection::setActorPtr(std::shared_ptr<actor::core::Actor> actor_ptr) {
-////void Connection::setActorPtr(actor::core::Actor *actor_ptr) {
-////void Connection::setActorPtr(core::Actor *actor_ptr) {
-//	//actor_ptr_ = std::make_shared<actor::core::Actor>(actor_ptr);
-//	actor_ptr_ = actor_ptr;
-//}
+void Connection::setActorPtr(std::shared_ptr<actor::core::Actor> actor_ptr) {
+	std::cout << "SET PTR BEF ASSIGNMENT" << std::endl;
+	actor_ptr_ = actor_ptr;
+	std::cout << "SET PTR AFTER ASSIGNMENT" << std::endl;
+}
 
 // ------------------------------------------------------------------- //
 

@@ -20,6 +20,7 @@
 #include "core/FSM.h"
 #include "ros_interface/Node.h"
 #include "ros_interface/Stream.h"
+#include "ros_interface/ConnectionFwd.h" // must be here due to circular dependency
 #include "ros_interface/Connection.h"
 
 // Social Force Model
@@ -52,8 +53,7 @@ namespace actor {
 namespace core {
 
 // ref: https://stackoverflow.com/questions/11711034/stdshared-ptr-of-this
-//class Actor : std::enable_shared_from_this<actor::core::Actor> {
-class Actor {
+class Actor : std::enable_shared_from_this<actor::core::Actor> {
 
 public:
 
@@ -267,8 +267,8 @@ private:
     /// \brief Connection class instance used for ROS Interface
     /// acts as an input buffer of the inter-agent
     /// communication channel
-    actor::ros_interface::Connection connection_;
-    //std::weak_ptr<actor::ros_interface::Connection> connection_;
+    std::weak_ptr<actor::ros_interface::Connection> connection_;
+    //actor::ros_interface::Connection connection_;
 
 };
 

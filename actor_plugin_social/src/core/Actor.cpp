@@ -17,7 +17,7 @@ Actor::Actor():
 		stance_(ACTOR_STANCE_STAND),	animation_factor_(4.50),
 		trans_function_ptr(nullptr)
 {
-
+	connection_ = std::weak_ptr<actor::ros_interface::Connection>();
 }
 
 // ------------------------------------------------------------------- //
@@ -928,7 +928,11 @@ void Actor::initRosInterface() {
 
 	//connection_.setNodeHandle(node_.getNodeHandlePtr());
 	//connection_.setActorPtr(shared_from_this());
-//	connection_.lock()->setActorPtr( shared_from_this() );
+
+	std::cout << "BEFORE SHARED FROM THIS" << std::endl;
+	//connection_.lock()->setActorPtr( shared_from_this() );
+
+	std::cout << "AFTER SHARED FROM THIS" << std::endl;
 
 }
 
