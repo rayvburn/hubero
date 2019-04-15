@@ -51,8 +51,8 @@ public:
 	void setNamespace(const std::string &ns);
 
 	/// \brief Sets pointer to an Actor as there is a need to invoke some
-	/// set() or get() methods on the Actor's object to further pass data
-	// TODO: pass shared_ptr
+	/// set() or get() methods on the Actor's object to further pass data -
+	/// circular dependency
 	void setActorPtr(std::shared_ptr<actor::core::Actor> actor_ptr);
 
 	/// \brief Advertises services if NodeHandle was previously set
@@ -64,12 +64,19 @@ public:
 private:
 
 	/// \brief Callbacks for each service
-	void srvSetGoalCallback(const actor_sim_srv::SetGoalRequestConstPtr &req, actor_sim_srv::SetGoalResponsePtr &resp);
-	void srvSetGoalNameCallback(const actor_sim_srv::SetGoalNameRequestConstPtr &req, actor_sim_srv::SetGoalNameResponsePtr &resp);
-	void srvSetStanceCallback(const actor_sim_srv::SetStanceRequestConstPtr &req, actor_sim_srv::SetStanceResponsePtr &resp);
-	void srvFollowObjectCallback(const actor_sim_srv::FollowObjectRequestConstPtr &req, actor_sim_srv::FollowObjectResponsePtr &resp);
-	void srvStopFollowingCallback(const actor_sim_srv::StopFollowingRequestConstPtr &req, actor_sim_srv::StopFollowingResponsePtr &resp);
-	void srvGetVelocityCallback(const actor_sim_srv::GetVelocityRequestConstPtr &req, actor_sim_srv::GetVelocityResponsePtr &resp);
+//	void srvSetGoalCallback			(const actor_sim_srv::SetGoalRequestConstPtr 		&req,	actor_sim_srv::SetGoalResponsePtr 		&resp);
+//	void srvSetGoalNameCallback		(const actor_sim_srv::SetGoalNameRequestConstPtr 	&req,	actor_sim_srv::SetGoalNameResponsePtr 	&resp);
+//	void srvSetStanceCallback		(const actor_sim_srv::SetStanceRequestConstPtr 		&req,	actor_sim_srv::SetStanceResponsePtr 	&resp);
+//	void srvFollowObjectCallback	(const actor_sim_srv::FollowObjectRequestConstPtr 	&req, 	actor_sim_srv::FollowObjectResponsePtr 	&resp);
+//	void srvStopFollowingCallback	(const actor_sim_srv::StopFollowingRequestConstPtr 	&req, 	actor_sim_srv::StopFollowingResponsePtr &resp);
+//	void srvGetVelocityCallback		(const actor_sim_srv::GetVelocityRequestConstPtr 	&req,	actor_sim_srv::GetVelocityResponsePtr 	&resp);
+
+	bool srvSetGoalCallback			(actor_sim_srv::SetGoal::Request 					&req,	actor_sim_srv::SetGoal::Response 			&resp);
+	bool srvSetGoalNameCallback		(actor_sim_srv::SetGoalName::Request::ConstPtr 		&req,	actor_sim_srv::SetGoalName::Response::Ptr 	&resp);
+	bool srvSetStanceCallback		(actor_sim_srv::SetStance::Request::ConstPtr 		&req,	actor_sim_srv::SetStance::Response::Ptr 	&resp);
+	bool srvFollowObjectCallback	(actor_sim_srv::FollowObject::Request::ConstPtr 	&req, 	actor_sim_srv::FollowObject::Response::Ptr 	&resp);
+	bool srvStopFollowingCallback	(actor_sim_srv::StopFollowing::Request::ConstPtr 	&req, 	actor_sim_srv::StopFollowing::Response::Ptr &resp);
+	bool srvGetVelocityCallback		(actor_sim_srv::GetVelocity::Request::ConstPtr 		&req,	actor_sim_srv::GetVelocity::Response::Ptr 	&resp);
 
 	/// \brief `main` for a callback thread
 	void callbackThreadHandler();
@@ -81,10 +88,11 @@ private:
 	std::string namespace_;
 
 	/// \brief Pointer to an Actor object
-	std::shared_ptr<actor::core::Actor> actor_ptr_;
+	//std::shared_ptr<actor::core::Actor> actor_ptr_;
+	std::weak_ptr<actor::core::Actor> actor_ptr_;
 
 	/// \brief ROS Callback queue to process messages
-	ros::CallbackQueue cb_queue_;
+	//ros::CallbackQueue cb_queue_;
 
 	/// \brief Separate thread to provide a fast response to a service call
 	std::thread callback_thread_;

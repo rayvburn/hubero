@@ -17,7 +17,7 @@ Actor::Actor():
 		stance_(ACTOR_STANCE_STAND),	animation_factor_(4.50),
 		trans_function_ptr(nullptr)
 {
-	connection_ = std::weak_ptr<actor::ros_interface::Connection>();
+
 }
 
 // ------------------------------------------------------------------- //
@@ -62,8 +62,40 @@ void Actor::initGazeboInterface(const gazebo::physics::ActorPtr &actor, const ga
 	// set previous pose to prevent velocity overshoot
 	pose_world_prev_ = actor_ptr_->WorldPose();
 
-	// initialize ROS interface to allow publishing and receiving messages
-	initRosInterface();
+}
+
+// ------------------------------------------------------------------- //
+
+void Actor::initRosInterface() {
+
+	/* initialize ROS interface to allow publishing and receiving messages;
+	 * due to inheritance from `shared_from_this`, this method is created
+	 * as a separate one */
+	stream_.setNodeHandle(node_.getNodeHandlePtr());
+	stream_.setNamespace(actor_ptr_->GetName());
+	stream_.initPublisher(ActorMarkerType::ACTOR_MARKER_BOUNDING, "ellipse");
+
+	// constructor of a Connection object
+	//connection_ = std::weak_ptr<actor::ros_interface::Connection>();
+	//connection_ = std::shared_ptr<actor::ros_interface::Connection>();
+
+
+//	connection_ptr_ = std::shared_ptr<actor::ros_interface::Connection>();
+	//connection_.setNodeHandle(node_.getNodeHandlePtr());
+	//connection_.setActorPtr(shared_from_this());
+
+//	std::cout << "BEFORE SHARED FROM THIS" << std::endl;
+//	connection_ptr_->setActorPtr( shared_from_this() );
+//
+//	//connection_.lock()->setActorPtr( shared_from_this() );
+//	// initServices
+//	std::cout << "AFTER SHARED FROM THIS" << std::endl;
+
+
+	connection_ptr_ = std::make_shared<actor::ros_interface::Connection>();
+	std::cout << "BEFORE SHARED FROM THIS" << std::endl;
+	connection_ptr_->setActorPtr( shared_from_this() );
+	std::cout << "AFTER SHARED FROM THIS" << std::endl;
 
 }
 
@@ -163,6 +195,9 @@ void Actor::readSDFParameters(const sdf::ElementPtr sdf) {
 // ------------------------------------------------------------------- //
 
 void Actor::setNewTarget(const ignition::math::Pose3d &pose) {
+
+	// TODO: error handling + return bool
+	// if ( pose.Pos().)
 	target_ = pose.Pos();
 }
 
@@ -915,24 +950,6 @@ std::string Actor::convertStanceToAnimationName() const {
 	}
 
 	return (anim_name);
-
-}
-
-// ------------------------------------------------------------------- //
-
-void Actor::initRosInterface() {
-
-	stream_.setNodeHandle(node_.getNodeHandlePtr());
-	stream_.setNamespace(actor_ptr_->GetName());
-	stream_.initPublisher(ActorMarkerType::ACTOR_MARKER_BOUNDING, "ellipse");
-
-	//connection_.setNodeHandle(node_.getNodeHandlePtr());
-	//connection_.setActorPtr(shared_from_this());
-
-	std::cout << "BEFORE SHARED FROM THIS" << std::endl;
-	//connection_.lock()->setActorPtr( shared_from_this() );
-
-	std::cout << "AFTER SHARED FROM THIS" << std::endl;
 
 }
 

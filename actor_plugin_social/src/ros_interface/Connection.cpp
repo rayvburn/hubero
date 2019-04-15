@@ -38,9 +38,7 @@ void Connection::setNamespace(const std::string &ns) {
 // ------------------------------------------------------------------- //
 
 void Connection::setActorPtr(std::shared_ptr<actor::core::Actor> actor_ptr) {
-	std::cout << "SET PTR BEF ASSIGNMENT" << std::endl;
 	actor_ptr_ = actor_ptr;
-	std::cout << "SET PTR AFTER ASSIGNMENT" << std::endl;
 }
 
 // ------------------------------------------------------------------- //
@@ -52,7 +50,7 @@ void Connection::initServices() {
 		return;
 	}
 
-//	srv_set_goal_ = nh_ptr_->advertiseService(namespace_ + "/SetGoal", &Connection::srvSetGoalCallback, this);
+	srv_set_goal_ = nh_ptr_->advertiseService(namespace_ + "/SetGoal", &Connection::srvSetGoalCallback, this);
 //	srv_set_goal_name_;
 //	srv_set_stance_;
 //	srv_follow_object_;
@@ -62,21 +60,24 @@ void Connection::initServices() {
 
 // ------------------------------------------------------------------- //
 
-void Connection::srvSetGoalCallback(const actor_sim_srv::SetGoalRequestConstPtr &req, actor_sim_srv::SetGoalResponsePtr &resp) {
+
+bool Connection::srvSetGoalCallback(actor_sim_srv::SetGoal::Request &req, actor_sim_srv::SetGoal::Response &resp) {
 
 	std::cout << "\n\n\nsrvSetGoalCallback()\n\n\n" << std::endl;
-	ignition::math::Pose3d pose;
-	pose.Pos().X() = static_cast<double>(req->x_pos);
-	pose.Pos().Y() = static_cast<double>(req->y_pos);
-	//actor_ptr_->setNewTarget(pose);
+//	ignition::math::Pose3d pose;
+//	pose.Pos().X() = static_cast<double>(req->x_pos);
+//	pose.Pos().Y() = static_cast<double>(req->y_pos);
+//	//actor_ptr_->setNewTarget(pose);
+//
+//	// response's flag does not matter
+//	resp->flag = true;
 
-	// response's flag does not matter
-	resp->flag = true;
+	return true;
 
 }
 
 // ------------------------------------------------------------------- //
-
+/*
 void Connection::srvSetGoalNameCallback(const actor_sim_srv::SetGoalNameRequestConstPtr &req, actor_sim_srv::SetGoalNameResponsePtr &resp) {
 
 	std::cout << "\n\n\nsrvSetGoalNameCallback()\n\n\n" << std::endl;
@@ -130,6 +131,7 @@ void Connection::srvGetVelocityCallback(const actor_sim_srv::GetVelocityRequestC
 //	resp->yaw = velocity.at(2);
 
 }
+*/
 
 // ------------------------------------------------------------------- //
 

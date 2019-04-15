@@ -79,15 +79,28 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
     std::cout << "LOADED POSE: " << this->actor->WorldPose() << std::endl;
 
+#ifndef ACTOR_SHARED_PTR
 	actor_object.initGazeboInterface(actor, world);
 	actor_object.initInflator(1.00, 0.80, 0.35, 0.0);
+	actor_object.initRosInterface();
+#else
+//	actor::core::Actor obj;
+//	actor_ptr_ = obj.shared_from_this();
+	actor_ptr_ = std::make_shared<actor::core::Actor>();
+	actor_ptr_->initGazeboInterface(actor, world);
+	actor_ptr_->initInflator(1.00, 0.80, 0.35, 0.0);
+	actor_ptr_->initRosInterface();
+#endif
 
 	ignition::math::Vector3d target_init;
 	target_init.X(ignition::math::Rand::DblUniform(-3, 3.5));
 	target_init.Y(ignition::math::Rand::DblUniform(-10, 2));
 	target_init.Z(1.21);
+#ifndef ACTOR_SHARED_PTR
 	actor_object.setNewTarget(ignition::math::Pose3d(target_init, ignition::math::Quaterniond(0.0, 0.0, 0.0)));
-
+#else
+	actor_ptr_->setNewTarget(ignition::math::Pose3d(target_init, ignition::math::Quaterniond(0.0, 0.0, 0.0)));
+#endif
 
 }
 
@@ -146,7 +159,11 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 		SfmSetPrintData(false);
 	//}
 
+#ifndef ACTOR_SHARED_PTR
 	actor_object.executeTransitionFunction(_info);
+#else
+	actor_ptr_->executeTransitionFunction(_info);
+#endif
 
 	// ==================================================================================================
 	/* ROS Interface & Visualization related */

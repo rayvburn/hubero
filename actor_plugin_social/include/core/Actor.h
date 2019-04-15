@@ -53,7 +53,7 @@ namespace actor {
 namespace core {
 
 // ref: https://stackoverflow.com/questions/11711034/stdshared-ptr-of-this
-class Actor : std::enable_shared_from_this<actor::core::Actor> {
+class Actor : public std::enable_shared_from_this<actor::core::Actor> {
 
 public:
 
@@ -62,6 +62,9 @@ public:
 
 	/// \brief Passes World and Actor pointers for use within Actor controller class
 	void initGazeboInterface(const gazebo::physics::ActorPtr &actor, const gazebo::physics::WorldPtr &world);
+
+    /// \brief Method that initializes publishers, services etc.
+    void initRosInterface();
 
 	/// \brief Read bounding type parameter and set accordingly bounding model's parameters
 	/// \brief Set circular shape as an inflator
@@ -168,9 +171,6 @@ private:
     /// \brief Helper function that converts a stance type to associated animation
     std::string convertStanceToAnimationName() const;
 
-    /// \brief Helper function that initializes publishers, services etc.
-    void initRosInterface();
-
     /// \brief Helper function that check if model of given name exists in the world
     inline std::tuple<bool, gazebo::physics::ModelPtr> isModelValid(const std::string &object_name) const;
 
@@ -267,7 +267,8 @@ private:
     /// \brief Connection class instance used for ROS Interface
     /// acts as an input buffer of the inter-agent
     /// communication channel
-    std::weak_ptr<actor::ros_interface::Connection> connection_;
+    //std::weak_ptr<actor::ros_interface::Connection> connection_;
+    std::shared_ptr<actor::ros_interface::Connection> connection_ptr_;
     //actor::ros_interface::Connection connection_;
 
 };

@@ -38,6 +38,15 @@
 #include "sfm/core/SFMDebug.h"
 
 
+#define ACTOR_SHARED_PTR
+
+#ifdef ACTOR_SHARED_PTR
+/* according to https://stackoverflow.com/questions/10534220/c11-passing-this-as-paramenter-for-stdmake-shared
+ * shared from this should be called on an object that is already managed by shared_ptr
+ * shared from this is used to pass a shared_ptr from an Actor class to a Connection class */
+#include <memory>
+#endif
+
 // -------------------------
 
 //#define VISUALIZE_SFM
@@ -81,7 +90,11 @@ namespace gazebo
     public: ActorPlugin();
 
     /// \brief Actor class object
+#ifndef ACTOR_SHARED_PTR
     public: actor::core::Actor actor_object;
+#else
+    public: std::shared_ptr<actor::core::Actor> actor_ptr_;
+#endif
 
     /// \brief Load the actor plugin.
     /// \param[in] _model Pointer to the parent model.
