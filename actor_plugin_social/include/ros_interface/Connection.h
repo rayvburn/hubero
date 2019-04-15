@@ -63,32 +63,26 @@ public:
 
 private:
 
-	/// \brief Callbacks for each service
-//	void srvSetGoalCallback			(const actor_sim_srv::SetGoalRequestConstPtr 		&req,	actor_sim_srv::SetGoalResponsePtr 		&resp);
-//	void srvSetGoalNameCallback		(const actor_sim_srv::SetGoalNameRequestConstPtr 	&req,	actor_sim_srv::SetGoalNameResponsePtr 	&resp);
-//	void srvSetStanceCallback		(const actor_sim_srv::SetStanceRequestConstPtr 		&req,	actor_sim_srv::SetStanceResponsePtr 	&resp);
-//	void srvFollowObjectCallback	(const actor_sim_srv::FollowObjectRequestConstPtr 	&req, 	actor_sim_srv::FollowObjectResponsePtr 	&resp);
-//	void srvStopFollowingCallback	(const actor_sim_srv::StopFollowingRequestConstPtr 	&req, 	actor_sim_srv::StopFollowingResponsePtr &resp);
-//	void srvGetVelocityCallback		(const actor_sim_srv::GetVelocityRequestConstPtr 	&req,	actor_sim_srv::GetVelocityResponsePtr 	&resp);
-
-	bool srvSetGoalCallback			(actor_sim_srv::SetGoal::Request 					&req,	actor_sim_srv::SetGoal::Response 			&resp);
-	bool srvSetGoalNameCallback		(actor_sim_srv::SetGoalName::Request::ConstPtr 		&req,	actor_sim_srv::SetGoalName::Response::Ptr 	&resp);
-	bool srvSetStanceCallback		(actor_sim_srv::SetStance::Request::ConstPtr 		&req,	actor_sim_srv::SetStance::Response::Ptr 	&resp);
-	bool srvFollowObjectCallback	(actor_sim_srv::FollowObject::Request::ConstPtr 	&req, 	actor_sim_srv::FollowObject::Response::Ptr 	&resp);
-	bool srvStopFollowingCallback	(actor_sim_srv::StopFollowing::Request::ConstPtr 	&req, 	actor_sim_srv::StopFollowing::Response::Ptr &resp);
-	bool srvGetVelocityCallback		(actor_sim_srv::GetVelocity::Request::ConstPtr 		&req,	actor_sim_srv::GetVelocity::Response::Ptr 	&resp);
+	/// \brief Callbacks for each service, service callback must return bool
+	bool srvSetGoalCallback			(actor_sim_srv::SetGoal::Request		&req,	actor_sim_srv::SetGoal::Response		&resp);
+	bool srvSetGoalNameCallback		(actor_sim_srv::SetGoalName::Request 	&req,	actor_sim_srv::SetGoalName::Response 	&resp);
+	bool srvSetStanceCallback		(actor_sim_srv::SetStance::Request 		&req,	actor_sim_srv::SetStance::Response 		&resp);
+	bool srvFollowObjectCallback	(actor_sim_srv::FollowObject::Request 	&req, 	actor_sim_srv::FollowObject::Response 	&resp);
+	bool srvStopFollowingCallback	(actor_sim_srv::StopFollowing::Request 	&req, 	actor_sim_srv::StopFollowing::Response 	&resp);
+	bool srvGetVelocityCallback		(actor_sim_srv::GetVelocity::Request 	&req,	actor_sim_srv::GetVelocity::Response 	&resp);
 
 	/// \brief `main` for a callback thread
 	void callbackThreadHandler();
 
 	/// \brief NodeHandle object to provide communication with external ROS systems
+	/// nullptr by default
 	std::shared_ptr<ros::NodeHandle> nh_ptr_;
 
 	/// \brief Namespace in which all services will be available (actor's name)
 	std::string namespace_;
 
 	/// \brief Pointer to an Actor object
-	//std::shared_ptr<actor::core::Actor> actor_ptr_;
+	/// nullptr by default
 	std::weak_ptr<actor::core::Actor> actor_ptr_;
 
 	/// \brief ROS Callback queue to process messages

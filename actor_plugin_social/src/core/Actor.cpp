@@ -53,10 +53,7 @@ void Actor::initGazeboInterface(const gazebo::physics::ActorPtr &actor, const ga
 	 * to lie on his back 1 m above the ground*/
 	ignition::math::Vector3d init_orient = actor_ptr_->WorldPose().Rot().Euler();
 	ignition::math::Pose3d   init_pose;
-	init_pose.Set(actor_ptr_->WorldPose().Pos(),
-				  ignition::math::Quaterniond(init_orient.X() + IGN_PI/2,
-											  init_orient.Y(),
-											  init_orient.Z()));
+	init_pose.Set( actor_ptr_->WorldPose().Pos(), ignition::math::Quaterniond(init_orient.X() + IGN_PI/2, init_orient.Y(), init_orient.Z()) );
 	actor_ptr_->SetWorldPose(init_pose);
 
 	// set previous pose to prevent velocity overshoot
@@ -69,7 +66,7 @@ void Actor::initGazeboInterface(const gazebo::physics::ActorPtr &actor, const ga
 void Actor::initRosInterface() {
 
 	/* initialize ROS interface to allow publishing and receiving messages;
-	 * due to inheritance from `shared_from_this`, this method is created
+	 * due to inheritance from `enable_shared_from_this`, this method is created
 	 * as a separate one */
 	stream_.setNodeHandle(node_.getNodeHandlePtr());
 	stream_.setNamespace(actor_ptr_->GetName());
@@ -77,11 +74,13 @@ void Actor::initRosInterface() {
 
 	// constructor of a Connection object
 	connection_ptr_ = std::make_shared<actor::ros_interface::Connection>();
-	std::cout << "BEFORE SHARED FROM THIS" << std::endl;
+
+	// Connection's configuration
 	connection_ptr_->setActorPtr( shared_from_this() );
-	std::cout << "AFTER SHARED FROM THIS" << std::endl;
 	connection_ptr_->setNodeHandle(node_.getNodeHandlePtr());
 	connection_ptr_->setNamespace(actor_ptr_->GetName());
+
+	// initialize services for Actor control
 	connection_ptr_->initServices();
 
 }
@@ -121,8 +120,7 @@ void Actor::initInflator(const double &semi_major, const double &semi_minor, con
 	// correct yaw angle to make ellipse abstract from Actor coordinate system's orientation
 	ignition::math::Angle yaw_world( pose_world_.Rot().Yaw() - IGN_PI_2);
 	yaw_world.Normalize();
-	bounding_ellipse_.init( 1.00, 0.80, yaw_world.Radian(), pose_world_.Pos(),
-							ignition::math::Vector3d(0.35, 0.0, 0.0) );
+	bounding_ellipse_.init( 1.00, 0.80, yaw_world.Radian(), pose_world_.Pos(), ignition::math::Vector3d(0.35, 0.0, 0.0) );
 	common_info_.setBoundingEllipse(bounding_ellipse_);
 
 }
