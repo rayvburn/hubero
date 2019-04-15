@@ -63,7 +63,7 @@ void Connection::initServices() {
 
 bool Connection::srvSetGoalCallback(actor_sim_srv::SetGoal::Request &req, actor_sim_srv::SetGoal::Response &resp) {
 
-	std::cout << "\n\n\nsrvSetGoalCallback()\n\n\n" << std::endl;
+	std::cout << "\n\n\nsrvSetGoalCallback()" << "\t" << namespace_ << "\n\n\n" << std::endl;
 //	ignition::math::Pose3d pose;
 //	pose.Pos().X() = static_cast<double>(req->x_pos);
 //	pose.Pos().Y() = static_cast<double>(req->y_pos);

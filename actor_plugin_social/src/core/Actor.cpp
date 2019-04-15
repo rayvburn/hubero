@@ -76,26 +76,13 @@ void Actor::initRosInterface() {
 	stream_.initPublisher(ActorMarkerType::ACTOR_MARKER_BOUNDING, "ellipse");
 
 	// constructor of a Connection object
-	//connection_ = std::weak_ptr<actor::ros_interface::Connection>();
-	//connection_ = std::shared_ptr<actor::ros_interface::Connection>();
-
-
-//	connection_ptr_ = std::shared_ptr<actor::ros_interface::Connection>();
-	//connection_.setNodeHandle(node_.getNodeHandlePtr());
-	//connection_.setActorPtr(shared_from_this());
-
-//	std::cout << "BEFORE SHARED FROM THIS" << std::endl;
-//	connection_ptr_->setActorPtr( shared_from_this() );
-//
-//	//connection_.lock()->setActorPtr( shared_from_this() );
-//	// initServices
-//	std::cout << "AFTER SHARED FROM THIS" << std::endl;
-
-
 	connection_ptr_ = std::make_shared<actor::ros_interface::Connection>();
 	std::cout << "BEFORE SHARED FROM THIS" << std::endl;
 	connection_ptr_->setActorPtr( shared_from_this() );
 	std::cout << "AFTER SHARED FROM THIS" << std::endl;
+	connection_ptr_->setNodeHandle(node_.getNodeHandlePtr());
+	connection_ptr_->setNamespace(actor_ptr_->GetName());
+	connection_ptr_->initServices();
 
 }
 

@@ -52,7 +52,11 @@
 namespace actor {
 namespace core {
 
-// ref: https://stackoverflow.com/questions/11711034/stdshared-ptr-of-this
+
+/* References:
+ * https://stackoverflow.com/questions/11711034/stdshared-ptr-of-this
+ * https://en.cppreference.com/w/cpp/memory/enable_shared_from_this */
+
 class Actor : public std::enable_shared_from_this<actor::core::Actor> {
 
 public:
@@ -267,9 +271,7 @@ private:
     /// \brief Connection class instance used for ROS Interface
     /// acts as an input buffer of the inter-agent
     /// communication channel
-    //std::weak_ptr<actor::ros_interface::Connection> connection_;
     std::shared_ptr<actor::ros_interface::Connection> connection_ptr_;
-    //actor::ros_interface::Connection connection_;
 
 };
 
