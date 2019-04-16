@@ -47,44 +47,7 @@ public:
 	/// Usually namespace will be the actor's name
 	void setNamespace(const std::string &ns);
 
-//	/// \brief Creates an object of ros::Publisher
-//	/// which broadcasts visualization_msgs::Marker messages;
-//	/// NOTE: tf_broadcaster doesn't need initialization
-//	void initPublisher(const ActorMarkerType &type, const std::string &topic_name);
-//
-//	/// \brief Creates an object of a ros::Publisher type
-//	/// which broadcasts visualization_msgs::MarkerArray messages
-//	/// NOTE: tf_broadcaster doesn't need initialization
-//	void initPublisher(const ActorMarkerArrayType &type, const std::string &topic_name);
-
-	/// \brief Creates an object of a ros::Publisher type
-	/// which broadcasts nav_msgs::Path messages
-	/// NOTE: tf_broadcaster doesn't need initialization
-	// TODO INCLUDE
-//	void initPublisher(const ActorNavMsgType &type, const std::string &topic_name);
-
-
-	/* Again - after successful compilation gzserver throws an error:
-	 * gzserver: symbol lookup error: [PATH]/build/actor_plugin_social/libactor_core.so:
-	 * undefined symbol: _ZN5actor13ros_interface6Stream11publishDataINS_15ActorMarkerType
-	 * EN18visualization_msgs7Marker_ISaIvEEEEEvT_T0_
-	/// \brief Publishes a Marker or MarkerArray with
-	/// a proper publisher (which must be previously initialized)
-	template <typename T1, typename T2>
-	void publishData(const T1 type, const T2 marker_msg);
-	*/
-
-//	/// \brief Publishes visualization_msgs::Marker message
-//	void publishData(const ActorMarkerType &type, const visualization_msgs::Marker &marker);
-//
-//	/// \brief Publishes visualization_msgs::MarkerArray message
-//	void publishData(const ActorMarkerArrayType &type, const visualization_msgs::MarkerArray &marker);
-//
-	/// \brief Publishes a TF message
-	void publishData(const ActorTfType &type, const ignition::math::Pose3d &pose);
-
-	// TODO:
-	// path
+	/* Scroll down for a templates definitions and overloaded methods */
 
 	/// \brief Default destructor
 	virtual ~Stream();
@@ -118,15 +81,32 @@ private:
 
 public:
 
+	/* NOTE:
+	 * there seems to be a problem with template definition in a separate file -
+	 * after successful compilation gzserver throws an error:
+	 * gzserver: symbol lookup error: [PATH]/build/actor_plugin_social/libactor_core.so:
+	 * undefined symbol: _ZN5actor13ros_interface6Stream11publishDataINS_15ActorMarkerType
+	 * EN18visualization_msgs7Marker_ISaIvEEEEEvT_T0_
+	 *
+	 * when templates are defined in header everything seems to work */
+
+
+	/// \brief Creates an object of ros::Publisher
+	/// which broadcasts visualization_msgs::Marker
+	/// or visualization_msgs::MarkerArray messages;
+	/// NOTE: tf_broadcaster doesn't need initialization
 	template <typename T1, typename T2>
 	void initPublisher(const T1 &type, const std::string &topic_name) {
 
 		ros::Publisher publisher;
-		publisher = nh_ptr_->advertise<T2>(namespace_ + topic_name, 10);
+		publisher = nh_ptr_->advertise<T2>(namespace_ + "/" + topic_name, 10);
 		publisher_id_map_.insert( std::pair<unsigned int, ros::Publisher> (static_cast<unsigned int>(type), publisher) );
 
 	}
 
+	/// \brief Publishes a visualization_msgs::Marker
+	/// or visualization_msgs::MarkerArray message;
+	/// message type is previously defined in ros::Publisher
 	template <typename T1, typename T2>
 	void publishData(const T1 type, const T2 marker_msg) {
 
@@ -137,6 +117,28 @@ public:
 		if ( found ) {
 			pub.publish(marker_msg);
 		}
+
+	}
+
+	/* below should be a specialization for template but it does
+	 * not seem to be allowed to be done within class so a simple
+	 * overloaded function is created */
+	/// \brief Publishes a geometry_msgs::TransformStamped message;
+	/// publisher initialization is not needed in this case (tf_broadcaster)
+	void publishData(const ActorTfType type, const ignition::math::Pose3d pose) {
+
+		// append _goal to a namespace when broadcasting target pose
+		std::string child_frame = namespace_;
+		if ( type == ACTOR_TF_TARGET ) {
+			child_frame.append("_goal");
+		}
+
+		geometry_msgs::TransformStamped tf_stamp = convertPoseToTfStamped(pose);
+		tf_stamp.header.frame_id = "map";
+		tf_stamp.header.stamp = ros::Time::now();
+		tf_stamp.child_frame_id = child_frame;
+
+		tf_broadcaster_.sendTransform(tf_stamp);
 
 	}
 

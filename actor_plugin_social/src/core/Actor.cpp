@@ -70,9 +70,9 @@ void Actor::initRosInterface() {
 	 * as a separate one */
 	stream_.setNodeHandle(node_.getNodeHandlePtr());
 	stream_.setNamespace(actor_ptr_->GetName());
-	//stream_.initPublisher(ActorMarkerType::ACTOR_MARKER_BOUNDING, "ellipse");
-	// template test
 	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_BOUNDING, "ellipse");
+//	stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, "closest_points");
+//	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_SF_VECTOR, "social_force");
 
 	// constructor of a Connection object
 	connection_ptr_ = std::make_shared<actor::ros_interface::Connection>();
@@ -791,20 +791,10 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	}
 
 	// publish data for visualization
-	/*
 	stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_ellipse_.getMarkerConversion());
 	stream_.publishData(ActorTfType::ACTOR_TF_SELF, pose_world_);
 	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_),
 																			 ignition::math::Quaterniond(0.0, 0.0, 0.0, 1.0)));
-	 */
-
-	// template test
-	stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_ellipse_.getMarkerConversion());
-	stream_.publishData(ActorTfType::ACTOR_TF_SELF, pose_world_);
-	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_),
-																			 ignition::math::Quaterniond(0.0, 0.0, 0.0, 1.0)));
-
-
 
 	// debug info
 //	print_info = false;
