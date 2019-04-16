@@ -108,7 +108,7 @@ public:
 	/// or visualization_msgs::MarkerArray message;
 	/// message type is previously defined in ros::Publisher
 	template <typename T1, typename T2>
-	void publishData(const T1 type, const T2 marker_msg) {
+	void publishData(const T1 &type, const T2 &marker_msg) {
 
 		ros::Publisher pub;
 		bool found = false;
@@ -125,7 +125,7 @@ public:
 	 * overloaded function is created */
 	/// \brief Publishes a geometry_msgs::TransformStamped message;
 	/// publisher initialization is not needed in this case (tf_broadcaster)
-	void publishData(const ActorTfType type, const ignition::math::Pose3d pose) {
+	void publishData(const ActorTfType &type, const ignition::math::Pose3d &pose) {
 
 		// append _goal to a namespace when broadcasting target pose
 		std::string child_frame = namespace_;

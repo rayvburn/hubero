@@ -29,69 +29,69 @@ CommonInfo::CommonInfo():
 
 // ------------------------------------------------------------------- //
 
-void CommonInfo::addActor (const std::string &_name) {
+void CommonInfo::addActor (const std::string &name) {
 
 	lin_vel_vector_.emplace_back(1.0, 1.0, 0.0);
-	this->id_actor_ = static_cast<unsigned int>(lin_vel_vector_.size() - 1);
+	id_actor_ = static_cast<unsigned int>(lin_vel_vector_.size() - 1);
 	bounding_box_vector_.push_back(actor::inflation::Box());
 	bounding_circle_vector_.push_back(actor::inflation::Circle());
 	bounding_ellipse_vector_.push_back(actor::inflation::Ellipse());
-	name_id_map_.insert(std::make_pair(_name, this->id_actor_));
+	name_id_map_.insert(std::make_pair(name, id_actor_));
 
 }
 
 // ------------------------------------------------------------------- //
 
-void CommonInfo::setBoundingBox (const actor::inflation::Box &_bb) {
-	bounding_box_vector_.at(this->id_actor_) = _bb;
+void CommonInfo::setBoundingBox (const actor::inflation::Box &bb) {
+	bounding_box_vector_.at(id_actor_) = bb;
 }
 
 // ------------------------------------------------------------------- //
 
-void CommonInfo::setBoundingCircle (const actor::inflation::Circle &_bc) {
-	bounding_circle_vector_.at(this->id_actor_) = _bc;
+void CommonInfo::setBoundingCircle (const actor::inflation::Circle &bc) {
+	bounding_circle_vector_.at(id_actor_) = bc;
 }
 
 // ------------------------------------------------------------------- //
 
-void CommonInfo::setBoundingEllipse	(const actor::inflation::Ellipse &_be) {
-	bounding_ellipse_vector_.at(this->id_actor_) = _be;
+void CommonInfo::setBoundingEllipse	(const actor::inflation::Ellipse &be) {
+	bounding_ellipse_vector_.at(id_actor_) = be;
 }
 
 // ------------------------------------------------------------------- //
 
-void CommonInfo::setLinearVel (const ignition::math::Vector3d &_vel) {
-	lin_vel_vector_.at(this->id_actor_) = _vel;
+void CommonInfo::setLinearVel (const ignition::math::Vector3d &vel) {
+	lin_vel_vector_.at(id_actor_) = vel;
 }
 
 // ------------------------------------------------------------------- //
 
 unsigned int CommonInfo::getActorID() const {
-	return (this->id_actor_);
+	return (id_actor_);
 }
 
 // ------------------------------------------------------------------- //
 
 actor::inflation::Box CommonInfo::getBoundingBox() const {
-	return (bounding_box_vector_.at(this->id_actor_));
+	return (bounding_box_vector_.at(id_actor_));
 }
 
 // ------------------------------------------------------------------- //
 
 actor::inflation::Circle CommonInfo::getBoundingCircle() const {
-	return (bounding_circle_vector_.at(this->id_actor_));
+	return (bounding_circle_vector_.at(id_actor_));
 }
 
 // ------------------------------------------------------------------- //
 
 actor::inflation::Ellipse CommonInfo::getBoundingEllipse() const {
-	return (bounding_ellipse_vector_.at(this->id_actor_));
+	return (bounding_ellipse_vector_.at(id_actor_));
 }
 
 // ------------------------------------------------------------------- //
 
 ignition::math::Vector3d CommonInfo::getLinearVelocity() const {
-	return (lin_vel_vector_.at(this->id_actor_));
+	return (lin_vel_vector_.at(id_actor_));
 }
 
 // ------------------------------------------------------------------- //

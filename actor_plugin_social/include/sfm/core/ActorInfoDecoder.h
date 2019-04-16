@@ -65,7 +65,7 @@ public:
 	/// from a given vector based on ID; otherwise - a default
 	/// constructor
 	template <typename T>
-	T getData(const std::vector<T> &vector) {
+	T getData(const std::vector<T> &vector) const {
 
 		if ( id_actor_ == ACTOR_NOT_FOUND ) {
 			// return default constructor

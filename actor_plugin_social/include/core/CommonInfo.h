@@ -56,11 +56,17 @@ class CommonInfo {
 
 public:
 
+	/// \brief Default constructor
 	CommonInfo();
 
-	/// \brief Method that assigns an ID for the actor that is invoked by (must be called for each actor)
+	/// \brief Method that assigns an ID for the actor
+	/// that is invoked by (must be called for each actor);
+	/// updates a private std::map instance which store
+	/// an actor's name and his ID
 	void addActor 			(const std::string &name);
 
+	/// \brief Methods that updated appropriate instance
+	/// in whole vector
 	void setBoundingBox		(const actor::inflation::Box &bb);
 	void setBoundingCircle	(const actor::inflation::Circle &bc);
 	void setBoundingEllipse	(const actor::inflation::Ellipse &be);
@@ -78,19 +84,33 @@ public:
 	std::vector<ignition::math::Vector3d>	getLinearVelocitiesVector() const;
 	std::map<std::string, unsigned int>		getNameIDMap() const;
 
+	/// \brief Default destructor
 	virtual ~CommonInfo();
 
 private:
 
+	/// \brief Helper function that clears all static
+	/// instances of a class
 	void clearInternalMemory();
 
-	/// \brief Actor's ID for indexing the vectors
+	/// \brief Actor's ID for indexing the vectors;
+	/// this is related to an actor which class is
+	/// constructed for
 	unsigned int id_actor_;
 
+	/// \brief Static vectors of a class which store
+	/// instances of a given type for whole actors
+	/// population - length of a vector is equal
+	/// actors number in a world
 	static std::vector<actor::inflation::Box> 	  bounding_box_vector_;
 	static std::vector<actor::inflation::Circle>  bounding_circle_vector_;
 	static std::vector<actor::inflation::Ellipse> bounding_ellipse_vector_;
 	static std::vector<ignition::math::Vector3d>  lin_vel_vector_;
+
+	/// \brief A map which stores actors names
+	/// and assigns their corresponding IDs each time
+	/// addActor() is invoked; thus addActor() must
+	/// be called first
 	static std::map<std::string, unsigned int>    name_id_map_;
 
 };
