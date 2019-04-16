@@ -39,67 +39,76 @@ class Inflator {
 
 public:
 
-	/// helper class which provides methods to calculate distances between
-	/// objects taking their bounding figures into consideration
+	/// \brief Class which provides methods to calculate distances
+	/// between objects taking their bounding models into consideration
 	Inflator();
 
-	// only other objects bounding box considered
+	/// \brief Function used when only other objects' bounding
+	/// box is considered and an actor is treated as a point
 	ignition::math::Vector3d findModelsClosestPoints(const ignition::math::Pose3d &actor_pose,
 														  const ignition::math::Pose3d &object_pose,
 														  const actor::inflation::Box &bb) const;
 
-	// actor's bounding box and object's bounding box
+	/// \brief Function used when an actor's Bounding Box
+	/// and an object's Bounding Box are considered
 	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
 			const ignition::math::Pose3d &actor_pose,  const actor::inflation::Box &actor_box,
 			const ignition::math::Pose3d &object_pose, const actor::inflation::Box &object_box,
 			const std::string &object_name /* debug only */) const;
 
-//	// actor's bounding Circle and object's Box
-//	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
-//			const ignition::math::Pose3d &actor_pose, const actor::inflation::Circle &actor_circle,
-//			const ignition::math::Pose3d &object_pose,const actor::inflation::Box &object_box,
-//			const std::string &object_name /* debug only */) const;
-//
-//	/// actor's bounding Ellipse and object's Box
-//	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
-//			const ignition::math::Pose3d &actor_pose, const actor::inflation::Ellipse &actor_ellipse,
-//			const ignition::math::Pose3d &object_pose,const actor::inflation::Box &object_box,
-//			const std::string &object_name /* debug only */) const;
+	/* Scroll down for an additional template definition which is used
+	 * for Bounding Circle / Bounding Ellipse and Bounding Box computations */
 
-
-	// actors with bounding Circle
+	/// \brief Function used when 2 actors
+	/// with Bounding Circles are considered
 	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
 			const ignition::math::Pose3d &actor_pose,  const actor::inflation::Circle &actor_circle,
 			const ignition::math::Pose3d &object_pose, const actor::inflation::Circle &object_circle,
 			const std::string &_object_name /* debug only */) const;
 
-	// actors with bounding Ellipse
+	/// \brief Function used when 2 actors
+	/// with Bounding Ellipses are considered
 	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
 			const ignition::math::Pose3d &actor_pose,	const actor::inflation::Ellipse &actor_ellipse,
 			const ignition::math::Pose3d &object_pose,	const actor::inflation::Ellipse &object_ellipse,
 			const std::string &object_name /* debug only */ ) const;
 
+	/// \brief Default destructor
 	virtual ~Inflator();
 
 private:
 
-	// only other objects bounding box considered - actor as a point
+	/// \brief Helper function used when only other objects' bounding
+	/// box is considered and an actor is treated as a point;
+	/// creates a vector of vertices of a Bounding Box;
+	/// \return A vector of 4 vertices of a rectangle is created -
+	/// Bounding Box is considered to be planar here
 	std::vector<ignition::math::Vector3d> createVerticesVector(const actor::inflation::Box &bb) const;
+
+	/// \brief Helper function used when only other objects' bounding
+	/// box is considered and an actor is treated as a point;
+	/// calculates distance from actor's position to each vertex
+	/// of a bounding box
 	std::vector<double> calculateLengthToVertices(const ignition::math::Vector3d &actor_pos, const std::vector<ignition::math::Vector3d> &vertices_pts) const;
 
-	// intersected models - 2 actors or actor and box
+	/// \brief Helper function used when models intersection occurs;
+	/// incorporates 2 cases of intersection: 2 actors or actor
+	/// an an object
 	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> findIntersectedModelsClosestPoints(
 			const ignition::math::Vector3d &actor_pos, const ignition::math::Vector3d &pt_intersect,
 			const IntersectionType &type) const;
 
 public:
 
-	/* actor's bounding Circle/Ellipse and object's Box - DEPRECATED due to error
+	/* Template definition in cpp threw an error:
 	 * gzserver: symbol lookup error: /home/rayvburn/ros_workspace/ws_people_sim/build/actor_plugin_social/
 	 * libsocial_force_model.so: undefined symbol: _ZNK3sfm4core9Inflation28calculateModelsClosestPointsIN5
 	 * actor9inflation7EllipseEEESt5tupleIJN8ignition4math5Pose3IdEENS8_7Vector3IdEEEERKSA_RKT_SF_RKNS4_3Bo
 	 * xERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE */
 
+	/// \brief Function used for calculations when an Actor's
+	/// Bounding Circle/Bounding Ellipse and an object's Box
+	/// are considered
 	template <class T>
 	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
 			const ignition::math::Pose3d &actor_pose, const T &actor_bound,
@@ -221,7 +230,7 @@ public:
 
 		return ( std::make_tuple(actor_pose_shifted, point_intersect) );
 
-	}
+	} /* findModelsClosestPoints() */
 
 
 };
