@@ -8,6 +8,7 @@
 #include <Base.h>
 
 #include <ignition/math/Angle.hh>
+#include <ignition/math/Quaternion.hh>
 
 namespace sfm {
 namespace vis {
