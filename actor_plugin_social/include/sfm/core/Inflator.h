@@ -115,6 +115,7 @@ public:
 			const ignition::math::Pose3d &object_pose,const actor::inflation::Box &object_box,
 			const std::string &object_name /* debug only */	) const {
 
+		/* BoundingCircle and BoundingBox -> actor and static object */
 		/* BoundingEllipse and BoundingBox -> actor and static object */
 
 		/* this function finds points that are located within the bounding
