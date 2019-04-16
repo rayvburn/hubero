@@ -84,6 +84,12 @@ typedef enum {
 
 // -------------------------
 
+typedef enum {
+	ACTOR_NAV_PATH = 300u,
+} ActorNavMsgType;
+
+// -------------------------
+
 } /* namespace actor */
 
 #endif /* INCLUDE_ACTOR_ENUMS_H_ */

@@ -28,23 +28,23 @@ void Stream::setNamespace(const std::string &ns) {
 
 // ------------------------------------------------------------------- //
 
-void Stream::initPublisher(const ActorMarkerType &type, const std::string &topic_name) {
-
-	ros::Publisher publisher;
-	publisher = nh_ptr_->advertise<visualization_msgs::Marker>(namespace_ + topic_name, 10);
-	publisher_id_map_.insert( std::pair<unsigned int, ros::Publisher> (static_cast<unsigned int>(type), publisher) );
-
-}
-
-// ------------------------------------------------------------------- //
-
-void Stream::initPublisher(const ActorMarkerArrayType &type, const std::string &topic_name) {
-
-	ros::Publisher publisher;
-	publisher = nh_ptr_->advertise<visualization_msgs::MarkerArray>(namespace_ + topic_name, 10);
-	publisher_id_map_.insert( std::pair<unsigned int, ros::Publisher> (static_cast<unsigned int>(type), publisher) );
-
-}
+//void Stream::initPublisher(const ActorMarkerType &type, const std::string &topic_name) {
+//
+//	ros::Publisher publisher;
+//	publisher = nh_ptr_->advertise<visualization_msgs::Marker>(namespace_ + topic_name, 10);
+//	publisher_id_map_.insert( std::pair<unsigned int, ros::Publisher> (static_cast<unsigned int>(type), publisher) );
+//
+//}
+//
+//// ------------------------------------------------------------------- //
+//
+//void Stream::initPublisher(const ActorMarkerArrayType &type, const std::string &topic_name) {
+//
+//	ros::Publisher publisher;
+//	publisher = nh_ptr_->advertise<visualization_msgs::MarkerArray>(namespace_ + topic_name, 10);
+//	publisher_id_map_.insert( std::pair<unsigned int, ros::Publisher> (static_cast<unsigned int>(type), publisher) );
+//
+//}
 
 // ------------------------------------------------------------------- //
 
@@ -65,31 +65,31 @@ void Stream::publishData(const T1 type, const T2 marker_msg) {
 
 // ------------------------------------------------------------------- //
 
-void Stream::publishData(const ActorMarkerType &type, const visualization_msgs::Marker &marker) {
-
-	ros::Publisher pub;
-	bool found = false;
-	std::tie(found, pub) = findPublisherInMap( static_cast<unsigned int>(type) );
-
-	if ( found && pub.getNumSubscribers() > 0 ) {
-		pub.publish(marker);
-	}
-
-}
-
-// ------------------------------------------------------------------- //
-
-void Stream::publishData(const ActorMarkerArrayType &type, const visualization_msgs::MarkerArray &marker) {
-
-	ros::Publisher pub;
-	bool found = false;
-	std::tie(found, pub) = findPublisherInMap( static_cast<unsigned int>(type) );
-
-	if ( found && pub.getNumSubscribers() > 0 ) {
-		pub.publish(marker);
-	}
-
-}
+//void Stream::publishData(const ActorMarkerType &type, const visualization_msgs::Marker &marker) {
+//
+//	ros::Publisher pub;
+//	bool found = false;
+//	std::tie(found, pub) = findPublisherInMap( static_cast<unsigned int>(type) );
+//
+//	if ( found && pub.getNumSubscribers() > 0 ) {
+//		pub.publish(marker);
+//	}
+//
+//}
+//
+//// ------------------------------------------------------------------- //
+//
+//void Stream::publishData(const ActorMarkerArrayType &type, const visualization_msgs::MarkerArray &marker) {
+//
+//	ros::Publisher pub;
+//	bool found = false;
+//	std::tie(found, pub) = findPublisherInMap( static_cast<unsigned int>(type) );
+//
+//	if ( found && pub.getNumSubscribers() > 0 ) {
+//		pub.publish(marker);
+//	}
+//
+//}
 
 // ------------------------------------------------------------------- //
 
