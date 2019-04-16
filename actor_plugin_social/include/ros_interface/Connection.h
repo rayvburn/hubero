@@ -11,8 +11,8 @@
 // C++ STL
 #include <memory> 	// std::shared_ptr
 #include <thread>
-#include <chrono>
-#include <future>
+//#include <chrono>	// not needed ATM
+//#include <future>
 #include <string>
 
 // ROS headers
@@ -59,6 +59,10 @@ public:
 
 	/// \brief Advertises services if NodeHandle was previously set
 	void initServices();
+
+	/// \brief Loads ParameterServer instances and invokes
+	/// appropriate Actor's setter methods
+	void loadParameters();
 
 	/// \brief Initializes callback queue, starts separate thread
 	/// for callback handling, used for teleoperation mode of an Actor

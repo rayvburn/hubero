@@ -13,6 +13,7 @@
 #include <vector>
 #include <array>
 #include <tuple>
+#include <queue>
 
 // Actor-related
 #include "core/Enums.h"
@@ -190,6 +191,10 @@ private:
 
     /// \brief Current target location
     ignition::math::Vector3d target_;
+
+    /// \brief Queue of consecutive target locations
+    // TODO
+    std::queue<ignition::math::Vector3d> target_checkpoints_;
 
     /// \brief Distance tolerance allowed
     double target_tolerance_;

@@ -27,7 +27,7 @@ Node::Node() {
 		ros::init(argc, argv, "actor_plugin_ros_interface_node");
 
 		node_started_ = true;
-		nh_ptr_.reset(new ros::NodeHandle(("actor_plugin_ros_interface")));
+		nh_ptr_.reset(new ros::NodeHandle(("~actor_plugin_ros_interface")));
 
 	}
 

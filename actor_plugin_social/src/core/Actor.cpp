@@ -82,6 +82,7 @@ void Actor::initRosInterface() {
 
 	// initialize services for Actor control
 	connection_ptr_->initServices();
+	connection_ptr_->loadParameters();
 
 }
 
@@ -187,7 +188,8 @@ bool Actor::setNewTarget(const ignition::math::Pose3d &pose) {
 		return (false);
 	}
 	target_ = pose.Pos();
-
+	// TODO:
+	//target_checkpoints_.push(target_);
 	return (true);
 }
 

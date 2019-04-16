@@ -12,13 +12,8 @@
 
 #include "core/Enums.h"
 
-
-
-
 namespace actor {
 namespace ros_interface {
-
-// TODO: start callback thread only when NH and actor are initialized!
 
 // ------------------------------------------------------------------- //
 
@@ -64,6 +59,19 @@ void Connection::initServices() {
 	srv_follow_object_ 	= nh_ptr_->advertiseService(namespace_ + "/follow_object", 	&Connection::srvFollowObjectCallback, this);
 	srv_stop_following_ = nh_ptr_->advertiseService(namespace_ + "/stop_following", &Connection::srvStopFollowingCallback, this);
 	srv_get_velocity_ 	= nh_ptr_->advertiseService(namespace_ + "/get_velocity", 	&Connection::srvGetVelocityCallback, this);
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Connection::loadParameters() {
+
+	if ( nh_ptr_ == nullptr ) {
+		return;
+	}
+
+	double test = 2.00;
+	test = nh_ptr_->param<double>("test", 1.00);
 
 }
 
@@ -172,6 +180,7 @@ bool Connection::srvGetVelocityCallback(actor_sim_srv::GetVelocity::Request &req
 
 void Connection::callbackThreadHandler() {
 
+	// TODO: not tested
 	while ( nh_ptr_->ok() ) {
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
