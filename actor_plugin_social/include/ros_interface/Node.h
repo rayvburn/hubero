@@ -18,13 +18,24 @@ class Node {
 
 public:
 
+	/// \brief Default constructor; initializes ROS node
 	Node();
+
+	/// \brief Copy a shared_ptr instance for use by other class
 	std::shared_ptr<ros::NodeHandle> getNodeHandlePtr() const;
+
+	/// \brief Default destructor
 	virtual ~Node();
 
 private:
 
+	/// \brief Flag to indicate whether ROS node was initialized;
+	/// prevents creating separate node for each Actor class object
 	static bool node_started_;
+
+	/// \brief NodeHandle's shared_ptr which is passed
+	/// to other classes which provide interface with ROS;
+	/// all of them use the same instance of NodeHandle
 	static std::shared_ptr<::ros::NodeHandle> nh_ptr_;
 
 };

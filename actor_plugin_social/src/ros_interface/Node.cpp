@@ -21,12 +21,15 @@ Node::Node() {
 
 	if ( !node_started_ ) {
 
-		std::cout << "NODE STARTED SUCCESSFULLY" << std::endl;
+		// initialize ROS' node
 		int argc = 0;
 		char **argv = nullptr;
 		ros::init(argc, argv, "actor_plugin_ros_interface_node");
 
+		// flag to create only 1 node for all actors
 		node_started_ = true;
+
+		// create new NodeHandle in a private namespace
 		nh_ptr_.reset(new ros::NodeHandle(("~actor_plugin_ros_interface")));
 
 	}
@@ -35,18 +38,13 @@ Node::Node() {
 
 // ------------------------------------------------------------------- //
 
-std::shared_ptr<::ros::NodeHandle> Node::getNodeHandlePtr() const {
-
-	// TODO: check if for sure 1 NH is created
+std::shared_ptr<ros::NodeHandle> Node::getNodeHandlePtr() const {
 	return (nh_ptr_);
-
 }
 
 // ------------------------------------------------------------------- //
 
-Node::~Node() {
-	// TODO Auto-generated destructor stub
-}
+Node::~Node() { }
 
 // ------------------------------------------------------------------- //
 
