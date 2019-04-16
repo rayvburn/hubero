@@ -53,11 +53,20 @@
 namespace actor {
 namespace core {
 
-
-/* References:
- * https://stackoverflow.com/questions/11711034/stdshared-ptr-of-this
- * https://en.cppreference.com/w/cpp/memory/enable_shared_from_this */
-
+/*
+ * Inheritance from std::enable_shared_from_this allows to pass
+ * a std::shared_ptr of an Actor instance to Connection class which
+ * provides ROS interface (`RX-only type`) and which must have
+ * an ability to Actor's setter methods - thus a circular
+ * dependency problem arises.
+ *
+ * Connection class stores weak_ptr (instead of a shared_ptr)
+ * of an Actor instance - this prevents some memory leaks after
+ * closing the application.
+ *
+ * Ref: https://en.cppreference.com/w/cpp/memory/enable_shared_from_this
+ * Ref: https://stackoverflow.com/questions/11711034/stdshared-ptr-of-this
+ */
 class Actor : public std::enable_shared_from_this<actor::core::Actor> {
 
 public:
@@ -133,8 +142,8 @@ public:
     void stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info);
     void stateHandlerTeleoperation 	(const gazebo::common::UpdateInfo &info);
 
+    /// \brief Default destructor
 	virtual ~Actor();
-
 
 private:
 

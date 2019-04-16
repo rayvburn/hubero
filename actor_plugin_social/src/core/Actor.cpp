@@ -184,7 +184,6 @@ void Actor::readSDFParameters(const sdf::ElementPtr sdf) {
 
 bool Actor::setNewTarget(const ignition::math::Pose3d &pose) {
 
-	// TODO: error handling + return bool
 	if ( std::isinf(pose.Pos().X()) ||  std::isnan(pose.Pos().X()) ||
 		 std::isinf(pose.Pos().Y()) ||  std::isnan(pose.Pos().Y()) ) {
 		return (false);
@@ -434,7 +433,7 @@ void Actor::stateHandlerTeleoperation (const gazebo::common::UpdateInfo &info) {
 // ------------------------------------------------------------------- //
 
 
-
+// private section
 
 
 void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
