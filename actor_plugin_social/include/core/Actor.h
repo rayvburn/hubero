@@ -26,6 +26,8 @@
 
 // Social Force Model
 #include "sfm/core/SocialForceModel.h"
+#include <Point.h>
+#include <Grid.h>
 #include "sfm/core/SFMDebug.h"
 
 // Inflation types for SFM
@@ -186,8 +188,18 @@ private:
     /// \brief Helper function to set proper state handler according to current state
     void updateTransitionFunctionPtr();
 
+    /// \brief Helper function to update a pose of a bounding model
+    /// \param[in] Pose which model needs to be located in;
+    /// parameter is useful for SFM grid visualization where
+    /// actor's fake positions are passed to bounding model
+    void updateBounding(const ignition::math::Pose3d &pose);
+
     /// \brief Helper function that converts a stance type to associated animation
     std::string convertStanceToAnimationName() const;
+
+    /// \brief Helper function to create visualization_msgs::Marker(s)
+    /// for a SFM's visualization
+    void visualizeVectorField(const gazebo::common::UpdateInfo &info);
 
     /// \brief Helper function that check if model of given name exists in the world
     inline std::tuple<bool, gazebo::physics::ModelPtr> isModelValid(const std::string &object_name) const;
@@ -265,11 +277,20 @@ private:
     /// \brief Object that should be followed by actor
     std::string object_to_follow_;
 
-    /// \brief List of models to ignore. Used for SFM
+    /// \brief List of models to ignore. Used by SFM
     std::vector<std::string> ignored_models_;
 
     /// \brief Social Force Model interface object
     sfm::core::SocialForceModel sfm_;
+
+    /// \brief Social Force Model single points visualization
+	sfm::vis::Point sfm_vis_single_;
+
+    /// \brief Social Force Model grid visualization
+	sfm::vis::Grid sfm_vis_grid_;
+
+    /// \brief Time of the last force field visualization publication
+	gazebo::common::Time time_last_vis_pub_;
 
     /// \brief Custom trajectory info
     gazebo::physics::TrajectoryInfoPtr trajectory_info_;

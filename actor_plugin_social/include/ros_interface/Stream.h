@@ -142,6 +142,25 @@ public:
 
 	}
 
+	/// \brief Returns a number of subscribing units of
+	/// a topic published by a ros::Publisher connected
+	/// with a given `type`
+	template <typename T>
+	unsigned int getSubscribersNum(const T &type) {
+
+		ros::Publisher pub;
+		bool found = false;
+		std::tie(found, pub) = findPublisherInMap( static_cast<unsigned int>(type) );
+
+		if ( found ) {
+			return ( pub.getNumSubscribers() );
+		}
+
+		// if not found then return 0
+		return (0);
+
+	}
+
 };
 
 } /* namespace ros_interface */

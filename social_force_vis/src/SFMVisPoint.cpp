@@ -98,7 +98,7 @@ void SFMVisPoint::SetForcePoint(	const ignition::math::Vector3d &_force, const i
 	visualization_msgs::Marker marker;
 
 	marker.header.frame_id = this->frame;
-	marker.header.stamp = ros::Time();
+	marker.header.stamp = ros::Time::now();
 	marker.ns = this->ns;
 	marker.id = marker_arr_index;
 	marker.type = visualization_msgs::Marker::ARROW;

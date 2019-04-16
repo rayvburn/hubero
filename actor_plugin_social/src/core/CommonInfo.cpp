@@ -31,7 +31,7 @@ CommonInfo::CommonInfo():
 
 void CommonInfo::addActor (const std::string &name) {
 
-	lin_vel_vector_.emplace_back(1.0, 1.0, 0.0);
+	lin_vel_vector_.emplace_back(0.0, 0.0, 0.0);
 	id_actor_ = static_cast<unsigned int>(lin_vel_vector_.size() - 1);
 	bounding_box_vector_.push_back(actor::inflation::Box());
 	bounding_circle_vector_.push_back(actor::inflation::Circle());

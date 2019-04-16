@@ -65,14 +65,22 @@ void Actor::initGazeboInterface(const gazebo::physics::ActorPtr &actor, const ga
 
 void Actor::initRosInterface() {
 
+	/* initialize SFM visualization instances */
+	sfm_vis_single_.setColorLine(1.0f, 1.0f, 0.0f, 0.7f);
+	sfm_vis_single_.setColorArrow(0.0f, 1.0f, 0.0f, 0.7f);
+
+	sfm_vis_grid_.setColorArrow(0.0f, 0.0f, 1.0f, 0.7f);
+	// FIXME: avoid hard-coding
+	sfm_vis_grid_.createGrid(-5.0, 5.5, -12.0, 4.0, 0.75);
+
 	/* initialize ROS interface to allow publishing and receiving messages;
 	 * due to inheritance from `enable_shared_from_this`, this method is created
 	 * as a separate one */
 	stream_.setNodeHandle(node_.getNodeHandlePtr());
 	stream_.setNamespace(actor_ptr_->GetName());
 	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_BOUNDING, "ellipse");
-//	stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, "closest_points");
-//	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_SF_VECTOR, "social_force");
+	stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, "closest_points");
+	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_SF_VECTOR, "social_force");
 
 	// constructor of a Connection object
 	connection_ptr_ = std::make_shared<actor::ros_interface::Connection>();
@@ -701,32 +709,8 @@ double Actor::prepareForUpdate(const gazebo::common::UpdateInfo &info) {
 	// FIXME: delete - below just doesn't work - WorldPtr doesnt get updated
 	actor_ptr_->SetLinearVel(velocity_lin_);
 
-	/* update the bounding box/circle/ellipse of the actor
-	 * (aim is to create a kind of an inflation layer) */
-	switch ( bounding_type_ ) {
-
-	case(ACTOR_BOUNDING_BOX):
-			bounding_box_.updatePose(pose_world_);
-			common_info_.setBoundingBox(bounding_box_);
-			break;
-
-	case(ACTOR_BOUNDING_CIRCLE):
-			bounding_circle_.setCenter(pose_world_.Pos());
-			common_info_.setBoundingCircle(bounding_circle_);
-			break;
-
-	case(ACTOR_BOUNDING_ELLIPSE):
-			// correct yaw angle to make ellipse abstract from Actor coordinate system's orientation
-			ignition::math::Angle yaw_world( pose_world_.Rot().Yaw() - IGN_PI_2);
-			yaw_world.Normalize();
-			bounding_ellipse_.updatePose(ignition::math::Pose3d(	pose_world_.Pos(),
-																ignition::math::Quaterniond(pose_world_.Rot().Roll(),
-																							pose_world_.Rot().Pitch(),
-																							yaw_world.Radian()) ));
-			common_info_.setBoundingEllipse(bounding_ellipse_);
-			break;
-
-	}
+	// update bounding model pose
+	updateBounding(pose_world_);
 
 	// dt is helpful for further calculations
 	return (dt);
@@ -798,6 +782,39 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	// debug info
 //	print_info = false;
 //	Print_Set(false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Actor::updateBounding(const ignition::math::Pose3d &pose) {
+
+	/* update the bounding box/circle/ellipse of the actor
+	 * (aim is to create a kind of an inflation layer) */
+	switch ( bounding_type_ ) {
+
+	case(ACTOR_BOUNDING_BOX):
+			bounding_box_.updatePose(pose);
+			common_info_.setBoundingBox(bounding_box_);
+			break;
+
+	case(ACTOR_BOUNDING_CIRCLE):
+			bounding_circle_.setCenter(pose.Pos());
+			common_info_.setBoundingCircle(bounding_circle_);
+			break;
+
+	case(ACTOR_BOUNDING_ELLIPSE):
+			// correct yaw angle to make ellipse abstract from Actor coordinate system's orientation
+			ignition::math::Angle yaw_world( pose.Rot().Yaw() - IGN_PI_2);
+			yaw_world.Normalize();
+			bounding_ellipse_.updatePose(ignition::math::Pose3d( pose.Pos(),
+																ignition::math::Quaterniond(pose.Rot().Roll(),
+																							pose.Rot().Pitch(),
+																							yaw_world.Radian()) ));
+			common_info_.setBoundingEllipse(bounding_ellipse_);
+			break;
+
+	}
 
 }
 
@@ -958,6 +975,55 @@ inline std::tuple<bool, gazebo::physics::ModelPtr> Actor::isModelValid(const std
 		return ( std::make_tuple(false, nullptr) );
 	}
 	return ( std::make_tuple(true, model_p) );
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
+
+	// do not publish too often
+	if ( (info.simTime - time_last_vis_pub_).Double() > 0.25 ) {
+
+		/* update the sim time even when grid will not be published
+		 * to avoid calling getSubscribersNum() in each iteration */
+		time_last_vis_pub_ = info.simTime;
+
+		/* creating a grid with high resolution is pretty time-consuming
+		 * check if there is a subscriber and then calculate force vectors
+		 * for a whole grid */
+
+		/* grid generation is orientation-dependent (current orientation
+		 * of an actor is used) */
+		if ( stream_.getSubscribersNum(actor::ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID ) ) {
+
+			ignition::math::Pose3d pose;	// pose where `virtual` actor will be placed in
+			ignition::math::Vector3d sf;	// social force vector
+
+			// before a start reset a grid index
+			sfm_vis_grid_.resetGridIndex();
+
+			while ( !sfm_vis_grid_.isWholeGridChecked() ) {
+
+				// set an actor's virtual pose
+				pose = ignition::math::Pose3d( sfm_vis_grid_.getNextGridElement(), pose_world_.Rot() );
+
+				// update the bounding of an actor
+				updateBounding(pose);
+
+				// calculate social force for actor located in current pose
+				sf = sfm_.GetSocialForce(world_ptr_, actor_ptr_->GetName(), pose, velocity_lin_, target_, common_info_);
+
+				// pass a result to vector of grid forces
+				sfm_vis_grid_.addMarker( sfm_vis_grid_.createArrow(pose.Pos(), sf) );
+
+			}
+
+			stream_.publishData( actor::ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID, sfm_vis_grid_.getMarkerArray() );
+
+		} /* getSubscribersNum() */
+
+	} /* if ( time_elapsed ) */
 
 }
 

@@ -49,6 +49,12 @@ add_library( ${PROJECT_NAME} SHARED
  src/SFMVisGrid.cpp
  include/SFMVisPoint.h
  src/SFMVisPoint.cpp
+ include/Base.h
+ include/Point.h
+ include/Grid.h
+ src/Base.cpp
+ src/Point.cpp
+ src/Grid.cpp
 )
 
 add_dependencies( ${PROJECT_NAME} 
