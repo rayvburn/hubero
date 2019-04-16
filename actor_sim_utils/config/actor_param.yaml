@@ -1,6 +1,6 @@
 initialization:
 
-    pose: {1.0, 1.0, 0.0, 0.0, 0.0, 0.75},  # {x, y, z, r, p, y}
+    pose: [1.0, 1.0, 0.0, 0.0, 0.0, 0.75]   # {x, y, z, r, p, y}
     stance: 1                               # look for Enums.h
 
 general:

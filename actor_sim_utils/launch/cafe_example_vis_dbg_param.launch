@@ -25,6 +25,6 @@
         <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" args="--verbose" respawn="false" output="screen"/>
     </group>
 
-    <rosparam file="$(find actor_sim_utils)/config/test_param.yaml" command="load" ns="/gazebo/actor_plugin_ros_interface"/>
+    <rosparam file="$(find actor_sim_utils)/config/actor_param.yaml" command="load" ns="/gazebo/actor_plugin_ros_interface"/>
 
 </launch>
