@@ -28,7 +28,7 @@ void Grid::createGrid(const float &x_start, const float &x_end, const float &y_s
 	float y_start_temp 	= y_start;
 	float y_end_temp 	= y_end;
 
-	// prepare data - calculate bounds values from low to high
+	// prepare data - calculate bounds' values from low to high
 	if ( x_end < x_start ) {
 		x_start_temp = x_end;
 		x_end_temp 	= x_start;
@@ -57,12 +57,20 @@ void Grid::createGrid(const float &x_start, const float &x_end, const float &y_s
 // ------------------------------------------------------------------- //
 
 void Grid::addMarker(const visualization_msgs::Marker &marker) {
-	marker_array_.markers.at( grid_index_ ) = marker;
+
+	/* create a temporary variable to change an ID;
+	 * leaving ID constant here will allow drawing only 1 marker
+	 * even when a MarkerArray is big */
+
+	visualization_msgs::Marker marker_temp = std::move(marker);
+	marker_temp.id = grid_index_ - 1;
+	marker_array_.markers.at( grid_index_ - 1 ) = marker_temp;
+
 }
 
 // ------------------------------------------------------------------- //
 
-bool Grid::isWholeGridChecked() {
+bool Grid::isWholeGridChecked() const {
 	if ( grid_index_ >= grid_.size() ) {
 		return (true);
 	}
@@ -84,7 +92,7 @@ void Grid::resetGridIndex() {
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::MarkerArray Grid::getMarkerArray() {
+visualization_msgs::MarkerArray Grid::getMarkerArray() const {
 	return ( marker_array_ );
 }
 

@@ -8,8 +8,6 @@
 #include <Base.h>
 
 #include <ignition/math/Angle.hh>
-#include <geometry_msgs/Point.h>
-
 
 namespace sfm {
 namespace vis {
@@ -43,7 +41,8 @@ visualization_msgs::Marker Base::createArrow(const ignition::math::Vector3d &pos
 
 	visualization_msgs::Marker marker;
 
-	// NOTE: header.stamp, ns, id DEPRECATED here
+	// NOTE: header.stamp, ns, deprecated here
+	// NOTE: marker.id is necessary for MarkerArray (otherwise only 1 marker will be drawn)
 	// `ADD is something of a misnomer, it really means "create or modify"`
 	// http://docs.ros.org/kinetic/api/visualization_msgs/html/msg/Marker.html
 

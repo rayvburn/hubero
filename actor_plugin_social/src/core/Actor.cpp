@@ -69,9 +69,9 @@ void Actor::initRosInterface() {
 	sfm_vis_single_.setColorLine(1.0f, 1.0f, 0.0f, 0.7f);
 	sfm_vis_single_.setColorArrow(0.0f, 1.0f, 0.0f, 0.7f);
 
-	sfm_vis_grid_.setColorArrow(0.0f, 0.0f, 1.0f, 0.7f);
+	sfm_vis_grid_.setColorArrow(0.2f, 1.0f, 0.0f, 0.9f);
 	// FIXME: avoid hard-coding
-	sfm_vis_grid_.createGrid(-5.0, 5.5, -12.0, 4.0, 0.75);
+	sfm_vis_grid_.createGrid(-5.0f, 5.5f, -12.0f, 4.0f, 0.65f);
 
 	/* initialize ROS interface to allow publishing and receiving messages;
 	 * due to inheritance from `enable_shared_from_this`, this method is created
@@ -79,8 +79,9 @@ void Actor::initRosInterface() {
 	stream_.setNodeHandle(node_.getNodeHandlePtr());
 	stream_.setNamespace(actor_ptr_->GetName());
 	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_BOUNDING, "ellipse");
-	stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, "closest_points");
 	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_SF_VECTOR, "social_force");
+	stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, "closest_points");
+	stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID, "force_grid");
 
 	// constructor of a Connection object
 	connection_ptr_ = std::make_shared<actor::ros_interface::Connection>();
@@ -779,6 +780,12 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_),
 																			 ignition::math::Quaterniond(0.0, 0.0, 0.0, 1.0)));
 
+	/* visualize SFM grid if enough time elapsed from last
+	 * publication and there is some unit subscribing to a topic */
+	if ( visualizeVectorField(info) ) {
+		stream_.publishData( actor::ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID, sfm_vis_grid_.getMarkerArray() );
+	}
+
 	// debug info
 //	print_info = false;
 //	Print_Set(false);
@@ -980,7 +987,7 @@ inline std::tuple<bool, gazebo::physics::ModelPtr> Actor::isModelValid(const std
 
 // ------------------------------------------------------------------- //
 
-void Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
+bool Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
 
 	// do not publish too often
 	if ( (info.simTime - time_last_vis_pub_).Double() > 0.25 ) {
@@ -1018,12 +1025,13 @@ void Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
 				sfm_vis_grid_.addMarker( sfm_vis_grid_.createArrow(pose.Pos(), sf) );
 
 			}
-
-			stream_.publishData( actor::ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID, sfm_vis_grid_.getMarkerArray() );
+			return (true);
 
 		} /* getSubscribersNum() */
 
 	} /* if ( time_elapsed ) */
+
+	return (false);
 
 }
 

@@ -25,10 +25,10 @@ public:
 
 	void createGrid(const float &x_start, const float &x_end, const float &y_start, const float &y_end, const float &resolution);
 	void addMarker(const visualization_msgs::Marker &marker);
-	bool isWholeGridChecked();
+	bool isWholeGridChecked() const;
 	ignition::math::Vector3d getNextGridElement();
 	void resetGridIndex();
-	visualization_msgs::MarkerArray getMarkerArray();
+	visualization_msgs::MarkerArray getMarkerArray() const;
 
 	virtual ~Grid();
 

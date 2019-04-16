@@ -199,7 +199,8 @@ private:
 
     /// \brief Helper function to create visualization_msgs::Marker(s)
     /// for a SFM's visualization
-    void visualizeVectorField(const gazebo::common::UpdateInfo &info);
+    /// \return True if MarkerArray is ready to be published
+    bool visualizeVectorField(const gazebo::common::UpdateInfo &info);
 
     /// \brief Helper function that check if model of given name exists in the world
     inline std::tuple<bool, gazebo::physics::ModelPtr> isModelValid(const std::string &object_name) const;
