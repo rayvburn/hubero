@@ -196,15 +196,19 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 			actor_decoder.setID(model_ptr->GetName(), _actor_info.getNameIDMap());
 
 			// load data from CommonInfo based on actor's id
-			model_vel     = actor_decoder.getVelocity(_actor_info.getLinearVelocitiesVector());
+//			model_vel     = actor_decoder.getVelocity(_actor_info.getLinearVelocitiesVector());
+			model_vel     = actor_decoder.getData(_actor_info.getLinearVelocitiesVector());
 
 			// select proper inflation model
 			if ( inflation_type == INFLATION_CIRCLE ) {
-				model_circle  = actor_decoder.getBoundingCircle(_actor_info.getBoundingCirclesVector());
+				//model_circle  = actor_decoder.getBoundingCircle(_actor_info.getBoundingCirclesVector());
+				model_circle  = actor_decoder.getData(_actor_info.getBoundingCirclesVector());
 			} else if ( inflation_type == INFLATION_ELLIPSE ) {
-				model_ellipse = actor_decoder.getBoundingEllipse(_actor_info.getBoundingEllipsesVector());
+				//model_ellipse = actor_decoder.getBoundingEllipse(_actor_info.getBoundingEllipsesVector());
+				model_ellipse = actor_decoder.getData(_actor_info.getBoundingEllipsesVector());
 			} else if ( inflation_type == INFLATION_BOX_ALL_OBJECTS || inflation_type == INFLATION_BOX_OTHER_OBJECTS ) {
-				model_box = actor_decoder.getBoundingBox(_actor_info.getBoundingBoxesVector());
+				//model_box = actor_decoder.getBoundingBox(_actor_info.getBoundingBoxesVector());
+				model_box = actor_decoder.getData(_actor_info.getBoundingBoxesVector());
 			}
 
 		} else {

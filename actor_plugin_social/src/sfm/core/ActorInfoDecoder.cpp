@@ -10,8 +10,6 @@
 namespace sfm {
 namespace core {
 
-static const unsigned int ACTOR_NOT_FOUND = 65534;
-static const unsigned int ACTOR_MODEL_ID = 32771;
 
 // ------------------------------------------------------------------- //
 
@@ -42,50 +40,6 @@ bool ActorInfoDecoder::isActor(const unsigned int &model_type) const {
 	} else {
 		return (false);
 	}
-
-}
-
-// ------------------------------------------------------------------- //
-
-ignition::math::Vector3d ActorInfoDecoder::getVelocity(const std::vector<ignition::math::Vector3d> &actors_velocities) const {
-
-	if ( id_actor_ == ACTOR_NOT_FOUND ) {
-		return (ignition::math::Vector3d(0.0, 0.0, 0.0));
-	}
-	return ( actors_velocities.at(id_actor_) );
-
-}
-
-// ------------------------------------------------------------------- //
-
-actor::inflation::Box ActorInfoDecoder::getBoundingBox(const std::vector<actor::inflation::Box> &actors_bounding_boxes) const {
-
-	if ( id_actor_ == ACTOR_NOT_FOUND ) {
-		return (actor::inflation::Box());
-	}
-	return ( actors_bounding_boxes.at(id_actor_) );
-
-}
-
-// ------------------------------------------------------------------- //
-
-actor::inflation::Circle ActorInfoDecoder::getBoundingCircle(const std::vector<actor::inflation::Circle> &actors_bounding_circles) const {
-
-	if ( id_actor_ == ACTOR_NOT_FOUND ) {
-		return (actor::inflation::Circle());
-	}
-	return ( actors_bounding_circles.at(id_actor_) );
-
-}
-
-// ------------------------------------------------------------------- //
-
-actor::inflation::Ellipse ActorInfoDecoder::getBoundingEllipse(const std::vector<actor::inflation::Ellipse> &actors_bounding_ellipses) const {
-
-	if ( id_actor_ == ACTOR_NOT_FOUND ) {
-		return (actor::inflation::Ellipse());
-	}
-	return ( actors_bounding_ellipses.at(id_actor_) );
 
 }
 
