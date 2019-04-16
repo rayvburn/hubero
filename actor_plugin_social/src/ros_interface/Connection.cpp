@@ -13,6 +13,8 @@
 #include "core/Enums.h"
 
 
+
+
 namespace actor {
 namespace ros_interface {
 
@@ -24,12 +26,16 @@ Connection::Connection()
 {
 	// TODO Auto-generated constructor stub
 
+	// threading - get std::future object out of std::promise
+//	future_obj_ = exit_signal_.get_future();
+
 }
 
 // ------------------------------------------------------------------- //
 
 void Connection::setNodeHandle(std::shared_ptr<ros::NodeHandle> nh_ptr) {
 	nh_ptr_ = nh_ptr;
+	nh_ptr_->setCallbackQueue(&cb_queue_);
 }
 
 // ------------------------------------------------------------------- //
@@ -47,8 +53,8 @@ void Connection::setActorPtr(std::shared_ptr<actor::core::Actor> actor_ptr) {
 
 void Connection::initServices() {
 
-	// check if NodeHandle pointer was set
-	if ( nh_ptr_ == nullptr ) {
+	// first check if NodeHandle pointer was set
+	if ( (nh_ptr_ == nullptr) || (actor_ptr_.expired()) ) {
 		return;
 	}
 
@@ -63,18 +69,35 @@ void Connection::initServices() {
 
 // ------------------------------------------------------------------- //
 
+bool Connection::prepareForTeleoperation() {
+
+	// first check if NodeHandle pointer was set
+	if ( nh_ptr_ == nullptr ) {
+		return (false);
+	}
+	// no thread termination possibility (unless !ros::ok() )
+	callback_thread_ = std::thread( std::bind(&Connection::callbackThreadHandler, this) );
+
+	// version with thread termination possibility
+//	callback_thread_ = std::thread( std::bind(&Connection::callbackThreadHandler, this), std::move(future_obj_) );
+
+	return (true);
+
+}
+
+// ------------------------------------------------------------------- //
+
 bool Connection::srvSetGoalCallback(actor_sim_srv::SetGoal::Request &req, actor_sim_srv::SetGoal::Response &resp) {
 
-	std::cout << "\n\n\nsrvSetGoalCallback()" << "\t" << namespace_ << "\n\n\n" << std::endl;
-//	ignition::math::Pose3d pose;
-//	pose.Pos().X() = static_cast<double>(req->x_pos);
-//	pose.Pos().Y() = static_cast<double>(req->y_pos);
-//	//actor_ptr_->setNewTarget(pose);
-//
-//	// response's flag does not matter
-//	resp->flag = true;
+	std::cout << "\nsrvSetGoalCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	ignition::math::Pose3d pose;
+	pose.Pos().X() = static_cast<double>(req.x_pos);
+	pose.Pos().Y() = static_cast<double>(req.y_pos);
 
-	return true;
+	// take ownership of the Actor shared_ptr
+	resp.flag = actor_ptr_.lock()->setNewTarget(pose);
+
+	return (true);
 
 }
 
@@ -82,14 +105,12 @@ bool Connection::srvSetGoalCallback(actor_sim_srv::SetGoal::Request &req, actor_
 
 bool Connection::srvSetGoalNameCallback(actor_sim_srv::SetGoalName::Request &req, actor_sim_srv::SetGoalName::Response &resp) {
 
-	std::cout << "\n\n\nsrvSetGoalNameCallback()" << "\t" << namespace_ << "\n\n\n" << std::endl;
-//	if ( actor_ptr_->setNewTarget(req->object_name) ) {
-//		resp->flag = true;
-//	} else {
-//		resp->flag = false;
-//	}
+	std::cout << "\nsrvSetGoalNameCallback()" << "\t" << namespace_ << "\n" << std::endl;
 
-	return true;
+	// take ownership of the Actor shared_ptr
+	resp.flag = actor_ptr_.lock()->setNewTarget(req.object_name);
+
+	return (true);
 
 }
 
@@ -97,14 +118,12 @@ bool Connection::srvSetGoalNameCallback(actor_sim_srv::SetGoalName::Request &req
 
 bool Connection::srvSetStanceCallback(actor_sim_srv::SetStance::Request &req, actor_sim_srv::SetStance::Response &resp) {
 
-	std::cout << "\n\n\nsrvSetStanceCallback()" << "\t" << namespace_ << "\n\n\n" << std::endl;
-//	if ( actor_ptr_->setStance(static_cast<actor::ActorStance>(req->stance_type_enum)) ) {
-//		resp->flag = true;
-//	} else {
-//		resp->flag = false;
-//	}
+	std::cout << "\nsrvSetStanceCallback()" << "\t" << namespace_ << "\n" << std::endl;
 
-	return true;
+	// take ownership of the Actor shared_ptr
+	resp.flag = actor_ptr_.lock()->setStance(static_cast<actor::ActorStance>(req.stance_enum));
+
+	return (true);
 
 }
 
@@ -112,10 +131,11 @@ bool Connection::srvSetStanceCallback(actor_sim_srv::SetStance::Request &req, ac
 
 bool Connection::srvFollowObjectCallback(actor_sim_srv::FollowObject::Request &req, actor_sim_srv::FollowObject::Response &resp) {
 
-	std::cout << "\n\n\nsrvFollowObjectCallback()" << "\t" << namespace_ << "\n\n\n" << std::endl;
-//	resp->resp_id = 0;
+	std::cout << "\nsrvFollowObjectCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	// TODO
+	// take ownership of the Actor shared_ptr
 
-	return true;
+	return (true);
 
 }
 
@@ -123,10 +143,11 @@ bool Connection::srvFollowObjectCallback(actor_sim_srv::FollowObject::Request &r
 
 bool Connection::srvStopFollowingCallback(actor_sim_srv::StopFollowing::Request &req, actor_sim_srv::StopFollowing::Response &resp) {
 
-	std::cout << "\n\n\nsrvStopFollowingCallback()" << "\t" << namespace_ << "\n\n\n" << std::endl;
-//	resp->flag = 0;
+	std::cout << "\nsrvStopFollowingCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	// TODO
+	// take ownership of the Actor shared_ptr
 
-	return true;
+	return (true);
 
 }
 
@@ -134,13 +155,15 @@ bool Connection::srvStopFollowingCallback(actor_sim_srv::StopFollowing::Request 
 
 bool Connection::srvGetVelocityCallback(actor_sim_srv::GetVelocity::Request &req, actor_sim_srv::GetVelocity::Response &resp) {
 
-	std::cout << "\n\n\nsrvGetVelocityCallback()" << "\t" << namespace_ << "\n\n\n" << std::endl;
-//	std::array<double, 3> velocity = actor_ptr_->getVelocity();
-//	resp->x = velocity.at(0);
-//	resp->y = velocity.at(1);
-//	resp->yaw = velocity.at(2);
+	std::cout << "\nsrvGetVelocityCallback()" << "\t" << namespace_ << "\n" << std::endl;
 
-	return true;
+	// take ownership of the Actor shared_ptr
+	std::array<double, 3> velocity = actor_ptr_.lock()->getVelocity();
+	resp.x = velocity.at(0);
+	resp.y = velocity.at(1);
+	resp.yaw = velocity.at(2);
+
+	return (true);
 
 }
 
@@ -148,6 +171,13 @@ bool Connection::srvGetVelocityCallback(actor_sim_srv::GetVelocity::Request &req
 // ------------------------------------------------------------------- //
 
 void Connection::callbackThreadHandler() {
+
+	while ( nh_ptr_->ok() ) {
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		cb_queue_.callAvailable( ros::WallDuration(0.001) );
+
+	}
 
 }
 

@@ -9,8 +9,10 @@
 #define INCLUDE_ROS_INTERFACE_CONNECTION_H_
 
 // C++ STL
-#include <memory> // std::shared_ptr
+#include <memory> 	// std::shared_ptr
 #include <thread>
+#include <chrono>
+#include <future>
 #include <string>
 
 // ROS headers
@@ -58,6 +60,14 @@ public:
 	/// \brief Advertises services if NodeHandle was previously set
 	void initServices();
 
+	/// \brief Initializes callback queue, starts separate thread
+	/// for callback handling, used for teleoperation mode of an Actor
+	bool prepareForTeleoperation();
+
+//	// TODO: makes sense then thread termination is possible
+//	/// \brief Invoked after teleoperation mode stoppage
+//	void finishTeleoperation();
+
 	/// \brief Default destructor
 	virtual ~Connection();
 
@@ -85,11 +95,19 @@ private:
 	/// nullptr by default
 	std::weak_ptr<actor::core::Actor> actor_ptr_;
 
-	/// \brief ROS Callback queue to process messages
-	//ros::CallbackQueue cb_queue_;
+	/// \brief ROS Callback queue to process messages;
+	/// typical pointer just like NodeHandle requires
+	ros::CallbackQueue cb_queue_;
 
 	/// \brief Separate thread to provide a fast response to a service call
 	std::thread callback_thread_;
+
+//	// Reference: https://thispointer.com/c11-how-to-stop-or-terminate-a-thread/
+//	/// \brief Object used as a helper to terminate a thread
+//	std::promise<void> exit_signal_;
+//
+//	/// \brief Object used to terminate a thread
+//	std::future<void> future_obj_;
 
 	/// \brief Servers for each service
 	ros::ServiceServer srv_set_goal_;

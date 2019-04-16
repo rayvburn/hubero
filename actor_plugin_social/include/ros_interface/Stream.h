@@ -75,6 +75,9 @@ public:
 	/// \brief Publishes a TF message
 	void publishData(const ActorTfType &type, const ignition::math::Pose3d &pose);
 
+	// TODO:
+	// path
+
 	/// \brief Default destructor
 	virtual ~Stream();
 

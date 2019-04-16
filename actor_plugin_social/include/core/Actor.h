@@ -97,7 +97,8 @@ public:
 	void readSDFParameters(const sdf::ElementPtr sdf);
 
 	/// \brief Method to set new target for actor - static objet's pose
-	void setNewTarget(const ignition::math::Pose3d &pose);
+	/// \return True if [x,y] position is valid
+	bool setNewTarget(const ignition::math::Pose3d &pose);
 
 	/// \brief Method to set new target for actor - object's name
 	/// \return True if object is valid
@@ -118,6 +119,9 @@ public:
 	/// \brief Set actor's new state (first see which are allowed)
 	/// \return True if state is valid
 	bool setState(const actor::ActorState &new_state);
+
+	// TODO:
+	// queue of objects to follow (checkpoints)
 
 	/// \brief Executes handler for currently set state
 	void executeTransitionFunction(const gazebo::common::UpdateInfo &info);
