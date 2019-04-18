@@ -13,6 +13,7 @@
 #include <memory>
 #include <tuple>
 #include <string>
+#include <limits>
 
 // ROS headers
 #include <ros/ros.h>
@@ -33,6 +34,8 @@ public:
 	/// default values are provided
 	typedef struct {
 
+		std::vector<double> init_pose; 						// if empty - there will be a random values chosen
+		unsigned short int	init_stance						= 0;
 		unsigned short int 	bounding_type 					= 2;
 		double 				animation_factor 				= 4.5;
 		double 				animation_speed_rotation 		= 0.007;
@@ -102,7 +105,7 @@ private:
 
 	/// \brief
 	/// must be non-const
-	std::tuple<std::string, int, double> convertToTuple(XmlRpc::XmlRpcValue &sublist);
+	std::tuple<std::string, int, double> convertModelDescriptionToTuple(XmlRpc::XmlRpcValue &sublist);
 
 	/*
 	 * Namespace and prefixes explanation:

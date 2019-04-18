@@ -97,7 +97,7 @@ void Actor::initRosInterface() {
 
 	// run parameter loader
 	params_.setActorParamsPrefix("actor");
-	params_.setSfmDictionaryPrefix("sfm");
+	params_.setSfmParamsPrefix("sfm");
 	params_.setSfmDictionaryPrefix("sfm");
 	params_.loadParameters(node_.getNodeHandlePtr());
 
