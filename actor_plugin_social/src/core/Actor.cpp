@@ -65,6 +65,12 @@ void Actor::initGazeboInterface(const gazebo::physics::ActorPtr &actor, const ga
 
 void Actor::initRosInterface() {
 
+	// run parameter loader
+	params_.setActorParamsPrefix("actor");
+	params_.setSfmParamsPrefix("sfm");
+	params_.setSfmDictionaryPrefix("sfm");
+	params_.loadParameters(node_.getNodeHandlePtr());
+
 	/* initialize SFM visualization instances */
 	sfm_vis_single_.setColorLine(1.0f, 1.0f, 0.0f, 0.7f);
 	sfm_vis_single_.setColorArrow(0.0f, 1.0f, 0.0f, 0.7f);
@@ -87,19 +93,13 @@ void Actor::initRosInterface() {
 	connection_ptr_ = std::make_shared<actor::ros_interface::Connection>();
 
 	// Connection's configuration
-	connection_ptr_->setActorPtr( shared_from_this() );
+	connection_ptr_->setActorPtr( shared_from_this() ); // passes `std::shared_ptr` of `this` (which normally would be a const pointer)
 	connection_ptr_->setNodeHandle(node_.getNodeHandlePtr());
 	connection_ptr_->setNamespace(actor_ptr_->GetName());
 
 	// initialize services for Actor control
 	connection_ptr_->initServices();
 	//connection_ptr_->loadParameters(); // DEPRECATED
-
-	// run parameter loader
-	params_.setActorParamsPrefix("actor");
-	params_.setSfmParamsPrefix("sfm");
-	params_.setSfmDictionaryPrefix("sfm");
-	params_.loadParameters(node_.getNodeHandlePtr());
 
 }
 

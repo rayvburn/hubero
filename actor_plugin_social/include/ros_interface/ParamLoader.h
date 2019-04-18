@@ -36,6 +36,7 @@ public:
 
 		std::vector<double> init_pose; 						// if empty - there will be a random values chosen
 		unsigned short int	init_stance						= 0;
+
 		unsigned short int 	bounding_type 					= 2;
 		double 				animation_factor 				= 4.5;
 		double 				animation_speed_rotation 		= 0.007;
@@ -63,6 +64,17 @@ public:
 		unsigned short int 	box_inflation_type 			= 0;
 
 	} SfmParams;
+
+	/// \brief Declaration of an SfmVisParams typedef'ed struct;
+	/// default values are provided
+	typedef struct {
+
+		double				markers_pub_period			= 0.15;
+		bool				publish_grid				= true;
+		double				grid_resolution				= 0.75;
+		double 				grid_pub_period				= 0.25;
+
+	} SfmVisParams;
 
 	/// \brief Declaration of an SfmDictionary typedef'ed struct;
 	/// default values are provided
