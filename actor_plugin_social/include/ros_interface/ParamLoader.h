@@ -23,7 +23,7 @@
 namespace actor {
 namespace ros_interface {
 
-/* Helper class created to prevent the main one (actor::core::Actor)
+/* Helper class created to prevent the main one's (actor::core::Actor)
  * pollution with a plenty of parameter variables used only once
  * during initialization */
 class ParamLoader {
@@ -76,38 +76,113 @@ public:
 	/// \brief Default constructor
 	ParamLoader();
 
+	/// \brief Sets main namespace of parameters to search within,
+	/// it is meant to be an actor's name (if each actor has
+	/// different parameters);
+	/// for further explanation find `namespace and prefixes
+	/// explanation` section in this file
 	void setNamespace(const std::string &ns);
 
+	/// \brief Sets namespace of actor's parameters to search within,
+	/// for further explanation find `namespace and prefixes
+	/// explanation` section in this file
 	void setActorParamsPrefix(const std::string &actor_prefix);
+
+	/// \brief Sets namespace of SFM's parameters to search within,
+	/// for further explanation find `namespace and prefixes
+	/// explanation` section in this file
 	void setSfmParamsPrefix(const std::string &sfm_prefix);
+
+	/// \brief Sets namespace of SFM's dictionary entities to search
+	/// within, for further explanation find `namespace and prefixes
+	/// explanation` section in this file
 	void setSfmDictionaryPrefix(const std::string &dictionary_prefix);
 
-//	/// \brief Loads ParameterServer instances and invokes
-//	/// appropriate Actor's setter methods
-//	void loadParameters();
+	/// \brief Loads parameters into typedef'ed struct
+	/// instances (marked as private in this class)
 	void loadParameters(const std::shared_ptr<ros::NodeHandle> nh_ptr);
 
-	ActorParams   getActorParams() 		const;
-	SfmParams 	  getSfmParams() 		const;
-	SfmDictionary getSfmDictionary() 	const;
+	/// \brief Returns actor's parameters
+	/// \return ActorParams struct with non-default values
+	/// if parameters was successfully decoded
+	ActorParams getActorParams() const;
+
+	/// \brief Returns SFM's parameters
+	/// \return SfmParams struct with non-default values
+	/// if parameters was successfully decoded
+	SfmParams getSfmParams() const;
+
+	/// \brief Returns SFM's dictionary
+	/// \return Non-empty SfmDictionary struct
+	/// if parameters was successfully decoded
+	SfmDictionary getSfmDictionary() const;
 
 	/// \brief Default destructor
 	virtual ~ParamLoader();
 
 private:
 
+	/// \brief Helper function which loads actor's parameters
+	/// into typedef'ed struct
 	void loadActorParams	(const std::shared_ptr<ros::NodeHandle> nh_ptr);
+
+	/// \brief Helper function which loads SFM's parameters
+	/// into typedef'ed struct
 	void loadSfmParams		(const std::shared_ptr<ros::NodeHandle> nh_ptr);
+
+	/// \brief Helper function which loads SFM's dictionary
+	/// into typedef'ed struct
 	void loadSfmDictionary	(const std::shared_ptr<ros::NodeHandle> nh_ptr);
 
+	/// \brief Helper function which converts a given string
+	/// into namespace pattern - '/' at the end
+	/// \return New string modified appropriately
 	inline std::string convertToNamespaceConvention(const std::string &str);
+
+	/// \brief Helper function which checks if given `str`
+	/// fits namespace pattern, (if needed) modifies
+	/// a copy of it and assigns new string to a `ns`
+	/// \brief [param in] string instance to be updated (set)
+	/// \brief [param in] new name for a namespace
 	inline void setLocalNs(std::string &ns, const std::string &str);
 
-	/// \brief
-	/// must be non-const
+	/// \brief Helper function which converts model description
+	/// loaded from YAML given in XmlRpcValue's format
+	/// to std::tuple;
+	/// NOTE: XmlRpc::XmlRpcValue passed to function must
+	/// be non-const
 	std::tuple<std::string, int, double> convertModelDescriptionToTuple(XmlRpc::XmlRpcValue &sublist);
 
+	/// \brief Main namespace name (for example actor's name)
+	std::string ns_;
+
+	/// \brief Actor's parameters namespace prefix
+	std::string actor_ns_prefix_;
+
+	/// \brief SFM's parameters namespace prefix
+	std::string sfm_ns_prefix_;
+
+	/// \brief SFM's dictionary namespace prefix
+	std::string dict_ns_prefix_;
+
+	/// \brief Struct storing actor's parameters
+	ActorParams params_actor_;
+
+	/// \brief Struct storing SFM's parameters
+	SfmParams params_sfm_;
+
+	/// \brief Struct storing SFM's dictionary;
+	/// marked static as dictionary is shared
+	/// among all actors
+	static SfmDictionary dict_sfm_;
+
+	/// \brief Helper flag to prevent loading
+	/// dictionary multiple times;
+	/// marked static just like SFM's dictionary
+	static bool dict_loaded_;
+
 	/*
+	 * NOTE: setting namespace and prefixes is NOT necessary
 	 * Namespace and prefixes explanation:
 	 *
 	 * default (blank actor's namespace and actor's prefix
@@ -118,61 +193,9 @@ private:
 	 * /gazebo/actor_plugin_ros_interface/[ns=actor_id]/[actor_ns_prefix]/general/animation_factor: 4.5
 	 * /gazebo/actor_plugin_ros_interface/[ns=actor_id]/[sfm_ns_prefix]/algorithm/fov: 2.0
 	 *
-	 * NOTE: if a prefix or a namespace is set, it must end with a '/' character
+	 * NOTE: if a prefix or a namespace is set, it must end with a '/' character -
+	 * this is managed by `convertToNamespaceConvention()` function
 	 */
-
-	std::string ns_;
-	std::string actor_ns_prefix_;
-	std::string sfm_ns_prefix_;
-	std::string dict_ns_prefix_;
-	ActorParams params_actor_;
-	SfmParams params_sfm_;
-	SfmDictionary dict_sfm_;
-
-//	/// \brief Parameters from an `initialization` section
-//	std::vector<double> init_pose_;
-//	unsigned int init_stance_;
-//
-//	/// \brief Parameters from a `general` section
-//	unsigned int bounding_type_;
-//	double animation_factor_;
-//	double animation_factor_rotation_;
-//	double target_tolerance_;
-//	double target_reach_max_time_;
-//	double target_reachable_check_period_;
-//	std::vector<double> world_bound_x_;
-//	std::vector<double> world_bound_y_;
-
-//public:
-//
-//	// -------------------------
-//
-//	struct {
-//		int field = 0;
-//	} ActorParamsStruct;
-//
-//	// -------------------------
-//
-//	struct {
-//		double 				fov 						= 2.00;
-//		double 				max_speed 					= 1.50;
-//		double 				mass 						= 80.0;
-//		double 				internal_force_factor 		= 100.0;
-//		double 				interaction_force_factor 	= 3000.0;
-//		double 				min_force 					= 300.0;
-//		double 				max_force 					= 2000.0;
-//		bool 				heterogenous_population 	= false;
-//		unsigned short int 	static_obj_interaction 		= 1;
-//		unsigned short int 	box_inflation_type 			= 0;
-//	} SfmParamsStruct;
-//
-//	// -------------------------
-//
-//	struct {
-//		int field = 1;
-//	} SfmDictStruct;
-//
-//	// -------------------------
 
 };
 
