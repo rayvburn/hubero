@@ -88,7 +88,7 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 //	actor_ptr_ = obj.shared_from_this();
 	actor_ptr_ = std::make_shared<actor::core::Actor>();
 	actor_ptr_->initGazeboInterface(actor, world);
-	// actor_ptr_->initInflator(1.00, 0.80, 0.35, 0.0); PARAM-BASED INFLATOR SELECTION
+	actor_ptr_->initInflator(1.00, 0.80, 0.35, 0.0); //PARAM-BASED INFLATOR SELECTION
 	actor_ptr_->initRosInterface();
 	actor_ptr_->initActor();
 #endif

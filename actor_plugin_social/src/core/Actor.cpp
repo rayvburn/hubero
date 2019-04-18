@@ -146,24 +146,23 @@ void Actor::initActor() {
 	}
 
 	// set initial stance and create custom trajectory
-	//setStance(ACTOR_STANCE_WALK);
 	setStance( static_cast<actor::ActorStance>(params_.getActorParams().init_stance) );
 
 	/* set starting pose different to default to prevent actor
-	 * to lie on his back 1 m above the ground*/
-	ignition::math::Pose3d   init_pose;
+	 * lying on his back 1 m above the ground */
+	ignition::math::Pose3d init_pose;
 
-	// check if some values have been passed
+	// check if some values have been set in .yaml
 	if ( params_.getActorParams().init_pose.size() == 0 ) {
 
+		// process parameters added to .world file (.sdf)
 		ignition::math::Vector3d init_orient = actor_ptr_->WorldPose().Rot().Euler();
-		// FIXME: `+ IGN_PI/2` is to prevent actor lying at the startup
-		// make it updateStanceOrientation do the job
 		init_pose.Set( actor_ptr_->WorldPose().Pos(), ignition::math::Quaterniond(init_orient.X(), init_orient.Y(), init_orient.Z()) );
 
 	} else {
 
-		// set pose as set in params
+		// set pose as set in .yaml file - handy for single actor
+		// not very handy for 100 of them
 		init_pose.Set( params_.getActorParams().init_pose.at(0), params_.getActorParams().init_pose.at(1), params_.getActorParams().init_pose.at(2), params_.getActorParams().init_pose.at(3), params_.getActorParams().init_pose.at(4), params_.getActorParams().init_pose.at(5) );
 
 	}
@@ -172,6 +171,24 @@ void Actor::initActor() {
 
 	// set previous pose to prevent velocity overshoot
 	pose_world_prev_ = actor_ptr_->WorldPose();
+
+//	// convert int to enum value and initialize a proper inflator
+//	bounding_type_ = static_cast<actor::ActorBoundingType>(params_.getActorInflatorParams().bounding_type);
+//
+//	switch ( bounding_type_ ) {
+//
+//	case(ACTOR_BOUNDING_BOX):
+//			// initInflator()
+//			break;
+//
+//	case(ACTOR_BOUNDING_CIRCLE):
+//
+//			break;
+//
+//	case(ACTOR_BOUNDING_ELLIPSE):
+//
+//			break;
+//	}
 
 
 }
@@ -369,7 +386,7 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 
 	/* forced close-to-zero distance traveled to avoid actor oscillations;
 	 * of course 0.0 linear distance is traveled when pure rotation is performed */
-	applyUpdate(info, 0.0007);
+	applyUpdate(info, params_.getActorParams().animation_speed_rotation);
 
 }
 
@@ -416,7 +433,7 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 	/* the smaller tolerance the bigger probability that actor will
 	 * step into some obstacle */
 	// TODO: YAML PARAMETER
-	if (to_target_distance < target_tolerance_) {
+	if (to_target_distance < params_.getActorParams().target_tolerance ) {
 
 		chooseNewTarget(info);
 		// after setting new target, first let's rotate to its direction
@@ -452,7 +469,7 @@ void Actor::stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info) {
 
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	double dist_traveled = 0.007;
+	double dist_traveled = 0.007; // temp
 	applyUpdate(info, dist_traveled);
 
 }
@@ -467,7 +484,7 @@ void Actor::stateHandlerTeleoperation (const gazebo::common::UpdateInfo &info) {
 
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	double dist_traveled = 0.007;
+	double dist_traveled = 0.007; // temp
 	applyUpdate(info, dist_traveled);
 
 }
@@ -541,7 +558,7 @@ void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 bool Actor::isTargetStillReachable(const gazebo::common::UpdateInfo &info) {
 
 	// check periodically, no need to do this in each iteration
-	if ( (info.simTime - time_last_reachability_).Double() > 2.0 ) {
+	if ( (info.simTime - time_last_reachability_).Double() > params_.getActorParams().target_reachable_check_period ) {
 
 		// save event time
 		time_last_reachability_ = info.simTime;
@@ -580,7 +597,7 @@ bool Actor::isTargetStillReachable(const gazebo::common::UpdateInfo &info) {
 bool Actor::isTargetNotReachedForTooLong(const gazebo::common::UpdateInfo &info) const {
 
 	// TODO: make the time a YAML parameter
-	if ( (info.simTime - time_last_target_selection_).Double() > 60.0 ) {
+	if ( (info.simTime - time_last_target_selection_).Double() > params_.getActorParams().target_reach_max_time ) {
 
 		std::cout << "isTargetNotReachedForTooLong()" << std::endl;
 		std::cout << "\t" << actor_ptr_->GetName() << "\tDETECTED TARGET UNREACHABLE IN FINITE TIME!" << std::endl;
@@ -624,10 +641,10 @@ void Actor::updateStanceOrientation(ignition::math::Pose3d &pose) {
 
 		// Yaw alignment with world X-axis DEPRECATED //
 		case(actor::ACTOR_STANCE_WALK):
-				rpy.X(1.5707);
+				rpy.X(IGN_PI_2);
 				break;
 		case(actor::ACTOR_STANCE_STAND):
-				rpy.X(1.5707);
+				rpy.X(IGN_PI_2);
 				break;
 		case(actor::ACTOR_STANCE_LIE):
 				rpy.X(0.0000);
@@ -781,7 +798,7 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	 */
 
 	// update script time to set proper animation speed
-	actor_ptr_->SetScriptTime( actor_ptr_->ScriptTime() + (dist_traveled * animation_factor_) );
+	actor_ptr_->SetScriptTime( actor_ptr_->ScriptTime() + (dist_traveled * params_.getActorParams().animation_factor) );
 
 	// update time
 	time_last_update_ = info.simTime;
@@ -811,7 +828,7 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_ellipse_.getMarkerConversion());
 	stream_.publishData(ActorTfType::ACTOR_TF_SELF, pose_world_);
 	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_),
-																			 ignition::math::Quaterniond(0.0, 0.0, 0.0, 1.0)));
+																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
 	// check if grid publication has been enabled in parameter file
 	if ( params_.getSfmVisParams().publish_grid ) {
 
@@ -1027,7 +1044,7 @@ inline std::tuple<bool, gazebo::physics::ModelPtr> Actor::isModelValid(const std
 bool Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
 
 	// do not publish too often
-	if ( (info.simTime - time_last_vis_pub_).Double() > 0.25 ) {
+	if ( (info.simTime - time_last_vis_pub_).Double() > params_.getSfmVisParams().grid_pub_period ) {
 
 		/* update the sim time even when grid will not be published
 		 * to avoid calling getSubscribersNum() in each iteration */

@@ -51,6 +51,7 @@ void ParamLoader::loadParameters(const std::shared_ptr<ros::NodeHandle> nh_ptr) 
 
 	loadActorParams(nh_ptr);
 	loadSfmParams(nh_ptr);
+	loadActorInflatorParams(nh_ptr);
 
 	// dictionary is shared between actors, let it load only once
 	if ( !dict_vis_loaded_ ) {
@@ -65,6 +66,12 @@ void ParamLoader::loadParameters(const std::shared_ptr<ros::NodeHandle> nh_ptr) 
 
 ParamLoader::ActorParams ParamLoader::getActorParams() const {
 	return (params_actor_);
+}
+
+// ------------------------------------------------------------------- //
+
+ParamLoader::InflatorParams ParamLoader::getActorInflatorParams() const {
+	return (params_actor_bounding_);
 }
 
 // ------------------------------------------------------------------- //
@@ -101,9 +108,6 @@ void ParamLoader::loadActorParams(const std::shared_ptr<ros::NodeHandle> nh_ptr)
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - -
 	// general section
-	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "general/bounding_type", temp_int) ) {
-		params_actor_.bounding_type = static_cast<unsigned short int>(temp_int);
-	}
 
 	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "general/animation_factor", params_actor_.animation_factor) ) { }
 	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "general/animation_speed_rotation", params_actor_.animation_speed_rotation) ) { }
@@ -120,6 +124,49 @@ void ParamLoader::loadActorParams(const std::shared_ptr<ros::NodeHandle> nh_ptr)
 //	for ( size_t i = 0; i < params_actor_.world_bound_x.size(); i++ ) {
 //		std::cout << i << "\t" << params_actor_.world_bound_x.at(i) << std::endl;
 //	}
+
+}
+
+// ------------------------------------------------------------------- //
+
+void ParamLoader::loadActorInflatorParams (const std::shared_ptr<ros::NodeHandle> nh_ptr) {
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - -
+	// inflation section
+	int temp_int; 	// variable to store an int further converted to unsigned short int
+
+	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "inflation/bounding_type", temp_int) ) {
+		params_actor_bounding_.bounding_type = static_cast<unsigned short int>(temp_int);
+	}
+	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "inflation/circle_radius", params_actor_bounding_.circle_radius) ) { }
+
+//	XmlRpc::XmlRpcValue list;
+//	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "inflation/box_size", list) ) {
+//
+//		double x_half = static_cast<double>( list["x_half"] );
+//		double y_half = static_cast<double>( list["y_half"] );
+//		double z_half = static_cast<double>( list["z_half"] );
+//		params_actor_bounding_.box_size.push_back(x_half);
+//		params_actor_bounding_.box_size.push_back(y_half);
+//		params_actor_bounding_.box_size.push_back(z_half);
+//		std::cout << "box loader: " << "\tx: " << x_half << "\ty: " << y_half << "\tz: " << z_half << std::endl;
+//
+//	}
+//
+//	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "inflation/ellipse", list) ) {
+//
+//		double semi_major 	= static_cast<double>( list["semi_major"] );
+//		double semi_minor 	= static_cast<double>( list["semi_minor"] );
+//		double offset_x 	= static_cast<double>( list["offset_x"] );
+//		double offset_y 	= static_cast<double>( list["offset_y"] );
+//		params_actor_bounding_.ellipse.push_back(semi_major);
+//		params_actor_bounding_.ellipse.push_back(semi_minor);
+//		params_actor_bounding_.ellipse.push_back(offset_x);
+//		params_actor_bounding_.ellipse.push_back(offset_y);
+//		std::cout << "ellipse loader: " << "\tmajor: " << semi_major << "\tminor: " << semi_minor << "\toffset_x: " << offset_x << "\toffset_y: " << offset_y << std::endl;
+//
+//	}
+
 
 }
 
@@ -174,7 +221,7 @@ void ParamLoader::loadSfmDictionary(const std::shared_ptr<ros::NodeHandle> nh_pt
 	XmlRpc::XmlRpcValue list;
 	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "world_dictionary/model_description", list) ) {
 
-		// temporary local variables to decode YAML list and convert it to a tuple
+		// temporary local variables to decode YAML list elements and convert it to a tuple
 		XmlRpc::XmlRpcValue sublist;
 
 		for (int i = 0; i < list.size(); i++) {

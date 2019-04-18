@@ -34,10 +34,9 @@ public:
 	/// default values are provided
 	typedef struct {
 
-		std::vector<double> init_pose; 						// if empty - there will be a random values chosen
+		std::vector<double> init_pose; 						// if empty - there will be .world file values chosen
 		unsigned short int	init_stance						= 0;
 
-		unsigned short int 	bounding_type 					= 2;
 		double 				animation_factor 				= 4.5;
 		double 				animation_speed_rotation 		= 0.007;
 		double 				target_tolerance 				= 1.25;
@@ -47,6 +46,17 @@ public:
 	    std::vector<double> world_bound_y					{-10.20, +3.80};
 
 	} ActorParams;
+
+	/// \brief Declaration of an ActorParams typedef'ed struct;
+	/// default values are provided
+	typedef struct {
+
+		unsigned short int 	bounding_type 					= 2;
+		double				circle_radius					= 0.5;
+		std::vector<double> box_size						{0.45, 0.45, 1.00};
+		std::vector<double> ellipse							{1.00, 0.80, 0.35, 0.00};
+
+	} InflatorParams;
 
 	/// \brief Declaration of an SfmParams typedef'ed struct;
 	/// default values are provided
@@ -114,6 +124,11 @@ public:
 	/// if parameters was successfully decoded
 	ActorParams getActorParams() const;
 
+	/// \brief Returns actor bounding's parameters
+	/// \return InflatorParams struct with non-default values
+	/// if parameters was successfully decoded
+	InflatorParams getActorInflatorParams() const;
+
 	/// \brief Returns SFM's parameters
 	/// \return SfmParams struct with non-default values
 	/// if parameters was successfully decoded
@@ -137,6 +152,10 @@ private:
 	/// \brief Helper function which loads actor's parameters
 	/// into typedef'ed struct
 	void loadActorParams (const std::shared_ptr<ros::NodeHandle> nh_ptr);
+
+	/// \brief Helper function which loads actor bounding's
+	/// parameters into typedef'ed struct
+	void loadActorInflatorParams (const std::shared_ptr<ros::NodeHandle> nh_ptr);
 
 	/// \brief Helper function which loads SFM's parameters
 	/// into typedef'ed struct
@@ -185,6 +204,9 @@ private:
 
 	/// \brief Struct storing actor's parameters
 	ActorParams params_actor_;
+
+	/// \brief Struct storing actor bounding's parameters
+	InflatorParams params_actor_bounding_;
 
 	/// \brief Struct storing SFM's parameters
 	SfmParams params_sfm_;
