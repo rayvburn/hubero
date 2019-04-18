@@ -13,8 +13,8 @@ namespace core {
 // ------------------------------------------------------------------- //
 
 Actor::Actor():
-		target_tolerance_(1.25), 		bounding_type_(ACTOR_BOUNDING_ELLIPSE),
-		stance_(ACTOR_STANCE_STAND),	animation_factor_(4.50),
+ 		bounding_type_(ACTOR_BOUNDING_ELLIPSE),
+		stance_(ACTOR_STANCE_STAND),
 		trans_function_ptr(nullptr)
 {
 
@@ -135,6 +135,8 @@ void Actor::initSFM() {
 
 void Actor::initActor() {
 
+	// - - - - - - - - - - - - - - - - - - - - - - -
+	// finite state machine setup section
 	// add states for FSM
 	fsm_.addState(ACTOR_STATE_ALIGN_TARGET);
 	fsm_.addState(ACTOR_STATE_MOVE_AROUND);
@@ -146,9 +148,15 @@ void Actor::initActor() {
 		updateTransitionFunctionPtr();
 	}
 
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+	// initial stance setup section
 	// set initial stance and create custom trajectory
 	setStance( static_cast<actor::ActorStance>(params_.getActorParams().init_stance) );
 
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+	// initial pose setup section
 	/* set starting pose different to default to prevent actor
 	 * lying on his back 1 m above the ground */
 	ignition::math::Pose3d init_pose;
@@ -173,6 +181,9 @@ void Actor::initActor() {
 	// set previous pose to prevent velocity overshoot
 	pose_world_prev_ = actor_ptr_->WorldPose();
 
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+	// bounding setup section
 	// convert int to enum value and initialize a proper inflator/bounding
 	bounding_type_ = static_cast<actor::ActorBoundingType>(params_.getActorInflatorParams().bounding_type);
 
@@ -189,6 +200,22 @@ void Actor::initActor() {
 			break;
 	}
 
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+	// initial target setup section
+	// check if target coordinates have been set in .YAML
+	if ( params_.getActorParams().init_target.size() != 3 ) {
+
+		// improper/no position set - choose random target
+		gazebo::common::UpdateInfo info_init;
+		chooseNewTarget(info_init);
+
+	} else {
+
+		// set target according to .YAML
+		target_ = ignition::math::Vector3d( params_.getActorParams().init_target.at(0), params_.getActorParams().init_target.at(1), params_.getActorParams().init_target.at(2) );
+
+	}
 
 }
 

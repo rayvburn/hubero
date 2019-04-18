@@ -224,9 +224,6 @@ private:
     // TODO
     std::queue<ignition::math::Vector3d> target_checkpoints_;
 
-    /// \brief Distance tolerance allowed
-    double target_tolerance_;
-
     /// \brief Time of the last new target selection
 	gazebo::common::Time time_last_target_selection_;
 
@@ -304,7 +301,7 @@ private:
 
     /// \brief Time scaling factor. Used to coordinate translational motion
     /// with the actor_ptr_'s walking animation.
-    double animation_factor_;
+//    double animation_factor_; // DEPRECATED - stored in ParamLoader instead
 
     /// \brief Node for ROS Interface
     actor::ros_interface::Node node_;
