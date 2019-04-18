@@ -10,6 +10,8 @@
 
 namespace actor {
 
+static const unsigned int ACTOR_MODEL_TYPE = 32771;
+
 // -------------------------
 
 typedef enum {

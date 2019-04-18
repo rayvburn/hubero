@@ -7,6 +7,7 @@
 
 #include "core/Actor.h"
 #include <algorithm>    // std::find
+#include <ignition/math/Line3.hh>
 
 namespace actor {
 namespace core {
@@ -290,8 +291,10 @@ bool Actor::setNewTarget(const ignition::math::Pose3d &pose) {
 		return (false);
 	}
 	target_ = pose.Pos();
+
 	// TODO:
 	//target_checkpoints_.push(target_);
+
 	return (true);
 }
 
@@ -305,10 +308,84 @@ bool Actor::setNewTarget(const std::string &object_name) {
 
 	if ( !is_valid ) {
 		return (false);
-	} else {
+	} /* else {
 		setNewTarget(model->WorldPose());
 		return (true);
+	} */
+
+	if ( model->GetType() == actor::ACTOR_MODEL_TYPE ) {
+		/* not allowable, actor is a dynamic model;
+		 * use follow object instead */
+		return (false);
 	}
+
+	/* let's find the line from the current actor's pose to the closest
+	 * point of an object's bounding box; shift the point to the free
+	 * space direction a little and set it as a new target */
+	ignition::math::Line3d line;
+	line.Set( pose_world_.Pos(), model->WorldPose().Pos() ); // line_angle expressed from actor to object
+	/* NOTE:
+	 * line.Set( model->WorldPose().Pos(), pose_world_.Pos() );
+	 * with commented version line_angle is expressed from object to actor,
+	 * but for some reason Box always return pt of intersection equal
+	 * to BoundingBox'es center (also, all 0.05 signs have to be inverted
+	 * in below `if` conditions) */
+	ignition::math::Vector3d pt_intersection;
+	bool does_intersect = false;
+	std::tie(does_intersect, std::ignore, pt_intersection) = model->BoundingBox().Intersect( line );
+
+	std::cout << "SetNewTarget() - bounding box check" << std::endl;
+	std::cout << "\tcenter: " << model->BoundingBox().Center() << "\tmin: " << model->BoundingBox().Min() << "\tmax: " << model->BoundingBox().Max() << std::endl;
+
+	if ( !does_intersect ) {
+		std::cout << "SetNewTarget() - does not intersect - THIS SHOULD NOT HAPPEN" << std::endl;
+		// this should not happen, something went wrong
+		return (false);
+	}
+
+	/* check the line's direction and based on the angle shift
+	 * the intersection point a little in proper direction */
+	double line_angle = std::atan2( line.Direction().Y(), line.Direction().X() );
+
+	std::cout << "SetNewTarget() - intersection check" << std::endl;
+	std::cout << "\tactor pos: " << pose_world_.Pos() << "\tobj pos: " << model->WorldPose().Pos() << "\tline_angle: " << line_angle << "\tpt intersect: " << pt_intersection << "\n";
+
+	if ( line_angle >= 0.00 && line_angle <= IGN_PI_2 ) {
+
+		// I quarter
+		std::cout << "I quarter" << std::endl;
+		pt_intersection.X( pt_intersection.X() - 0.05 );
+		pt_intersection.Y( pt_intersection.Y() - 0.05 );
+
+	} else if ( line_angle > IGN_PI_2 && line_angle <= IGN_PI ) {
+
+		// II quarter
+		std::cout << "II quarter" << std::endl;
+		pt_intersection.X( pt_intersection.X() + 0.05 );
+		pt_intersection.Y( pt_intersection.Y() - 0.05 );
+
+	} else if ( line_angle < 0.00 && line_angle >= -IGN_PI_2 ) {
+
+		// IV quarter
+		std::cout << "IV quarter" << std::endl;
+		pt_intersection.X( pt_intersection.X() - 0.05 );
+		pt_intersection.Y( pt_intersection.Y() + 0.05 );
+
+	} else if ( line_angle < -IGN_PI_2 && line_angle >= -IGN_PI ) {
+
+		// III quarter
+		std::cout << "III quarter" << std::endl;
+		pt_intersection.X( pt_intersection.X() + 0.05 );
+		pt_intersection.Y( pt_intersection.Y() + 0.05 );
+
+	} else {
+		std::cout << "\n\n\nLINE ANGLE WRONG CONDITIONS\n\n\n";
+	}
+
+	std::cout << "\tshifted intersection point: " << pt_intersection << std::endl;
+	std::cout << "\n\n\n\n" << std::endl;
+	setNewTarget( ignition::math::Pose3d(pt_intersection, model->WorldPose().Rot()) );
+	return (true);
 
 }
 
@@ -573,12 +650,12 @@ void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 			}
 
 			// check if model's bounding box contains target point
-			if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), target_) ) {
+			if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), new_target) ) {
 				// TODO: make this an error log message
 				std::cout << "chooseNewTarget() - selection failed -> model containing target's pos: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
 				std::cout << std::endl;
 				new_target = target_;
-				break;
+				continue;
 			}
 
 		} // for
