@@ -6,6 +6,7 @@
  */
 
 #include "core/Actor.h"
+#include <algorithm>    // std::find
 
 namespace actor {
 namespace core {
@@ -63,7 +64,7 @@ void Actor::initRosInterface() {
 	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_SF_VECTOR, "social_force");
 	stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, "closest_points");
 
-	// check if grid usage has been enabled in YAML file
+	// check if grid usage has been enabled in .YAML file
 	if ( params_.getSfmVisParams().publish_grid ) {
 		stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID, "force_grid");
 	}
@@ -161,7 +162,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	 * lying on his back 1 m above the ground */
 	ignition::math::Pose3d init_pose;
 
-	// check if some values have been set in .yaml
+	// check if some values have been set in .YAML
 	if ( params_.getActorParams().init_pose.size() == 0 ) {
 
 		// process parameters added to .world file (.sdf)
@@ -170,7 +171,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 
 	} else {
 
-		// set pose as set in .yaml file - handy for single actor
+		// set pose as set in .YAML file - handy for single actor
 		// not very handy for 100 of them
 		init_pose.Set( params_.getActorParams().init_pose.at(0), params_.getActorParams().init_pose.at(1), params_.getActorParams().init_pose.at(2), params_.getActorParams().init_pose.at(3), params_.getActorParams().init_pose.at(4), params_.getActorParams().init_pose.at(5) );
 
@@ -202,7 +203,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// initial target setup section
-	// check if target coordinates have been set in .YAML
+	// check if target coordinates have been set in .YAML - vector of 3 elements expected
 	if ( params_.getActorParams().init_target.size() == 3 ) {
 
 		// set target according to .YAML
@@ -221,6 +222,15 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 		chooseNewTarget(info_init);
 
 	}
+
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+	// debugging section
+	std::cout << actor_ptr_->GetName() << "\tIGNORED MODELS VECTOR:" << std::endl;
+	for ( size_t i = 0; i < params_.getSfmDictionary().ignored_models_.size(); i++ ) {
+		std::cout << i << "\t" << params_.getSfmDictionary().ignored_models_.at(i) << std::endl;
+	}
+	std::cout << "\n\n" << std::endl;
 
 }
 
@@ -524,7 +534,7 @@ void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 
 	ignition::math::Vector3d new_target(target_);
 
-	// look for target that is located at least 2 meters from current one
+	// look for target that is located at least 2 meters from the current one
 	while ( (new_target - target_).Length() < 2.0 ) {
 
 		// get random coordinates based on world limits
@@ -549,11 +559,11 @@ void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 
 			/* bounding-box-based target selection - safer for big obstacles,
 			 * accounting some tolerance for a target accomplishment - an actor should
-			 * not step into an object */
+			 * not step into an object;
+			 * also, check if current model is not listed as neglible */
 
-			// FIXME: cafe is a specific model that represents a whole world
-			// params
-			if ( world_ptr_->ModelByIndex(i)->GetName() == "cafe" ) {
+			if ( isModelNegligible(world_ptr_->ModelByIndex(i)->GetName(), params_.getSfmDictionary().ignored_models_) ) {
+				std::cout << "MODEL NEGLIGIBLE: " << world_ptr_->ModelByIndex(i)->GetName() << "\tfor " << actor_ptr_->GetName() << std::endl;
 				continue;
 			}
 
@@ -648,6 +658,61 @@ bool Actor::doesBoundingBoxContainPoint(const ignition::math::Box &bb, const ign
 		}
 
 	}
+	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+/*
+bool Actor::isModelNegligible(const std::string &object_name) {
+
+	// name has to be exactly given in .YAML - NOT HANDY for multiple objects of the same type
+	/*
+	std::vector<std::string>::iterator it;
+	it = std::find ( params_.getSfmDictionary().ignored_models_.begin(), params_.getSfmDictionary().ignored_models_.end(), object_name);
+	if ( it != params_.getSfmDictionary().ignored_models_.end() ) {
+		// element found in `ignored models` vector
+		return (true);
+	}
+	return (false);
+
+}
+*/
+
+// ------------------------------------------------------------------- //
+
+bool Actor::isModelNegligible(const std::string &object_name, const std::vector<std::string> &dictionary) {
+
+	// copy constructor
+	std::string object_name_trim(object_name);
+
+	// trim last character is it's number (model of the same type numbering)
+	while ( std::isdigit(object_name_trim.back())  ) {
+		object_name_trim.pop_back();
+	}
+
+//	std::cout << "isModelNegligible()  -  name: " << object_name << "\tPATTERN TO FIND: " << object_name_trim << "\t";
+
+	// name consisted from numbers only?
+	if ( object_name_trim.length() == 0 ) {
+		return (false);
+	}
+
+	// iterate through whole dictionary to find something that matches
+	std::size_t found;
+	for ( size_t i = 0; i < dictionary.size(); i++ ) {
+
+		found = dictionary.at(i).find(object_name_trim);
+		if ( found != std::string::npos ) {
+			// found something similar
+//			std::cout << "FOUND" << std::endl;
+			return (true);
+		}
+
+	}
+
+//	std::cout << "NOT FOUND" << std::endl;
+	// iterated through whole dictionary and did not found a given pattern
 	return (false);
 
 }

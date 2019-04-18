@@ -150,6 +150,11 @@ public:
     void stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info);
     void stateHandlerTeleoperation 	(const gazebo::common::UpdateInfo &info);
 
+	/// \brief Helper method that checks if a given object is
+	/// listed in a ignored_model vector passed in .YAML;
+    /// made it static as it will be useful for SFM
+	static bool isModelNegligible(const std::string &object_name, const std::vector<std::string> &dictionary);
+
     /// \brief Default destructor
 	virtual ~Actor();
 
