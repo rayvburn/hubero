@@ -23,6 +23,7 @@
 #include "ros_interface/Stream.h"
 #include "ros_interface/ConnectionFwd.h" // must be here due to circular dependency
 #include "ros_interface/Connection.h"
+#include "ros_interface/ParamLoader.h"
 
 // Social Force Model
 #include "sfm/core/SocialForceModel.h"
@@ -312,6 +313,12 @@ private:
     /// acts as an input buffer of the inter-agent
     /// communication channel
     std::shared_ptr<actor::ros_interface::Connection> connection_ptr_;
+
+    /// \brief ParamLoader class acts as a local `ParameterServer` -
+    /// stores parameters for a whole system (SFM too),
+    /// avoids pollution of an Actor class with plenty of parameter
+    /// variables
+    actor::ros_interface::ParamLoader params_;
 
 };
 

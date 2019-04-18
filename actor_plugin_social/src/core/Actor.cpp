@@ -93,7 +93,13 @@ void Actor::initRosInterface() {
 
 	// initialize services for Actor control
 	connection_ptr_->initServices();
-	connection_ptr_->loadParameters();
+	//connection_ptr_->loadParameters(); // DEPRECATED
+
+	// run parameter loader
+	params_.setActorParamsPrefix("actor");
+	params_.setSfmDictionaryPrefix("sfm");
+	params_.setSfmDictionaryPrefix("sfm");
+	params_.loadParameters(node_.getNodeHandlePtr());
 
 }
 

@@ -80,6 +80,9 @@ add_library(actor_ros
   src/ros_interface/Stream.cpp
   include/ros_interface/Node.h
   src/ros_interface/Node.cpp
+
+  include/ros_interface/ParamLoader.h
+  src/ros_interface/ParamLoader.cpp
 )
 
 target_link_libraries(actor_inflation actor_core actor_ros) # ros needed here?

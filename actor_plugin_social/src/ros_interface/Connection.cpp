@@ -64,120 +64,120 @@ void Connection::initServices() {
 
 // ------------------------------------------------------------------- //
 
-void Connection::loadParameters() {
-
-	if ( nh_ptr_ == nullptr ) {
-		return;
-	}
-
-	// - - - - - - - - - - - - - - - - - - - - - - - - -
-	// initialization section
-	std::vector<double> init_pose;
-	if ( nh_ptr_->getParam("initialization/pose", init_pose) ) {
-
-	}
-
-	int init_stance;
-	if ( nh_ptr_->getParam("initialization/stance", init_stance) ) {
-
-	}
-
-	// - - - - - - - - - - - - - - - - - - - - - - - - -
-	// general section
-
-	int general_bounding_type;
-	if ( nh_ptr_->getParam("general/bounding_type", general_bounding_type) ) {
-
-	}
-
-	double general_animation_factor;
-	if ( nh_ptr_->getParam("general/animation_factor", general_animation_factor) ) {
-
-	}
-
-	double general_animation_speed_rotation;
-	if ( nh_ptr_->getParam("general/animation_speed_rotation", general_animation_speed_rotation) ) {
-
-	}
-
-	double general_target_tolerance;
-	if ( nh_ptr_->getParam("general/target_tolerance", general_target_tolerance) ) {
-
-	}
-
-	double general_reach_max_time;
-	if ( nh_ptr_->getParam("general/target_reach_max_time", general_reach_max_time) ) {
-
-	}
-
-	double general_target_reachable_check_period;
-	if ( nh_ptr_->getParam("general/target_reachable_check_period", general_target_reachable_check_period) ) {
-
-	}
-
-	std::vector<double> general_world_bound_x;
-	if ( nh_ptr_->getParam("general/world_bound_x", general_world_bound_x) ) {
-
-	}
-
-	std::vector<double> general_world_bound_y;
-	if ( nh_ptr_->getParam("general/world_bound_y", general_world_bound_y) ) {
-
-	}
-
-	// - - - - - - - - - - - - - - - - - - - - - - - - -
-	// sfm section
-	double sfm_fov;
-	if ( nh_ptr_->getParam("sfm/fov", sfm_fov) ) {
-
-	}
-
-	double sfm_max_speed;
-	if ( nh_ptr_->getParam("sfm/max_speed", sfm_max_speed) ) {
-
-	}
-
-	double sfm_mass;
-	if ( nh_ptr_->getParam("sfm/mass", sfm_mass) ) {
-
-	}
-
-	double sfm_internal_force_factor;
-	if ( nh_ptr_->getParam("sfm/internal_force_factor", sfm_internal_force_factor) ) {
-
-	}
-
-	double sfm_interaction_force_factor;
-	if ( nh_ptr_->getParam("sfm/interaction_force_factor", sfm_interaction_force_factor) ) {
-
-	}
-
-	double sfm_min_force;
-	if ( nh_ptr_->getParam("sfm/min_force", sfm_min_force) ) {
-
-	}
-
-	double sfm_max_force;
-	if ( nh_ptr_->getParam("sfm/max_force", sfm_max_force) ) {
-
-	}
-
-	int sfm_static_obj_interaction;
-	if ( nh_ptr_->getParam("sfm/mass", sfm_static_obj_interaction) ) {
-
-	}
-
-	bool sfm_heterogenous_population;
-	if ( nh_ptr_->getParam("sfm/heterogenous_population", sfm_heterogenous_population) ) {
-
-	}
-
-	int sfm_box_inflation_type;
-	if ( nh_ptr_->getParam("sfm/box_inflation_type", sfm_box_inflation_type) ) {
-
-	}
-
-}
+//void Connection::loadParameters() {
+//
+//	if ( nh_ptr_ == nullptr ) {
+//		return;
+//	}
+//
+//	// - - - - - - - - - - - - - - - - - - - - - - - - -
+//	// initialization section
+//	std::vector<double> init_pose;
+//	if ( nh_ptr_->getParam("initialization/pose", init_pose) ) {
+//
+//	}
+//
+//	int init_stance;
+//	if ( nh_ptr_->getParam("initialization/stance", init_stance) ) {
+//
+//	}
+//
+//	// - - - - - - - - - - - - - - - - - - - - - - - - -
+//	// general section
+//
+//	int general_bounding_type;
+//	if ( nh_ptr_->getParam("general/bounding_type", general_bounding_type) ) {
+//
+//	}
+//
+//	double general_animation_factor;
+//	if ( nh_ptr_->getParam("general/animation_factor", general_animation_factor) ) {
+//
+//	}
+//
+//	double general_animation_speed_rotation;
+//	if ( nh_ptr_->getParam("general/animation_speed_rotation", general_animation_speed_rotation) ) {
+//
+//	}
+//
+//	double general_target_tolerance;
+//	if ( nh_ptr_->getParam("general/target_tolerance", general_target_tolerance) ) {
+//
+//	}
+//
+//	double general_reach_max_time;
+//	if ( nh_ptr_->getParam("general/target_reach_max_time", general_reach_max_time) ) {
+//
+//	}
+//
+//	double general_target_reachable_check_period;
+//	if ( nh_ptr_->getParam("general/target_reachable_check_period", general_target_reachable_check_period) ) {
+//
+//	}
+//
+//	std::vector<double> general_world_bound_x;
+//	if ( nh_ptr_->getParam("general/world_bound_x", general_world_bound_x) ) {
+//
+//	}
+//
+//	std::vector<double> general_world_bound_y;
+//	if ( nh_ptr_->getParam("general/world_bound_y", general_world_bound_y) ) {
+//
+//	}
+//
+//	// - - - - - - - - - - - - - - - - - - - - - - - - -
+//	// sfm section
+//	double sfm_fov;
+//	if ( nh_ptr_->getParam("sfm/fov", sfm_fov) ) {
+//
+//	}
+//
+//	double sfm_max_speed;
+//	if ( nh_ptr_->getParam("sfm/max_speed", sfm_max_speed) ) {
+//
+//	}
+//
+//	double sfm_mass;
+//	if ( nh_ptr_->getParam("sfm/mass", sfm_mass) ) {
+//
+//	}
+//
+//	double sfm_internal_force_factor;
+//	if ( nh_ptr_->getParam("sfm/internal_force_factor", sfm_internal_force_factor) ) {
+//
+//	}
+//
+//	double sfm_interaction_force_factor;
+//	if ( nh_ptr_->getParam("sfm/interaction_force_factor", sfm_interaction_force_factor) ) {
+//
+//	}
+//
+//	double sfm_min_force;
+//	if ( nh_ptr_->getParam("sfm/min_force", sfm_min_force) ) {
+//
+//	}
+//
+//	double sfm_max_force;
+//	if ( nh_ptr_->getParam("sfm/max_force", sfm_max_force) ) {
+//
+//	}
+//
+//	int sfm_static_obj_interaction;
+//	if ( nh_ptr_->getParam("sfm/mass", sfm_static_obj_interaction) ) {
+//
+//	}
+//
+//	bool sfm_heterogenous_population;
+//	if ( nh_ptr_->getParam("sfm/heterogenous_population", sfm_heterogenous_population) ) {
+//
+//	}
+//
+//	int sfm_box_inflation_type;
+//	if ( nh_ptr_->getParam("sfm/box_inflation_type", sfm_box_inflation_type) ) {
+//
+//	}
+//
+//}
 
 // ------------------------------------------------------------------- //
 
