@@ -101,6 +101,7 @@ void ParamLoader::loadActorParams(const std::shared_ptr<ros::NodeHandle> nh_ptr)
 	int temp_int; 	// variable to store an int further converted to unsigned short int
 
 	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "initialization/pose", params_actor_.init_pose) ) { }
+	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "initialization/target", params_actor_.init_target) ) { }
 
 	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "initialization/stance", temp_int) ) {
 		params_actor_.init_stance = static_cast<unsigned short int>(temp_int);
@@ -140,32 +141,36 @@ void ParamLoader::loadActorInflatorParams (const std::shared_ptr<ros::NodeHandle
 	}
 	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "inflation/circle_radius", params_actor_bounding_.circle_radius) ) { }
 
-//	XmlRpc::XmlRpcValue list;
-//	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "inflation/box_size", list) ) {
-//
-//		double x_half = static_cast<double>( list["x_half"] );
-//		double y_half = static_cast<double>( list["y_half"] );
-//		double z_half = static_cast<double>( list["z_half"] );
-//		params_actor_bounding_.box_size.push_back(x_half);
-//		params_actor_bounding_.box_size.push_back(y_half);
-//		params_actor_bounding_.box_size.push_back(z_half);
+	XmlRpc::XmlRpcValue list;
+	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "inflation/box_size", list) ) {
+
+		XmlRpc::XmlRpcValue sublist = list[0]; // only 1 element expected
+		params_actor_bounding_.box_size.clear();
+		double x_half = static_cast<double>( sublist["x_half"] );
+		double y_half = static_cast<double>( sublist["y_half"] );
+		double z_half = static_cast<double>( sublist["z_half"] );
+		params_actor_bounding_.box_size.push_back(x_half);
+		params_actor_bounding_.box_size.push_back(y_half);
+		params_actor_bounding_.box_size.push_back(z_half);
 //		std::cout << "box loader: " << "\tx: " << x_half << "\ty: " << y_half << "\tz: " << z_half << std::endl;
-//
-//	}
-//
-//	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "inflation/ellipse", list) ) {
-//
-//		double semi_major 	= static_cast<double>( list["semi_major"] );
-//		double semi_minor 	= static_cast<double>( list["semi_minor"] );
-//		double offset_x 	= static_cast<double>( list["offset_x"] );
-//		double offset_y 	= static_cast<double>( list["offset_y"] );
-//		params_actor_bounding_.ellipse.push_back(semi_major);
-//		params_actor_bounding_.ellipse.push_back(semi_minor);
-//		params_actor_bounding_.ellipse.push_back(offset_x);
-//		params_actor_bounding_.ellipse.push_back(offset_y);
+
+	}
+
+	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "inflation/ellipse", list) ) {
+
+		XmlRpc::XmlRpcValue sublist = list[0]; // only 1 element expected
+		params_actor_bounding_.ellipse.clear();
+		double semi_major 	= static_cast<double>( sublist["semi_major"] );
+		double semi_minor 	= static_cast<double>( sublist["semi_minor"] );
+		double offset_x 	= static_cast<double>( sublist["offset_x"] );
+		double offset_y 	= static_cast<double>( sublist["offset_y"] );
+		params_actor_bounding_.ellipse.push_back(semi_major);
+		params_actor_bounding_.ellipse.push_back(semi_minor);
+		params_actor_bounding_.ellipse.push_back(offset_x);
+		params_actor_bounding_.ellipse.push_back(offset_y);
 //		std::cout << "ellipse loader: " << "\tmajor: " << semi_major << "\tminor: " << semi_minor << "\toffset_x: " << offset_x << "\toffset_y: " << offset_y << std::endl;
-//
-//	}
+
+	}
 
 
 }
@@ -220,9 +225,6 @@ void ParamLoader::loadSfmDictionary(const std::shared_ptr<ros::NodeHandle> nh_pt
 
 	XmlRpc::XmlRpcValue list;
 	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "world_dictionary/model_description", list) ) {
-
-		// temporary local variables to decode YAML list elements and convert it to a tuple
-		XmlRpc::XmlRpcValue sublist;
 
 		for (int i = 0; i < list.size(); i++) {
 		      dict_sfm_.model_description.push_back( convertModelDescriptionToTuple(list[i]) );

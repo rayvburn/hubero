@@ -35,6 +35,7 @@ public:
 	typedef struct {
 
 		std::vector<double> init_pose; 						// if empty - there will be .world file values chosen
+		std::vector<double> init_target;					// if empty - there will be random values chosen
 		unsigned short int	init_stance						= 0;
 
 		double 				animation_factor 				= 4.5;

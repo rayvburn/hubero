@@ -88,9 +88,10 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 //	actor_ptr_ = obj.shared_from_this();
 	actor_ptr_ = std::make_shared<actor::core::Actor>();
 	actor_ptr_->initGazeboInterface(actor, world);
-	actor_ptr_->initInflator(1.00, 0.80, 0.35, 0.0); //PARAM-BASED INFLATOR SELECTION
+	//actor_ptr_->initInflator(1.00, 0.80, 0.35, 0.0); //PARAM-BASED INFLATOR SELECTION
 	actor_ptr_->initRosInterface();
 	actor_ptr_->initActor();
+	std::cout << "MODDED POSE: " << this->actor->WorldPose() << std::endl;
 #endif
 
 	ignition::math::Vector3d target_init;
@@ -100,7 +101,7 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 #ifndef ACTOR_SHARED_PTR
 	actor_object.setNewTarget(ignition::math::Pose3d(target_init, ignition::math::Quaterniond(0.0, 0.0, 0.0)));
 #else
-	actor_ptr_->setNewTarget(ignition::math::Pose3d(target_init, ignition::math::Quaterniond(0.0, 0.0, 0.0)));
+	//actor_ptr_->setNewTarget(ignition::math::Pose3d(target_init, ignition::math::Quaterniond(0.0, 0.0, 0.0)));
 #endif
 
 }

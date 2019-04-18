@@ -116,7 +116,8 @@ void Actor::initInflator(const double &semi_major, const double &semi_minor, con
 	// correct yaw angle to make ellipse abstract from Actor coordinate system's orientation
 	ignition::math::Angle yaw_world( pose_world_.Rot().Yaw() - IGN_PI_2);
 	yaw_world.Normalize();
-	bounding_ellipse_.init( 1.00, 0.80, yaw_world.Radian(), pose_world_.Pos(), ignition::math::Vector3d(0.35, 0.0, 0.0) );
+//	bounding_ellipse_.init( 1.00, 0.80, yaw_world.Radian(), pose_world_.Pos(), ignition::math::Vector3d(0.35, 0.0, 0.0) );
+	bounding_ellipse_.init( semi_major, semi_minor, yaw_world.Radian(), pose_world_.Pos(), ignition::math::Vector3d(center_offset_x, center_offset_y, 0.0) );
 	common_info_.setBoundingEllipse(bounding_ellipse_);
 
 }
@@ -172,23 +173,21 @@ void Actor::initActor() {
 	// set previous pose to prevent velocity overshoot
 	pose_world_prev_ = actor_ptr_->WorldPose();
 
-//	// convert int to enum value and initialize a proper inflator
-//	bounding_type_ = static_cast<actor::ActorBoundingType>(params_.getActorInflatorParams().bounding_type);
-//
-//	switch ( bounding_type_ ) {
-//
-//	case(ACTOR_BOUNDING_BOX):
-//			// initInflator()
-//			break;
-//
-//	case(ACTOR_BOUNDING_CIRCLE):
-//
-//			break;
-//
-//	case(ACTOR_BOUNDING_ELLIPSE):
-//
-//			break;
-//	}
+	// convert int to enum value and initialize a proper inflator/bounding
+	bounding_type_ = static_cast<actor::ActorBoundingType>(params_.getActorInflatorParams().bounding_type);
+
+	switch ( bounding_type_ ) {
+
+	case(ACTOR_BOUNDING_BOX):
+			initInflator( params_.getActorInflatorParams().box_size.at(0), params_.getActorInflatorParams().box_size.at(1), params_.getActorInflatorParams().box_size.at(2) );
+			break;
+	case(ACTOR_BOUNDING_CIRCLE):
+			initInflator( params_.getActorInflatorParams().circle_radius );
+			break;
+	case(ACTOR_BOUNDING_ELLIPSE):
+			initInflator( params_.getActorInflatorParams().ellipse.at(0), params_.getActorInflatorParams().ellipse.at(1), params_.getActorInflatorParams().ellipse.at(2), params_.getActorInflatorParams().ellipse.at(3) );
+			break;
+	}
 
 
 }
