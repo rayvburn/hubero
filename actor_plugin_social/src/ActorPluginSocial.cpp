@@ -89,50 +89,18 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	actor_ptr_ = std::make_shared<actor::core::Actor>();
 	actor_ptr_->initGazeboInterface(actor, world);
 	actor_ptr_->initRosInterface();
-	actor_ptr_->initActor();
+	actor_ptr_->initActor(_sdf);
 	std::cout << "MODDED POSE: " << this->actor->WorldPose() << std::endl;
 #endif
 
-	ignition::math::Vector3d target_init;
-	target_init.X(ignition::math::Rand::DblUniform(-3, 3.5));
-	target_init.Y(ignition::math::Rand::DblUniform(-10, 2));
-	target_init.Z(1.21);
-#ifndef ACTOR_SHARED_PTR
-	actor_object.setNewTarget(ignition::math::Pose3d(target_init, ignition::math::Quaterniond(0.0, 0.0, 0.0)));
-#else
-	//actor_ptr_->setNewTarget(ignition::math::Pose3d(target_init, ignition::math::Quaterniond(0.0, 0.0, 0.0)));
-#endif
 
 }
 
 /////////////////////////////////////////////////
 void ActorPlugin::Reset()
 {
-//  this->velocity_desired = 0.8;
-//  this->last_update = 0;
-//
-//  if (this->sdf && this->sdf->HasElement("target"))
-//    this->target = this->sdf->Get<ignition::math::Vector3d>("target");
-//  else
-//    this->target = ignition::math::Vector3d(0, -5, 1.2138);
-//
-//  auto skelAnims = this->actor->SkeletonAnimations();
-//  if (skelAnims.find(WALKING_ANIMATION) == skelAnims.end())
-//  {
-//    gzerr << "Skeleton animation " << WALKING_ANIMATION << " not found.\n";
-//  }
-//  else
-//  {
-//    // Create custom trajectory
-//    this->trajectoryInfo.reset(new physics::TrajectoryInfo());
-//    this->trajectoryInfo->type = WALKING_ANIMATION;
-//    this->trajectoryInfo->duration = 1.0;
-//
-//    this->actor->SetCustomTrajectory(this->trajectoryInfo);
-//  }
-}
 
-/////////////////////////////////////////////////
+}
 
 /////////////////////////////////////////////////
 

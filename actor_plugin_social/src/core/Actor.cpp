@@ -133,7 +133,7 @@ void Actor::initSFM() {
 
 // ------------------------------------------------------------------- //
 
-void Actor::initActor() {
+void Actor::initActor(const sdf::ElementPtr sdf) {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// finite state machine setup section
@@ -188,7 +188,6 @@ void Actor::initActor() {
 	bounding_type_ = static_cast<actor::ActorBoundingType>(params_.getActorInflatorParams().bounding_type);
 
 	switch ( bounding_type_ ) {
-
 	case(ACTOR_BOUNDING_BOX):
 			initInflator( params_.getActorInflatorParams().box_size.at(0), params_.getActorInflatorParams().box_size.at(1), params_.getActorInflatorParams().box_size.at(2) );
 			break;
@@ -204,16 +203,22 @@ void Actor::initActor() {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// initial target setup section
 	// check if target coordinates have been set in .YAML
-	if ( params_.getActorParams().init_target.size() != 3 ) {
-
-		// improper/no position set - choose random target
-		gazebo::common::UpdateInfo info_init;
-		chooseNewTarget(info_init);
-
-	} else {
+	if ( params_.getActorParams().init_target.size() == 3 ) {
 
 		// set target according to .YAML
 		target_ = ignition::math::Vector3d( params_.getActorParams().init_target.at(0), params_.getActorParams().init_target.at(1), params_.getActorParams().init_target.at(2) );
+
+	} else if ( sdf && sdf->HasElement("target") ) {
+
+		// target coordinates in .YAML haven't been defined - use .sdf
+		target_ = sdf->Get<ignition::math::Vector3d>("target");
+
+	} else {
+
+		// improper/no position set - choose random target
+		gazebo::common::UpdateInfo info_init;
+		info_init.simTime = world_ptr_->SimTime();
+		chooseNewTarget(info_init);
 
 	}
 
@@ -223,6 +228,7 @@ void Actor::initActor() {
 
 void Actor::readSDFParameters(const sdf::ElementPtr sdf) {
 
+	// DEPRECATED?
 //	if ( sdf && sdf->HasElement("target") ) {
 //		this->target = sdf->Get<ignition::math::Vector3d>("target");
 //	} else {
@@ -458,7 +464,6 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 
 	/* the smaller tolerance the bigger probability that actor will
 	 * step into some obstacle */
-	// TODO: YAML PARAMETER
 	if (to_target_distance < params_.getActorParams().target_tolerance ) {
 
 		chooseNewTarget(info);
@@ -467,16 +472,10 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 
 	}
 
-	// make sure the actor won't go out of bounds
-	// TODO: YAML config
-//	new_pose.Pos().X( std::max(-3.0,  std::min( 3.5, new_pose.Pos().X() ) ) );
-//	new_pose.Pos().Y( std::max(-10.0, std::min( 2.0, new_pose.Pos().Y() ) ) );
-
 	// object info update
 	double dist_traveled = (new_pose.Pos() - actor_ptr_->WorldPose().Pos()).Length();
 
 	// update the local copy of the actor's pose
-//	SetActorPose(new_pose);
 	pose_world_ = new_pose;
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -526,7 +525,7 @@ void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 	ignition::math::Vector3d new_target(target_);
 
 	// look for target that is located at least 2 meters from current one
-	while ((new_target - target_).Length() < 2.0) {
+	while ( (new_target - target_).Length() < 2.0 ) {
 
 		// get random coordinates based on world limits
 		new_target.X(ignition::math::Rand::DblUniform( params_.getActorParams().world_bound_x.at(0), params_.getActorParams().world_bound_x.at(1)) );
@@ -548,7 +547,7 @@ void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 			*
 			*/
 
-			/* bounding-box-based target selection - more safe for big obstacles,
+			/* bounding-box-based target selection - safer for big obstacles,
 			 * accounting some tolerance for a target accomplishment - an actor should
 			 * not step into an object */
 
@@ -622,7 +621,6 @@ bool Actor::isTargetStillReachable(const gazebo::common::UpdateInfo &info) {
 
 bool Actor::isTargetNotReachedForTooLong(const gazebo::common::UpdateInfo &info) const {
 
-	// TODO: make the time a YAML parameter
 	if ( (info.simTime - time_last_target_selection_).Double() > params_.getActorParams().target_reach_max_time ) {
 
 		std::cout << "isTargetNotReachedForTooLong()" << std::endl;
@@ -665,13 +663,17 @@ void Actor::updateStanceOrientation(ignition::math::Pose3d &pose) {
 
 	switch (stance_) {
 
-		// Yaw alignment with world X-axis DEPRECATED //
 		case(actor::ACTOR_STANCE_WALK):
-				rpy.X(IGN_PI_2);
-				break;
 		case(actor::ACTOR_STANCE_STAND):
+		case(actor::ACTOR_STANCE_STAND_UP):
+		case(actor::ACTOR_STANCE_TALK_A):
+		case(actor::ACTOR_STANCE_TALK_B):
+		case(actor::ACTOR_STANCE_RUN):
+		case(actor::ACTOR_STANCE_SIT_DOWN):
+		case(actor::ACTOR_STANCE_SITTING):
 				rpy.X(IGN_PI_2);
 				break;
+
 		case(actor::ACTOR_STANCE_LIE):
 				rpy.X(0.0000);
 				break;
@@ -783,8 +785,8 @@ double Actor::prepareForUpdate(const gazebo::common::UpdateInfo &info) {
 
 	common_info_.setLinearVel(velocity_lin_);
 
-	// FIXME: delete - below just doesn't work - WorldPtr doesnt get updated
-	actor_ptr_->SetLinearVel(velocity_lin_);
+	// DELETE - below just doesn't work - WorldPtr doesnt get updated
+	// actor_ptr_->SetLinearVel(velocity_lin_);
 
 	// update bounding model pose
 	updateBounding(pose_world_);
@@ -851,7 +853,19 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	}
 
 	// publish data for visualization
-	stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_ellipse_.getMarkerConversion());
+	// proper bounding object to publish needs to be chosen
+	switch ( bounding_type_ ) {
+	case(ACTOR_BOUNDING_BOX):
+			stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_box_.getMarkerConversion());
+			break;
+	case(ACTOR_BOUNDING_CIRCLE):
+			stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_circle_.getMarkerConversion());
+			break;
+	case(ACTOR_BOUNDING_ELLIPSE):
+			stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_ellipse_.getMarkerConversion());
+			break;
+	}
+
 	stream_.publishData(ActorTfType::ACTOR_TF_SELF, pose_world_);
 	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_),
 																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));

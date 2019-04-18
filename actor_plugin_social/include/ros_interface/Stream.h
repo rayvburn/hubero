@@ -114,7 +114,8 @@ public:
 		bool found = false;
 		std::tie(found, pub) = findPublisherInMap( static_cast<unsigned int>(type) );
 
-		if ( found ) {
+		// do not publish when nobody subscribes
+		if ( (found) && (pub.getNumSubscribers() > 0) ) {
 			pub.publish(marker_msg);
 		}
 

@@ -109,7 +109,7 @@ public:
 	/// \brief Configure actor's initial pose, stance,
 	/// FSM states, their transition functions, etc.
 	/// based on provided parameters
-	void initActor();
+	void initActor(const sdf::ElementPtr sdf);
 
 	/// \brief Search for actor-related fields in the .world file to load parameters
 	void readSDFParameters(const sdf::ElementPtr sdf);
