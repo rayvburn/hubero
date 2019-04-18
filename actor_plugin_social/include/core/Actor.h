@@ -104,7 +104,12 @@ public:
 	void initInflator(const double &semi_major, const double &semi_minor, const double &center_offset_x, const double &center_offset_y);
 
 	/// TODO:
-	void initSFM(const double &param);
+	void initSFM();
+
+	/// \brief Configure actor's initial pose, stance,
+	/// FSM states, their transition functions, etc.
+	/// based on provided parameters
+	void initActor();
 
 	/// \brief Search for actor-related fields in the .world file to load parameters
 	void readSDFParameters(const sdf::ElementPtr sdf);
@@ -173,7 +178,7 @@ private:
 
     /// \brief Helper functions that consider the offsets of the actor's yaw and a roll
     /// angles depending on current stance
-	void updateStanceOrientation();
+	void updateStanceOrientation(ignition::math::Pose3d &pose);
 
     /// \brief Function invoked at the start of each OnUpdate event
     /// \return: dt - time delta

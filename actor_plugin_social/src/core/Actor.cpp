@@ -32,33 +32,6 @@ void Actor::initGazeboInterface(const gazebo::physics::ActorPtr &actor, const ga
 	 * bounding box of Actor in WorldPtr) */
 	common_info_.addActor(actor_ptr_->GetName());
 
-	// set initial stance and create custom trajectory
-	setStance(ACTOR_STANCE_WALK);
-
-	// add states for FSM
-	fsm_.addState(ACTOR_STATE_ALIGN_TARGET);
-	fsm_.addState(ACTOR_STATE_MOVE_AROUND);
-	fsm_.addState(ACTOR_STATE_FOLLOW_OBJECT);
-	fsm_.addState(ACTOR_STATE_TELEOPERATION);
-
-	// update state handler function pointer
-	if ( fsm_.didStateChange() ) {
-		updateTransitionFunctionPtr();
-	}
-
-	// initialize SFM
-	sfm_.Init(80.0, 2.0, 1.0, world_ptr_);
-
-	/* set starting pose different to default to prevent actor
-	 * to lie on his back 1 m above the ground*/
-	ignition::math::Vector3d init_orient = actor_ptr_->WorldPose().Rot().Euler();
-	ignition::math::Pose3d   init_pose;
-	init_pose.Set( actor_ptr_->WorldPose().Pos(), ignition::math::Quaterniond(init_orient.X() + IGN_PI/2, init_orient.Y(), init_orient.Z()) );
-	actor_ptr_->SetWorldPose(init_pose);
-
-	// set previous pose to prevent velocity overshoot
-	pose_world_prev_ = actor_ptr_->WorldPose();
-
 }
 
 // ------------------------------------------------------------------- //
@@ -105,7 +78,6 @@ void Actor::initRosInterface() {
 
 	// initialize services for Actor control
 	connection_ptr_->initServices();
-	//connection_ptr_->loadParameters(); // DEPRECATED
 
 }
 
@@ -151,7 +123,56 @@ void Actor::initInflator(const double &semi_major, const double &semi_minor, con
 
 // ------------------------------------------------------------------- //
 
-void Actor::initSFM(const double &param) {
+void Actor::initSFM() {
+
+	// initialize SFM
+	sfm_.Init(80.0, 2.0, 1.0, world_ptr_);
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Actor::initActor() {
+
+	// add states for FSM
+	fsm_.addState(ACTOR_STATE_ALIGN_TARGET);
+	fsm_.addState(ACTOR_STATE_MOVE_AROUND);
+	fsm_.addState(ACTOR_STATE_FOLLOW_OBJECT);
+	fsm_.addState(ACTOR_STATE_TELEOPERATION);
+
+	// update state handler function pointer
+	if ( fsm_.didStateChange() ) {
+		updateTransitionFunctionPtr();
+	}
+
+	// set initial stance and create custom trajectory
+	//setStance(ACTOR_STANCE_WALK);
+	setStance( static_cast<actor::ActorStance>(params_.getActorParams().init_stance) );
+
+	/* set starting pose different to default to prevent actor
+	 * to lie on his back 1 m above the ground*/
+	ignition::math::Pose3d   init_pose;
+
+	// check if some values have been passed
+	if ( params_.getActorParams().init_pose.size() == 0 ) {
+
+		ignition::math::Vector3d init_orient = actor_ptr_->WorldPose().Rot().Euler();
+		// FIXME: `+ IGN_PI/2` is to prevent actor lying at the startup
+		// make it updateStanceOrientation do the job
+		init_pose.Set( actor_ptr_->WorldPose().Pos(), ignition::math::Quaterniond(init_orient.X(), init_orient.Y(), init_orient.Z()) );
+
+	} else {
+
+		// set pose as set in params
+		init_pose.Set( params_.getActorParams().init_pose.at(0), params_.getActorParams().init_pose.at(1), params_.getActorParams().init_pose.at(2), params_.getActorParams().init_pose.at(3), params_.getActorParams().init_pose.at(4), params_.getActorParams().init_pose.at(5) );
+
+	}
+	updateStanceOrientation(init_pose);
+	actor_ptr_->SetWorldPose(init_pose);
+
+	// set previous pose to prevent velocity overshoot
+	pose_world_prev_ = actor_ptr_->WorldPose();
+
 
 }
 
@@ -592,12 +613,12 @@ bool Actor::doesBoundingBoxContainPoint(const ignition::math::Box &bb, const ign
 
 // ------------------------------------------------------------------- //
 
-void Actor::updateStanceOrientation() {
+void Actor::updateStanceOrientation(ignition::math::Pose3d &pose) {
 
 	/* Corrects the rotation to align face with x axis if yaw = 0
 	 * and stand up (with roll 0 actor is lying) */
 
-	ignition::math::Vector3d rpy = pose_world_.Rot().Euler();
+	ignition::math::Vector3d rpy = pose.Rot().Euler();
 
 	switch (stance_) {
 
@@ -614,7 +635,7 @@ void Actor::updateStanceOrientation() {
 
 	}
 
-	pose_world_.Rot().Euler(rpy);
+	pose.Rot().Euler(rpy);
 
 }
 
@@ -712,7 +733,7 @@ double Actor::prepareForUpdate(const gazebo::common::UpdateInfo &info) {
 	// copy pose
 	pose_world_ = actor_ptr_->WorldPose();
 
-	updateStanceOrientation();
+	updateStanceOrientation(pose_world_);
 
 	double dt = (info.simTime - time_last_update_).Double();
 	calculateVelocity(dt);

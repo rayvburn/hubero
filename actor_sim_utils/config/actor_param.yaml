@@ -1,7 +1,8 @@
 initialization:
 
     # if not set - will be random within world bounds
-    pose: [1.0, 1.0, 0.0, 0.0, 0.0, 0.75]   # {x, y, z, r, p, y}
+    # this will apply to all actors (will be initialized in the same place)
+    #pose: [1.0, 1.0, 0.0, 0.0, 0.0, 0.75]   # {x, y, z, r, p, y}, express yaw in terms of world coordinate system, this overwrites .sdf pose setting!
     stance: 1                               # look for core/Enums.h
 
 general:
