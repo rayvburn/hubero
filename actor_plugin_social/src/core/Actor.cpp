@@ -79,6 +79,7 @@ void Actor::initRosInterface() {
 
 	// initialize services for Actor control
 	connection_ptr_->initServices();
+	connection_ptr_->startCallbackProcessingThread();
 
 }
 
@@ -117,7 +118,6 @@ void Actor::initInflator(const double &semi_major, const double &semi_minor, con
 	// correct yaw angle to make ellipse abstract from Actor coordinate system's orientation
 	ignition::math::Angle yaw_world( pose_world_.Rot().Yaw() - IGN_PI_2);
 	yaw_world.Normalize();
-//	bounding_ellipse_.init( 1.00, 0.80, yaw_world.Radian(), pose_world_.Pos(), ignition::math::Vector3d(0.35, 0.0, 0.0) );
 	bounding_ellipse_.init( semi_major, semi_minor, yaw_world.Radian(), pose_world_.Pos(), ignition::math::Vector3d(center_offset_x, center_offset_y, 0.0) );
 	common_info_.setBoundingEllipse(bounding_ellipse_);
 
@@ -226,11 +226,11 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// debugging section
-	std::cout << actor_ptr_->GetName() << "\tIGNORED MODELS VECTOR:" << std::endl;
-	for ( size_t i = 0; i < params_.getSfmDictionary().ignored_models_.size(); i++ ) {
-		std::cout << i << "\t" << params_.getSfmDictionary().ignored_models_.at(i) << std::endl;
-	}
-	std::cout << "\n\n" << std::endl;
+//	std::cout << actor_ptr_->GetName() << "\tIGNORED MODELS VECTOR:" << std::endl;
+//	for ( size_t i = 0; i < params_.getSfmDictionary().ignored_models_.size(); i++ ) {
+//		std::cout << i << "\t" << params_.getSfmDictionary().ignored_models_.at(i) << std::endl;
+//	}
+//	std::cout << "\n\n" << std::endl;
 
 }
 
@@ -332,11 +332,13 @@ bool Actor::followObject(const std::string &object_name, const bool &stop_after_
 // ------------------------------------------------------------------- //
 
 std::array<double, 3> Actor::getVelocity() const {
+
 	std::array<double, 3> array;
 	array.at(0) = velocity_lin_.X();
 	array.at(1) = velocity_lin_.Y();
 	array.at(2) = velocity_ang_.Z();
 	return (array);
+
 }
 
 // ------------------------------------------------------------------- //
@@ -487,6 +489,9 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 
 	// update the local copy of the actor's pose
 	pose_world_ = new_pose;
+
+	// publish social force vector
+	stream_.publishData(ActorMarkerType::ACTOR_MARKER_SF_VECTOR, sfm_vis_single_.createArrow(new_pose.Pos(), sf) );
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 

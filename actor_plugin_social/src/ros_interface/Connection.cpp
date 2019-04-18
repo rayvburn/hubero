@@ -30,7 +30,6 @@ Connection::Connection()
 
 void Connection::setNodeHandle(std::shared_ptr<ros::NodeHandle> nh_ptr) {
 	nh_ptr_ = nh_ptr;
-	nh_ptr_->setCallbackQueue(&cb_queue_);
 }
 
 // ------------------------------------------------------------------- //
@@ -50,6 +49,7 @@ void Connection::initServices() {
 
 	// first check if NodeHandle pointer was set
 	if ( (nh_ptr_ == nullptr) || (actor_ptr_.expired()) ) {
+		std::cout << "\n\n\nConnection::initServices() - NodeHandle Null or ActorPtr expired!()\n\n\n";
 		return;
 	}
 
@@ -59,6 +59,21 @@ void Connection::initServices() {
 	srv_follow_object_ 	= nh_ptr_->advertiseService(namespace_ + "/follow_object", 	&Connection::srvFollowObjectCallback, this);
 	srv_stop_following_ = nh_ptr_->advertiseService(namespace_ + "/stop_following", &Connection::srvStopFollowingCallback, this);
 	srv_get_velocity_ 	= nh_ptr_->advertiseService(namespace_ + "/get_velocity", 	&Connection::srvGetVelocityCallback, this);
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Connection::startCallbackProcessingThread() {
+
+	// first check if NodeHandle pointer was set
+	if ( (nh_ptr_ == nullptr) || (actor_ptr_.expired()) ) {
+		std::cout << "\n\n\nConnection::startCallbackProcessingThread() - NodeHandle Null or ActorPtr expired!()\n\n\n";
+		return;
+	}
+
+	nh_ptr_->setCallbackQueue(&cb_queue_);
+	callback_thread_ = std::thread( std::bind(&Connection::callbackThreadHandler, this) );
 
 }
 

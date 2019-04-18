@@ -60,6 +60,10 @@ public:
 	/// \brief Advertises services if NodeHandle was previously set
 	void initServices();
 
+	/// \brief Sets callback queue and starts a new thread
+	/// for services' callbacks processing
+	void startCallbackProcessingThread();
+
 	/// \brief Initializes callback queue, starts separate thread
 	/// for callback handling, used for teleoperation mode of an Actor
 	bool prepareForTeleoperation();
