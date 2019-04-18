@@ -13,7 +13,7 @@ algorithm:                              # social force model
 
 visualization:
 
-    vis_pub_period: 0.15                # how often a typical visualization markers should be published (in each X seconds)
+    markers_pub_period: 0.15            # how often a typical visualization markers should be published (in each X seconds)
     publish_grid: true                  # whether to visualize vector field (if set to `false` - other GRID-related parameters have no effect) 
     grid_resolution: 0.65               # side of a grid cell (in meters), the smaller the higher number of SFM iterations needed (could be pretty time consuming)
     grid_pub_period: 0.25               # how often a grid needs to be updated (note that it anyway won't be update if nobody subcribes it)  (in each X seconds)    

@@ -68,16 +68,18 @@ void Actor::initRosInterface() {
 	// run parameter loader
 	params_.setActorParamsPrefix("actor");
 	params_.setSfmParamsPrefix("sfm");
-	params_.setSfmDictionaryPrefix("sfm");
 	params_.loadParameters(node_.getNodeHandlePtr());
 
 	/* initialize SFM visualization instances */
 	sfm_vis_single_.setColorLine(1.0f, 1.0f, 0.0f, 0.7f);
 	sfm_vis_single_.setColorArrow(0.0f, 1.0f, 0.0f, 0.7f);
 
-	sfm_vis_grid_.setColorArrow(0.2f, 1.0f, 0.0f, 0.9f);
-	// FIXME: avoid hard-coding
-	sfm_vis_grid_.createGrid(-5.0f, 5.5f, -12.0f, 4.0f, 0.65f);
+	if ( params_.getSfmVisParams().publish_grid ) {
+		sfm_vis_grid_.setColorArrow(0.2f, 1.0f, 0.0f, 0.9f);
+		sfm_vis_grid_.createGrid(params_.getActorParams().world_bound_x.at(0), params_.getActorParams().world_bound_x.at(1),
+								 params_.getActorParams().world_bound_y.at(0), params_.getActorParams().world_bound_y.at(1),
+								 params_.getSfmVisParams().grid_resolution);
+	}
 
 	/* initialize ROS interface to allow publishing and receiving messages;
 	 * due to inheritance from `enable_shared_from_this`, this method is created
@@ -87,7 +89,11 @@ void Actor::initRosInterface() {
 	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_BOUNDING, "ellipse");
 	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_SF_VECTOR, "social_force");
 	stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, "closest_points");
-	stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID, "force_grid");
+
+	// check if grid usage has been enabled in YAML file
+	if ( params_.getSfmVisParams().publish_grid ) {
+		stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID, "force_grid");
+	}
 
 	// constructor of a Connection object
 	connection_ptr_ = std::make_shared<actor::ros_interface::Connection>();
@@ -459,9 +465,8 @@ void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 	while ((new_target - target_).Length() < 2.0) {
 
 		// get random coordinates based on world limits
-		// TODO: world limits loaded as a parameter
-		new_target.X(ignition::math::Rand::DblUniform(-3, 3.5));
-		new_target.Y(ignition::math::Rand::DblUniform(-10, 2));
+		new_target.X(ignition::math::Rand::DblUniform( params_.getActorParams().world_bound_x.at(0), params_.getActorParams().world_bound_x.at(1)) );
+		new_target.Y(ignition::math::Rand::DblUniform( params_.getActorParams().world_bound_y.at(0), params_.getActorParams().world_bound_y.at(1)) );
 
 		// check distance to all world's objects
 		for (unsigned int i = 0; i < world_ptr_->ModelCount(); ++i) {
@@ -484,6 +489,7 @@ void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 			 * not step into an object */
 
 			// FIXME: cafe is a specific model that represents a whole world
+			// params
 			if ( world_ptr_->ModelByIndex(i)->GetName() == "cafe" ) {
 				continue;
 			}
@@ -731,9 +737,9 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
   	// save last position to calculate velocity
 	pose_world_prev_ = actor_ptr_->WorldPose();
 
-//	// FIXME: make sure the actor won't go out of bounds
-//	pose_world_.Pos().X(std::max(-3.0, std::min(3.5, pose_world_.Pos().X())));
-//	pose_world_.Pos().Y(std::max(-10.0, std::min(2.0, pose_world_.Pos().Y())));
+	// make sure the actor won't go out of bounds
+	pose_world_.Pos().X(std::max( params_.getActorParams().world_bound_x.at(0), std::min( params_.getActorParams().world_bound_x.at(1), pose_world_.Pos().X())));
+	pose_world_.Pos().Y(std::max( params_.getActorParams().world_bound_y.at(0), std::min( params_.getActorParams().world_bound_y.at(1), pose_world_.Pos().Y())));
 
 	// update the global pose
 	actor_ptr_->SetWorldPose(pose_world_, false, false);
@@ -785,11 +791,15 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	stream_.publishData(ActorTfType::ACTOR_TF_SELF, pose_world_);
 	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_),
 																			 ignition::math::Quaterniond(0.0, 0.0, 0.0, 1.0)));
+	// check if grid publication has been enabled in parameter file
+	if ( params_.getSfmVisParams().publish_grid ) {
 
-	/* visualize SFM grid if enough time elapsed from last
-	 * publication and there is some unit subscribing to a topic */
-	if ( visualizeVectorField(info) ) {
-		stream_.publishData( actor::ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID, sfm_vis_grid_.getMarkerArray() );
+		/* visualize SFM grid if enough time elapsed from last
+		 * publication and there is some unit subscribing to a topic */
+		if ( visualizeVectorField(info) ) {
+			stream_.publishData( actor::ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID, sfm_vis_grid_.getMarkerArray() );
+		}
+
 	}
 
 	// debug info

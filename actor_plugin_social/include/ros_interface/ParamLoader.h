@@ -105,11 +105,6 @@ public:
 	/// explanation` section in this file
 	void setSfmParamsPrefix(const std::string &sfm_prefix);
 
-	/// \brief Sets namespace of SFM's dictionary entities to search
-	/// within, for further explanation find `namespace and prefixes
-	/// explanation` section in this file
-	void setSfmDictionaryPrefix(const std::string &dictionary_prefix);
-
 	/// \brief Loads parameters into typedef'ed struct
 	/// instances (marked as private in this class)
 	void loadParameters(const std::shared_ptr<ros::NodeHandle> nh_ptr);
@@ -124,6 +119,11 @@ public:
 	/// if parameters was successfully decoded
 	SfmParams getSfmParams() const;
 
+	/// \brief Returns SFM's visualization parameters
+	/// \return SfmParams struct with non-default values
+	/// if parameters was successfully decoded
+	SfmVisParams getSfmVisParams() const;
+
 	/// \brief Returns SFM's dictionary
 	/// \return Non-empty SfmDictionary struct
 	/// if parameters was successfully decoded
@@ -136,15 +136,19 @@ private:
 
 	/// \brief Helper function which loads actor's parameters
 	/// into typedef'ed struct
-	void loadActorParams	(const std::shared_ptr<ros::NodeHandle> nh_ptr);
+	void loadActorParams (const std::shared_ptr<ros::NodeHandle> nh_ptr);
 
 	/// \brief Helper function which loads SFM's parameters
 	/// into typedef'ed struct
-	void loadSfmParams		(const std::shared_ptr<ros::NodeHandle> nh_ptr);
+	void loadSfmParams (const std::shared_ptr<ros::NodeHandle> nh_ptr);
+
+	/// \brief Helper function which loads SFM's visualization
+	/// parameters into typedef'ed struct
+	void loadSfmVisParams (const std::shared_ptr<ros::NodeHandle> nh_ptr);
 
 	/// \brief Helper function which loads SFM's dictionary
 	/// into typedef'ed struct
-	void loadSfmDictionary	(const std::shared_ptr<ros::NodeHandle> nh_ptr);
+	void loadSfmDictionary (const std::shared_ptr<ros::NodeHandle> nh_ptr);
 
 	/// \brief Helper function which converts a given string
 	/// into namespace pattern - '/' at the end
@@ -165,6 +169,11 @@ private:
 	/// be non-const
 	std::tuple<std::string, int, double> convertModelDescriptionToTuple(XmlRpc::XmlRpcValue &sublist);
 
+	/// \brief Helper function which sets smaller axis-bound
+	/// value to 0 element and bigger to 1st;
+	/// such an order is imposed in actor::core::Actor
+	void sortVectorValues(std::vector<double> &vector);
+
 	/// \brief Main namespace name (for example actor's name)
 	std::string ns_;
 
@@ -173,9 +182,6 @@ private:
 
 	/// \brief SFM's parameters namespace prefix
 	std::string sfm_ns_prefix_;
-
-	/// \brief SFM's dictionary namespace prefix
-	std::string dict_ns_prefix_;
 
 	/// \brief Struct storing actor's parameters
 	ActorParams params_actor_;
@@ -188,10 +194,15 @@ private:
 	/// among all actors
 	static SfmDictionary dict_sfm_;
 
+	/// \brief Struct storing SFM's dictionary;
+	/// marked static as dictionary is shared
+	/// among all actors
+	static SfmVisParams params_sfm_vis_;
+
 	/// \brief Helper flag to prevent loading
-	/// dictionary multiple times;
+	/// dictionary and vis parameters multiple times;
 	/// marked static just like SFM's dictionary
-	static bool dict_loaded_;
+	static bool dict_vis_loaded_;
 
 	/*
 	 * NOTE: setting namespace and prefixes is NOT necessary
