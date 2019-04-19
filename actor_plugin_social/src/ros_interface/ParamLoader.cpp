@@ -115,6 +115,7 @@ void ParamLoader::loadActorParams(const std::shared_ptr<ros::NodeHandle> nh_ptr)
 	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "general/target_tolerance", params_actor_.target_tolerance) ) { }
 	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "general/target_reach_max_time", params_actor_.target_reach_max_time) ) { }
 	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "general/target_reachable_check_period", params_actor_.target_reachable_check_period) ) { }
+	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "general/limit_actors_workspace", params_actor_.limit_actors_workspace) ) { }
 	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "general/world_bound_x", params_actor_.world_bound_x) ) { }
 	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "general/world_bound_y", params_actor_.world_bound_y) ) { }
 

@@ -43,6 +43,7 @@ public:
 		double 				target_tolerance 				= 1.25;
 		double 				target_reach_max_time 			= 60.0;
 		double 				target_reachable_check_period 	= 2.0;
+		bool 				limit_actors_workspace			= true;
 	    std::vector<double> world_bound_x					{-3.20, +3.80};
 	    std::vector<double> world_bound_y					{-10.20, +3.80};
 

@@ -934,8 +934,10 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	pose_world_prev_ = actor_ptr_->WorldPose();
 
 	// make sure the actor won't go out of bounds
-	pose_world_.Pos().X(std::max( params_.getActorParams().world_bound_x.at(0), std::min( params_.getActorParams().world_bound_x.at(1), pose_world_.Pos().X())));
-	pose_world_.Pos().Y(std::max( params_.getActorParams().world_bound_y.at(0), std::min( params_.getActorParams().world_bound_y.at(1), pose_world_.Pos().Y())));
+	if ( params_.getActorParams().limit_actors_workspace ) {
+		pose_world_.Pos().X(std::max( params_.getActorParams().world_bound_x.at(0), std::min( params_.getActorParams().world_bound_x.at(1), pose_world_.Pos().X())));
+		pose_world_.Pos().Y(std::max( params_.getActorParams().world_bound_y.at(0), std::min( params_.getActorParams().world_bound_y.at(1), pose_world_.Pos().Y())));
+	}
 
 	// update the global pose
 	actor_ptr_->SetWorldPose(pose_world_, false, false);
