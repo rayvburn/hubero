@@ -50,9 +50,6 @@ private:
 	/// \brief Default value for id_actor
 	static constexpr unsigned int ACTOR_NOT_FOUND = 65534;
 
-	/// \brief Gazebo model ID for ActorPlugin obejcts
-	static constexpr unsigned int ACTOR_MODEL_ID = 32771;
-
 	/// \brief ID of an actor, changes as SFM is computed
 	/// for consecutive actors
 	unsigned int id_actor_;

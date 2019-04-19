@@ -12,6 +12,8 @@
 namespace actor {
 namespace core {
 
+// FIXME: init inflator private
+
 // ------------------------------------------------------------------- //
 
 Actor::Actor():
@@ -310,7 +312,7 @@ bool Actor::setNewTarget(const std::string &object_name) {
 		return (false);
 	}
 
-	if ( model->GetType() == actor::ACTOR_MODEL_TYPE ) {
+	if ( model->GetType() == actor::ACTOR_MODEL_TYPE_ID ) {
 		/* not allowable, actor is a dynamic model;
 		 * use follow object instead */
 		return (false);

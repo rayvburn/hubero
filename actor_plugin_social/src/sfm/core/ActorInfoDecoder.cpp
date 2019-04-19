@@ -6,6 +6,7 @@
  */
 
 #include <sfm/core/ActorInfoDecoder.h>
+#include "core/Enums.h" // ACTOR_MODEL_TYPE_ID
 
 namespace sfm {
 namespace core {
@@ -35,7 +36,7 @@ void ActorInfoDecoder::setID(const std::string &name, const std::map<std::string
 
 bool ActorInfoDecoder::isActor(const unsigned int &model_type) const {
 
-	if ( model_type == ACTOR_MODEL_ID ) {
+	if ( model_type == actor::ACTOR_MODEL_TYPE_ID ) {
 		return (true);
 	} else {
 		return (false);

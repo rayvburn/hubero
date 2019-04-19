@@ -19,11 +19,6 @@
 namespace sfm {
 namespace core {
 
-
-#define ACTOR_ID_NOT_FOUND	255u
-#define ACTOR_MODEL_TYPE_ID 	32771
-
-
 // - - - - - - - - - - - - - - - - -
 
 //#include "../../print_info.h"
@@ -120,24 +115,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 
 	closest_points.clear();
 
-	// easier to debug single actor
-	if ( _actor_name == "actor1" ) {
-
-#ifndef SILENT_
-		if ( print_counter++ == 250 ) {
-#else
-		if ( print_counter == 250 ) {
-#endif
-			std::cout << " -------------- PRINT_INFO triggered TRUE ------------------ " << std::endl;
-			print_info = true;
-			print_counter = 0;
-		} else {
-			print_info = false;
-		}
-	} else {
-		print_info = false;
-	}
-
+	( SfmGetPrintData() ) ? (print_info = true) : (0);
 
 //	if ( _actor_name == "actor1" && SfmGetPrintData()) {
 //		debugEllipseSet(true);
@@ -175,6 +153,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 		}
 
 		// test world specific names
+		// FIXME
 		if ( model_ptr->GetName() == "cafe" || model_ptr->GetName() == "ground_plane" ) {
 			// do not calculate social force from the objects he is stepping on
 			continue;
@@ -274,6 +253,7 @@ ignition::math::Vector3d SocialForceModel::GetSocialForce(
 
 		default:
 
+				// no inflation
 //				std::cout << "\tINFLATION - DEFAULT" << std::endl;
 				actor_closest_to_model_pose = _actor_pose;
 				model_closest_point_pose = model_ptr->WorldPose();
@@ -565,6 +545,9 @@ ignition::math::Vector3d SocialForceModel::GetNormalToAlphaDirection(const ignit
 
 // ------------------------------------------------------------------- //
 
+/// \return F_alpha_beta - repulsive force created by `beta` object
+/// \return d_alpha_beta - distance vector pointing from `alpha` to `beta`
+/// \return theta_alpha_beta - angle
 ignition::math::Vector3d SocialForceModel::GetInteractionComponent(
 		const ignition::math::Pose3d &_actor_pose,
 		const ignition::math::Vector3d &_actor_vel,
@@ -1314,11 +1297,11 @@ double SocialForceModel::GetAngleBetweenObjectsVelocities(
 		/* both actors coordinate systems are oriented the same
 		 * so no extra calculations need to be performed (relative angle) */
 
-		/* this is a lightweight version - another one is based on dot product
+		/* this is a `lightweight` version - another one is based on dot product
 		 * and arccos calculation (used in the dynamic object case) - result would
 		 * be equal here (when both actors are moving);
 		 * with a use of this version there is an ability to calculate the angle
-		 * even when one of the actors is currently rotating */
+		 * even when one of the actors is currently only rotating */
 		yaw_diff.Radian((_actor_yaw.Radian() - _object_yaw.Radian()));
 		yaw_diff.Normalize();
 
