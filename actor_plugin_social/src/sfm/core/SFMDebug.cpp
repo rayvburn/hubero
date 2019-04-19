@@ -17,6 +17,7 @@ void SfmSetPrintData(const bool &to_print) {
 	print_data_dbg = to_print;
 }
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 std::string SfmDebugGetCurrentActorName() {
 	return(debug_current_actor_name);

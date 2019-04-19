@@ -48,6 +48,7 @@ GZ_REGISTER_MODEL_PLUGIN(ActorPlugin)
 
 
 /////////////////////////////////////////////////
+
 ActorPlugin::ActorPlugin() { }
 
 /////////////////////////////////////////////////
@@ -120,13 +121,16 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	}
 
 	if ( !to_start ) {
+		SfmSetPrintData(false); // for some reason - REMOVING THIS completely FROM onUpdate makes Gazebo crash
 		return;
 	};
 
 	// print only when vis is updated
 	//if ( actor->GetName() == "actor1" ) {
-		SfmSetPrintData(false);
+//		SfmSetPrintData(false);
 	//}
+
+
 
 #ifndef ACTOR_SHARED_PTR
 	actor_object.executeTransitionFunction(_info);

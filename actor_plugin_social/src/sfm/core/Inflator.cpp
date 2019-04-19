@@ -6,17 +6,13 @@
  */
 
 #include <sfm/core/Inflator.h>
-#include "sfm/core/SFMDebug.h"
 
 namespace sfm {
 namespace core {
 
 // ------------------------------------------------------------------- //
 
-Inflator::Inflator() {
-	// TODO Auto-generated constructor stub
-
-}
+Inflator::Inflator() { }
 
 // ------------------------------------------------------------------- //
 
@@ -282,8 +278,8 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findInt
 	 */
 
 #ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
-	if ( debug_current_actor_name == "actor1" ) {
-		std::cout << "\nWARNING - " << debug_current_actor_name << "'s bounding circle IS INTERSECTING " << debug_current_object_name << "'s bounding BOX!" << std::endl;
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
+		std::cout << "\nWARNING - " << SfmDebugGetCurrentActorName() << "'s bounding circle IS INTERSECTING " << SfmDebugGetCurrentObjectName() << "'s bounding BOX!" << std::endl;
 	}
 #endif
 
@@ -302,7 +298,7 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findInt
 
 
 #ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
-	if ( debug_current_actor_name == "actor1" ) {
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "\tLINE    slope: " << line_slope.Radian() << "\tdir: " << line_actor_intersection.Direction() << std::endl;
 		std::cout << "\t\tlength: " << line_actor_intersection.Length() << "\tsin: " << sin(line_slope.Radian()) << "\tcos: " << cos(line_slope.Radian()) << std::endl;
 		//std::cout << "\tINITIAL shift\tactor: " << actor_pose_shifted.Pos() << "\tobject: " <<  object_pos_shifted << std::endl;
@@ -374,7 +370,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 //	connection.Z(0.0); // planar
 //
 //	if ( connection.Length() <= actor_circle.GetRadius() ) {
-//	std::cout << debug_current_actor_name << "'s center: " << actor_pose.Pos() << "\tBC's center: " << actor_circle.GetCenter() << std::endl;
+//	std::cout << SfmDebugGetCurrentActorName() << "'s center: " << actor_pose.Pos() << "\tBC's center: " << actor_circle.GetCenter() << std::endl;
 
 	// above commented -> instead isWithin method created
 	if ( actor_circle.doesContain(object_pos_shifted) ) {
@@ -384,7 +380,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 	} else {
 
 		#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX
-		std::cout << "\nINFO - " << debug_current_actor_name << "'s bounding circle IS SAFE\tlength: " << connection.Length() << "\tradius: " << actor_circle.GetRadius() << std::endl;
+		std::cout << "\nINFO - " << SfmDebugGetCurrentActorName() << "'s bounding circle IS SAFE\tlength: " << connection.Length() << "\tradius: " << actor_circle.GetRadius() << std::endl;
 		#endif
 
 	}
@@ -414,10 +410,10 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 
 	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 	if ( SfmGetPrintData() ) {
-	if ( debug_current_actor_name == "actor1" ) {
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "\n*******************************************************************************\n";
 		std::cout << "in GetActorModelBBsClosestPoints() - 2 ACTORS - checking intersection\n";
-		std::cout << "\t" << debug_current_actor_name << "'s pos: " << actor_pose.Pos() << "\t" << debug_current_object_name << "'s pos: " << object_pose.Pos() << std::endl;
+		std::cout << "\t" << SfmDebugGetCurrentActorName() << "'s pos: " << actor_pose.Pos() << "\t" << SfmDebugGetCurrentObjectName() << "'s pos: " << object_pose.Pos() << std::endl;
 	}
 	}
 	#endif
@@ -426,7 +422,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 
 	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 	if ( SfmGetPrintData() ) {
-	if ( debug_current_actor_name == "actor1" ) {
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "\n\tActor's BE intersection result: " << actor_pose_shifted.Pos();
 	}
 	}
@@ -438,7 +434,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 
 	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 	if ( SfmGetPrintData() ) {
-	if ( debug_current_actor_name == "actor1" ) {
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "\n\tObject's BE intersection result: " << object_pos_shifted;
 	}
 	}
@@ -453,8 +449,8 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 		if ( SfmGetPrintData() ) {
-		if ( debug_current_actor_name == "actor1" ) {
-			std::cout << "\n\n\tACTOR'S BE CONTAINS " << debug_current_object_name << "'s POINT!!!!\n";
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
+			std::cout << "\n\n\tACTOR'S BE CONTAINS " << SfmDebugGetCurrentObjectName() << "'s POINT!!!!\n";
 		}
 		}
 		#endif
@@ -463,7 +459,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 	} else {
 
 		#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX
-		std::cout << "\nINFO - " << debug_current_actor_name << "'s bounding circle IS SAFE\tlength: " << connection.Length() << "\tradius: " << _actor_bc.GetRadius() << std::endl;
+		std::cout << "\nINFO - " << SfmDebugGetCurrentActorName() << "'s bounding circle IS SAFE\tlength: " << connection.Length() << "\tradius: " << _actor_bc.GetRadius() << std::endl;
 		#endif
 
 	}
@@ -475,7 +471,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 
 	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 	if ( SfmGetPrintData() ) {
-	if ( debug_current_actor_name == "actor1" ) {
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "\n*******************************************************************************\n\n\n";
 	}
 	}
@@ -487,9 +483,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 
 // ------------------------------------------------------------------- //
 
-Inflator::~Inflator() {
-	// TODO Auto-generated destructor stub
-}
+Inflator::~Inflator() { }
 
 // ------------------------------------------------------------------- //
 

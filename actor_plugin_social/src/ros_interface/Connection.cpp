@@ -12,6 +12,12 @@
 
 #include "core/Enums.h"
 
+// - - - - - - - - - - - - - - - -
+// SFM debug switcher
+#include "sfm/core/SFMDebug.h"
+#include "BoundingEllipseDebug.h"
+// - - - - - - - - - - - - - - - -
+
 namespace actor {
 namespace ros_interface {
 
@@ -19,7 +25,6 @@ namespace ros_interface {
 
 Connection::Connection()
 {
-	// TODO Auto-generated constructor stub
 
 	// threading - get std::future object out of std::promise
 //	future_obj_ = exit_signal_.get_future();
@@ -59,6 +64,8 @@ void Connection::initServices() {
 	srv_follow_object_ 	= nh_ptr_->advertiseService(namespace_ + "/follow_object", 	&Connection::srvFollowObjectCallback, this);
 	srv_stop_following_ = nh_ptr_->advertiseService(namespace_ + "/stop_following", &Connection::srvStopFollowingCallback, this);
 	srv_get_velocity_ 	= nh_ptr_->advertiseService(namespace_ + "/get_velocity", 	&Connection::srvGetVelocityCallback, this);
+
+	srv_switch_debug_sfm_= nh_ptr_->advertiseService(namespace_ + "/debug_sfm", 	&Connection::srvSetDebugSFMCallback, this);
 
 }
 
@@ -177,12 +184,33 @@ bool Connection::srvGetVelocityCallback(actor_sim_srv::GetVelocity::Request &req
 
 }
 
+// ------------------------------------------------------------------- //
+
+bool Connection::srvSetDebugSFMCallback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &resp) {
+
+	std::cout << "\nsrvSetDebugSFMCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	if ( req.data == true ) {
+
+		SfmSetPrintData(true);
+		debugEllipseSet(true);
+
+	} else {
+
+		SfmSetPrintData(false);
+		debugEllipseSet(false);
+
+	}
+
+	resp.success = true;
+	return (true);
+
+}
 
 // ------------------------------------------------------------------- //
 
 void Connection::callbackThreadHandler() {
 
-	// TODO: not tested
+	// thread calling message callbacks for those which wait in the queue
 	while ( nh_ptr_->ok() ) {
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -194,9 +222,7 @@ void Connection::callbackThreadHandler() {
 
 // ------------------------------------------------------------------- //
 
-Connection::~Connection() {
-	// TODO Auto-generated destructor stub
-}
+Connection::~Connection() { }
 
 // ------------------------------------------------------------------- //
 

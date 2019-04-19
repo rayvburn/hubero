@@ -22,6 +22,9 @@
 #include <string>
 #include <vector>
 
+// template definition placed in header - load directives
+// which parts of code to compile
+#include "sfm/core/SFMDebug.h"
 
 namespace sfm {
 namespace core {
@@ -129,10 +132,10 @@ public:
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 		if ( SfmGetPrintData() ) {
-		if ( debug_current_actor_name == "actor1" ) {
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 			std::cout << "\n---------------------------------------------------------------------------------\n";
 			std::cout << "in GetActorModelBBsClosestPoints() - ACTOR & OBJECT - checking intersection\n";
-			std::cout << "\t" << debug_current_actor_name << "'s pos: " << actor_pose.Pos() << "\t" << debug_current_object_name << "'s pos: " << object_pose.Pos() << std::endl;
+			std::cout << "\t" << SfmDebugGetCurrentActorName() << "'s pos: " << actor_pose.Pos() << "\t" << SfmDebugGetCurrentObjectName() << "'s pos: " << object_pose.Pos() << std::endl;
 		}
 		}
 		#endif
@@ -161,7 +164,7 @@ public:
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 		if ( SfmGetPrintData() ) {
-		if ( debug_current_actor_name == "actor1" ) {
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 			std::cout << "\n\tObject's BBox intersection result: " << intersects << "\tpt: "<< point_intersect;
 			std::cout << "\n\tline len: " << line.Length();
 		}
@@ -175,14 +178,14 @@ public:
 
 			#if defined(DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB) || defined(DEBUG_BOUNDING_ELLIPSE_INTERSECTION)
 			if ( SfmGetPrintData() ) {
-			std::cout << "\n\n\n\n\n1\tACTOR STEPPED INTO OBSTACLE\n\n\n\n\n\t" << debug_current_actor_name << "\t" << debug_current_object_name << "\n" << std::endl;
+			std::cout << "\n\n\n\n\n1\tACTOR STEPPED INTO OBSTACLE\n\n\n\n\n\t" << SfmDebugGetCurrentActorName() << "\t" << SfmDebugGetCurrentObjectName() << "\n" << std::endl;
 			}
 			#endif
 			std::tie(actor_pose_shifted.Pos(), point_intersect) = findIntersectedModelsClosestPoints(actor_pose.Pos(), point_intersect, INTERSECTION_ACTOR_OBJECT);
 
 			#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 			if ( SfmGetPrintData() ) {
-			if ( debug_current_actor_name == "actor1" ) {
+			if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 				std::cout << "\n---------------------------------------------------------------------------------\n\n\n";
 			}
 			}
@@ -203,7 +206,7 @@ public:
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 		if ( SfmGetPrintData() ) {
-		if ( debug_current_actor_name == "actor1" ) {
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 			std::cout << "\nactor's BE intersection result - new actor's pose: " << actor_pose_shifted.Pos();
 		}
 		}
@@ -223,7 +226,7 @@ public:
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 		if ( SfmGetPrintData() ) {
-		if ( debug_current_actor_name == "actor1" ) {
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 			std::cout << "\n---------------------------------------------------------------------------------\n\n\n";
 		}
 		}

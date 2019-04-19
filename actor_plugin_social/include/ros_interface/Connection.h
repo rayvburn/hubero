@@ -32,6 +32,9 @@
 #include <actor_sim_srv/SetStance.h>
 #include <actor_sim_srv/GetVelocity.h>
 
+// service for switching on/off SFM's debugging info
+#include <std_srvs/SetBool.h>
+
 
 namespace actor {
 namespace ros_interface {
@@ -85,6 +88,9 @@ private:
 	bool srvStopFollowingCallback	(actor_sim_srv::StopFollowing::Request 	&req, 	actor_sim_srv::StopFollowing::Response 	&resp);
 	bool srvGetVelocityCallback		(actor_sim_srv::GetVelocity::Request 	&req,	actor_sim_srv::GetVelocity::Response 	&resp);
 
+	/// \brief Switcher of a debug info printing
+	bool srvSetDebugSFMCallback		(std_srvs::SetBool::Request				&req,	std_srvs::SetBool::Response 			&resp);
+
 	/// \brief `main` for a callback thread
 	void callbackThreadHandler();
 
@@ -120,6 +126,9 @@ private:
 	ros::ServiceServer srv_follow_object_;
 	ros::ServiceServer srv_stop_following_;
 	ros::ServiceServer srv_get_velocity_;
+
+	/// \brief Only for debugging purposes
+	ros::ServiceServer srv_switch_debug_sfm_;
 
 };
 
