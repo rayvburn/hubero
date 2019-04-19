@@ -4,16 +4,10 @@ project(actor_plugin_social)
 find_package(roscpp REQUIRED)
 find_package(actor_sim_utils REQUIRED)
 find_package(actor_sim_srv REQUIRED)
-#find_package(social_force_vis REQUIRED)
 find_package(catkin REQUIRED COMPONENTS social_force_vis)
 
 find_package(tf REQUIRED)
 find_package(std_msgs REQUIRED)
-# find_package(grid_map_ros)
-
-#find_library(
-#  PATHS /home/rayvburn/ros_workspace/ws_people_sim/src/incare_people_sim/social_force_vis/lib
-#)
 
 include_directories(${roscpp_INCLUDE_DIRS})
 include_directories(${actor_sim_utils_INCLUDE_DIRS})
@@ -22,7 +16,6 @@ include_directories(${social_force_vis_INCLUDE_DIRS})
 
 include_directories(${tf_INCLUDE_DIRS})
 include_directories(${std_msgs_INCLUDE_DIRS})
-# include_directories(${grid_map_ros_INCLUDE_DIRS})
 include_directories(/user/include/sdformat-5.2)
 include_directories(./include)
 
@@ -40,18 +33,18 @@ add_library(social_force_model
   include/sfm/core/Inflator.h 
   include/sfm/core/SFMDebug.h
   include/sfm/core/ActorInfoDecoder.h
+  include/sfm/fuzz/Fuzzifier.h
   src/sfm/core/SocialForceModel.cpp
   src/sfm/core/Inflator.cpp
   src/sfm/core/SFMDebug.cpp
   src/sfm/core/ActorInfoDecoder.cpp
+  src/sfm/fuzz/Fuzzifier.cpp
 )
 
 add_library(social_force_model_utils include/SocialForceModelUtils.h src/SocialForceModelUtils.cpp)
-#add_library(actor_bounding_circle include/BoundingCircle.h src/BoundingCircle.cpp)
-#add_library(actor_common_info include/CommonInfo.h src/CommonInfo.cpp)
 
 # CommonInfo doesnt see Ellipse - namespace?
-# sol: headers into include, sources into src
+# solution: move headers into include/, sources into src/
 add_library(actor_inflation
   include/inflation/Box.h
   src/inflation/Box.cpp
@@ -111,4 +104,3 @@ target_link_libraries( ${PROJECT_NAME}
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-

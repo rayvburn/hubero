@@ -320,7 +320,9 @@ bool Actor::setNewTarget(const std::string &object_name) {
 
 	/* let's find the line from the current actor's pose to the closest
 	 * point of an object's bounding box; shift the point to the free
-	 * space direction a little and set it as a new target */
+	 * space direction a little and set it as a new target;
+	 * this way a rise of an `unreachable target` flag won't occur,
+	 * because target is located in a free space) */
 
 	ignition::math::Line3d line;
 	line.Set( pose_world_.Pos(), model->WorldPose().Pos() ); // line_angle expressed from the actor to an object

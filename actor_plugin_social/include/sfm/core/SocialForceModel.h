@@ -145,7 +145,7 @@ public:
 			const ignition::math::Vector3d &_actor_vel,
 			const ignition::math::Pose3d &_object_pose,
 			const ignition::math::Vector3d &_object_vel,
-			const ignition::math::Vector3d &_object_closest_point,
+			//const ignition::math::Vector3d &_object_closest_point,
 			const bool &_is_actor
 	);
 
@@ -212,14 +212,15 @@ public:
 								const ignition::math::Vector3d _target);
 
 
-	ignition::math::Vector3d GetObjectsInteractionForce(
-			const ignition::math::Pose3d &_actor_pose,
-			const ignition::math::Vector3d &_actor_velocity,
-			const ignition::math::Pose3d &_object_pose,
-			const ignition::math::Vector3d &_object_velocity,
-			const ignition::math::Vector3d &_n_alpha, 		// actor's normal (based on velocity vector)
-			const ignition::math::Vector3d &_d_alpha_beta,
-			const bool &_is_actor );
+//	ignition::math::Vector3d GetObjectsInteractionForce(
+//			const ignition::math::Pose3d &_actor_pose,
+//			const ignition::math::Vector3d &_actor_velocity,
+//			const ignition::math::Pose3d &_object_pose,
+//			const ignition::math::Vector3d &_object_velocity,
+//			const ignition::math::Vector3d &_n_alpha, 		// actor's normal (based on velocity vector)
+//			const ignition::math::Vector3d &_d_alpha_beta,
+//			const bool &_is_actor );
+
 
 	ignition::math::Vector3d GetSocialForce(
 		const gazebo::physics::WorldPtr _world_ptr,
