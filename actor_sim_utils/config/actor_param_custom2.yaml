@@ -1,0 +1,30 @@
+initialization:
+
+    # if pose not set - as initial pose the .world's file <pose> tag values will be used
+    # this will apply to all actors (they all will be initialized in the same place unless separate files and namespaces are created (or at least parameter remapping feature used))
+    # pose: [1.0, 1.0, 0.0, 0.0, 0.0, 0.75] # {x, y, z, r, p, y}, express yaw in terms of world coordinate system, this overwrites .sdf pose setting!
+    
+    # target: [1.0, 2.0, 3.0]           # initial target coordinates
+    stance: 1                           # look for core/Enums.h
+
+general:
+
+    animation_factor: 4.5               # how fast the animation is played
+    animation_speed_rotation: 0.0007    # dist_traveled
+    target_tolerance: 1.25              # in meters
+    target_reach_max_time: 60.0         # in seconds
+    target_reachable_check_period: 2.0  # in seconds
+    limit_actors_workspace: false       # whether to allow poses which exceed virtual world's bounds
+    world_bound_x: [-10.30, +8.80]      # in meters, actor will not be allowed to move further along X axis (NOTE: smaller value MUST be listed first)
+    world_bound_y: [-7.70, +3.70]       # in meters, actor will not be allowed to move further along Y axis (NOTE: smaller value MUST be listed first)
+
+inflation:
+
+    bounding_type: 2                    # look for core/Enums.h for further description
+    circle_radius: 0.5                  # bounding circle radius, ignored when another type of inflator selected
+    box_size:                           # bounding box sides' lengths, ignored when another type of inflator selected
+        - {x_half: 0.45, y_half: 0.45, z_half: 1.00}
+    ellipse:                            # ellipse configuration, offset created to achieve something like described in `E. T. Hall, “Proxemics/Personal Space in Different Cultures`
+        - {semi_major: 1.00, semi_minor: 0.8, offset_x: 0.35, offset_y: 0.0} # positive X: shifts ellipse's center towards actor's back, positive Y -> towards right-hand side
+                                        # ignored when another type of inflator selected, be careful choosing offset (it must be located within ellipse's bounds!)
+
