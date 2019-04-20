@@ -8,6 +8,7 @@
 #include "sfm/core/SocialForceModel.h"
 #include <cmath>		// atan2()
 #include <tgmath.h>		// fabs()
+#include <math.h>		// exp()
 
 // ----------------------------------------
 
@@ -256,7 +257,12 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		// debug txt
 		if ( print_info ) { std::cout << "actor_center: " << actor_pose.Pos() << "\tobstacle_closest_pt: " << model_closest_point_pose.Pos() << "\tdist: " << (model_closest_point_pose.Pos()-actor_pose.Pos()).Length() << std::endl; }
 
-		// debug closest points
+		/* debug closest points
+		 * a pair must be added to vector, pair consists
+		 * of model closest point's pose and an actor's
+		 * pose that is closest to the model;
+		 * note that actor's pose lies on its bounding
+		 * figure's border (in most cases) */
 		closest_points_.push_back(model_closest_point_pose);
 		closest_points_.push_back(actor_closest_to_model_pose);
 
@@ -285,6 +291,12 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 			std::cout << "\tactor1-table1 interaction vector: " << f_alpha_beta.X() << "\t" << f_alpha_beta.Y() << std::endl;
 		}
 #endif
+
+		/* check if some condition is met based on
+		 * parameters previously passed to Fuzzifier */
+		if ( fuzz_.isConditionDetected() ) {
+
+		}
 
 		/* Kind of a hack connected with very strong repulsion when actors are close to each other
 		 * whereas in bigger distances the force is quite weak;
@@ -668,7 +680,8 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	// TODO: adjust Z according to stance?
 	d_alpha_beta.Z(0.0); // it is assumed that all objects are in the actor's plane
 
-	// actor's normal (based on velocity vector)
+	/* actor's normal (based on velocity vector, whose direction could
+	 * be also acquired from his yaw angle */
 	ignition::math::Vector3d n_alpha = computeNormalAlphaDirection(actor_pose);
 
 
@@ -1421,13 +1434,13 @@ inline bool SocialForceModel::isOutOfFOV(const double &angle_relative) {
 
 // ------------------------------------------------------------------- //
 
-inline double SocialForceModel::getYawFromPose(const ignition::math::Pose3d &_pose) {
+inline double SocialForceModel::getYawFromPose(const ignition::math::Pose3d &pose) {
 
 	// the actor's offset yaw is considered
 	// return (_actor_pose.Rot().Yaw() + (IGN_PI / 2));
 
 	// when offset already considered
-	return (_pose.Rot().Yaw());
+	return (pose.Rot().Yaw());
 }
 
 // ------------------------------------------------------------------- //

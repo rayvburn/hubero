@@ -32,6 +32,7 @@
 // SFM's other files
 #include <sfm/core/Inflator.h>
 #include <sfm/core/ActorInfoDecoder.h>
+#include <sfm/fuzz/Fuzzifier.h>
 
 // ----------------------------------------------------------------------------------------------- //
 /*
@@ -311,6 +312,8 @@ private:
 
 	sfm::core::Inflator inflator_;
 	sfm::core::ActorInfoDecoder actor_decoder_;
+
+	sfm::fuzz::Fuzzifier fuzz_;
 
 	/* Model C -> Rudloff et al. (2011) model's parameters based on  S. Seer et al. (2014) */
 	/* setting parameters static will create a population of actors moving in the same way */
