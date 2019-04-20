@@ -160,7 +160,31 @@ public:
 	void Init(const unsigned short int _mass_person,
 			  const float _desired_force_factor,
 			  const float _interaction_force_factor,
-				const gazebo::physics::WorldPtr _world_ptr);
+			  const gazebo::physics::WorldPtr _world_ptr);
+
+	/// \brief Function which calculates social force
+	/// for an actor taking whole world's objects
+	/// into consideration
+	ignition::math::Vector3d computeSocialForce(const gazebo::physics::WorldPtr &world_ptr, const std::string &actor_name,
+			const ignition::math::Pose3d &actor_pose, const ignition::math::Vector3d &actor_velocity,
+			const ignition::math::Vector3d &actor_target, const actor::core::CommonInfo &actor_info,
+			const double &dt);
+
+	/// \brief Function which computes a new pose
+	/// for an actor based on current one and the calculated
+	/// social force
+	ignition::math::Pose3d computeNewPose(const ignition::math::Pose3d &actor_pose, const ignition::math::Vector3d &actor_vel,
+			const ignition::math::Vector3d &social_force, const double &dt);
+
+	/// \brief Returns vector of poses of closest points between
+	/// actor and other objects; makes use out of bounding
+	/// boxes of world's objects and those boundings which
+	/// had been created for actors
+	std::vector<ignition::math::Pose3d> getClosestPointsVector() const;
+
+
+
+
 
 
 	ignition::math::Angle GetYawMovementDirection(
@@ -169,29 +193,13 @@ public:
 			const ignition::math::Vector3d &_sf_vel);
 
 
-	ignition::math::Vector3d GetInternalAcceleration(		const ignition::math::Pose3d &_actor_pose,
-			const ignition::math::Vector3d &_actor_vel,
-			const ignition::math::Vector3d &_actor_target);
+
 
 	inline double GetYawFromPose(const ignition::math::Pose3d &_pose);
 
-	ignition::math::Vector3d GetInteractionComponent(
-			const ignition::math::Pose3d &_actor_pose,
-			const ignition::math::Vector3d &_actor_vel,
-			const ignition::math::Pose3d &_object_pose,
-			const ignition::math::Vector3d &_object_vel,
-			//const ignition::math::Vector3d &_object_closest_point,
-			const bool &_is_actor
-	);
 
-	ignition::math::Pose3d GetNewPose(
-			const ignition::math::Pose3d &_actor_pose,
-			const ignition::math::Pose3d &_actor_last_pose,
-			const ignition::math::Vector3d &_actor_vel,
-			const ignition::math::Vector3d &_actor_target,
-			const ignition::math::Vector3d &_social_force,
-			const double &_dt,
-			const uint8_t &_stance);
+
+
 
 	ignition::math::Vector3d GetNormalToAlphaDirection(const ignition::math::Pose3d &_actor_pose);
 
@@ -222,16 +230,35 @@ public:
 								const ignition::math::Vector3d _target);
 
 
-	ignition::math::Vector3d GetSocialForce(
-		const gazebo::physics::WorldPtr _world_ptr,
-		const std::string _actor_name,
-		const ignition::math::Pose3d _actor_pose,
-		const ignition::math::Vector3d _actor_velocity,
-		const ignition::math::Vector3d _actor_target, // );
-		const actor::core::CommonInfo &_actor_info);
 
-	// debug closest points
-	std::vector<ignition::math::Pose3d> GetClosestPointsVector() const;
+
+
+
+	/// \brief Default destructor
+	virtual ~SocialForceModel();
+
+private:
+
+	/// \brief Helper function which assigns randomly
+	/// generated numbers (with a proper mean and std. dev)
+	/// to an algorithm parameters An, ... , Bw
+	void setParameters();
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	// Social Force Model's components section (internal acceleration,
+	// interaction force (dynamic/static) )
+
+	/// \brief Helper function which calculates internal force
+	/// term of an actor; this component describes a person's
+	/// motivation to reach its current goal
+	ignition::math::Vector3d computeInternalForce(const ignition::math::Pose3d &actor_pose, const ignition::math::Vector3d &actor_vel, const ignition::math::Vector3d &actor_target);
+
+	/// \brief Helper function which calculates interaction
+	/// force which another object (static or dynamic)
+	/// exerts on the actor
+	ignition::math::Vector3d computeInteractionForce(const ignition::math::Pose3d &actor_pose,
+			const ignition::math::Vector3d &actor_vel, const ignition::math::Pose3d &object_pose,
+			const ignition::math::Vector3d &object_vel, const bool &is_actor);
 
 	ignition::math::Vector3d GetForceFromStaticObstacle(const ignition::math::Pose3d &_actor_pose,
 			const ignition::math::Vector3d &_actor_velocity,
@@ -239,24 +266,16 @@ public:
 			const double &_dt);
 	// FIXME: dt needed to be passed!
 
-	/// \brief Default destructor
-	virtual ~SocialForceModel();
-
-private:
-
-	//#if		defined(THETA_ALPHA_BETA_V2011)
-	// computeThetaAlphaBetaAngle
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	// Section covering more of a geometry-related functions
 
 	/// \brief Helper function which computes theta_αβ angle;
 	/// fits 2011 configuration, where this angle is defined
 	/// as: "an angle between velocity of pedestrian α and
 	/// the displacement of pedestrian β"
-	double computeThetaAlphaBetaAngle(const ignition::math::Vector3d &_actor_vel, const ignition::math::Angle &_actor_yaw,
-									  const ignition::math::Vector3d &_object_vel, const ignition::math::Angle &_object_yaw,
-									  const bool &_is_actor);
-
-
-	//#elif	defined(THETA_ALPHA_BETA_V2014)
+	double computeThetaAlphaBetaAngle(const ignition::math::Vector3d &actor_vel, const ignition::math::Angle &actor_yaw,
+									  const ignition::math::Vector3d &object_vel, const ignition::math::Angle &object_yaw,
+									  const bool &is_actor);
 
 	/// \brief Helper function which computes theta_αβ angle;
 	/// fits 2014 configuration, where this angle is defined
@@ -265,20 +284,16 @@ private:
 	/// vector)
 	/// \[param in] d_alpha_beta - vector between objects
 	/// positions
-	double computeThetaAlphaBetaAngle(const ignition::math::Vector3d &_n_alpha, const ignition::math::Vector3d &_d_alpha_beta);
-
-	//#else
+	double computeThetaAlphaBetaAngle(const ignition::math::Vector3d &n_alpha, const ignition::math::Vector3d &d_alpha_beta);
 
 	/// \brief Helper function which computes theta_αβ angle;
 	/// works only for dynamically moving actors -
 	/// NOT RECOMMENDED
-	double computeThetaAlphaBetaAngle(const ignition::math::Pose3d &_actor_pose, ignition::math::Angle *_actor_yaw,
-									  const ignition::math::Pose3d &_object_pose, ignition::math::Angle *_object_yaw);
-
-	//#endif
+	double computeThetaAlphaBetaAngle(const ignition::math::Angle &actor_yaw, const ignition::math::Angle &object_yaw);
 
 
-	void 	SetParameterValues(void);
+
+
 
 	std::vector<ignition::math::Pose3d> closest_points;
 
@@ -305,8 +320,6 @@ private:
 
 	sfm::core::Inflator inflate;
 	sfm::core::ActorInfoDecoder actor_decoder;
-
-
 
 	/* Model C -> Rudloff et al. (2011) model's parameters based on  S. Seer et al. (2014) */
 	/* setting parameters static will create a population of actors moving in the same way */

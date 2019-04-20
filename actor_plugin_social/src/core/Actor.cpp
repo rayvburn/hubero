@@ -507,12 +507,8 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	ignition::math::Vector3d sf = sfm_.GetSocialForce(world_ptr_,
-													 actor_ptr_->GetName(),
-													 pose_world_,
-													 velocity_lin_,
-													 target_,
-													 common_info_);
+	ignition::math::Vector3d sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), pose_world_,
+														  velocity_lin_, target_, common_info_, dt);
 
 //	if ( print_info ) {
 //		std::cout << "\t TOTAL force: " << sf << std::endl;
@@ -524,7 +520,7 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 //		std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;
 //	}
 
-	ignition::math::Pose3d new_pose = sfm_.GetNewPose( pose_world_, pose_world_prev_, velocity_lin_, target_, sf, dt, 0);
+	ignition::math::Pose3d new_pose = sfm_.computeNewPose(pose_world_, velocity_lin_, sf, dt);
 
 //	if ( print_info ) {
 //		std::cout << "\t NEW pose: " << new_pose;
@@ -1249,7 +1245,8 @@ bool Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
 				updateBounding(pose);
 
 				// calculate social force for actor located in current pose
-				sf = sfm_.GetSocialForce(world_ptr_, actor_ptr_->GetName(), pose, velocity_lin_, target_, common_info_);
+				// hard-coded time delta
+				sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), pose, velocity_lin_, target_, common_info_, 0.001);
 
 				// pass a result to vector of grid forces
 				sfm_vis_grid_.addMarker( sfm_vis_grid_.createArrow(pose.Pos(), sf) );
