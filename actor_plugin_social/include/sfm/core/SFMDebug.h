@@ -75,6 +75,10 @@ unsigned int curr_actor = 3;				// TODO: couldn't catch an event to debug this
 
 // ---------------------------------
 
+#define DEBUG_FUZZIFIER_VEL_ANGLE
+
+// ---------------------------------
+
 #include <string>
 
 // variables for debugging

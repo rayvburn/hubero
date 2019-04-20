@@ -187,8 +187,8 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		// ============================================================================
 
 		// model_closest i.e. closest to an actor or the actor's bounding
-		ignition::math::Pose3d actor_closest_to_model_pose;
-		ignition::math::Pose3d model_closest_point_pose;
+		ignition::math::Pose3d actor_closest_to_model_pose = actor_pose;
+		ignition::math::Pose3d model_closest_point_pose = model_ptr->WorldPose();
 
 //		std::cout << "START DEBUGGING\n\t" << SfmDebugGetCurrentActorName() << "\t\t" << SfmDebugGetCurrentObjectName() << std::endl;
 //		std::cout << "\tinitial actor_pose: " << _actor_pose << "\tmodel_pose: " << model_ptr->WorldPose() << std::endl;
@@ -246,8 +246,9 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 				// no inflation
 //				std::cout << "\tINFLATION - DEFAULT" << std::endl;
-				actor_closest_to_model_pose = actor_pose;
-				model_closest_point_pose = model_ptr->WorldPose();
+//				leave centers as closest
+//				actor_closest_to_model_pose = actor_pose;
+//				model_closest_point_pose = model_ptr->WorldPose();
 				break;
 
 		}
@@ -979,9 +980,9 @@ double SocialForceModel::computeThetaAlphaBetaAngle(const ignition::math::Vector
 	/* 2011 - "θ αβ - angle between velocity of pedestrian α
 	 * and the displacement of pedestrian β" */
 
-#ifdef DEBUG_GEOMETRY_1
-	if ( print_info ) {
-		std::cout << "GetAngleBetweenObjectsVelocities(): ";
+#if defined(DEBUG_GEOMETRY_1) || defined(DEBUG_FUZZIFIER_VEL_ANGLE)
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
+		std::cout << "\ncomputeThetaAlphaBetaAngle(): ";
 	}
 #endif
 
@@ -1001,9 +1002,9 @@ double SocialForceModel::computeThetaAlphaBetaAngle(const ignition::math::Vector
 	// check if the other object is an actor
 	if ( is_actor ) {
 
-		#ifdef DEBUG_GEOMETRY_1
-		if ( print_info ) {
-			std::cout << "\t++another ACTOR++";
+		#if defined(DEBUG_GEOMETRY_1) || defined(DEBUG_FUZZIFIER_VEL_ANGLE)
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
+			std::cout << "\t++another ACTOR++\t" << SfmDebugGetCurrentObjectName();
 		}
 		#endif
 
@@ -1015,7 +1016,8 @@ double SocialForceModel::computeThetaAlphaBetaAngle(const ignition::math::Vector
 		 * be equal here (when both actors are moving);
 		 * with a use of this version there is an ability to calculate the angle
 		 * even when one of the actors is currently only rotating */
-		yaw_diff.Radian((actor_yaw.Radian() - object_yaw.Radian()));
+		// yaw_diff.Radian((actor_yaw.Radian() - object_yaw.Radian())); // V1
+		yaw_diff.Radian(object_yaw.Radian() - actor_yaw.Radian()); // OK
 		yaw_diff.Normalize();
 
 	} else {
@@ -1025,9 +1027,9 @@ double SocialForceModel::computeThetaAlphaBetaAngle(const ignition::math::Vector
 		 * the yaw_diff as in `_is_actor` case */
 		if ( object_vel.Length() < 1e-06 ) {
 
-			#ifdef DEBUG_GEOMETRY_1
-			if ( print_info ) {
-				std::cout << "\t++STATIC object++"; // THIS SHOULD NOT HAPPEN AFTER ADDING COMPONENT FOR STATIC OBSTACLES!
+			#if defined(DEBUG_GEOMETRY_1) || defined(DEBUG_FUZZIFIER_VEL_ANGLE)
+			if ( SfmDebugGetCurrentActorName() == "actor1" ) {
+				std::cout << "\t++STATIC object++\t" << SfmDebugGetCurrentObjectName(); // THIS SHOULD NOT HAPPEN AFTER ADDING COMPONENT FOR STATIC OBSTACLES!
 			}
 			#endif
 
@@ -1038,9 +1040,9 @@ double SocialForceModel::computeThetaAlphaBetaAngle(const ignition::math::Vector
 
 		} else {
 
-			#ifdef DEBUG_GEOMETRY_1
-			if ( print_info ) {
-				std::cout << "\t++!!! DYNAMIC object !!!++";
+			#if defined(DEBUG_GEOMETRY_1) || defined(DEBUG_FUZZIFIER_VEL_ANGLE)
+			if ( SfmDebugGetCurrentActorName() == "actor1" ) {
+				std::cout << "\t++!!! DYNAMIC object !!!++\t" << SfmDebugGetCurrentObjectName();
 			}
 			#endif
 
@@ -1065,9 +1067,9 @@ double SocialForceModel::computeThetaAlphaBetaAngle(const ignition::math::Vector
 	}
 
 
-#ifdef DEBUG_GEOMETRY_1
-	if ( print_info ) {
-		std::cout << "\t yaw_actor: " << _actor_yaw.Radian() << "  yaw_object: " << _object_yaw.Radian() << "  yaw_diff: " << yaw_diff.Radian() << "\tactor_vel: " << _actor_vel << "\tobj_vel: " << _object_vel << std::endl;
+#if defined(DEBUG_GEOMETRY_1) || defined(DEBUG_FUZZIFIER_VEL_ANGLE)
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
+		std::cout << "\tyaw_actor: " << actor_yaw.Radian() << "  yaw_object: " << object_yaw.Radian() << "\n\tyaw_diff: " << yaw_diff.Radian() << "\tactor_vel: " << actor_vel << "\tobj_vel: " << object_vel << std::endl << std::endl;
 	}
 #endif
 

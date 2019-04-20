@@ -69,10 +69,10 @@ bool Fuzzifier::isConditionDetected() {
 
 	// -----------------------------------------------------------
 	std::cout << "Fuzzifier\n";
-	std::cout << "\tvels_angle_set: " << vels_angle_set_ << "\tvels_relative_angle: " << vels_relative_angle_ << std::endl;
+	std::cout << "\tvels_angle_set: " << vels_angle_set_ << "\tvels_relative_angle: " << vels_relative_angle_ << "\t| deg:" << IGN_RTOD(vels_relative_angle_) << std::endl;
 	std::cout << "\tdist_set: " << dist_set_ << "\t\tdist_between_objects: " << dist_between_objects_ << std::endl;
-	std::cout << "\tdir_angle_set: " << dir_angle_set_ << "\tto_object_dir_relative_angle: " << to_object_dir_relative_angle_ << std::endl;
-	std::cout << "\tsf_set: " << sf_set_ << "\t\tsf_vector_dir_angle: " << sf_vector_dir_angle_ << std::endl;
+	std::cout << "\tdir_angle_set: " << dir_angle_set_ << "\tto_object_dir_relative_angle: " << to_object_dir_relative_angle_ << "\t| deg:" << IGN_RTOD(to_object_dir_relative_angle_) << std::endl;
+	std::cout << "\tsf_set: " << sf_set_ << "\t\tsf_vector_dir_angle: " << sf_vector_dir_angle_ << "\t| deg:" << IGN_RTOD(sf_vector_dir_angle_) << std::endl;
 	// -----------------------------------------------------------
 
 	bool detected = false;
@@ -88,13 +88,15 @@ bool Fuzzifier::isConditionDetected() {
 	// NOTE: the angle range isn't symmetrical
 	if ( to_object_dir_relative_angle_ <= IGN_DTOR(-20) && to_object_dir_relative_angle_ >= IGN_DTOR(-120) ) {
 		is_on_the_right = true;
-		condition_ = SFM_CONDITION_DYNAMIC_OBJECT_RIGHT;
+		std::cout << "\tIS ON THE RIGHT FLAG" << std::endl;
 	}
 
-//	// TODO: vels_relative_angle_ calculations
-//	if ( is_on_the_right ) {
-//		vels_relative_angle_
-//	}
+	// if an object detected on the right then check if it is moving in perpendicular direction
+	if ( is_on_the_right ) {
+		if ( vels_relative_angle_ >= IGN_DTOR(20) && vels_relative_angle_ <= IGN_DTOR(160) ) {
+			condition_ = SFM_CONDITION_DYNAMIC_OBJECT_RIGHT;
+		}
+	}
 
 	// check if a condition was met
 	if ( condition_ == SFM_CONDITION_DYNAMIC_OBJECT_RIGHT ) {
