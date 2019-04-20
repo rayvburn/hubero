@@ -34,11 +34,13 @@ add_library(social_force_model
   include/sfm/core/SFMDebug.h
   include/sfm/core/ActorInfoDecoder.h
   include/sfm/fuzz/Fuzzifier.h
+  include/sfm/fuzz/Defuzzifier.h
   src/sfm/core/SocialForceModel.cpp
   src/sfm/core/Inflator.cpp
   src/sfm/core/SFMDebug.cpp
   src/sfm/core/ActorInfoDecoder.cpp
   src/sfm/fuzz/Fuzzifier.cpp
+  src/sfm/fuzz/Defuzzifier.cpp
 )
 
 add_library(social_force_model_utils include/SocialForceModelUtils.h src/SocialForceModelUtils.cpp)

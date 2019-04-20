@@ -787,6 +787,7 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	fuzz_.setDistanceVectorLength(d_alpha_beta.Length());
 	fuzz_.setToObjectDirectionRelativeAngle(beta_angle_rel);
 	fuzz_.setVelocitiesRelativeAngle(velocities_angle);
+	fuzz_.setOtherObjectVelocity(object_vel);
 
 	// store angle between objects' (in most cases) velocities
 	double theta_alpha_beta = 0.0;
