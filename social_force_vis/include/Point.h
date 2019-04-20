@@ -43,11 +43,11 @@ public:
 	/// \brief Method that passes position components
 	/// of a poses to a createLineList() method which
 	/// takes ignition::math::Vector3d
-	visualization_msgs::Marker createLineList(const ignition::math::Pose3d &p1, const ignition::math::Pose3d &p2) const;
+	visualization_msgs::Marker createLineList(const ignition::math::Pose3d &p1, const ignition::math::Pose3d &p2, const unsigned int &line_id) const;
 
 	/// \brief Function that creates a line list;
 	/// each line could be created out of 2 points
-	visualization_msgs::Marker createLineList(const ignition::math::Vector3d &p1, const ignition::math::Vector3d &p2) const;
+	visualization_msgs::Marker createLineList(const ignition::math::Vector3d &p1, const ignition::math::Vector3d &p2, const unsigned int &line_id) const;
 
 	/// \brief Default destructor
 	virtual ~Point();

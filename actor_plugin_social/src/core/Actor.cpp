@@ -49,10 +49,10 @@ void Actor::initRosInterface() {
 
 	/* initialize SFM visualization instances */
 	sfm_vis_single_.setColorLine(1.0f, 1.0f, 0.0f, 0.7f);
-	sfm_vis_single_.setColorArrow(0.0f, 1.0f, 0.0f, 0.7f);
+	sfm_vis_single_.setColorArrow(1.0f, 0.0f, 0.0f, 0.9f);
 
 	if ( params_.getSfmVisParams().publish_grid ) {
-		sfm_vis_grid_.setColorArrow(0.2f, 1.0f, 0.0f, 0.9f);
+		sfm_vis_grid_.setColorArrow(0.2f, 1.0f, 0.0f, 0.7f);
 		sfm_vis_grid_.createGrid(params_.getActorParams().world_bound_x.at(0), params_.getActorParams().world_bound_x.at(1),
 								 params_.getActorParams().world_bound_y.at(0), params_.getActorParams().world_bound_y.at(1),
 								 params_.getSfmVisParams().grid_resolution);

@@ -33,7 +33,7 @@ visualization_msgs::MarkerArray Point::createLineListArray(const std::vector<ign
 	}
 
 	for ( size_t i = 0; i < poses.size(); i=i+2 ) {
-		array.markers.push_back( createLineList(poses.at(i), poses.at(i+1)) );
+		array.markers.push_back( createLineList(poses.at(i), poses.at(i+1), i) );
 	}
 	return (array);
 
@@ -41,23 +41,24 @@ visualization_msgs::MarkerArray Point::createLineListArray(const std::vector<ign
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker Point::createLineList(const ignition::math::Pose3d &p1, const ignition::math::Pose3d &p2) const {
-	return ( createLineList(p1.Pos(), p2.Pos()) );
+visualization_msgs::Marker Point::createLineList(const ignition::math::Pose3d &p1, const ignition::math::Pose3d &p2, const unsigned int &line_id) const {
+	return ( createLineList(p1.Pos(), p2.Pos(), line_id) );
 }
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker Point::createLineList(const ignition::math::Vector3d &p1, const ignition::math::Vector3d &p2) const {
+visualization_msgs::Marker Point::createLineList(const ignition::math::Vector3d &p1, const ignition::math::Vector3d &p2, const unsigned int &line_id) const {
 
 	visualization_msgs::Marker marker;
 
-	// NOTE: header.stamp, ns, id DEPRECATED here
+	// NOTE: header.stamp, ns, DEPRECATED here
 	// `ADD is something of a misnomer, it really means "create or modify"`
 	// http://docs.ros.org/kinetic/api/visualization_msgs/html/msg/Marker.html
 
 	marker.header.frame_id = frame_;
 	marker.type = visualization_msgs::Marker::LINE_LIST;
 	marker.action = visualization_msgs::Marker::ADD;
+	marker.id = line_id;
 
 	marker.pose.orientation.w = 1.0;
 
