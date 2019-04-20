@@ -187,33 +187,6 @@ public:
 
 
 
-	ignition::math::Angle GetYawMovementDirection(
-			const ignition::math::Pose3d &_actor_pose,
-			const ignition::math::Vector3d &_actor_vel,
-			const ignition::math::Vector3d &_sf_vel);
-
-
-
-
-	inline double GetYawFromPose(const ignition::math::Pose3d &_pose);
-
-
-
-
-
-	ignition::math::Vector3d GetNormalToAlphaDirection(const ignition::math::Pose3d &_actor_pose);
-
-
-	std::tuple<RelativeLocation, double> GetBetaRelativeLocation(
-			const ignition::math::Angle &_actor_yaw,
-			const ignition::math::Vector3d &_d_alpha_beta);
-
-	bool IsOutOfFOV(const double &_angle_relative);
-
-
-	ignition::math::Vector3d GetPerpendicularToNormal(
-			const ignition::math::Vector3d &_n_alpha,
-			const uint8_t &_beta_rel_location);
 
 	// NEVER USED? DEPRECATED
 #if defined(PERPENDICULAR_COLLISION_AVOIDANCE_MOD)
@@ -222,9 +195,6 @@ public:
 			const uint8_t &_beta_rel_location,
 			const ignition::math::Angle &_alpha_beta_angle);
 #endif
-
-	double GetRelativeSpeed(const ignition::math::Vector3d &_actor_velocity,
-							const ignition::math::Vector3d &_object_velocity);
 
 	bool IsActorFacingTheTarget(const ignition::math::Angle _yaw,
 								const ignition::math::Vector3d _target);
@@ -248,7 +218,7 @@ private:
 	// Social Force Model's components section (internal acceleration,
 	// interaction force (dynamic/static) )
 
-	/// \brief Helper function which calculates internal force
+	/// \brief Helper function which calculates the internal force
 	/// term of an actor; this component describes a person's
 	/// motivation to reach its current goal
 	ignition::math::Vector3d computeInternalForce(const ignition::math::Pose3d &actor_pose, const ignition::math::Vector3d &actor_vel, const ignition::math::Vector3d &actor_target);
@@ -260,14 +230,16 @@ private:
 			const ignition::math::Vector3d &actor_vel, const ignition::math::Pose3d &object_pose,
 			const ignition::math::Vector3d &object_vel, const bool &is_actor);
 
-	ignition::math::Vector3d GetForceFromStaticObstacle(const ignition::math::Pose3d &_actor_pose,
-			const ignition::math::Vector3d &_actor_velocity,
-			const ignition::math::Pose3d &_object_pose,
-			const double &_dt);
-	// FIXME: dt needed to be passed!
+	/// \brief Helper function which computes a repulsive
+	/// force which static obstacle exerts on the actor;
+	/// fits 2014 configuration and used only in this case
+	ignition::math::Vector3d computeForceStaticObstacle(const ignition::math::Pose3d &actor_pose,
+			const ignition::math::Vector3d &actor_velocity, const ignition::math::Pose3d &object_pose,
+			const double &dt);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Section covering more of a geometry-related functions
+	/* Theta alpha-beta calculation */
 
 	/// \brief Helper function which computes theta_αβ angle;
 	/// fits 2011 configuration, where this angle is defined
@@ -291,26 +263,88 @@ private:
 	/// NOT RECOMMENDED
 	double computeThetaAlphaBetaAngle(const ignition::math::Angle &actor_yaw, const ignition::math::Angle &object_yaw);
 
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	/* Resultative vector components calculation - normal (n_alpha)
+	 * and perpendicular (p_alpha) */
 
+	/// \brief Helper function which computes a vector
+	/// that is normal to alpha's direction vector;
+	/// depending on the `parameter description` set
+	/// the vector is calculated differently
+	ignition::math::Vector3d computeNormalAlphaDirection(const ignition::math::Pose3d &actor_pose);
 
+	/// \brief Helper function which takes a given n_alpha
+	/// vector and based on currently investigated object's
+	/// relative to the actor location calculates a perpendicular
+	/// to n_alpha vector
+	ignition::math::Vector3d computePerpendicularToNormal(const ignition::math::Vector3d &n_alpha,
+			const RelativeLocation &beta_rel_location);
 
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	/* General functions section (still geometry-related) */
 
+	/// \brief Helper function which calculates a relative
+	/// location of the investigated object based on actor's
+	/// facing direction (in this case it is equal to a movement
+	/// direction)
+	/// \return A tuple of relative location of the object
+	/// and an angle between actor's movement and object's
+	/// location
+	std::tuple<RelativeLocation, double> computeObjectRelativeLocation(const ignition::math::Angle &actor_yaw,
+			const ignition::math::Vector3d &d_alpha_beta);
+
+	/// \brief Helper function which checks whether a given
+	/// angle is within actor's field of view bounds
+	inline bool isOutOfFOV(const double &angle_relative);
+
+	/// \brief Helper function which pulls out a yaw angle
+	/// from a given pose; at the moment it is just a wrapper
+	/// on a Pose's class method but it could be handy
+	/// when an additional angle transformation should be used
+	/// NOTE: actor's coordinate system is rotated 90 deg CW
+	/// compared to the world's one
+	inline double getYawFromPose(const ignition::math::Pose3d &pose);
+
+	/// \brief Helper function which calculates relative
+	/// speed based on 2 given velocity vectors
+	double computeRelativeSpeed(const ignition::math::Vector3d &actor_vel, const ignition::math::Vector3d &object_vel);
+
+	/// \brief Helper function which is used in computeNewPose;
+	/// based on a velocity vector which would be a result
+	/// from a raw SFM algorithm it refines actor's yaw
+	/// to prevent immediate rotations;
+	/// the bigger the actor's velocity is the smaller
+	/// rotation is allowed (modeled with a decreasing
+	/// exponential function);
+	/// it has a big impact on actors' behavior
+	ignition::math::Angle computeYawMovementDirection(const ignition::math::Pose3d &actor_pose,
+			const ignition::math::Vector3d &actor_vel,	const ignition::math::Vector3d &sf_vel);
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	/// \brief A vector of poses of closest points
+	/// between actor's and object's boundings
 	std::vector<ignition::math::Pose3d> closest_points;
 
-	// stores previous location of a model relative to an actor
+	/// \brief A map which stores previous location
+	/// of a model relative to an actor;
+	/// a historical data is used when relative location
+	/// value oscillates from one side to the other
 	std::map<std::string, RelativeLocation> map_models_rel_locations;
 
-
+	/// \brief Social Force Model parameters variables
 	float relaxation_time;
 	float speed_desired;
 	float speed_max;
-	float force_max;
-	float force_min;
+
 	float fov;
 	float yaw_max_delta;
 	unsigned short int mass_person; 		// to evaluate if helpful
 	float desired_force_factor;
 	float interaction_force_factor;
+
+	float force_max;
+	float force_min;
 
 
 	sfm::core::StaticObjectInteraction interaction_static_type;
@@ -318,7 +352,7 @@ private:
 	sfm::core::ParameterDescription param_description_;
 
 
-	sfm::core::Inflator inflate;
+	sfm::core::Inflator inflator;
 	sfm::core::ActorInfoDecoder actor_decoder;
 
 	/* Model C -> Rudloff et al. (2011) model's parameters based on  S. Seer et al. (2014) */

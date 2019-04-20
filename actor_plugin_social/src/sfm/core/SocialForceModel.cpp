@@ -203,14 +203,14 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 //				std::cout << "\tINFLATION - BOX - OTHER OBJECTS" << std::endl;
 				actor_closest_to_model_pose = actor_pose;
-				model_closest_point_pose.Pos() = inflate.findModelsClosestPoints(actor_pose, model_ptr->WorldPose(), model_box);
+				model_closest_point_pose.Pos() = inflator.findModelsClosestPoints(actor_pose, model_ptr->WorldPose(), model_box);
 				break;
 
 		case(INFLATION_BOX_ALL_OBJECTS):
 
 //				std::cout << "\tINFLATION - BOX - ALL OBJECTS" << std::endl;
 				std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-						inflate.findModelsClosestPoints(actor_pose, actor_info.getBoundingBox(),
+						inflator.findModelsClosestPoints(actor_pose, actor_info.getBoundingBox(),
 															 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
 				break;
 
@@ -219,12 +219,12 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 				if ( is_an_actor ) {
 //					std::cout << "\tINFLATION - CIRCLE - actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflate.findModelsClosestPoints(actor_pose, actor_info.getBoundingCircle(),
+							inflator.findModelsClosestPoints(actor_pose, actor_info.getBoundingCircle(),
 																 model_ptr->WorldPose(), model_circle, model_ptr->GetName() );
 				} else {
 //					std::cout << "\tINFLATION - CIRCLE - non-actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflate.findModelsClosestPoints(actor_pose, actor_info.getBoundingCircle(),
+							inflator.findModelsClosestPoints(actor_pose, actor_info.getBoundingCircle(),
 																 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
 				}
 				break;
@@ -234,12 +234,12 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 				if ( is_an_actor ) {
 //					std::cout << "\tINFLATION - ELLIPSE - actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflate.findModelsClosestPoints(actor_pose, actor_info.getBoundingEllipse(),
+							inflator.findModelsClosestPoints(actor_pose, actor_info.getBoundingEllipse(),
 																 model_ptr->WorldPose(), model_ellipse, model_ptr->GetName() );
 				} else {
 //					std::cout << "\tINFLATION - ELLIPSE - non actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflate.findModelsClosestPoints(actor_pose, actor_info.getBoundingEllipse(),
+							inflator.findModelsClosestPoints(actor_pose, actor_info.getBoundingEllipse(),
 																 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
 
 				}
@@ -276,7 +276,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 //			std::cout << "\tf_alpha_beta - STATIC" << std::endl;
 			// FIXME: dt arbitrary ATM!
-			f_alpha_beta = GetForceFromStaticObstacle(actor_closest_to_model_pose, actor_velocity,
+			f_alpha_beta = computeForceStaticObstacle(actor_closest_to_model_pose, actor_velocity,
 													  model_closest_point_pose, dt);
 
 		}
@@ -451,7 +451,7 @@ ignition::math::Pose3d SocialForceModel::computeNewPose(const ignition::math::Po
 	 * current movement direction / current target.
 	 * yaw_new is calculated according to the vector of resulting velocity -
 	 * which is based on social force */
-	ignition::math::Angle yaw_new = this->GetYawMovementDirection(actor_pose, actor_vel, result_vel);
+	ignition::math::Angle yaw_new = computeYawMovementDirection(actor_pose, actor_vel, result_vel);
 
 	/* recalculation pros:
 	 *  	o smooth rotational motion,
@@ -567,215 +567,21 @@ std::vector<ignition::math::Pose3d> SocialForceModel::getClosestPointsVector() c
 	return (closest_points);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d SocialForceModel::GetNormalToAlphaDirection(const ignition::math::Pose3d &_actor_pose) {
-
-	// when speed is 0 then there is no way of calculating the angle THETA_alpha_beta (0 vector length)
-	// better way is calculating normal based on actor's yaw than velocity vector
-
-//	if ( print_info ) {
-		// std::cout << "BEFORE -- n_alpha: " << *_n_alpha << "  _actor_vel: " << _actor_vel << std::endl;
-//	}
-
-	// ignition::math::Vector3d rpy = _actor_pose.Rot().Euler();
 
 
-	/* all calculations here are based on world coordinate system data -
-	 * n_alpha from actor's coordinate system is projected onto
-	 * world's coordinate system axes */
-	ignition::math::Angle yaw_norm(this->GetYawFromPose(_actor_pose));
-	yaw_norm.Normalize();
-
-	// check parameter setting - n_alpha issue there
-	switch (param_description_) {
-
-	case(PARAMETER_DESCRIPTION_2011):
-			// vector pointing opposite direction
-			yaw_norm -= yaw_norm.Pi;
-			yaw_norm.Normalize();
-			break;
-
-	case(PARAMETER_DESCRIPTION_2014):
-	default:
-			// do not rotate
-			break;
-
-	}
-
-//#ifdef N_ALPHA_V2011
-//	yaw_norm -= yaw_norm.Pi; // opposite pointing
-//	yaw_norm.Normalize();
-//#endif
-
-	ignition::math::Vector3d n_alpha;
-
-	// rotate the vector
-	n_alpha.X( +sin(yaw_norm.Radian()) );
-	n_alpha.Y( -cos(yaw_norm.Radian()) ); 	// sine and cosine relation the same as in GetNewPose()
-	n_alpha.Z(0.0); 						// in-plane movement only at the moment
-	n_alpha.Normalize();
-
-	if ( print_info ) {
-		std::cout << "\t n_alpha: " << n_alpha << "\t";
-	}
-
-	return n_alpha;
-
-}
 
 
-#ifdef DEBUG_TF
-
-	/*
-	// actor's pose
-	actor_current_pose = _actor_pose; // current = before update
-	double yaw = atan2(_actor_pose.Pos().Y(), _actor_pose.Pos().X());
-	actor_current_pose.Set(_actor_pose.Pos(), ignition::math::Vector3d(0.0, 0.0, yaw));
-
-	tf_stamped.header.frame_id = "map";
-	tf_stamped.child_frame_id = "actor1_base";
-
-	tf_stamped.transform.translation.x = actor_current_pose.Pos().X();
-	tf_stamped.transform.translation.y = actor_current_pose.Pos().Y();
-	tf_stamped.transform.translation.z = actor_current_pose.Pos().Z();
-
-	tf_stamped.transform.rotation.x = actor_current_pose.Rot().X();
-	tf_stamped.transform.rotation.y = actor_current_pose.Rot().Y();
-	tf_stamped.transform.rotation.z = actor_current_pose.Rot().Z();
-	tf_stamped.transform.rotation.w = actor_current_pose.Rot().W();
-
-	tf_broadcaster.sendTransform(tf_stamped);
-
-	// actor's normal
-	ignition::math::Vector3d rpy_actor = actor_current_pose.Rot().Euler();
-	double yaw_normal = atan2(_n_alpha->Y(), _n_alpha->X());
-	rpy_actor.Z(yaw_normal);
-
-	tf2::Matrix3x3 quat;
-	tf2::Quaternion tf_quat;
-	tf_quat.setX(actor_current_pose.Rot().X());
-	tf_quat.setY(actor_current_pose.Rot().Y());
-	tf_quat.setZ(actor_current_pose.Rot().Z());
-	tf_quat.setW(actor_current_pose.Rot().W());
-
-	quat.setRotation(tf_quat);
-	double roll, pitch, yawq;
-	quat.getRPY(roll, pitch,yawq);
-
-	//std::cout << "yaw: " << rpy_actor.X() << "  yaw_n: " << yaw_normal << std::endl;
-	//std::cout << "yaw: " << yawq << "  yaw_n: " << yaw_normal << std::endl;
-
-	actor_current_pose.Set(_actor_pose.Pos(), ignition::math::Vector3d(0.0, 0.0, yaw_normal));
-
-	tf_stamped.header.frame_id = "map";
-	tf_stamped.child_frame_id = "actor1_normal";
-
-	tf_stamped.transform.rotation.x = actor_current_pose.Rot().X();
-	tf_stamped.transform.rotation.y = actor_current_pose.Rot().Y();
-	tf_stamped.transform.rotation.z = actor_current_pose.Rot().Z();
-	tf_stamped.transform.rotation.w = actor_current_pose.Rot().W();
-
-	tf_broadcaster.sendTransform(tf_stamped);
-	*/
-
-#endif
 
 
-// ------------------------------------------------------------------- //
-
-ignition::math::Angle SocialForceModel::GetYawMovementDirection(
-		const ignition::math::Pose3d &_actor_pose,
-		const ignition::math::Vector3d &_actor_vel,
-		const ignition::math::Vector3d &_sf_vel) {
 
 
-	// actor's coordinate system transformed into world's coordinate system (SF's)
 
-	// 1st step
-	// social force's angle
-	ignition::math::Angle yaw_sf( std::atan2(_sf_vel.Y(), _sf_vel.X()) );
-	yaw_sf.Normalize();
 
-	// actor's angle transformed to world coordinate system
-	double yaw_alpha_w = GetYawFromPose(_actor_pose) - IGN_PI_2;
 
-	// difference used to determine angular rotation direction
-	ignition::math::Angle yaw_diff( yaw_sf.Radian() - yaw_alpha_w );
-	yaw_diff.Normalize();
 
-	// 2nd step
-	/* yaw_increment is a function of speed - the faster actor goes
-	 * the less maneuverability he has and less rotations will make	*/
-	/// @yaw_increment the less the value is the more reluctant actor
-	/// will be to immediate rotations
-	/// correlated with parameter @force_min
-	double yaw_increment = 0.003 * std::exp( -_actor_vel.Length() ); // 0.009 before - many rotations
 
-	// sign determines angle increment direction
-	short int sign = -1;
-	( yaw_diff.Radian() >= 0.0 ) ? (sign = +1) : (0);
-
-	// stores the angle increment based on current SF
-	double angle_change = 0.0;
-	if ( std::fabs(yaw_diff.Radian()) < yaw_increment ) {
-		// only small rotation adjustment needed
-		angle_change = static_cast<double>(sign) * yaw_diff.Radian();
-	} else {
-		// truncate big angle change desired by SF
-		angle_change = static_cast<double>(sign) * yaw_increment;
-	}
-
-	// 3rd step
-	// calculate new yaw
-	ignition::math::Angle yaw_new( yaw_alpha_w + angle_change );
-	yaw_new.Normalize();
-
-	// ----------------------------------------------
-
-	// debug
-	#ifdef DEBUG_YAW_MOVEMENT_DIR
-	( SfmGetPrintData() ) ? (print_info = true) : (0);
-	#endif
-
-	if ( print_info ) {
-
-		#ifdef DEBUG_YAW_MOVEMENT_DIR
-		std::cout << "///////////////////////////////////////////////////////////\n";
-		std::cout << SfmDebugGetCurrentActorName() << "\tGetYawMovementDirection()" << std::endl;
-		std::cout << "\tyaw_alpha: " << GetYawFromPose(_actor_pose) << "\tyaw_alpha_W: " << yaw_alpha_w << "\tyaw_sf: " << yaw_sf.Radian() << "\tsf: " << _sf_vel << std::endl;
-		std::cout << "\tyaw_diff NOT norm.: " << (yaw_sf.Radian() - yaw_alpha_w) << "\tyaw_diff_norm: " << yaw_diff.Radian() << std::endl;
-		std::cout << "\tangle_change: " << angle_change << "\tyaw_new NOT norm: " << yaw_alpha_w + angle_change << "\tyaw_new norm: " << yaw_new.Radian() << std::endl;
-		ignition::math::Vector3d test_vector;
-		test_vector.X( cos(yaw_new.Radian()) * _sf_vel.Length() );
-		test_vector.Y( sin(yaw_new.Radian()) * _sf_vel.Length() );
-		std::cout << "\tEQUAL DIR TEST\tX: " << ((test_vector.X() * _sf_vel.X()) >= 0.0) << "\tY: " << ((test_vector.Y() * _sf_vel.Y()) >= 0.0) << std::endl;
-		std::cout << "///////////////////////////////////////////////////////////\n";
-		#endif
-
-	}
-
-	#ifdef DEBUG_YAW_MOVEMENT_DIR
-	( SfmGetPrintData() ) ? (print_info = false) : (0);
-	#endif
-
-	// ----------------------------------------------
-
-	return (yaw_new);
-
-}
 
 
 
@@ -815,43 +621,11 @@ bool SocialForceModel::IsActorFacingTheTarget(	const ignition::math::Angle _yaw,
 
 
 
-double SocialForceModel::GetRelativeSpeed(
-		const ignition::math::Vector3d &_actor_velocity,
-		const ignition::math::Vector3d &_object_velocity) {
 
-#ifdef DEBUG_REL_SPEED
-
-	ignition::math::Vector3d rel_vel = _object_velocity - _actor_velocity;
-	if ( print_info ) {
-		std::cout << std::endl;
-		std::cout << "GetRelativeSpeed(): ";
-		std::cout << "  obj_vel: " << _object_velocity;
-		std::cout << "  act_vel: " << _actor_velocity;
-		std::cout << "  v_rel:  " << rel_vel;
-		std::cout << "  spd_rel: " << rel_vel.Length();
-		std::cout << std::endl;
-	}
-
-	return rel_vel.Length();
-
-#else
-
-	return ( (_object_velocity - _actor_velocity).Length() );
-
-#endif
-
-}
 
 // ============================================================================
 
-inline double SocialForceModel::GetYawFromPose(const ignition::math::Pose3d &_pose) {
 
-	// the actor's offset yaw is considered
-	// return (_actor_pose.Rot().Yaw() + (IGN_PI / 2));
-
-	// when offset already considered
-	return (_pose.Rot().Yaw());
-}
 
 // ============================================================================
 
@@ -879,344 +653,13 @@ inline double SocialForceModel::GetYawFromPose(const ignition::math::Pose3d &_po
 
 
 
-// ------------------------------------------------------------------- //
 
-ignition::math::Vector3d SocialForceModel::GetPerpendicularToNormal(
 
-		const ignition::math::Vector3d &_n_alpha,
-		const uint8_t &_beta_rel_location)
 
-{
 
-	/* Depending on which side beta is on relative to n_alpha, the p_alpha (perpendicular vector)
-	 * will point to direction opposite to the side where beta is */
 
-	/*
-	ignition::math::Vector3d p_alpha;
-	if ( _beta_rel_location == LOCATION_RIGHT ) {
-		p_alpha = _n_alpha.Perpendicular();
-		// return (_n_alpha.Perpendicular());
-	} else if ( _beta_rel_location == LOCATION_LEFT ) {
 
-		// ignition::math::Vector3d p_alpha;
 
-		// inverse-perpendicular vector calculations based on ignition library
-		static const double sqr_zero = 1e-06 * 1e-06;
-		ignition::math::Vector3d to_cross = {0, 0, 1}; // TODO: -1?
-		p_alpha = _n_alpha.Cross(to_cross);
-
-		// Check the length of the vector
-		if (p_alpha.SquaredLength() < sqr_zero)
-		{
-
-			to_cross = {0, -1, 0};
-			p_alpha = p_alpha.Cross(to_cross);
-			std::cout << "GetPerpendicularToNormal(): " << "\t TOO SHORT! " << std::endl;
-
-		}
-	}
-	*/
-
-	ignition::math::Vector3d p_alpha;
-	static const double sqr_zero = 1e-06 * 1e-06;
-	ignition::math::Vector3d to_cross;
-
-	if ( _beta_rel_location == LOCATION_LEFT ) {
-
-		// check parameter - n_alpha issue there
-		switch (param_description_) {
-
-		case(PARAMETER_DESCRIPTION_2011):
-				to_cross.Set(0.0, 0.0, -1.0);
-				break;
-
-		case(PARAMETER_DESCRIPTION_2014):
-		default:
-				to_cross.Set(0.0, 0.0,  1.0);
-				break;
-
-		}
-
-//		#if 	defined(N_ALPHA_V2011)
-//		to_cross.Set(0.0, 0.0, -1.0);
-//		#elif 	defined(N_ALPHA_V2014)
-//		to_cross.Set(0.0, 0.0,  1.0);
-//		#endif
-
-	} else if ( _beta_rel_location == LOCATION_RIGHT ) {
-
-		// check parameter - n_alpha issue there
-		switch (param_description_) {
-
-		case(PARAMETER_DESCRIPTION_2011):
-				to_cross.Set(0.0, 0.0,  1.0);
-				break;
-		case(PARAMETER_DESCRIPTION_2014):
-		default:
-				to_cross.Set(0.0, 0.0, -1.0);
-				break;
-
-		}
-
-//		#if 	defined(N_ALPHA_V2011)
-//		to_cross.Set(0.0, 0.0,  1.0);
-//		#elif 	defined(N_ALPHA_V2014)
-//		to_cross.Set(0.0, 0.0, -1.0);
-//		#endif
-
-	} else {
-
-#ifdef DEBUG_GEOMETRY_1
-		if ( print_info ) {
-			std::cout << "BEHIND!\t" << std::endl;
-		}
-#endif
-
-	}
-
-	p_alpha = _n_alpha.Cross(to_cross);
-
-	// Check the length of the vector
-	if (p_alpha.SquaredLength() < sqr_zero) {
-
-		// this should not happen
-		to_cross = {0, -1, 0};
-		p_alpha = p_alpha.Cross(to_cross);
-#ifdef DEBUG_GEOMETRY_1
-		if ( print_info ) {
-			std::cout << "GetPerpendicularToNormal(): " << "\t TOO SHORT! " << std::endl;
-		}
-#endif
-
-	}
-
-#ifdef DEBUG_GEOMETRY_1
-	if ( print_info ) {
-		std::cout << "GetPerpendicularToNormal(): " << "  x: " << p_alpha.X() << "  y: " << p_alpha.Y() << "  z: " << p_alpha.Z() << std::endl;
-	}
-#endif
-
-	return p_alpha;
-
-}
-
-// ------------------------------------------------------------------- //
-
-// TODO: make it return a tuple <RelativeLocation rel_loc, double rel_angle> - for detailed info connected with BEHIND objects?
-std::tuple<RelativeLocation, double> SocialForceModel::GetBetaRelativeLocation(
-		const ignition::math::Angle &_actor_yaw,
-		const ignition::math::Vector3d &_d_alpha_beta)
-{
-
-	RelativeLocation rel_loc = LOCATION_UNSPECIFIED;
-	ignition::math::Angle angle_relative; 		// relative to actor's (alpha) direction
-	ignition::math::Angle angle_d_alpha_beta;	// stores yaw of d_alpha_beta
-
-	ignition::math::Vector3d d_alpha_beta_norm = _d_alpha_beta;
-	d_alpha_beta_norm.Normalize();
-
-	// when normalized vector used with atan2 then division by euclidean distance not needed
-	//angle_d_alpha_beta.Radian( std::atan2(d_alpha_beta_norm.X(), d_alpha_beta_norm.Y()) );	// V1
-	angle_d_alpha_beta.Radian( std::atan2(d_alpha_beta_norm.Y(), d_alpha_beta_norm.X()) ); 	// V2
-	angle_d_alpha_beta.Normalize();
-
-	//angle_relative = _actor_yaw + angle_d_alpha_beta;	// V1
-
-	// V2
-	//angle_relative = _actor_yaw - angle_d_alpha_beta; 	// actor's coordinate system rotation considered (relative to world coord. sys.)
-
-	/* V2 NOTES:
-	 *
-	 */
-	angle_relative = _actor_yaw - angle_d_alpha_beta;
-
-	// V3
-	// corrected in terms of transforming to world's coordinate system
-	ignition::math::Angle actor_yaw_corrected(_actor_yaw.Radian() - IGN_PI_2);
-	actor_yaw_corrected.Normalize(); // V4
-	angle_relative.Radian( angle_d_alpha_beta.Radian() - actor_yaw_corrected() );
-	angle_relative.Normalize(); // V4
-
-	// angle_relative.Normalize(); // V1
-
-#ifdef DEBUG_GEOMETRY_2
-	if ( print_info ) {
-		std::cout << "\n GetBetaRelativeLocation() " << "ACTOR yaw: " << _actor_yaw.Radian() << "  ANGLE d_alpha_beta: " << angle_d_alpha_beta.Radian() << "  ANGLE sum: " << angle_relative.Radian();
-	}
-	std::string txt_dbg;
-#endif
-
-	// LOCATION_FRONT ~ hysteresis regulator
-	/*
-	if ( angle_relative.Radian() >= -IGN_DTOR(9) &&
-		 angle_relative.Radian() <= +IGN_DTOR(9) ) {
-	*/
-
-	/* SFM FRONT or SFM_BACK to be specific - added exponentially decreasing
-	 * interaction for objects that are behind so relative angle calculations
-	 * extended with close to Pi value case */
-	if ( std::fabs(angle_relative.Radian()) <= IGN_DTOR(9) ||
-		 std::fabs(angle_relative.Radian()) >= (IGN_PI - IGN_DTOR(9)) ) {
-
-		rel_loc = LOCATION_FRONT;
-#ifdef DEBUG_GEOMETRY_2
-		txt_dbg = "FRONT";
-#endif
-	/* // LOCATION_BEHIND DEPRECATED HERE
-	} else if ( IsOutOfFOV(angle_relative.Radian() ) ) { // consider FOV
-
-		rel_loc = LOCATION_BEHIND;
-#ifdef DEBUG_GEOMETRY_2
-		txt_dbg = "BEHIND";
-#endif
-	*/
-	} else if ( angle_relative.Radian() <= 0.0 ) { // 0.0 ) {
-
-		rel_loc = LOCATION_RIGHT;
-#ifdef DEBUG_GEOMETRY_2
-		txt_dbg = "RIGHT";
-#endif
-
-	} else if ( angle_relative.Radian() > 0.0 ) { // 0.0 ) {
-
-		rel_loc = LOCATION_LEFT;
-#ifdef DEBUG_GEOMETRY_2
-		txt_dbg = "LEFT";
-#endif
-
-	}
-
-#ifdef DEBUG_GEOMETRY_2
-	if ( print_info ) {
-		std::cout << "  " << txt_dbg << std::endl;
-	}
-#endif
-
-	/* historical data considered when calculating relative location - it is crucial to not
-	 * allow minor yaw rotations to switch from left to right etc. thus a relative angle
-	 * must exceed certain threshold before it will be in fact switched;
-	 * LOCATION_BEHIND must not be found in map_models_rel_locations! */
-
-#ifdef DEBUG_OSCILLATIONS
-	if ( SfmDebugGetCurrentObjectName() == "table1" && SfmDebugGetCurrentActorName() == "actor1" ) {
-		std::string location_str;
-		if ( rel_loc == LOCATION_FRONT ) {
-			location_str = "FRONT";
-		} else if ( rel_loc == LOCATION_BEHIND ) {
-			location_str = "BEHIND";
-		} else if ( rel_loc == LOCATION_RIGHT ) {
-			location_str = "RIGHT SIDE";
-		} else if ( rel_loc == LOCATION_LEFT ) {
-			location_str = "LEFT SIDE";
-		} else if ( rel_loc == LOCATION_UNSPECIFIED ) {
-			location_str = "UNKNOWN";
-		}
-		std::cout << "\t" << SfmDebugGetCurrentObjectName() << "'s relative location: " << location_str <<  "\tactor: " << SfmDebugGetCurrentActorName();
-		std::cout << "\n\t\td_alpha_beta: x " << d_alpha_beta_norm.X() << "  y " << d_alpha_beta_norm.Y() << "\tangle_actor_yaw_RAW: " << _actor_yaw.Radian() << "\tangle_actor_yaw_CORR: " << actor_yaw_corrected.Radian() << "\tangle_d_ab: " << angle_d_alpha_beta.Radian() << /* "\tangle_diff: " << (angle_d_alpha_beta.Radian()-actor_yaw_corrected.Radian())<< */ "\tangle_rel: " << angle_relative.Radian();
-	}
-#endif
-
-	/* if the angle_relative is above few degrees value then the historical value may be discarded */
-	if ( rel_loc != LOCATION_FRONT ) {
-		map_models_rel_locations[SfmDebugGetCurrentObjectName()] = rel_loc;
-	} else {
-#ifdef DEBUG_OSCILLATIONS
-		std::cout << "\t:::::::::::::::::::::::::HIST REL ANG!:::::::::::::::::::::::::::::::::::::::::::\t";
-#endif
-		return ( std::make_tuple(map_models_rel_locations[SfmDebugGetCurrentObjectName()], angle_relative.Radian()) );
-	}
-
-	return ( std::make_tuple(rel_loc, angle_relative.Radian()) );
-
-}
-
-// ------------------------------------------------------------------- //
-
-bool SocialForceModel::IsOutOfFOV(const double &_angle_relative) {
-
-	if ( std::fabs(_angle_relative) >= fov ) {
-		return true;
-	}
-
-	return false;
-
-}
-
-// ------------------------------------------------------------------- //
-
-ignition::math::Vector3d SocialForceModel::GetForceFromStaticObstacle(
-		const ignition::math::Pose3d &_actor_pose,
-		const ignition::math::Vector3d &_actor_velocity,
-		const ignition::math::Pose3d &_object_pose,
-		const double &_dt)
-{
-
-	/* elliptic formulation - `14 article - equations (3) and (4) */
-
-	// distance vector
-	ignition::math::Vector3d d_alpha_i = _actor_pose.Pos() - _object_pose.Pos(); // proper direction
-	d_alpha_i.Z(0.00); // planar
-
-	// acceleration
-	ignition::math::Vector3d y_alpha_i = _actor_velocity * _dt;
-	y_alpha_i.Z(0.00); // planar
-
-	// semi-minor axis of the elliptic formulation
-	double w_alpha_i = 0.5 * sqrt( std::pow((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()),2) -
-								   std::pow(y_alpha_i.Length(), 2) );
-
-	// division by ~0 prevention - returning zeros vector instead of NaNs
-	if ( (std::fabs(w_alpha_i) < 1e-08) || (std::isnan(w_alpha_i)) || (d_alpha_i.Length() < 1e-08) ) {
-
-		#ifdef DEBUG_FORCE_EACH_OBJECT
-		if ( SfmGetPrintData() ) {
-			std::cout << "\n-----------------------\n" << SfmDebugGetCurrentActorName();
-			std::cout << "\nSTATIC OBSTACLE ============= ERROR ===================" << std::endl;
-			std::cout << "\t" << SfmDebugGetCurrentObjectName() << ": ";
-			std::cout << "\td_alpha_i: " << d_alpha_i << " \tlen: " << d_alpha_i.Length() << std::endl;
-			std::cout << "\ty_alpha_i: " << y_alpha_i;
-			std::cout << "\tw_alpha_i: " << w_alpha_i << std::endl;
-			std::cout << "\tFAIL w_alpha_i small: " << (std::fabs(w_alpha_i) < 1e-08) << std::endl;
-			std::cout << "\tFAIL w_alpha_i NaN: " << (std::isnan(w_alpha_i)) << std::endl;
-			std::cout << "\td_alpha_i Length FAIL: " << (d_alpha_i.Length() < 1e-08) << std::endl;
-			std::cout << "\tf_alpha_i: " << ignition::math::Vector3d(0.0, 0.0, 0.0) << std::endl;
-		}
-		#endif
-
-		return ( ignition::math::Vector3d(0.0, 0.0, 0.0) );
-	}
-
-	// ~force (acceleration) calculation
-	ignition::math::Vector3d f_alpha_i;
-	f_alpha_i = this->Aw * exp(-w_alpha_i/this->Bw) * ((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()) /
-			    2*w_alpha_i) * 0.5 * (d_alpha_i.Normalized() + (d_alpha_i - y_alpha_i).Normalized());
-
-	// FIXME: temp mass factor
-	// setting too high produces noticeable accelerations around objects
-	f_alpha_i *= 30.0;
-
-#ifdef DEBUG_FORCE_EACH_OBJECT
-	if ( SfmGetPrintData() ) {
-	#ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
-	std::cout << "\n-----------------------\n" << SfmDebugGetCurrentActorName();
-	#else
-	if ( SfmDebugGetCurrentActorName() == "actor1" ) { // && SfmDebugGetCurrentObjectName() == "table1") {
-	#endif
-		std::cout << "\nSTATIC OBSTACLE" << std::endl;
-		std::cout << "\t" << SfmDebugGetCurrentObjectName() << ": ";
-		std::cout << "\td_alpha_i: " << d_alpha_i << " \tlen: " << d_alpha_i.Length() << std::endl;
-		std::cout << "\ty_alpha_i: " << y_alpha_i;
-		std::cout << "\tw_alpha_i: " << w_alpha_i << std::endl;
-		std::cout << "\tf_alpha_i: " << f_alpha_i * interaction_force_factor << std::endl;
-	#ifndef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
-	}
-	#endif
-	}
-#endif
-
-	return (f_alpha_i);
-
-}
 
 
 
@@ -1329,7 +772,7 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	d_alpha_beta.Z(0.0); // it is assumed that all objects are in the actor's plane
 
 	// actor's normal (based on velocity vector)
-	ignition::math::Vector3d n_alpha = GetNormalToAlphaDirection(actor_pose);
+	ignition::math::Vector3d n_alpha = computeNormalAlphaDirection(actor_pose);
 
 
 	// ================================================================================
@@ -1368,7 +811,7 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	/* yaw of an actor is always updated in new pose calculation procedure, so setting the yaw
 	 * based on world info should work - actor is always oriented in his movement direction
 	 * (if linear speed is non-zero) */
-	ignition::math::Angle actor_yaw(GetYawFromPose(actor_pose));
+	ignition::math::Angle actor_yaw(getYawFromPose(actor_pose));
 	actor_yaw.Normalize();
 
 	// OBJECT_YAW used when V2011 and V2014 not #defined
@@ -1376,12 +819,12 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	 * but the object's coordinate system orientation is not known, so velocity calculation
 	 * still may need to be performed (if needed depending on θ αβ calculation method);
 	 * when `_is_actor` flag is set no further velocity calculation needed! */
-	ignition::math::Angle object_yaw(GetYawFromPose(object_pose));
+	ignition::math::Angle object_yaw(getYawFromPose(object_pose));
 	object_yaw.Normalize();
 
 	RelativeLocation beta_rel_location = LOCATION_UNSPECIFIED;
 	double beta_angle_rel = 0.0;
-	std::tie(beta_rel_location, beta_angle_rel) = GetBetaRelativeLocation(actor_yaw, d_alpha_beta);
+	std::tie(beta_rel_location, beta_angle_rel) = computeObjectRelativeLocation(actor_yaw, d_alpha_beta);
 
 	/* total force factor is used to make objects'
 	 * that are behind actor interactions weaker */
@@ -1390,7 +833,7 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	/* check whether beta is within the field of view
 	 * to determine proper factor for force in case
 	 * beta is behind alpha */
-	if ( IsOutOfFOV(beta_angle_rel) ) {
+	if ( isOutOfFOV(beta_angle_rel) ) {
 
 		// exp function used: e^(-0.5*x)
 		total_force_factor = std::exp( -0.5 * d_alpha_beta.Length() );
@@ -1407,7 +850,7 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	}
 
 
-	double v_rel = GetRelativeSpeed(actor_vel, object_vel);
+	double v_rel = computeRelativeSpeed(actor_vel, object_vel);
 
 	if ( v_rel < 1e-06 ) {
 
@@ -1447,7 +890,7 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 
 	}
 
-	ignition::math::Vector3d p_alpha = GetPerpendicularToNormal(n_alpha, beta_rel_location); 	// actor's perpendicular (based on velocity vector)
+	ignition::math::Vector3d p_alpha = computePerpendicularToNormal(n_alpha, beta_rel_location); 	// actor's perpendicular (based on velocity vector)
 	double exp_normal = ( (-Bn * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn * d_alpha_beta.Length();
 	double exp_perpendicular = ( (-Bp * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp * d_alpha_beta.Length();
 	f_alpha_beta = n_alpha * An * exp(exp_normal) + p_alpha * Ap * exp(exp_perpendicular);
@@ -1530,6 +973,80 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	 *		- current actor's pose
 	 *
 	 */
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Vector3d SocialForceModel::computeForceStaticObstacle(const ignition::math::Pose3d &actor_pose,
+		const ignition::math::Vector3d &actor_velocity, const ignition::math::Pose3d &object_pose,
+		const double &dt)
+{
+
+	/* elliptic formulation - `14 article - equations (3) and (4) */
+
+	// distance vector
+	ignition::math::Vector3d d_alpha_i = actor_pose.Pos() - object_pose.Pos(); // proper direction
+	d_alpha_i.Z(0.00); // planar
+
+	// acceleration
+	ignition::math::Vector3d y_alpha_i = actor_velocity * dt;
+	y_alpha_i.Z(0.00); // planar
+
+	// semi-minor axis of the elliptic formulation
+	double w_alpha_i = 0.5 * sqrt( std::pow((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()),2) -
+								   std::pow(y_alpha_i.Length(), 2) );
+
+	// division by ~0 prevention - returning zeros vector instead of NaNs
+	if ( (std::fabs(w_alpha_i) < 1e-08) || (std::isnan(w_alpha_i)) || (d_alpha_i.Length() < 1e-08) ) {
+
+		#ifdef DEBUG_FORCE_EACH_OBJECT
+		if ( SfmGetPrintData() ) {
+			std::cout << "\n-----------------------\n" << SfmDebugGetCurrentActorName();
+			std::cout << "\nSTATIC OBSTACLE ============= ERROR ===================" << std::endl;
+			std::cout << "\t" << SfmDebugGetCurrentObjectName() << ": ";
+			std::cout << "\td_alpha_i: " << d_alpha_i << " \tlen: " << d_alpha_i.Length() << std::endl;
+			std::cout << "\ty_alpha_i: " << y_alpha_i;
+			std::cout << "\tw_alpha_i: " << w_alpha_i << std::endl;
+			std::cout << "\tFAIL w_alpha_i small: " << (std::fabs(w_alpha_i) < 1e-08) << std::endl;
+			std::cout << "\tFAIL w_alpha_i NaN: " << (std::isnan(w_alpha_i)) << std::endl;
+			std::cout << "\td_alpha_i Length FAIL: " << (d_alpha_i.Length() < 1e-08) << std::endl;
+			std::cout << "\tf_alpha_i: " << ignition::math::Vector3d(0.0, 0.0, 0.0) << std::endl;
+		}
+		#endif
+
+		return ( ignition::math::Vector3d(0.0, 0.0, 0.0) );
+	}
+
+	// ~force (acceleration) calculation
+	ignition::math::Vector3d f_alpha_i;
+	f_alpha_i = this->Aw * exp(-w_alpha_i/this->Bw) * ((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()) /
+			    2*w_alpha_i) * 0.5 * (d_alpha_i.Normalized() + (d_alpha_i - y_alpha_i).Normalized());
+
+	// FIXME: temp mass factor
+	// setting too high produces noticeable accelerations around objects
+	f_alpha_i *= 30.0;
+
+#ifdef DEBUG_FORCE_EACH_OBJECT
+	if ( SfmGetPrintData() ) {
+	#ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+	std::cout << "\n-----------------------\n" << SfmDebugGetCurrentActorName();
+	#else
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) { // && SfmDebugGetCurrentObjectName() == "table1") {
+	#endif
+		std::cout << "\nSTATIC OBSTACLE" << std::endl;
+		std::cout << "\t" << SfmDebugGetCurrentObjectName() << ": ";
+		std::cout << "\td_alpha_i: " << d_alpha_i << " \tlen: " << d_alpha_i.Length() << std::endl;
+		std::cout << "\ty_alpha_i: " << y_alpha_i;
+		std::cout << "\tw_alpha_i: " << w_alpha_i << std::endl;
+		std::cout << "\tf_alpha_i: " << f_alpha_i * interaction_force_factor << std::endl;
+	#ifndef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
+	}
+	#endif
+	}
+#endif
+
+	return (f_alpha_i);
 
 }
 
@@ -1711,6 +1228,436 @@ double SocialForceModel::computeThetaAlphaBetaAngle(const ignition::math::Angle 
 	return ( yaw_diff.Radian() );
 
 }
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Vector3d SocialForceModel::computeNormalAlphaDirection(const ignition::math::Pose3d &actor_pose) {
+
+	// when speed is 0 then there is no way of calculating the angle THETA_alpha_beta (0 vector length)
+	// better way is calculating normal based on actor's yaw than velocity vector
+
+
+	/* all calculations here are performed on world coordinate system data -
+	 * n_alpha from actor's coordinate system is projected onto
+	 * world's coordinate system axes */
+	ignition::math::Angle yaw_norm(getYawFromPose(actor_pose));
+	yaw_norm.Normalize();
+
+	// check parameter setting - n_alpha issue there
+	switch (param_description_) {
+
+	case(PARAMETER_DESCRIPTION_2011):
+			// vector pointing opposite direction
+			yaw_norm -= yaw_norm.Pi;
+			yaw_norm.Normalize();
+			break;
+
+	case(PARAMETER_DESCRIPTION_2014):
+	default:
+			// do not rotate
+			break;
+
+	}
+
+//#ifdef N_ALPHA_V2011
+//	yaw_norm -= yaw_norm.Pi; // opposite pointing
+//	yaw_norm.Normalize();
+//#endif
+
+	ignition::math::Vector3d n_alpha;
+
+	// rotate the vector
+	n_alpha.X( +sin(yaw_norm.Radian()) );
+	n_alpha.Y( -cos(yaw_norm.Radian()) ); 	// sine and cosine relation the same as in GetNewPose()
+	n_alpha.Z(0.0); 						// in-plane movement only at the moment
+	n_alpha.Normalize();
+
+	if ( print_info ) {
+		std::cout << "\t n_alpha: " << n_alpha << "\t";
+	}
+
+	return n_alpha;
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Vector3d SocialForceModel::computePerpendicularToNormal(const ignition::math::Vector3d &n_alpha,
+		const RelativeLocation &beta_rel_location)
+
+{
+
+	/* Depending on which side beta is on relative to n_alpha, the p_alpha (perpendicular vector)
+	 * will point to direction opposite to the side where beta is */
+
+	/*
+	ignition::math::Vector3d p_alpha;
+	if ( _beta_rel_location == LOCATION_RIGHT ) {
+		p_alpha = _n_alpha.Perpendicular();
+		// return (_n_alpha.Perpendicular());
+	} else if ( _beta_rel_location == LOCATION_LEFT ) {
+
+		// ignition::math::Vector3d p_alpha;
+
+		// inverse-perpendicular vector calculations based on ignition library
+		static const double sqr_zero = 1e-06 * 1e-06;
+		ignition::math::Vector3d to_cross = {0, 0, 1}; // TODO: -1?
+		p_alpha = _n_alpha.Cross(to_cross);
+
+		// Check the length of the vector
+		if (p_alpha.SquaredLength() < sqr_zero)
+		{
+
+			to_cross = {0, -1, 0};
+			p_alpha = p_alpha.Cross(to_cross);
+			std::cout << "GetPerpendicularToNormal(): " << "\t TOO SHORT! " << std::endl;
+
+		}
+	}
+	*/
+
+	ignition::math::Vector3d p_alpha;
+	static const double sqr_zero = 1e-06 * 1e-06;
+	ignition::math::Vector3d to_cross;
+
+	if ( beta_rel_location == LOCATION_LEFT ) {
+
+		// check parameter - n_alpha issue there
+		switch (param_description_) {
+
+		case(PARAMETER_DESCRIPTION_2011):
+				to_cross.Set(0.0, 0.0, -1.0);
+				break;
+
+		case(PARAMETER_DESCRIPTION_2014):
+		default:
+				to_cross.Set(0.0, 0.0,  1.0);
+				break;
+
+		}
+
+//		#if 	defined(N_ALPHA_V2011)
+//		to_cross.Set(0.0, 0.0, -1.0);
+//		#elif 	defined(N_ALPHA_V2014)
+//		to_cross.Set(0.0, 0.0,  1.0);
+//		#endif
+
+	} else if ( beta_rel_location == LOCATION_RIGHT ) {
+
+		// check parameter - n_alpha issue there
+		switch (param_description_) {
+
+		case(PARAMETER_DESCRIPTION_2011):
+				to_cross.Set(0.0, 0.0,  1.0);
+				break;
+		case(PARAMETER_DESCRIPTION_2014):
+		default:
+				to_cross.Set(0.0, 0.0, -1.0);
+				break;
+
+		}
+
+//		#if 	defined(N_ALPHA_V2011)
+//		to_cross.Set(0.0, 0.0,  1.0);
+//		#elif 	defined(N_ALPHA_V2014)
+//		to_cross.Set(0.0, 0.0, -1.0);
+//		#endif
+
+	} else {
+
+#ifdef DEBUG_GEOMETRY_1
+		if ( print_info ) {
+			std::cout << "BEHIND!\t" << std::endl;
+		}
+#endif
+
+	}
+
+	p_alpha = n_alpha.Cross(to_cross);
+
+	// Check the length of the vector
+	if (p_alpha.SquaredLength() < sqr_zero) {
+
+		// this should not happen
+		to_cross = {0, -1, 0};
+		p_alpha = p_alpha.Cross(to_cross);
+#ifdef DEBUG_GEOMETRY_1
+		if ( print_info ) {
+			std::cout << "GetPerpendicularToNormal(): " << "\t TOO SHORT! " << std::endl;
+		}
+#endif
+
+	}
+
+#ifdef DEBUG_GEOMETRY_1
+	if ( print_info ) {
+		std::cout << "GetPerpendicularToNormal(): " << "  x: " << p_alpha.X() << "  y: " << p_alpha.Y() << "  z: " << p_alpha.Z() << std::endl;
+	}
+#endif
+
+	return ( p_alpha );
+
+}
+
+// ------------------------------------------------------------------- //
+
+std::tuple<RelativeLocation, double> SocialForceModel::computeObjectRelativeLocation(const ignition::math::Angle &actor_yaw,
+		const ignition::math::Vector3d &d_alpha_beta)
+{
+
+	RelativeLocation rel_loc = LOCATION_UNSPECIFIED;
+	ignition::math::Angle angle_relative; 		// relative to actor's (alpha) direction
+	ignition::math::Angle angle_d_alpha_beta;	// stores yaw of d_alpha_beta
+
+	ignition::math::Vector3d d_alpha_beta_norm = d_alpha_beta;
+	d_alpha_beta_norm.Normalize();
+
+	// when normalized vector used with atan2 then division by euclidean distance not needed
+	//angle_d_alpha_beta.Radian( std::atan2(d_alpha_beta_norm.X(), d_alpha_beta_norm.Y()) );	// V1
+	angle_d_alpha_beta.Radian( std::atan2(d_alpha_beta_norm.Y(), d_alpha_beta_norm.X()) ); 	// V2
+	angle_d_alpha_beta.Normalize();
+
+	//angle_relative = _actor_yaw + angle_d_alpha_beta;	// V1
+
+	// V2
+	//angle_relative = _actor_yaw - angle_d_alpha_beta; 	// actor's coordinate system rotation considered (relative to world coord. sys.)
+
+	/* V2 NOTES:
+	 *
+	 */
+	angle_relative = actor_yaw - angle_d_alpha_beta;
+
+	// V3
+	// corrected in terms of transforming to world's coordinate system
+	ignition::math::Angle actor_yaw_corrected(actor_yaw.Radian() - IGN_PI_2);
+	actor_yaw_corrected.Normalize(); // V4
+	angle_relative.Radian( angle_d_alpha_beta.Radian() - actor_yaw_corrected() );
+	angle_relative.Normalize(); // V4
+
+	// angle_relative.Normalize(); // V1
+
+#ifdef DEBUG_GEOMETRY_2
+	if ( print_info ) {
+		std::cout << "\n GetBetaRelativeLocation() " << "ACTOR yaw: " << _actor_yaw.Radian() << "  ANGLE d_alpha_beta: " << angle_d_alpha_beta.Radian() << "  ANGLE sum: " << angle_relative.Radian();
+	}
+	std::string txt_dbg;
+#endif
+
+	// LOCATION_FRONT ~ hysteresis regulator
+	/*
+	if ( angle_relative.Radian() >= -IGN_DTOR(9) &&
+		 angle_relative.Radian() <= +IGN_DTOR(9) ) {
+	*/
+
+	/* SFM FRONT or SFM_BACK to be specific - added exponentially decreasing
+	 * interaction for objects that are behind so relative angle calculations
+	 * extended with close to Pi value case */
+	if ( std::fabs(angle_relative.Radian()) <= IGN_DTOR(9) ||
+		 std::fabs(angle_relative.Radian()) >= (IGN_PI - IGN_DTOR(9)) ) {
+
+		rel_loc = LOCATION_FRONT;
+#ifdef DEBUG_GEOMETRY_2
+		txt_dbg = "FRONT";
+#endif
+	/* // LOCATION_BEHIND DEPRECATED HERE
+	} else if ( IsOutOfFOV(angle_relative.Radian() ) ) { // consider FOV
+
+		rel_loc = LOCATION_BEHIND;
+#ifdef DEBUG_GEOMETRY_2
+		txt_dbg = "BEHIND";
+#endif
+	*/
+	} else if ( angle_relative.Radian() <= 0.0 ) { // 0.0 ) {
+
+		rel_loc = LOCATION_RIGHT;
+#ifdef DEBUG_GEOMETRY_2
+		txt_dbg = "RIGHT";
+#endif
+
+	} else if ( angle_relative.Radian() > 0.0 ) { // 0.0 ) {
+
+		rel_loc = LOCATION_LEFT;
+#ifdef DEBUG_GEOMETRY_2
+		txt_dbg = "LEFT";
+#endif
+
+	}
+
+#ifdef DEBUG_GEOMETRY_2
+	if ( print_info ) {
+		std::cout << "  " << txt_dbg << std::endl;
+	}
+#endif
+
+	/* historical data considered when calculating relative location - it is crucial to not
+	 * allow minor yaw rotations to switch from left to right etc. thus a relative angle
+	 * must exceed certain threshold before it will be in fact switched;
+	 * LOCATION_BEHIND must not be found in map_models_rel_locations! */
+
+#ifdef DEBUG_OSCILLATIONS
+	if ( SfmDebugGetCurrentObjectName() == "table1" && SfmDebugGetCurrentActorName() == "actor1" ) {
+		std::string location_str;
+		if ( rel_loc == LOCATION_FRONT ) {
+			location_str = "FRONT";
+		} else if ( rel_loc == LOCATION_BEHIND ) {
+			location_str = "BEHIND";
+		} else if ( rel_loc == LOCATION_RIGHT ) {
+			location_str = "RIGHT SIDE";
+		} else if ( rel_loc == LOCATION_LEFT ) {
+			location_str = "LEFT SIDE";
+		} else if ( rel_loc == LOCATION_UNSPECIFIED ) {
+			location_str = "UNKNOWN";
+		}
+		std::cout << "\t" << SfmDebugGetCurrentObjectName() << "'s relative location: " << location_str <<  "\tactor: " << SfmDebugGetCurrentActorName();
+		std::cout << "\n\t\td_alpha_beta: x " << d_alpha_beta_norm.X() << "  y " << d_alpha_beta_norm.Y() << "\tangle_actor_yaw_RAW: " << _actor_yaw.Radian() << "\tangle_actor_yaw_CORR: " << actor_yaw_corrected.Radian() << "\tangle_d_ab: " << angle_d_alpha_beta.Radian() << /* "\tangle_diff: " << (angle_d_alpha_beta.Radian()-actor_yaw_corrected.Radian())<< */ "\tangle_rel: " << angle_relative.Radian();
+	}
+#endif
+
+	/* if the angle_relative is above few degrees value then the historical value may be discarded */
+	if ( rel_loc != LOCATION_FRONT ) {
+		map_models_rel_locations[SfmDebugGetCurrentObjectName()] = rel_loc;
+	} else {
+#ifdef DEBUG_OSCILLATIONS
+		std::cout << "\t:::::::::::::::::::::::::HIST REL ANG!:::::::::::::::::::::::::::::::::::::::::::\t";
+#endif
+		return ( std::make_tuple(map_models_rel_locations[SfmDebugGetCurrentObjectName()], angle_relative.Radian()) );
+	}
+
+	return ( std::make_tuple(rel_loc, angle_relative.Radian()) );
+
+}
+
+// ------------------------------------------------------------------- //
+
+inline bool SocialForceModel::isOutOfFOV(const double &angle_relative) {
+
+	if ( std::fabs(angle_relative) >= fov ) {
+		return (true);
+	}
+	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+inline double SocialForceModel::getYawFromPose(const ignition::math::Pose3d &_pose) {
+
+	// the actor's offset yaw is considered
+	// return (_actor_pose.Rot().Yaw() + (IGN_PI / 2));
+
+	// when offset already considered
+	return (_pose.Rot().Yaw());
+}
+
+// ------------------------------------------------------------------- //
+
+double SocialForceModel::computeRelativeSpeed(const ignition::math::Vector3d &actor_vel,
+		const ignition::math::Vector3d &object_vel) {
+
+#ifdef DEBUG_REL_SPEED
+
+	ignition::math::Vector3d rel_vel = _object_velocity - _actor_velocity;
+	if ( print_info ) {
+		std::cout << std::endl;
+		std::cout << "GetRelativeSpeed(): ";
+		std::cout << "  obj_vel: " << _object_velocity;
+		std::cout << "  act_vel: " << _actor_velocity;
+		std::cout << "  v_rel:  " << rel_vel;
+		std::cout << "  spd_rel: " << rel_vel.Length();
+		std::cout << std::endl;
+	}
+
+	return rel_vel.Length();
+
+#else
+
+	return ( (object_vel - actor_vel).Length() );
+
+#endif
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Angle SocialForceModel::computeYawMovementDirection(const ignition::math::Pose3d &actor_pose,
+		const ignition::math::Vector3d &actor_vel,	const ignition::math::Vector3d &sf_vel) {
+
+
+	// actor's coordinate system transformed into world's coordinate system (SF's)
+
+	// 1st step
+	// social force's angle
+	ignition::math::Angle yaw_sf( std::atan2(sf_vel.Y(), sf_vel.X()) );
+	yaw_sf.Normalize();
+
+	// actor's angle transformed to world coordinate system
+	double yaw_alpha_w = getYawFromPose(actor_pose) - IGN_PI_2;
+
+	// difference used to determine angular rotation direction
+	ignition::math::Angle yaw_diff( yaw_sf.Radian() - yaw_alpha_w );
+	yaw_diff.Normalize();
+
+	// 2nd step
+	/* yaw_increment is a function of speed - the faster actor goes
+	 * the less maneuverability he has and less rotations will make	*/
+	/// @yaw_increment the less the value is the more reluctant actor
+	/// will be to immediate rotations
+	/// correlated with parameter @force_min
+	double yaw_increment = 0.003 * std::exp( -actor_vel.Length() ); // 0.009 before - many rotations
+
+	// sign determines angle increment direction
+	short int sign = -1;
+	( yaw_diff.Radian() >= 0.0 ) ? (sign = +1) : (0);
+
+	// stores the angle increment based on current SF
+	double angle_change = 0.0;
+	if ( std::fabs(yaw_diff.Radian()) < yaw_increment ) {
+		// only small rotation adjustment needed
+		angle_change = static_cast<double>(sign) * yaw_diff.Radian();
+	} else {
+		// truncate big angle change desired by SF
+		angle_change = static_cast<double>(sign) * yaw_increment;
+	}
+
+	// 3rd step
+	// calculate new yaw
+	ignition::math::Angle yaw_new( yaw_alpha_w + angle_change );
+	yaw_new.Normalize();
+
+	// ----------------------------------------------
+
+	// debug
+	#ifdef DEBUG_YAW_MOVEMENT_DIR
+	( SfmGetPrintData() ) ? (print_info = true) : (0);
+	#endif
+
+	if ( print_info ) {
+
+		#ifdef DEBUG_YAW_MOVEMENT_DIR
+		std::cout << "///////////////////////////////////////////////////////////\n";
+		std::cout << SfmDebugGetCurrentActorName() << "\tGetYawMovementDirection()" << std::endl;
+		std::cout << "\tyaw_alpha: " << getYawFromPose(actor_pose) << "\tyaw_alpha_W: " << yaw_alpha_w << "\tyaw_sf: " << yaw_sf.Radian() << "\tsf: " << sf_vel << std::endl;
+		std::cout << "\tyaw_diff NOT norm.: " << (yaw_sf.Radian() - yaw_alpha_w) << "\tyaw_diff_norm: " << yaw_diff.Radian() << std::endl;
+		std::cout << "\tangle_change: " << angle_change << "\tyaw_new NOT norm: " << yaw_alpha_w + angle_change << "\tyaw_new norm: " << yaw_new.Radian() << std::endl;
+		ignition::math::Vector3d test_vector;
+		test_vector.X( cos(yaw_new.Radian()) * sf_vel.Length() );
+		test_vector.Y( sin(yaw_new.Radian()) * sf_vel.Length() );
+		std::cout << "\tEQUAL DIR TEST\tX: " << ((test_vector.X() * sf_vel.X()) >= 0.0) << "\tY: " << ((test_vector.Y() * sf_vel.Y()) >= 0.0) << std::endl;
+		std::cout << "///////////////////////////////////////////////////////////\n";
+		#endif
+
+	}
+
+	#ifdef DEBUG_YAW_MOVEMENT_DIR
+	( SfmGetPrintData() ) ? (print_info = false) : (0);
+	#endif
+
+	// ----------------------------------------------
+
+	return (yaw_new);
+
+}
+
 
 // ------------------------------------------------------------------- //
 
