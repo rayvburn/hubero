@@ -292,10 +292,16 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		}
 #endif
 
+
 		/* check if some condition is met based on
 		 * parameters previously passed to Fuzzifier */
-		if ( fuzz_.isConditionDetected() ) {
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
+			// easier debugging with a single actor
+			std::cout << SfmDebugGetCurrentActorName() << "\t" << SfmDebugGetCurrentObjectName() << "\t";
+			if ( fuzz_.isConditionDetected() ) {
 
+			}
+			fuzz_.resetParameters();
 		}
 
 		/* Kind of a hack connected with very strong repulsion when actors are close to each other
@@ -777,6 +783,9 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 
 	/* angle between velocities of alpha and beta is needed for Fuzzifier */
 	double velocities_angle = computeThetaAlphaBetaAngle(actor_vel, actor_yaw, object_vel, object_yaw, is_actor);
+	fuzz_.setDistanceVectorLength(d_alpha_beta.Length());
+	fuzz_.setToObjectDirectionRelativeAngle(beta_angle_rel);
+	fuzz_.setVelocitiesRelativeAngle(velocities_angle);
 
 	// store angle between objects' (in most cases) velocities
 	double theta_alpha_beta = 0.0;

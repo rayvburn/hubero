@@ -9,6 +9,7 @@
 #define INCLUDE_SFM_FUZZ_FUZZIFIER_H_
 
 #include <ignition/math/Vector3.hh>
+#include <tuple>
 
 namespace sfm {
 namespace fuzz {
@@ -26,7 +27,7 @@ class Fuzzifier {
 	/// \brief Consecutive levels of detected
 	/// condition's strength
 	typedef enum {
-		FUZZY_LEVEL_SMALL = 0,
+		FUZZY_LEVEL_LOW = 0,
 		FUZZY_LEVEL_MEDIUM,
 		FUZZY_LEVEL_HIGH,
 		FUZZY_LEVEL_EXTREME,
@@ -35,8 +36,8 @@ class Fuzzifier {
 
 public:
 
+	/// \brief Default constructor
 	Fuzzifier();
-	// void setParameters(const ignition::math::Vector3d &d_alpha_beta, const ignition::math::Vector3d &v_alpha, const ignition::math::Vector3d &v_beta, const ignition::math::Vector3d &social_force);
 
 	void setDistanceVectorLength(const double &d_alpha_beta_len);
 	void setToObjectDirectionRelativeAngle(const double &to_object_dir_relative_angle);
@@ -51,16 +52,18 @@ public:
 	// invoked after each iteration
 	void resetParameters();
 
-	// defuzzifier - std::tuple<double, ignition::math::Vector3d, ignition::math::Vector3d>
+	std::tuple<SocialCondition, FuzzyLevel> getSocialConditionAndLevel() const;
+
+	/// \brief Default destructor
 	virtual ~Fuzzifier();
 
 private:
 
 	/// \brief Flags indicating that a corresponding parameter
 	/// had been set since last resetParameters() procedure
+	bool vels_angle_set_;
 	bool dist_set_;
 	bool dir_angle_set_;
-	bool vels_angle_set_;
 	bool sf_set_;
 
 	/// \brief A relative angle between 2 objects' velocities
