@@ -8,36 +8,20 @@
 #include "sfm/core/SocialForceModel.h"
 #include <cmath>		// atan2()
 #include <tgmath.h>		// fabs()
-#include <tuple>		// std::tuple
-
-#include "sfm/core/SFMDebug.h"
 
 // ----------------------------------------
 
+// debugging
+static bool print_info = false;
+#include "sfm/core/SFMDebug.h"
 #include "BoundingEllipseDebug.h"
+
+// ----------------------------------------
+
 
 namespace sfm {
 namespace core {
 
-// - - - - - - - - - - - - - - - - -
-
-//#include "../../print_info.h"
-static bool print_info = false;
-static int print_counter = 0;
-
-// ------------------------------------------------------------------- //
-
-// TODO: add references to arguments to avoid copy
-
-// ------------------------------------------------------------------- //
-
-/* TODO: from ActorPlugin HandleObstacles:
-if (std::find(this->ignoreModels.begin(), this->ignoreModels.end(),
-          model->GetName()) == this->ignoreModels.end())
-{
-
-}
-*/
 
 // ------------------------------------------------------------------- //
 
@@ -54,19 +38,19 @@ SocialForceModel::SocialForceModel():
 	 * 		a very conservative movement style (possibly cause stepping into obstacles
 	 * 		in cluttered world) */
 
-	fov(2.00), speed_max(1.50), yaw_max_delta(20.0 / M_PI * 180.0), mass_person(1),
-	desired_force_factor(100.0), // desired_force_factor(200.0),
-	interaction_force_factor(3000.0), // interaction_force_factor(6000.0),
-	force_max(2000.0), force_min(300.0), // force_min(800.0)
-	inflation_type(INFLATION_ELLIPSE),
-	interaction_static_type(INTERACTION_ELLIPTICAL),
+	fov_(2.00), speed_max_(1.50), person_mass_(1),
+	internal_force_factor_(100.0), // desired_force_factor(200.0),
+	interaction_force_factor_(3000.0), // interaction_force_factor(6000.0),
+	force_max_(2000.0), force_min_(300.0), // force_min(800.0)
+	inflation_type_(INFLATION_ELLIPSE),
+	interaction_static_type_(INTERACTION_ELLIPTICAL),
 	param_description_(PARAMETER_DESCRIPTION_2014)
 
 {
 
 	setParameters();
 
-	closest_points.clear();
+	closest_points_.clear();
 
 	/* Algorithm PARAMETERS are:
 	 * - relaxation time must be given here
@@ -80,14 +64,26 @@ SocialForceModel::SocialForceModel():
 
 // ------------------------------------------------------------------- //
 
-void SocialForceModel::Init(const unsigned short int _mass_person,
-		const float _desired_force_factor,
-		const float _interaction_force_factor,
-		const gazebo::physics::WorldPtr _world_ptr) {
+void SocialForceModel::init(const double &internal_force_factor, const double &interaction_force_factor,
+		  const unsigned int &mass, const double &max_speed, const double &fov,
+		  const double &min_force, const double &max_force, const StaticObjectInteraction &stat_obj_type,
+		  const InflationType &inflation_type, const gazebo::physics::WorldPtr &world_ptr)
+{
 
+	internal_force_factor_ = internal_force_factor;
+	interaction_force_factor_ = interaction_force_factor;
+	person_mass_ = mass;
+	speed_max_ = max_speed;
+	fov_ = fov;
+	force_min_ = min_force;
+	force_max_ = max_force;
+	interaction_static_type_ = stat_obj_type;
+	inflation_type_ = inflation_type;
+
+	// initialize historical relative locations map with arbitrary values
 	// TODO: discard the objects that should be ignored
-	for ( unsigned int i = 0; i < _world_ptr->ModelCount(); i++ ) {
-		map_models_rel_locations[_world_ptr->ModelByIndex(i)->GetName()] = LOCATION_UNSPECIFIED;
+	for ( unsigned int i = 0; i < world_ptr->ModelCount(); i++ ) {
+		map_models_rel_locations_[ world_ptr->ModelByIndex(i)->GetName() ] = LOCATION_UNSPECIFIED;
 	}
 
 }
@@ -104,7 +100,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 	std::stringstream log_msg; // debug
 #endif
 
-	closest_points.clear();
+	closest_points_.clear();
 
 	( SfmGetPrintData() ) ? (print_info = true) : (0);
 
@@ -163,21 +159,21 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 			std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
 		}
 
-		if ( (is_an_actor = actor_decoder.isActor(model_ptr->GetType())) ) {
+		if ( (is_an_actor = actor_decoder_.isActor(model_ptr->GetType())) ) {
 
 			// decoder of the CommonInfo class
-			actor_decoder.setID(model_ptr->GetName(), actor_info.getNameIDMap());
+			actor_decoder_.setID(model_ptr->GetName(), actor_info.getNameIDMap());
 
 			// load data from CommonInfo based on actor's id
-			model_vel = actor_decoder.getData(actor_info.getLinearVelocitiesVector());
+			model_vel = actor_decoder_.getData(actor_info.getLinearVelocitiesVector());
 
 			// select proper inflation model
-			if ( inflation_type == INFLATION_CIRCLE ) {
-				model_circle  = actor_decoder.getData(actor_info.getBoundingCirclesVector());
-			} else if ( inflation_type == INFLATION_ELLIPSE ) {
-				model_ellipse = actor_decoder.getData(actor_info.getBoundingEllipsesVector());
-			} else if ( inflation_type == INFLATION_BOX_ALL_OBJECTS || inflation_type == INFLATION_BOX_OTHER_OBJECTS ) {
-				model_box = actor_decoder.getData(actor_info.getBoundingBoxesVector());
+			if ( inflation_type_ == INFLATION_CIRCLE ) {
+				model_circle  = actor_decoder_.getData(actor_info.getBoundingCirclesVector());
+			} else if ( inflation_type_ == INFLATION_ELLIPSE ) {
+				model_ellipse = actor_decoder_.getData(actor_info.getBoundingEllipsesVector());
+			} else if ( inflation_type_ == INFLATION_BOX_ALL_OBJECTS || inflation_type_ == INFLATION_BOX_OTHER_OBJECTS ) {
+				model_box = actor_decoder_.getData(actor_info.getBoundingBoxesVector());
 			}
 
 		} else {
@@ -197,20 +193,20 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 //		std::cout << "\tinitial actor_pose: " << _actor_pose << "\tmodel_pose: " << model_ptr->WorldPose() << std::endl;
 
 		// calculate closest points
-		switch(inflation_type) {
+		switch(inflation_type_) {
 
 		case(INFLATION_BOX_OTHER_OBJECTS):
 
 //				std::cout << "\tINFLATION - BOX - OTHER OBJECTS" << std::endl;
 				actor_closest_to_model_pose = actor_pose;
-				model_closest_point_pose.Pos() = inflator.findModelsClosestPoints(actor_pose, model_ptr->WorldPose(), model_box);
+				model_closest_point_pose.Pos() = inflator_.findModelsClosestPoints(actor_pose, model_ptr->WorldPose(), model_box);
 				break;
 
 		case(INFLATION_BOX_ALL_OBJECTS):
 
 //				std::cout << "\tINFLATION - BOX - ALL OBJECTS" << std::endl;
 				std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-						inflator.findModelsClosestPoints(actor_pose, actor_info.getBoundingBox(),
+						inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingBox(),
 															 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
 				break;
 
@@ -219,12 +215,12 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 				if ( is_an_actor ) {
 //					std::cout << "\tINFLATION - CIRCLE - actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflator.findModelsClosestPoints(actor_pose, actor_info.getBoundingCircle(),
+							inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingCircle(),
 																 model_ptr->WorldPose(), model_circle, model_ptr->GetName() );
 				} else {
 //					std::cout << "\tINFLATION - CIRCLE - non-actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflator.findModelsClosestPoints(actor_pose, actor_info.getBoundingCircle(),
+							inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingCircle(),
 																 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
 				}
 				break;
@@ -234,12 +230,12 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 				if ( is_an_actor ) {
 //					std::cout << "\tINFLATION - ELLIPSE - actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflator.findModelsClosestPoints(actor_pose, actor_info.getBoundingEllipse(),
+							inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingEllipse(),
 																 model_ptr->WorldPose(), model_ellipse, model_ptr->GetName() );
 				} else {
 //					std::cout << "\tINFLATION - ELLIPSE - non actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflator.findModelsClosestPoints(actor_pose, actor_info.getBoundingEllipse(),
+							inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingEllipse(),
 																 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
 
 				}
@@ -261,11 +257,11 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		if ( print_info ) { std::cout << "actor_center: " << actor_pose.Pos() << "\tobstacle_closest_pt: " << model_closest_point_pose.Pos() << "\tdist: " << (model_closest_point_pose.Pos()-actor_pose.Pos()).Length() << std::endl; }
 
 		// debug closest points
-		closest_points.push_back(model_closest_point_pose);
-		closest_points.push_back(actor_closest_to_model_pose);
+		closest_points_.push_back(model_closest_point_pose);
+		closest_points_.push_back(actor_closest_to_model_pose);
 
 		// based on a parameter and an object type - calculate a force from a static object properly
-		if ( is_an_actor || interaction_static_type == INTERACTION_REPULSIVE_EVASIVE ) {
+		if ( is_an_actor || interaction_static_type_ == INTERACTION_REPULSIVE_EVASIVE ) {
 
 //			std::cout << "\tf_alpha_beta - NON STATIC" << std::endl;
 			// calculate interaction force
@@ -275,7 +271,6 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		} else {
 
 //			std::cout << "\tf_alpha_beta - STATIC" << std::endl;
-			// FIXME: dt arbitrary ATM!
 			f_alpha_beta = computeForceStaticObstacle(actor_closest_to_model_pose, actor_velocity,
 													  model_closest_point_pose, dt);
 
@@ -315,7 +310,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 #ifdef DEBUG_LOG_ALL_INTERACTIONS
 		if ( SfmGetPrintData() ) {
 		log_msg << "\t" << model_ptr->GetName();
-		log_msg << "\t" << f_alpha_beta * interaction_force_factor << "\n";
+		log_msg << "\t" << f_alpha_beta * interaction_force_factor_ << "\n";
 		}
 #endif
 
@@ -326,9 +321,9 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "**************************************************************************\n";
 		std::cout << "LOG_MESSAGE - ALL OBJECTS ----- " << SfmDebugGetCurrentActorName() << std::endl;
-		std::cout << "\tInternal: " << desired_force_factor * f_alpha << std::endl;
+		std::cout << "\tInternal: " << internal_force_factor_ * f_alpha << std::endl;
 		std::cout << log_msg.str() << std::endl;
-		std::cout << "\tTOTAL FORCE: " << desired_force_factor * f_alpha + interaction_force_factor * f_interaction_total << std::endl;
+		std::cout << "\tTOTAL FORCE: " << internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total << std::endl;
 		std::cout << "**************************************************************************\n\n\n";
 	}
 	}
@@ -347,7 +342,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 	// this->calculateDesiredForceFactor(dist_to_closest_obstacle);
 	// inside the function lets normalize the factor according to the `desired` one
 
-	ignition::math::Vector3d f_total = desired_force_factor * f_alpha + interaction_force_factor * f_interaction_total;
+	ignition::math::Vector3d f_total = internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total;
 	f_total.Z(0.0);
 
 #ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
@@ -356,7 +351,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 	if ( print_info ) {
 		std::cout << "-----------------------\n";
-		std::cout << actor_name << " | SocialForce: " << f_total << "\tinternal: " << desired_force_factor * f_alpha << "\tinteraction: " << interaction_force_factor * f_interaction_total;
+		std::cout << actor_name << " | SocialForce: " << f_total << "\tinternal: " << internal_force_factor_ * f_alpha << "\tinteraction: " << interaction_force_factor_ * f_interaction_total;
 	}
 //	std::cout << _actor_name << " | SocialForce: " << f_total << "\tinternal: " << desired_force_factor * f_alpha << "\tinteraction: " << interaction_force_factor * f_interaction_total;
 
@@ -366,17 +361,17 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 	// truncate the force value to max to prevent strange speedup of an actor
 	double force_length = f_total.Length();
-	if ( force_length > force_max ) {
+	if ( force_length > force_max_ ) {
 
-		f_total = f_total.Normalize() * force_max;
+		f_total = f_total.Normalize() * force_max_;
 
 		if ( print_info ) {
 			std::cout << "\tTRUNCATED";
 		}
 
-	} /* */ else if ( force_length < force_min ) {
+	} /* */ else if ( force_length < force_min_ ) {
 
-		f_total = f_total.Normalize() * force_min;
+		f_total = f_total.Normalize() * force_min_;
 
 		if ( print_info ) {
 			std::cout << "\tEXTENDED";
@@ -410,7 +405,7 @@ ignition::math::Pose3d SocialForceModel::computeNewPose(const ignition::math::Po
 	/* II Newton's law equation			a = F / m
 	 * Straight-line movement equation 	v = a * t
 	 * with the use of 2 above - calculate the resulting ideal velocity caused by social forces */
-	ignition::math::Vector3d result_vel = (social_force / this->mass_person) * dt;
+	ignition::math::Vector3d result_vel = (social_force / this->person_mass_) * dt;
 	ignition::math::Vector3d result_vel_backup = result_vel; // debugging purposes
 
 #ifdef DEBUG_NEW_POSE
@@ -422,9 +417,9 @@ ignition::math::Pose3d SocialForceModel::computeNewPose(const ignition::math::Po
 
 	/* if calculated speed value is bigger than max_speed then perform normalization
 	 * leave velocity direction as is, shorten the vector to max possible */
-	if ( result_vel.Length() > speed_max ) {
+	if ( result_vel.Length() > speed_max_ ) {
 
-		result_vel = result_vel.Normalize() * speed_max;
+		result_vel = result_vel.Normalize() * speed_max_;
 
 		#ifdef DEBUG_NEW_POSE
 		if ( print_info ) {
@@ -564,113 +559,15 @@ ignition::math::Pose3d SocialForceModel::computeNewPose(const ignition::math::Po
 // ------------------------------------------------------------------- //
 
 std::vector<ignition::math::Pose3d> SocialForceModel::getClosestPointsVector() const {
-	return (closest_points);
+	return (closest_points_);
 }
 
 // ------------------------------------------------------------------- //
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ------------------------------------------------------------------- //
-
-// TODO: DEPRECATED?
-bool SocialForceModel::IsActorFacingTheTarget(	const ignition::math::Angle _yaw,
-												const ignition::math::Vector3d _target)
-{
-
-	ignition::math::Angle yaw_target( std::atan2( _target.X(), _target.Y() ) );
-	yaw_target.Normalize();
-
-	ignition::math::Angle yaw_result( yaw_target.Radian() - _yaw.Radian() );
-	yaw_result.Normalize();
-
-#ifdef DEBUG_ACTOR_FACING_TARGET
-	if ( print_info ) {
-		std::cout << "\n\tIsActorFacingTheTarget()\tyaw_actor: " << _yaw.Radian() << "\tyaw_target: " << yaw_target.Radian() << "\tyaw_result: " << yaw_result.Radian();
-	}
-#endif
-
-	/* The threshold angle is taken - 0-(TH) degs should be considered as well as (180-TH)-180 */
-	const unsigned short int THRESHOLD_ANGLE = 25;
-	if ( 	std::fabs(yaw_result.Radian()) <= IGN_DTOR(THRESHOLD_ANGLE) ||
-			std::fabs(yaw_result.Radian()) >= IGN_DTOR(180-THRESHOLD_ANGLE) )
-	{
-		return true;
-	} else {
-		return false;
-	}
-
-
-}
-
-// ------------------------------------------------------------------- //
-
-
-
-
-
-// ============================================================================
-
-
-
-// ============================================================================
-
-//ignition::math::Vector3d SocialForceModel::GetObjectsInteractionForce(
-//		const ignition::math::Pose3d &_actor_pose,
-//		const ignition::math::Vector3d &_actor_velocity,
-//		const ignition::math::Pose3d &_object_pose,
-//		const ignition::math::Vector3d &_object_velocity,
-//		const ignition::math::Vector3d &_n_alpha, 		// actor's normal (based on velocity vector)
-//		const ignition::math::Vector3d &_d_alpha_beta, 	// vector between objects positions
-//		//const ignition::math::Vector3d &_closest_point,
-//		const bool &_is_actor
-//)
-//{
-//
-//	// FUNCTION DEPRECATED
-//	ignition::math::Vector3d aaa;
-//	return ( aaa );
-//
-//}
-
-// ------------------------------------------------------------------- //
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// *************************************************************************************************
-// *************************************************************************************************
-// PRIVATE SECTION 	********************************************************************************
-//					********************************************************************************
-// ------------------------------------------------------------------- //
+// **********************************************************************
+// **********************************************************************
+// PRIVATE SECTION 	*****************************************************
+//					*****************************************************
 
 void SocialForceModel::setParameters() {
 
@@ -681,35 +578,35 @@ void SocialForceModel::setParameters() {
 
 	// desired speed (based on (Moussaid et al. (2009))
 	std::normal_distribution<float> dist_spd_desired(1.29F, 0.19F);
-	speed_desired = dist_spd_desired(rand_gen);
+	speed_desired_ = dist_spd_desired(rand_gen);
 
 	// relaxation time (based on (Moussaid et al. (2009))
 	std::normal_distribution<float> dist_tau(0.54F, 0.05F);
-	relaxation_time = dist_tau(rand_gen);
+	relaxation_time_ = dist_tau(rand_gen);
 
 	// ----------------------------- Model C ------------------------------------------------------ //
 	// Rudloff et al. (2011) model's parameters based on  S. Seer et al. (2014)
 	// Generate random value of mean a and standard deviation b
-	std::normal_distribution<float> dist_an(0.2615F, 0.0551F);		An = dist_an(rand_gen);
-	std::normal_distribution<float> dist_bn(0.4026F, 0.1238F);		Bn = dist_bn(rand_gen);
-	std::normal_distribution<float> dist_cn(2.1614F, 0.3728F);		Cn = dist_cn(rand_gen);
-	std::normal_distribution<float> dist_ap(1.5375F, 0.3084F);		Ap = dist_ap(rand_gen);
-	std::normal_distribution<float> dist_bp(0.4938F, 0.1041F);		Bp = dist_bp(rand_gen);
-	std::normal_distribution<float> dist_cp(0.5710F, 0.1409F);		Cp = dist_cp(rand_gen);
-	std::normal_distribution<float> dist_aw(0.3280F, 0.1481F);		Aw = dist_aw(rand_gen);
-	std::normal_distribution<float> dist_bw(0.1871F, 0.0563F);		Bw = dist_bw(rand_gen);
+	std::normal_distribution<float> dist_an(0.2615F, 0.0551F);		An_ = dist_an(rand_gen);
+	std::normal_distribution<float> dist_bn(0.4026F, 0.1238F);		Bn_ = dist_bn(rand_gen);
+	std::normal_distribution<float> dist_cn(2.1614F, 0.3728F);		Cn_ = dist_cn(rand_gen);
+	std::normal_distribution<float> dist_ap(1.5375F, 0.3084F);		Ap_ = dist_ap(rand_gen);
+	std::normal_distribution<float> dist_bp(0.4938F, 0.1041F);		Bp_ = dist_bp(rand_gen);
+	std::normal_distribution<float> dist_cp(0.5710F, 0.1409F);		Cp_ = dist_cp(rand_gen);
+	std::normal_distribution<float> dist_aw(0.3280F, 0.1481F);		Aw_ = dist_aw(rand_gen);
+	std::normal_distribution<float> dist_bw(0.1871F, 0.0563F);		Bw_ = dist_bw(rand_gen);
 
 #ifdef DEBUG_SFM_PARAMETERS
-	std::cout << "\t speed_desired: " << speed_desired << std::endl;
-	std::cout << "\t relaxation_time: " << relaxation_time << std::endl;
-	std::cout << "\t An: " << An << std::endl;
-	std::cout << "\t Bn: " << Bn << std::endl;
-	std::cout << "\t Cn: " << Cn << std::endl;
-	std::cout << "\t Ap: " << Ap << std::endl;
-	std::cout << "\t Bp: " << Bp << std::endl;
-	std::cout << "\t Cp: " << Cp << std::endl;
-	std::cout << "\t Aw: " << Aw << std::endl;
-	std::cout << "\t Bw: " << Bw << std::endl;
+	std::cout << "\t speed_desired: " << speed_desired_ << std::endl;
+	std::cout << "\t relaxation_time: " << relaxation_time_ << std::endl;
+	std::cout << "\t An: " << An_ << std::endl;
+	std::cout << "\t Bn: " << Bn_ << std::endl;
+	std::cout << "\t Cn: " << Cn_ << std::endl;
+	std::cout << "\t Ap: " << Ap_ << std::endl;
+	std::cout << "\t Bp: " << Bp_ << std::endl;
+	std::cout << "\t Cp: " << Cp_ << std::endl;
+	std::cout << "\t Aw: " << Aw_ << std::endl;
+	std::cout << "\t Bw: " << Bw_ << std::endl;
 	std::cout << std::endl;
 #endif
 
@@ -723,8 +620,8 @@ ignition::math::Vector3d SocialForceModel::computeInternalForce(const ignition::
 	// FIXME: a lot of allocations here
 	ignition::math::Vector3d to_goal_vector = (actor_target - actor_pose.Pos());
 	ignition::math::Vector3d to_goal_direction = to_goal_vector.Normalize();
-	ignition::math::Vector3d ideal_vel_vector = speed_desired * to_goal_direction;
-	ignition::math::Vector3d f_alpha = mass_person * (1/relaxation_time) * (ideal_vel_vector - actor_vel);
+	ignition::math::Vector3d ideal_vel_vector = speed_desired_ * to_goal_direction;
+	ignition::math::Vector3d f_alpha = person_mass_ * (1/relaxation_time_) * (ideal_vel_vector - actor_vel);
 	f_alpha.Z(0.0);
 
 #ifdef DEBUG_INTERNAL_ACC
@@ -735,7 +632,7 @@ ignition::math::Vector3d SocialForceModel::computeInternalForce(const ignition::
 		std::cout << "\tactor_pos: " << _actor_pose.Pos();
 		std::cout << "\ttarget: " << _actor_target << "   to_goal_direction: " << to_goal_direction;
 		std::cout << "\n\tactor_vel: " << _actor_vel << "\tideal_vel_vector: " << ideal_vel_vector;
-		std::cout << "\tf_alpha: " << f_alpha * desired_force_factor;
+		std::cout << "\tf_alpha: " << f_alpha * internal_force_factor_;
 		std::cout << std::endl;
 		std::cout << std::endl;
 //	}
@@ -891,9 +788,9 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	}
 
 	ignition::math::Vector3d p_alpha = computePerpendicularToNormal(n_alpha, beta_rel_location); 	// actor's perpendicular (based on velocity vector)
-	double exp_normal = ( (-Bn * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn * d_alpha_beta.Length();
-	double exp_perpendicular = ( (-Bp * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp * d_alpha_beta.Length();
-	f_alpha_beta = n_alpha * An * exp(exp_normal) + p_alpha * Ap * exp(exp_perpendicular);
+	double exp_normal = ( (-Bn_ * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn_ * d_alpha_beta.Length();
+	double exp_perpendicular = ( (-Bp_ * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp_ * d_alpha_beta.Length();
+	f_alpha_beta = n_alpha * An_ * exp(exp_normal) + p_alpha * Ap_ * exp(exp_perpendicular);
 
 	// weaken the interaction force when beta is behind alpha
 	f_alpha_beta *= total_force_factor;
@@ -928,7 +825,7 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 		}
 		std::cout << "\t\trel_location: " << location_str << std::endl;
 
-		std::cout << "\tf_alpha_beta: " << f_alpha_beta * interaction_force_factor << "\t\tvec len: " << interaction_force_factor * f_alpha_beta.Length() << std::endl;
+		std::cout << "\tf_alpha_beta: " << f_alpha_beta * interaction_force_factor_ << "\t\tvec len: " << interaction_force_factor_ * f_alpha_beta.Length() << std::endl;
 	#ifndef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	}
 	#endif
@@ -1020,7 +917,7 @@ ignition::math::Vector3d SocialForceModel::computeForceStaticObstacle(const igni
 
 	// ~force (acceleration) calculation
 	ignition::math::Vector3d f_alpha_i;
-	f_alpha_i = this->Aw * exp(-w_alpha_i/this->Bw) * ((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()) /
+	f_alpha_i = this->Aw_ * exp(-w_alpha_i/this->Bw_) * ((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()) /
 			    2*w_alpha_i) * 0.5 * (d_alpha_i.Normalized() + (d_alpha_i - y_alpha_i).Normalized());
 
 	// FIXME: temp mass factor
@@ -1039,7 +936,7 @@ ignition::math::Vector3d SocialForceModel::computeForceStaticObstacle(const igni
 		std::cout << "\td_alpha_i: " << d_alpha_i << " \tlen: " << d_alpha_i.Length() << std::endl;
 		std::cout << "\ty_alpha_i: " << y_alpha_i;
 		std::cout << "\tw_alpha_i: " << w_alpha_i << std::endl;
-		std::cout << "\tf_alpha_i: " << f_alpha_i * interaction_force_factor << std::endl;
+		std::cout << "\tf_alpha_i: " << f_alpha_i * interaction_force_factor_ << std::endl;
 	#ifndef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	}
 	#endif
@@ -1259,11 +1156,6 @@ ignition::math::Vector3d SocialForceModel::computeNormalAlphaDirection(const ign
 
 	}
 
-//#ifdef N_ALPHA_V2011
-//	yaw_norm -= yaw_norm.Pi; // opposite pointing
-//	yaw_norm.Normalize();
-//#endif
-
 	ignition::math::Vector3d n_alpha;
 
 	// rotate the vector
@@ -1336,11 +1228,6 @@ ignition::math::Vector3d SocialForceModel::computePerpendicularToNormal(const ig
 
 		}
 
-//		#if 	defined(N_ALPHA_V2011)
-//		to_cross.Set(0.0, 0.0, -1.0);
-//		#elif 	defined(N_ALPHA_V2014)
-//		to_cross.Set(0.0, 0.0,  1.0);
-//		#endif
 
 	} else if ( beta_rel_location == LOCATION_RIGHT ) {
 
@@ -1356,12 +1243,6 @@ ignition::math::Vector3d SocialForceModel::computePerpendicularToNormal(const ig
 				break;
 
 		}
-
-//		#if 	defined(N_ALPHA_V2011)
-//		to_cross.Set(0.0, 0.0,  1.0);
-//		#elif 	defined(N_ALPHA_V2014)
-//		to_cross.Set(0.0, 0.0, -1.0);
-//		#endif
 
 	} else {
 
@@ -1515,12 +1396,12 @@ std::tuple<RelativeLocation, double> SocialForceModel::computeObjectRelativeLoca
 
 	/* if the angle_relative is above few degrees value then the historical value may be discarded */
 	if ( rel_loc != LOCATION_FRONT ) {
-		map_models_rel_locations[SfmDebugGetCurrentObjectName()] = rel_loc;
+		map_models_rel_locations_[SfmDebugGetCurrentObjectName()] = rel_loc;
 	} else {
 #ifdef DEBUG_OSCILLATIONS
 		std::cout << "\t:::::::::::::::::::::::::HIST REL ANG!:::::::::::::::::::::::::::::::::::::::::::\t";
 #endif
-		return ( std::make_tuple(map_models_rel_locations[SfmDebugGetCurrentObjectName()], angle_relative.Radian()) );
+		return ( std::make_tuple(map_models_rel_locations_[SfmDebugGetCurrentObjectName()], angle_relative.Radian()) );
 	}
 
 	return ( std::make_tuple(rel_loc, angle_relative.Radian()) );
@@ -1531,7 +1412,7 @@ std::tuple<RelativeLocation, double> SocialForceModel::computeObjectRelativeLoca
 
 inline bool SocialForceModel::isOutOfFOV(const double &angle_relative) {
 
-	if ( std::fabs(angle_relative) >= fov ) {
+	if ( std::fabs(angle_relative) >= fov_ ) {
 		return (true);
 	}
 	return (false);

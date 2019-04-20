@@ -8,28 +8,30 @@
 #ifndef INCLUDE_SOCIALFORCEMODEL_H_
 #define INCLUDE_SOCIALFORCEMODEL_H_
 
-#include <SocialForceModelUtils.h>
+// Gazebo
+#include <gazebo-8/gazebo/physics/World.hh>
+#include <gazebo-8/gazebo/physics/Model.hh>
 
+// ignition
+#include <ignition/math/Vector3.hh>
+#include <ignition/math/Pose3.hh>
+#include <ignition/math/Angle.hh>
+
+// C++ STL
+#include <vector>	// closest points
+#include <tuple>	// rel_loc
+
+// Actor's data storage
 #include "core/CommonInfo.h"
 
+// Bounding models of an actor
 #include "inflation/Ellipse.h"
 #include "inflation/Circle.h"
 #include "inflation/Box.h"
 
-#include <gazebo-8/gazebo/physics/World.hh>
-#include <gazebo-8/gazebo/physics/Model.hh>
-#include <ignition/math.hh> 		// is it still needed??
-
+// SFM's other files
 #include <sfm/core/Inflator.h>
 #include <sfm/core/ActorInfoDecoder.h>
-
-// debug closest points
-#include <vector>
-
-
-// ---------------------------------
-
-// #define PERPENDICULAR_COLLISION_AVOIDANCE_MOD // DEPRECATED?
 
 // ----------------------------------------------------------------------------------------------- //
 /*
@@ -51,9 +53,6 @@ namespace core {
 
 // ---------------------------------
 
-// #define INTERACTION_FORCE_STATIC_OBJ_V2011 	//
-// #define INTERACTION_FORCE_STATIC_OBJ_V2014	//
-
 typedef enum {
 
 	/* `The repulsive force from static obstacles f αi is modeled by using the functional
@@ -67,21 +66,6 @@ typedef enum {
 } StaticObjectInteraction;
 
 // ---------------------------------
-
-/*
- * At first it seemed that it's the bounding box calculation that makes algorithm unstable,
- * but without BB the situation is the same
- */
-
-//#define BOUNDING_BOX_CALCULATION
-#ifdef BOUNDING_BOX_CALCULATION
-	//#define BOUNDING_BOX_ONLY_FROM_OTHER_OBJECTS
-	//#define BOUNDING_BOX_ALL_OBJECTS
-#endif
-//#define BOUNDING_CIRCLE_CALCULATION	// bounding circle around actors only
-
-										// compared to bounding box
-//#define BOUNDING_ELLIPSE_CALCULATION
 
 typedef enum {
 	INFLATION_BOX_OTHER_OBJECTS = 0,
@@ -103,13 +87,7 @@ typedef enum {
 
 // ---------------------------------
 
-//#define THETA_ALPHA_BETA_V2011
-#define THETA_ALPHA_BETA_V2014		//
-
-//#define N_ALPHA_V2011		//
-#define N_ALPHA_V2014		//
-
-/* 	φ_αβ
+/* 	φ_αβ issue
  * There is an inconsistency in papers connected with the Rudloff's version of Social Force model -
  * in Rudloff et al. 2011 - https://www.researchgate.net/publication/236149039_Can_Walking_Behavior_Be_Predicted_Analysis_of_Calibration_and_Fit_of_Pedestrian_Models
  * there is a statement that theta_alpha_beta is an "angle between velocity of pedestrian α and the displacement of pedestrian β"
@@ -117,7 +95,7 @@ typedef enum {
  * they say that in this model "φ αβ is the angle between n α and d αβ" (they call it phi instead of theta)
  */
 
-/* 	n_α
+/* 	n_α issue
  * Another inconsistency between 2011 and 2014 papers connected to Rudloff's SFM version is n_alpha issue.
  * In 2011 original paper there is said that n_alpha is "pointing in the opposite direction to the walking
  * direction (deceleration force)".
@@ -157,10 +135,12 @@ public:
 	/// \brief Default constructor
 	SocialForceModel();
 
-	void Init(const unsigned short int _mass_person,
-			  const float _desired_force_factor,
-			  const float _interaction_force_factor,
-			  const gazebo::physics::WorldPtr _world_ptr);
+	/// \brief Function which sets internal parameters
+	/// according to given values
+	void init(const double &internal_force_factor, const double &interaction_force_factor,
+			  const unsigned int &mass, const double &max_speed, const double &fov,
+			  const double &min_force, const double &max_force, const StaticObjectInteraction &stat_obj_type,
+			  const InflationType &inflation_type, const gazebo::physics::WorldPtr &world_ptr);
 
 	/// \brief Function which calculates social force
 	/// for an actor taking whole world's objects
@@ -181,28 +161,6 @@ public:
 	/// boxes of world's objects and those boundings which
 	/// had been created for actors
 	std::vector<ignition::math::Pose3d> getClosestPointsVector() const;
-
-
-
-
-
-
-
-	// NEVER USED? DEPRECATED
-#if defined(PERPENDICULAR_COLLISION_AVOIDANCE_MOD)
-	ignition::math::Vector3d GetPerpendicularToNormal(
-			const ignition::math::Vector3d &_n_alpha,
-			const uint8_t &_beta_rel_location,
-			const ignition::math::Angle &_alpha_beta_angle);
-#endif
-
-	bool IsActorFacingTheTarget(const ignition::math::Angle _yaw,
-								const ignition::math::Vector3d _target);
-
-
-
-
-
 
 	/// \brief Default destructor
 	virtual ~SocialForceModel();
@@ -318,54 +276,53 @@ private:
 	/// exponential function);
 	/// it has a big impact on actors' behavior
 	ignition::math::Angle computeYawMovementDirection(const ignition::math::Pose3d &actor_pose,
-			const ignition::math::Vector3d &actor_vel,	const ignition::math::Vector3d &sf_vel);
+			const ignition::math::Vector3d &actor_vel, const ignition::math::Vector3d &sf_vel);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 	/// \brief A vector of poses of closest points
 	/// between actor's and object's boundings
-	std::vector<ignition::math::Pose3d> closest_points;
+	std::vector<ignition::math::Pose3d> closest_points_;
 
 	/// \brief A map which stores previous location
 	/// of a model relative to an actor;
 	/// a historical data is used when relative location
 	/// value oscillates from one side to the other
-	std::map<std::string, RelativeLocation> map_models_rel_locations;
+	std::map<std::string, RelativeLocation> map_models_rel_locations_;
 
 	/// \brief Social Force Model parameters variables
-	float relaxation_time;
-	float speed_desired;
-	float speed_max;
+	float relaxation_time_;
+	float speed_desired_;
+	float speed_max_;
 
-	float fov;
-	float yaw_max_delta;
-	unsigned short int mass_person; 		// to evaluate if helpful
-	float desired_force_factor;
-	float interaction_force_factor;
+	float fov_;
+	unsigned short int person_mass_; 		// to evaluate if helpful
+	float internal_force_factor_;
+	float interaction_force_factor_;
 
-	float force_max;
-	float force_min;
+	float force_max_;
+	float force_min_;
 
 
-	sfm::core::StaticObjectInteraction interaction_static_type;
-	sfm::core::InflationType inflation_type;
+	sfm::core::StaticObjectInteraction interaction_static_type_;
+	sfm::core::InflationType inflation_type_;
 	sfm::core::ParameterDescription param_description_;
 
 
-	sfm::core::Inflator inflator;
-	sfm::core::ActorInfoDecoder actor_decoder;
+	sfm::core::Inflator inflator_;
+	sfm::core::ActorInfoDecoder actor_decoder_;
 
 	/* Model C -> Rudloff et al. (2011) model's parameters based on  S. Seer et al. (2014) */
 	/* setting parameters static will create a population of actors moving in the same way */
 	// TODO: make all actors share the same param values
-	float An;
-	float Bn;
-	float Cn;
-	float Ap;
-	float Bp;
-	float Cp;
-	float Aw;
-	float Bw;
+	float An_;
+	float Bn_;
+	float Cn_;
+	float Ap_;
+	float Bp_;
+	float Cp_;
+	float Aw_;
+	float Bw_;
 
 };
 

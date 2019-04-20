@@ -131,7 +131,7 @@ void Actor::initInflator(const double &semi_major, const double &semi_minor, con
 void Actor::initSFM() {
 
 	// initialize SFM
-	sfm_.Init(80.0, 2.0, 1.0, world_ptr_);
+	// sfm_.Init(80.0, 2.0, 1.0, world_ptr_);
 
 }
 
@@ -550,8 +550,9 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 	// update the local copy of the actor's pose
 	pose_world_ = new_pose;
 
-	// publish social force vector
+	// publish social force vector and closest points lines
 	stream_.publishData(ActorMarkerType::ACTOR_MARKER_SF_VECTOR, sfm_vis_single_.createArrow(new_pose.Pos(), sf) );
+	stream_.publishData(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, sfm_vis_single_.createLineListArray(sfm_.getClosestPointsVector()) );
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
