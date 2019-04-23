@@ -14,28 +14,31 @@
 namespace sfm {
 namespace fuzz {
 
+/* when put into class the error appears:
+ * libsocial_force_model.so: undefined symbol: _ZNK3sfm4fuzz9Fuzzifier26getSocialConditionAndLevelEv */
+
+/// \brief Human-readable environment state
+/// definition
+typedef enum {
+	SFM_CONDITION_DYNAMIC_OBJECT_RIGHT = 0,
+	SFM_CONDITION_DYNAMIC_OBJECT_RIGHT_MOVES_PERPENDICULAR,
+	SFM_CONDITION_FORCE_DRIVES_INTO_OBSTACLE,
+	SFM_CONDITION_UNKNOWN = 100
+} SocialCondition;
+
+/// \brief Consecutive levels of detected
+/// condition's strength
+typedef enum {
+	FUZZY_LEVEL_LOW = 0,
+	FUZZY_LEVEL_MEDIUM,
+	FUZZY_LEVEL_HIGH,
+	FUZZY_LEVEL_EXTREME,
+	FUZZY_LEVEL_UNKNOWN
+} FuzzyLevel;
+
 class Fuzzifier {
 
 public:
-
-	/// \brief Human-readable environment state
-	/// definition
-	typedef enum {
-		SFM_CONDITION_DYNAMIC_OBJECT_RIGHT = 0,
-		SFM_CONDITION_DYNAMIC_OBJECT_RIGHT_MOVES_PERPENDICULAR,
-		SFM_CONDITION_FORCE_DRIVES_INTO_OBSTACLE,
-		SFM_CONDITION_UNKNOWN = 100
-	} SocialCondition;
-
-	/// \brief Consecutive levels of detected
-	/// condition's strength
-	typedef enum {
-		FUZZY_LEVEL_LOW = 0,
-		FUZZY_LEVEL_MEDIUM,
-		FUZZY_LEVEL_HIGH,
-		FUZZY_LEVEL_EXTREME,
-		FUZZY_LEVEL_UNKNOWN
-	} FuzzyLevel;
 
 	/// \brief Default constructor
 	Fuzzifier();
@@ -59,7 +62,7 @@ public:
 	/// after each iteration
 	void resetParameters();
 
-	std::tuple<SocialCondition, FuzzyLevel> getSocialConditionAndLevel() const;
+	std::tuple<sfm::fuzz::SocialCondition, sfm::fuzz::FuzzyLevel> getSocialConditionAndLevel() const;
 
 	/// \brief Default destructor
 	virtual ~Fuzzifier();

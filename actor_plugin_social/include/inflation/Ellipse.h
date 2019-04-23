@@ -55,9 +55,16 @@ private:
 	double yaw_ellipse_;
 	double yaw_offset_;
 
+	/// \brief Center of the ellipse; center
+	/// is calculated based on center_shifted
+	/// with actor's yaw and ellipse's offset
+	/// taken into consideration
 	ignition::math::Vector3d center_;
 	ignition::math::Vector3d offset_;
-	ignition::math::Vector3d center_shifted_; // shifted center of the ellipse (center + offset with current yaw taken into consideration)
+
+	/// \brief Equal to the current position
+	/// of an actor
+	ignition::math::Vector3d center_shifted_;
 
 };
 

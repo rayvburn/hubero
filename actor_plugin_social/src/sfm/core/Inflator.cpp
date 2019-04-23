@@ -430,7 +430,9 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 
 	// intersection of the 2nd actor's circle (another one)
 	ignition::math::Vector3d object_pos_shifted;
+	// current actor ellipse's shifted center ( = actor's pos) is connected with object ellipse's center; the connector is a line
 	std::tie(std::ignore, object_pos_shifted) = object_ellipse.getIntersection(actor_pose.Pos());
+//	std::tie(std::ignore, object_pos_shifted) = object_ellipse.getIntersection(actor_pose_shifted.Pos());
 
 	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 	if ( SfmGetPrintData() ) {

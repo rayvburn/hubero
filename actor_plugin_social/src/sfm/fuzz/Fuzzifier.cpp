@@ -11,6 +11,7 @@
 #include <ignition/math/Helpers.hh> // IGN_PI_2
 #include <ignition/math/Angle.hh>	// IGN_DTOR
 #include <string> 					// debugging
+#include <sfm/core/SFMDebug.h>
 
 namespace sfm {
 namespace fuzz {
@@ -72,33 +73,43 @@ bool Fuzzifier::isConditionDetected() {
 	bool check_object_on_the_right = false;
 	bool check_force_direction = false;
 
+	#ifdef DEBUG_FUZZIFIER_CONDITION_INFO
+	std::cout << SfmDebugGetCurrentActorName() << "\t" << SfmDebugGetCurrentObjectName() << "\t";
+	#endif
+
 	// only 1 condition checked at once
 	if ( isActivePredicateForceDirection() ) {
 
 		/* this is computed in a separate step - while a single interaction is investigated
 		 * (i.e. `is object on the right` check) a total social force has not been
 		 * calculated yet */
+		#ifdef DEBUG_FUZZIFIER_CONDITION_INFO
 		std::cout << "Fuzzifier isConditionDetected() - force direction check!\n";
+		#endif
 		check_force_direction = true;
 
 	} else if ( isActivePredicateObjectRight() ) {
 
+		#ifdef DEBUG_FUZZIFIER_CONDITION_INFO
 		std::cout << "Fuzzifier isConditionDetected() - object on the right check!\n";
+		#endif
 		check_object_on_the_right = true;
 
 	} else {
 
+		#ifdef DEBUG_FUZZIFIER_CONDITION_INFO
 		std::cout << "Fuzzifier isConditionDetected() - NO PARAMS SET or OBJECT STATIC!\n\n";
+		#endif
 		return (false);
 
 	}
 
 	// -----------------------------------------------------------
-	std::cout << "Fuzzifier\n";
-	std::cout << "\tvels_angle_set: " << vels_angle_set_ << "\tvels_relative_angle: " << vels_relative_angle_ << "\t| deg:" << IGN_RTOD(vels_relative_angle_) << std::endl;
-	std::cout << "\tdist_set: " << dist_set_ << "\t\tdist_between_objects: " << dist_between_objects_ << std::endl;
-	std::cout << "\tdir_angle_set: " << dir_angle_set_ << "\tto_object_dir_relative_angle: " << to_object_dir_relative_angle_ << "\t| deg:" << IGN_RTOD(to_object_dir_relative_angle_) << std::endl;
-	std::cout << "\tsf_set: " << sf_set_ << "\t\tsf_vector_dir_angle: " << sf_vector_dir_angle_ << "\t| deg:" << IGN_RTOD(sf_vector_dir_angle_) << std::endl;
+//	std::cout << "Fuzzifier\n";
+//	std::cout << "\tvels_angle_set: " << vels_angle_set_ << "\tvels_relative_angle: " << vels_relative_angle_ << "\t| deg:" << IGN_RTOD(vels_relative_angle_) << std::endl;
+//	std::cout << "\tdist_set: " << dist_set_ << "\t\tdist_between_objects: " << dist_between_objects_ << std::endl;
+//	std::cout << "\tdir_angle_set: " << dir_angle_set_ << "\tto_object_dir_relative_angle: " << to_object_dir_relative_angle_ << "\t| deg:" << IGN_RTOD(to_object_dir_relative_angle_) << std::endl;
+//	std::cout << "\tsf_set: " << sf_set_ << "\t\tsf_vector_dir_angle: " << sf_vector_dir_angle_ << "\t| deg:" << IGN_RTOD(sf_vector_dir_angle_) << std::endl;
 	// -----------------------------------------------------------
 
 	bool detected = false;
@@ -170,13 +181,15 @@ bool Fuzzifier::isConditionDetected() {
 	} /* check_force_direction */
 
 
-	// when one of the predicates is true the print debug
+	#ifdef DEBUG_FUZZIFIER_CONDITION_INFO
+	// when one of the predicates is true then print debug
 	if ( check_object_on_the_right || check_force_direction ) {
 		std::string level_txt, condition_txt;
 		if ( condition_ == SFM_CONDITION_DYNAMIC_OBJECT_RIGHT ) { condition_txt = "SFM_CONDITION_DYNAMIC_OBJECT_RIGHT"; } else if ( condition_ == SFM_CONDITION_FORCE_DRIVES_INTO_OBSTACLE ) { condition_txt = "SFM_CONDITION_FORCE_DRIVES_INTO_OBSTACLE"; } else if ( condition_ == SFM_CONDITION_DYNAMIC_OBJECT_RIGHT_MOVES_PERPENDICULAR ) { condition_txt = "SFM_CONDITION_DYNAMIC_OBJECT_RIGHT_MOVES_PERPENDICULAR"; } else { condition_txt = "SFM_CONDITION_UNKNOWN"; };
 		if ( level_ == FUZZY_LEVEL_EXTREME ) { level_txt = "FUZZY_LEVEL_EXTREME"; } else if ( level_ == FUZZY_LEVEL_HIGH ) { level_txt = "FUZZY_LEVEL_HIGH"; } else if ( level_ == FUZZY_LEVEL_MEDIUM ) { level_txt = "FUZZY_LEVEL_MEDIUM"; } else if ( level_ == FUZZY_LEVEL_LOW ) { level_txt = "FUZZY_LEVEL_LOW"; } else { level_txt = "FUZZY_LEVEL_UNKNOWN"; };
 		std::cout << "\t" << condition_txt << "\t" << level_txt << std::endl;
 	}
+	#endif
 
 	return (detected);
 
@@ -196,6 +209,12 @@ void Fuzzifier::resetParameters() {
 	vels_angle_set_ = false;
 	sf_set_ = false;
 
+}
+
+// ------------------------------------------------------------------- //
+
+std::tuple<sfm::fuzz::SocialCondition, sfm::fuzz::FuzzyLevel> Fuzzifier::getSocialConditionAndLevel() const {
+	return ( std::make_tuple(condition_, level_) );
 }
 
 // ------------------------------------------------------------------- //

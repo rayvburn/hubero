@@ -48,8 +48,8 @@
 #define DEBUG_LOG_ALL_INTERACTIONS
 //
 ////#define DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB
-#define DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-//
+// #define DEBUG_BOUNDING_ELLIPSE_INTERSECTION
+
 #define DEBUG_FORCE_EACH_OBJECT 									// detailed info in each iteration
 #define DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 
@@ -75,7 +75,8 @@ unsigned int curr_actor = 3;				// TODO: couldn't catch an event to debug this
 
 // ---------------------------------
 
-#define DEBUG_FUZZIFIER_VEL_ANGLE
+// #define DEBUG_FUZZIFIER_VEL_ANGLE
+// #define DEBUG_FUZZIFIER_CONDITION_INFO
 
 // ---------------------------------
 

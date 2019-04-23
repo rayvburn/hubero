@@ -28,20 +28,24 @@ list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
 add_library(${PROJECT_NAME} SHARED include/ActorPluginSocial.h src/ActorPluginSocial.cpp)
+
 add_library(social_force_model 
   include/sfm/core/SocialForceModel.h 
   include/sfm/core/Inflator.h 
   include/sfm/core/SFMDebug.h
   include/sfm/core/ActorInfoDecoder.h
-  include/sfm/fuzz/Fuzzifier.h
-  include/sfm/fuzz/Defuzzifier.h
+
   src/sfm/core/SocialForceModel.cpp
   src/sfm/core/Inflator.cpp
   src/sfm/core/SFMDebug.cpp
   src/sfm/core/ActorInfoDecoder.cpp
-  src/sfm/fuzz/Fuzzifier.cpp
-  src/sfm/fuzz/Defuzzifier.cpp
 )
+
+add_library(social_force_model_fuzzy
+  include/sfm/fuzz/Fuzzifier.h
+  include/sfm/fuzz/Defuzzifier.h
+  src/sfm/fuzz/Fuzzifier.cpp
+  src/sfm/fuzz/Defuzzifier.cpp)
 
 add_library(social_force_model_utils include/SocialForceModelUtils.h src/SocialForceModelUtils.cpp)
 
@@ -81,7 +85,7 @@ add_library(actor_ros
 )
 
 target_link_libraries(actor_inflation actor_core actor_ros) # ros needed here?
-#target_link_libraries(social_force_model actor_core)
+target_link_libraries(social_force_model social_force_model_fuzzy)
 #target_link_libraries(actor_core actor_ros)
 
 #add_library(enums include/Enums.h)

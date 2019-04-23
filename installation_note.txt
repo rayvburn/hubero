@@ -2,7 +2,7 @@
 sudo apt-get install ros-kinetic-gazebo8*
 *Download velodyne_simulator from here: https://bitbucket.org/DataspeedInc/velodyne_simulator/downloads/*
 
-## Compilation order may be crucial
+## Compilation order may be crucial (FIXME: DEPENDENCIES?)
 catkin build actor_sim_srv
 catkin build actor_sim_utils
 catkin build actor_plugin_social

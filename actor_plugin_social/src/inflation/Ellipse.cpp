@@ -9,6 +9,7 @@
 #include <ignition/math/Angle.hh>
 #include <ignition/math/Quaternion.hh>
 #include <math.h> // fabs(), pow(), atan2(), tan()
+#include "sfm/core/SFMDebug.h"
 
 namespace actor {
 namespace inflation {
@@ -75,7 +76,7 @@ void Ellipse::setCenterOffset(const ignition::math::Vector3d &offset_vector) {
 	/* check if offset is lying down within the ellipse's bound -
 	 * at this moment the offset is 0 and location of the offset point
 	 * must be investigated */
-	if ( offset_vector.Length() > 1e-06 && doesContain(center_ + offset_vector) ) {
+	if ( offset_vector.Length() > 1e-06 && doesContain(center_ + offset_vector) ) { // FIXME - ROTATION not taken into consideration
 
 		offset_ = offset_vector;
 
@@ -107,7 +108,7 @@ void Ellipse::updatePose(const ignition::math::Pose3d &pose) {
 
 // ------------------------------------------------------------------- //
 
-/// find point in which line going through ellipse's shifted center and pt_dest intersects the ellipse
+/// find point in which line going through ellipse's center and pt_dest intersects the ellipse
 /// determine if pt_dest lies within ellipse's bounds
 
 std::tuple<bool, ignition::math::Vector3d> Ellipse::getIntersection(const ignition::math::Vector3d &pt_dest) const {
@@ -164,7 +165,7 @@ std::tuple<bool, ignition::math::Vector3d> Ellipse::getIntersection(const igniti
 	psi.Normalize();
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( debugEllipseGet() ) {
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 	std::cout << "\n\nEllipse::getIntersection() with point: " << pt_dest << "\tellipse's center: " << center_ << "  center_shifted: " << center_shifted_ << std::endl;
 	std::cout << "\t\t\tpsi_to_dest from center shifted: " << psi.Radian() << std::endl;
 	}
@@ -180,7 +181,7 @@ std::tuple<bool, ignition::math::Vector3d> Ellipse::getIntersection(const igniti
 	std::tie(solution_num, pt_of_intersection1, pt_of_intersection2) = getIntersectionWithLine(psi.Radian());
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( debugEllipseGet() ) {
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 	std::cout << "\tsolutions: " << solution_num << "\tintersection with p1: " << pt_of_intersection1 << "\tor p2: " << pt_of_intersection2 << std::endl;
 	}
 #endif
@@ -199,7 +200,7 @@ std::tuple<bool, ignition::math::Vector3d> Ellipse::getIntersection(const igniti
 	ignition::math::Angle angle_test_backup;
 	angle_test_backup.Radian( std::atan2( (pt_of_intersection2 - center_).Y(),
 								   	   	   (pt_of_intersection2 - center_).X() ) );
-	if ( debugEllipseGet() ) {
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 	std::cout << "\tangle_test_p1: " << angle_test.Radian() << "\tangle_test_p2: " << angle_test_backup.Radian() << "\tpsi: " << psi.Radian() << std::endl;
 	}
 #endif
@@ -209,7 +210,7 @@ std::tuple<bool, ignition::math::Vector3d> Ellipse::getIntersection(const igniti
 		pt_proper = &pt_of_intersection1;
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-		if ( debugEllipseGet() ) {
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "\tp1 - PASSED" << std::endl;
 		}
 		#endif
@@ -222,7 +223,7 @@ std::tuple<bool, ignition::math::Vector3d> Ellipse::getIntersection(const igniti
 		if ( std::fabs(angle_test.Radian() - psi.Radian()) < 1e-03 ) {
 
 			#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-			if ( debugEllipseGet() ) {
+			if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 			std::cout << "\tp2 - PASSED" << std::endl;
 			}
 			#endif
@@ -230,7 +231,7 @@ std::tuple<bool, ignition::math::Vector3d> Ellipse::getIntersection(const igniti
 		} else {
 
 			#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-			if ( debugEllipseGet() ) {
+			if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 			std::cout << "\tFAILED" << std::endl;
 			}
 			#endif
@@ -242,7 +243,7 @@ std::tuple<bool, ignition::math::Vector3d> Ellipse::getIntersection(const igniti
 	}
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( debugEllipseGet() ) {
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 	std::cout << "\tproper point: " << *pt_proper << std::endl;
 	std::cout << "\tpoint location test - pt_dest to center len: " << (pt_dest - center_).Length() << "\tpoint on ellipse to center len: " << (*pt_proper - center_).Length();
 	}
@@ -253,7 +254,7 @@ std::tuple<bool, ignition::math::Vector3d> Ellipse::getIntersection(const igniti
 	if ( (pt_dest - center_).Length() - (*pt_proper - center_).Length() <= 0.0 ) {
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-		if ( debugEllipseGet() ) {
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "  WITHIN!" << std::endl;
 		}
 		#endif
@@ -262,7 +263,7 @@ std::tuple<bool, ignition::math::Vector3d> Ellipse::getIntersection(const igniti
 	} else {
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-		if ( debugEllipseGet() ) {
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "  PT is OUTSIDE ELLIPSE!" << std::endl;
 		}
 		#endif
@@ -344,6 +345,7 @@ visualization_msgs::Marker Ellipse::getMarkerConversion() const {
 
 void Ellipse::updateShiftedCenter() {
 
+	// DEPRECATED, updateCenter used as shifted center is equal to actor's position
 	center_shifted_.X(center_.X() + offset_.X() * cos(yaw_offset_ + yaw_ellipse_));
 	center_shifted_.Y(center_.Y() + offset_.Y() * sin(yaw_offset_ + yaw_ellipse_));
 	center_shifted_.Z(center_.Z());
@@ -353,15 +355,17 @@ void Ellipse::updateShiftedCenter() {
 // ------------------------------------------------------------------- //
 
 void Ellipse::updateCenter() {
+
 	// center = center_shifted + rotated_offset (2D rotation matrix expanded here)
 	center_.X( center_shifted_.X() + (offset_.X()*cos(yaw_ellipse_) - offset_.Y()*sin(yaw_ellipse_)) );
 	center_.Y( center_shifted_.Y() + (offset_.X()*sin(yaw_ellipse_) + offset_.Y()*cos(yaw_ellipse_)) );
 	center_.Z( 0.0 );
+
 }
 
 // ------------------------------------------------------------------- //
 
-// useful for simple intersection from center to destinatino point search
+// useful for simple intersection from center to destination point search
 std::tuple<ignition::math::Vector3d, double> Ellipse::getIntersectionExtended(const ignition::math::Vector3d &pt_dest)
 	const {
 
@@ -407,7 +411,7 @@ std::tuple<unsigned int, ignition::math::Vector3d, ignition::math::Vector3d>
 Ellipse::getIntersectionWithLine(const double &to_dest_angle) const {
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( debugEllipseGet() ) {
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 	std::cout << "\ngetIntersectionWithLine()\t\t\t\tSTART\n";
 	}
 #endif
@@ -442,7 +446,7 @@ Ellipse::getIntersectionWithLine(const double &to_dest_angle) const {
 	double delta = std::pow(b_q, 2.00) - (4.00 * a_q * c_q);
 
 #ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( debugEllipseGet() ) {
+	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 	std::cout << "\n\tLINE - a: " << a_l << "   b: " << b_l << "   delta: " << delta << "   to_dest_ang: " << to_dest_angle;
 	} else {
 		//std::cout << "\n\n\n\n\nELLIPSE TO NOT PRINT DEBUG\n\n\n\n\n";
@@ -452,14 +456,14 @@ Ellipse::getIntersectionWithLine(const double &to_dest_angle) const {
 	// check number of solutions
 	if ( std::fabs(delta) < 1e-06 ) {
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-		if ( debugEllipseGet() ) {
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "\t1 solution\n";
 		}
 		#endif
 		solution_num = 1;
 	} else if ( delta > 0.0 ) {
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-		if ( debugEllipseGet() ) {
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "\t2 solutions\n";
 		}
 		#endif
@@ -467,7 +471,7 @@ Ellipse::getIntersectionWithLine(const double &to_dest_angle) const {
 		solution_num = 2;
 	} else {
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-		if ( debugEllipseGet() ) {
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "\t0 solutions\n";
 		}
 		#endif
@@ -485,7 +489,7 @@ Ellipse::getIntersectionWithLine(const double &to_dest_angle) const {
 		pt_of_intersection2.Y( a_l * pt_of_intersection2.X() + b_l );
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-		if ( debugEllipseGet() ) {
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "\n\tQUADRATIC EQUATION" << std::endl;
 		std::cout << "\tparams: a_major: " << a_major_ << "  b_minor: " << b_minor_ << "  center_shifted: " << center_ << std::endl;
 		std::cout << "\tdelta: " << delta << "  sqrt_delta: " << sqrt(delta) << "  a_q: " << a_q << "  b_q: " << b_q << "  c_q: " << c_q << std::endl;
@@ -503,7 +507,7 @@ Ellipse::getIntersectionWithLine(const double &to_dest_angle) const {
 		pt_of_intersection.Y( a_l * pt_of_intersection.X() + b_l );
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-		if ( debugEllipseGet() ) {
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "\ngetIntersectionWithLine() -------------------- END --------------------\n";
 		}
 		#endif
@@ -513,7 +517,7 @@ Ellipse::getIntersectionWithLine(const double &to_dest_angle) const {
 	} else {
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-		if ( debugEllipseGet() ) {
+		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "\ngetIntersectionWithLine() -------------------- END --------------------\n";
 		}
 		#endif

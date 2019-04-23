@@ -20,12 +20,12 @@ public:
 	/// \brief Default constructor
 	Defuzzifier();
 
-	void setSocialConditionAndLevel(const sfm::fuzz::Fuzzifier::SocialCondition &condition, const sfm::fuzz::Fuzzifier::FuzzyLevel &level);
+	void setSocialConditionAndLevel(const sfm::fuzz::SocialCondition &condition, const sfm::fuzz::FuzzyLevel &level);
 
 	/// \return A tuple with an additional internal
 	/// force coefficient and rotated interaction
 	/// force vector
-	std::tuple<double, ignition::math::Vector3d> defuzzifyObjectRight(const ignition::math::Vector3d &f_alpha_beta);
+	std::tuple<double, ignition::math::Vector3d> defuzzifyObjectRight(const double &fuzzy_f_alpha, const ignition::math::Vector3d &f_alpha_beta);
 
 	/// \return A modified social force vector
 	ignition::math::Vector3d defuzzifySfDirection(const ignition::math::Vector3d &social_force);
@@ -35,8 +35,10 @@ public:
 
 private:
 
-	sfm::fuzz::Fuzzifier::SocialCondition condition_;
-	sfm::fuzz::Fuzzifier::FuzzyLevel level_;
+	/// \brief 2D rotation around Z-axis
+	ignition::math::Vector3d rotateVector(const ignition::math::Vector3d &f_alpha_beta, const double &angle);
+	sfm::fuzz::SocialCondition condition_;
+	sfm::fuzz::FuzzyLevel level_;
 
 };
 

@@ -919,7 +919,7 @@ double Actor::prepareForUpdate(const gazebo::common::UpdateInfo &info) {
 	// DELETE - below just doesn't work - WorldPtr doesnt get updated
 	// actor_ptr_->SetLinearVel(velocity_lin_);
 
-	// update bounding model pose
+	// update bounding model's pose
 	updateBounding(pose_world_);
 
 	// dt is helpful for further calculations
@@ -1012,6 +1012,13 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 		}
 
 	}
+
+	// ellipse
+//	std::cout << "\tBOUNDING ELLIPSE\n";
+//	std::cout << "\tActor's pos: " << pose_world_.Pos() << std::endl;
+//	std::cout << "\tEllipse's offset: " << bounding_ellipse_.getCenterOffset() << std::endl;
+//	std::cout << "\tEllipse's center: " << bounding_ellipse_.getCenter() << "\tEllipse's shifted center: " << bounding_ellipse_.getCenterShifted() << std::endl;
+//	std::cout << "\n\n";
 
 	// debug info
 //	print_info = false;

@@ -115,6 +115,9 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 	// compute internal acceleration
 	ignition::math::Vector3d f_alpha = computeInternalForce(actor_pose, actor_velocity, actor_target);
 
+	// extra coefficient - Fuzzy logic affects internal force
+	double fuzzy_factor_f_alpha = 1.00;
+
 	// allocate variables needed in loop
 	ignition::math::Vector3d f_interaction_total(0.0, 0.0, 0.0);
 	ignition::math::Vector3d f_alpha_beta(0.0, 0.0, 0.0);
@@ -258,6 +261,21 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		// debug txt
 		if ( print_info ) { std::cout << "actor_center: " << actor_pose.Pos() << "\tobstacle_closest_pt: " << model_closest_point_pose.Pos() << "\tdist: " << (model_closest_point_pose.Pos()-actor_pose.Pos()).Length() << std::endl; }
 
+
+		/* closest points ellipse debugging */
+//		if ( actor_name == "actor1" ) {
+//			std::cout << "CLOSEST POINTS ELLIPSE DEBUGGING\tactor: " << actor_name << "\tmodel: " << model_ptr->GetName() << "\n";
+//			std::cout << "\tactor_center: " << actor_pose << "\tactor_closest: " << actor_closest_to_model_pose << std::endl;
+//			std::cout << "\tactor ellipse's center: " << actor_info.getBoundingEllipse().getCenter() << "\tactor ellipse's SHIFTED center: " << actor_info.getBoundingEllipse().getCenterShifted() << std::endl;
+//			std::cout << "\tmodel_center: " << model_ptr->WorldPose() << "\tmodel_closest: " << model_closest_point_pose << std::endl;
+//			if ( is_an_actor ) {
+//				std::cout << "\tmodel_ellipse's center: " << model_ellipse.getCenter() << "\tmodel_ellipse's SHIFTED center: " << model_ellipse.getCenterShifted() << std::endl;
+//			} else {
+//				std::cout << "\tmodel_box'es center: " << model_box.getCenter() << std::endl;
+//			}
+//			std::cout << "\n\n";
+//		}
+
 		/* debug closest points
 		 * a pair must be added to vector, pair consists
 		 * of model closest point's pose and an actor's
@@ -296,14 +314,19 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 		/* check if some condition is met based on
 		 * parameters previously passed to Fuzzifier */
-		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
+//		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 			// easier debugging with a single actor
-			std::cout << SfmDebugGetCurrentActorName() << "\t" << SfmDebugGetCurrentObjectName() << "\t";
 			if ( fuzz_.isConditionDetected() ) {
+
+				sfm::fuzz::SocialCondition soc_cond;
+				sfm::fuzz::FuzzyLevel fuzz_lvl;
+				std::tie(soc_cond, fuzz_lvl) = fuzz_.getSocialConditionAndLevel();
+				defuzz_.setSocialConditionAndLevel( soc_cond, fuzz_lvl );
+				std::tie(fuzzy_factor_f_alpha, f_alpha_beta) = defuzz_.defuzzifyObjectRight(fuzzy_factor_f_alpha, f_alpha_beta);
 
 			}
 			fuzz_.resetParameters();
-		}
+//		}
 
 		/* Kind of a hack connected with very strong repulsion when actors are close to each other
 		 * whereas in bigger distances the force is quite weak;
@@ -329,7 +352,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 #ifdef DEBUG_LOG_ALL_INTERACTIONS
 		if ( SfmGetPrintData() ) {
 		log_msg << "\t" << model_ptr->GetName();
-		log_msg << "\t" << f_alpha_beta * interaction_force_factor_ << "\n";
+		log_msg << "\t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\n";
 		}
 #endif
 
@@ -340,9 +363,9 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::cout << "**************************************************************************\n";
 		std::cout << "LOG_MESSAGE - ALL OBJECTS ----- " << SfmDebugGetCurrentActorName() << std::endl;
-		std::cout << "\tInternal: " << internal_force_factor_ * f_alpha << std::endl;
+		std::cout << "\tInternal: " << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha << std::endl;
 		std::cout << log_msg.str() << std::endl;
-		std::cout << "\tTOTAL FORCE: " << internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total << std::endl;
+		std::cout << "\tTOTAL FORCE: " << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total << std::endl;
 		std::cout << "**************************************************************************\n\n\n";
 	}
 	}
@@ -361,7 +384,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 	// this->calculateDesiredForceFactor(dist_to_closest_obstacle);
 	// inside the function lets normalize the factor according to the `desired` one
 
-	ignition::math::Vector3d f_total = internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total;
+	ignition::math::Vector3d f_total = fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total;
 	f_total.Z(0.0);
 
 #ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
