@@ -35,7 +35,7 @@ std::tuple<double, ignition::math::Vector3d> Defuzzifier::defuzzifyObjectRight(c
 	}
 
 	double internal_force_coeff = fuzzy_f_alpha;
-	ignition::math::Vector3d f_alpha_beta_rot(f_alpha_beta.X(), f_alpha_beta.Y(), 0.0);
+	ignition::math::Vector3d f_alpha_beta_rot( f_alpha_beta.X(), f_alpha_beta.Y(), 0.0 );
 
 	switch ( condition_ ) {
 

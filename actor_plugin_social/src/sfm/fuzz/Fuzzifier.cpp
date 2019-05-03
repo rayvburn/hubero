@@ -121,7 +121,7 @@ bool Fuzzifier::isConditionDetected() {
 		// helper flag
 		bool is_on_the_right = false;
 
-		/* -IGN_PI_2 -> -90 degress
+		/* -IGN_PI_2 -> -90 degrees
 		 * when `to_object_dir_relative_angle_` is equal to this value,
 		 * one could say that object's relative position is straight
 		 * on the right-hand side - a maximum case */

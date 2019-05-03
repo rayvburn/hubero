@@ -314,6 +314,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 		/* check if some condition is met based on
 		 * parameters previously passed to Fuzzifier */
+		/*
 //		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
 			// easier debugging with a single actor
 			if ( fuzz_.isConditionDetected() ) {
@@ -322,11 +323,27 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 				sfm::fuzz::FuzzyLevel fuzz_lvl;
 				std::tie(soc_cond, fuzz_lvl) = fuzz_.getSocialConditionAndLevel();
 				defuzz_.setSocialConditionAndLevel( soc_cond, fuzz_lvl );
+
+				if ( SfmDebugGetCurrentActorName() == "actor1" && fuzz_lvl != sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_UNKNOWN ) {
+					std::string level_txt, condition_txt;
+					if ( soc_cond == sfm::fuzz::SocialCondition::SFM_CONDITION_DYNAMIC_OBJECT_RIGHT ) { condition_txt = "SFM_CONDITION_DYNAMIC_OBJECT_RIGHT"; } else if ( soc_cond == sfm::fuzz::SocialCondition::SFM_CONDITION_FORCE_DRIVES_INTO_OBSTACLE ) { condition_txt = "SFM_CONDITION_FORCE_DRIVES_INTO_OBSTACLE"; } else if ( soc_cond == sfm::fuzz::SocialCondition::SFM_CONDITION_DYNAMIC_OBJECT_RIGHT_MOVES_PERPENDICULAR ) { condition_txt = "SFM_CONDITION_DYNAMIC_OBJECT_RIGHT_MOVES_PERPENDICULAR"; } else { condition_txt = "SFM_CONDITION_UNKNOWN"; };
+					if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_EXTREME ) { level_txt = "FUZZY_LEVEL_EXTREME"; } else if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_HIGH ) { level_txt = "FUZZY_LEVEL_HIGH"; } else if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_MEDIUM ) { level_txt = "FUZZY_LEVEL_MEDIUM"; } else if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_LOW ) { level_txt = "FUZZY_LEVEL_LOW"; } else { level_txt = "FUZZY_LEVEL_UNKNOWN"; };
+					std::cout << SfmDebugGetCurrentActorName() << "\t" << SfmDebugGetCurrentObjectName() << "\t" << condition_txt << "\t" << level_txt << std::endl;
+					std::cout << "\tfuzzy_factor_BEF: " << fuzzy_factor_f_alpha << "\tf_alpha_beta BEF: " << f_alpha_beta << std::endl;
+				}
+
 				std::tie(fuzzy_factor_f_alpha, f_alpha_beta) = defuzz_.defuzzifyObjectRight(fuzzy_factor_f_alpha, f_alpha_beta);
+
+				if ( SfmDebugGetCurrentActorName() == "actor1" && fuzz_lvl != sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_UNKNOWN ) {
+					std::cout << "\tfuzzy_factor_AFTER: " << fuzzy_factor_f_alpha << "\tf_alpha_beta AFTER: " << f_alpha_beta << std::endl;
+					std::cout << std::endl;
+					std::cout << std::endl;
+				}
 
 			}
 			fuzz_.resetParameters();
 //		}
+		 */
 
 		/* Kind of a hack connected with very strong repulsion when actors are close to each other
 		 * whereas in bigger distances the force is quite weak;
