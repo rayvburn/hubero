@@ -159,9 +159,9 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		SfmDebugSetCurrentActorName(actor_name); //////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		if ( print_info ) {
-			std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
-		}
+//		if ( print_info ) {
+//			std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
+//		}
 
 		if ( (is_an_actor = actor_decoder_.isActor(model_ptr->GetType())) ) {
 
@@ -259,7 +259,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 //		std::cout << "\tFINAL actor_pose: " << actor_closest_to_model_pose << "\tmodel_pose: " << model_closest_point_pose << std::endl;
 
 		// debug txt
-		if ( print_info ) { std::cout << "actor_center: " << actor_pose.Pos() << "\tobstacle_closest_pt: " << model_closest_point_pose.Pos() << "\tdist: " << (model_closest_point_pose.Pos()-actor_pose.Pos()).Length() << std::endl; }
+//		if ( print_info ) { std::cout << "actor_center: " << actor_pose.Pos() << "\tobstacle_closest_pt: " << model_closest_point_pose.Pos() << "\tdist: " << (model_closest_point_pose.Pos()-actor_pose.Pos()).Length() << std::endl; }
 
 
 		/* closest points ellipse debugging */
@@ -276,15 +276,6 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 //			std::cout << "\n\n";
 //		}
 
-		/* debug closest points
-		 * a pair must be added to vector, pair consists
-		 * of model closest point's pose and an actor's
-		 * pose that is closest to the model;
-		 * note that actor's pose lies on its bounding
-		 * figure's border (in most cases) */
-		closest_points_.push_back(model_closest_point_pose);
-		closest_points_.push_back(actor_closest_to_model_pose);
-
 		// based on a parameter and an object type - calculate a force from a static object properly
 		if ( is_an_actor || interaction_static_type_ == INTERACTION_REPULSIVE_EVASIVE ) {
 
@@ -299,6 +290,17 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 			f_alpha_beta = computeForceStaticObstacle(actor_closest_to_model_pose, actor_velocity,
 													  model_closest_point_pose, dt);
 
+		}
+
+		/* debug closest points
+		 * a pair must be added to vector, pair consists
+		 * of model closest point's pose and an actor's
+		 * pose that is closest to the model;
+		 * note that actor's pose lies on its bounding
+		 * figure's border (in most cases) */
+		if ( f_alpha_beta.Length() > 1e-06 ) {
+			closest_points_.push_back(model_closest_point_pose);
+			closest_points_.push_back(actor_closest_to_model_pose);
 		}
 
 //		std::cout << "\n\n\n" << std::endl;
@@ -362,9 +364,9 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 		// sum all forces
 		f_interaction_total += f_alpha_beta;
-		if ( print_info ) {
-			std::cout << " model's name: " << model_ptr->GetName() << "  pose: " << model_ptr->WorldPose() << "  lin vel: " << model_vel << "  force: " << f_alpha_beta << std::endl;
-		}
+//		if ( print_info ) {
+//			std::cout << " model's name: " << model_ptr->GetName() << "  pose: " << model_ptr->WorldPose() << "  lin vel: " << model_vel << "  force: " << f_alpha_beta << std::endl;
+//		}
 
 #ifdef DEBUG_LOG_ALL_INTERACTIONS
 		if ( SfmGetPrintData() ) {
@@ -746,7 +748,7 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	ignition::math::Vector3d f_alpha_beta(0.0, 0.0, 0.0);
 
 	// check length to other object (beta)
-	if ( d_alpha_beta.Length() > 10.0 ) {
+	if ( d_alpha_beta.Length() > 7.5 ) {
 
 		// TODO: if no objects nearby the threshold should be increased
 		#ifdef DEBUG_INTERACTION_FORCE

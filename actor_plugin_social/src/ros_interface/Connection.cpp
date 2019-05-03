@@ -214,7 +214,7 @@ void Connection::callbackThreadHandler() {
 	while ( nh_ptr_->ok() ) {
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-		cb_queue_.callAvailable( ros::WallDuration(0.001) );
+		cb_queue_.callAvailable(); //  ros::WallDuration(0.001)
 
 	}
 

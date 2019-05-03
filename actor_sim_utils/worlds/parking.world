@@ -5957,5 +5957,309 @@
         <projection_type>perspective</projection_type>
       </camera>
     </gui>
+
+
+    <!-- ============================================================== -->
+
+    <!-- Usage: modify the <pose> elements of each actor to change their
+         starting location. Modify the <target> elements of each actor to
+         change their destination. The <target_weight> can be used to
+         tune the vector field used by the ActorPlugin to control the Actor. -->
+
+    <actor name="actor1">
+      <pose>1.20 20.5 1.00 0 0 3.14</pose>
+      <skin>
+        <!-- <filename>walk.dae</filename>  -->
+        <filename>walk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+      <!--  Animations could be added within animation tag
+            The ones available by default are listed in
+            /usr/share/gazebo-8/media/models -->
+      <animation name="walk">
+        <filename>walk.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand">
+        <filename>stand.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sit_down">
+        <filename>sit_down.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sitting">
+        <filename>sitting.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="run">
+        <filename>run.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_a">
+        <filename>talk_a.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_b">
+        <filename>talk_b.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+                        
+
+      <plugin name="actor1_plugin" filename="libactor_plugin_social.so">
+        <target>-4.5 11.5 1.00</target>
+        <animation_factor>5.1</animation_factor>
+        <!-- Usage: Modify the set of models that the vector field should
+             ignore when moving the actor -->
+        <ignore_obstacles>
+          <model>cafe</model>
+          <model>ground_plane</model>
+        </ignore_obstacles>
+      </plugin>
+    </actor>
+
+    <actor name="actor2">
+      <pose>20.25 18.25 1.00 0 0 3.14</pose>
+      <skin>
+        <filename>walk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+      <animation name="walk">
+        <filename>walk.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand">
+        <filename>stand.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sit_down">
+        <filename>sit_down.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sitting">
+        <filename>sitting.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="run">
+        <filename>run.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_a">
+        <filename>talk_a.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_b">
+        <filename>talk_b.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <plugin name="actor2_plugin" filename="libactor_plugin_social.so">
+        <target>5.25 -4.5 1.00</target>
+        <animation_factor>5.1</animation_factor>
+        <ignore_obstacles>
+          <model>cafe</model>
+          <model>ground_plane</model>
+        </ignore_obstacles>
+      </plugin>
+    </actor>
+
+    <actor name="actor3">
+      <pose>-0.6 5.15 1.00 0 0 -1.57</pose>
+      <skin>
+        <filename>walk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+
+      <animation name="walk">
+        <filename>walk.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand">
+        <filename>stand.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sit_down">
+        <filename>sit_down.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sitting">
+        <filename>sitting.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="run">
+        <filename>run.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_a">
+        <filename>talk_a.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_b">
+        <filename>talk_b.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      
+      <plugin name="actor3_plugin" filename="libactor_plugin_social.so">
+        <target>19.5 11.85 1.24</target>
+        <animation_factor>5.1</animation_factor>
+        <ignore_obstacles>
+          <model>cafe</model>
+          <model>ground_plane</model>
+        </ignore_obstacles>
+      </plugin>
+    </actor>    
+
+
+    <actor name="actor4">
+      <pose>-5.5 -6.5 1.00 0 0 0</pose>
+      <skin>
+        <filename>walk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+
+      <animation name="walk">
+        <filename>walk.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand">
+        <filename>stand.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sit_down">
+        <filename>sit_down.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sitting">
+        <filename>sitting.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="run">
+        <filename>run.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_a">
+        <filename>talk_a.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_b">
+        <filename>talk_b.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <plugin name="actor4_plugin" filename="libactor_plugin_social.so">
+        <target>17.25 -6.25 1.24</target>
+        <animation_factor>5.1</animation_factor>
+        <ignore_obstacles>
+          <model>cafe</model>
+          <model>ground_plane</model>
+        </ignore_obstacles>
+      </plugin>
+    </actor>  
+
+    <!-- ============================================================== -->
   </world>
 </sdf>

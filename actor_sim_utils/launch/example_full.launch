@@ -26,7 +26,14 @@
         <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" args="--verbose" respawn="false" output="screen"/>
     </group>
 
+    <!-- 
     <rosparam file="$(find actor_sim_utils)/config/actor_param.yaml" command="load" ns="/gazebo/actor_plugin_ros_interface/actor"/>
+    -->
     <rosparam file="$(find actor_sim_utils)/config/sfm_param.yaml"   command="load" ns="/gazebo/actor_plugin_ros_interface/sfm"/>
+    
+
+    <group if="$(eval world == 'living_room')">
+        <rosparam file="$(find actor_sim_utils)/config/actor_param_living.yaml" command="load" ns="/gazebo/actor_plugin_ros_interface/actor"/>
+    </group>
 
 </launch>
