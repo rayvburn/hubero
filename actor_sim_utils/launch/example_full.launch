@@ -7,7 +7,8 @@
     <env name="GAZEBO_PLUGIN_PATH" value="$(find actor_plugin_social)/lib:$(find social_force_vis)/lib:$(optenv GAZEBO_PLUGIN_PATH)"/>
     
     <!-- ====================== default values for parameters ================================== -->
-    <arg name="world_file"  default="$(find actor_sim_utils)/worlds/custom2.world"/>
+    <arg name="world" default="cafe_example"/>
+    <arg name="world_file"  default="$(find actor_sim_utils)/worlds/$(arg world).world"/>
     <arg name="gui" default="true"/>
     <arg name="rviz" default="true"/>
 
@@ -25,7 +26,7 @@
         <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" args="--verbose" respawn="false" output="screen"/>
     </group>
 
-    <rosparam file="$(find actor_sim_utils)/config/actor_param_custom2.yaml" command="load" ns="/gazebo/actor_plugin_ros_interface/actor"/>
-    <rosparam file="$(find actor_sim_utils)/config/sfm_param_custom2.yaml"   command="load" ns="/gazebo/actor_plugin_ros_interface/sfm"/>
+    <rosparam file="$(find actor_sim_utils)/config/actor_param.yaml" command="load" ns="/gazebo/actor_plugin_ros_interface/actor"/>
+    <rosparam file="$(find actor_sim_utils)/config/sfm_param.yaml"   command="load" ns="/gazebo/actor_plugin_ros_interface/sfm"/>
 
 </launch>
