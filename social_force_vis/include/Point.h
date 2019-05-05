@@ -38,7 +38,7 @@ public:
 	void setColorLine(const float &r, const float &g, const float &b, const float &alpha);
 
 	/// \brief Method which wraps createLineList()
-	visualization_msgs::MarkerArray createLineListArray(const std::vector<ignition::math::Pose3d> &poses) const;
+	visualization_msgs::MarkerArray createLineListArray(const std::vector<ignition::math::Pose3d> &poses);
 
 	/// \brief Method that passes position components
 	/// of a poses to a createLineList() method which
@@ -56,6 +56,10 @@ private:
 
 	/// \brief Stores a color a line
 	std_msgs::ColorRGBA color_line_;
+
+	/// \brief Stores a max ID of a line
+	/// which allows to delete old lines
+	unsigned int line_id_max_;
 
 };
 

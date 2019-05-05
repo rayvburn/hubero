@@ -12,7 +12,7 @@ namespace vis {
 
 // ------------------------------------------------------------------- //
 
-Point::Point() { }
+Point::Point(): line_id_max_(0) { }
 
 // ------------------------------------------------------------------- //
 
@@ -22,19 +22,51 @@ void Point::setColorLine(const float &r, const float &g, const float &b, const f
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::MarkerArray Point::createLineListArray(const std::vector<ignition::math::Pose3d> &poses) const {
+visualization_msgs::MarkerArray Point::createLineListArray(const std::vector<ignition::math::Pose3d> &poses) {
 
 	visualization_msgs::MarkerArray array;
 
-	// check is there is even number of elements
+	/* check is there is even number of elements */
 	if ( poses.size() % 2 != 0 ) {
 		std::cout << "createLineListArray() - odd number of elements in vector but MUST be even!" << std::endl;
 		return (array);
 	}
 
+	/* fill a marker array with lines */
 	for ( size_t i = 0; i < poses.size(); i=i+2 ) {
 		array.markers.push_back( createLineList(poses.at(i), poses.at(i+1), i) );
 	}
+
+	/* check if a maximum line ID is bigger than a poses' size */
+	if ( line_id_max_ > (poses.size() - 1) ) {
+
+		/* copy the size value, as after entering the for loop
+		 * the size of a vector will be increased */
+		size_t lines_size_backup = poses.size() - 1;
+
+		/* if true, then fill the marker array with blank markers (action DELETE);
+		 * start `for` loop with poses.size() index because (size() - 1) objects
+		 * were already created */
+		visualization_msgs::Marker marker;
+		marker.header.frame_id = frame_;
+		marker.type = visualization_msgs::Marker::LINE_LIST;
+		marker.action = visualization_msgs::Marker::DELETE;
+
+		for ( size_t i = poses.size(); i <= line_id_max_; i++ ) {
+			marker.id = i;
+			array.markers.push_back(marker);
+		}
+
+		// save a new max ID of a lines array
+		line_id_max_ = lines_size_backup;
+
+	} else {
+
+		// save a new max ID of a lines array
+		line_id_max_ = poses.size() - 1;
+
+	}
+
 	return (array);
 
 }
