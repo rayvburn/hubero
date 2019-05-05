@@ -20,8 +20,10 @@
 namespace sfm {
 namespace core {
 
-/// more of a failure blocker than a real decoder -
-/// decoder returns default object constructor when actor is not found
+/// \brief InfoDecoder class is more of a failure blocker than a real decoder -
+/// decoder returns default object constructor when actor is not found.
+/// This class is created as a supplement to the actor::core::CommonInfo
+/// class created as a workaround to ActorPlugin bugs (check CommonInfo's .h)
 class ActorInfoDecoder {
 
 public:

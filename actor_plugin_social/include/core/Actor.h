@@ -56,7 +56,7 @@
 namespace actor {
 namespace core {
 
-/*
+/**
  * Inheritance from std::enable_shared_from_this allows to pass
  * a std::shared_ptr of an Actor instance to Connection class which
  * provides ROS interface (`RX-only type`) and which must have

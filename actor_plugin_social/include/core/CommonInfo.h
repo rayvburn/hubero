@@ -52,6 +52,11 @@ namespace core {
  * Bounding types could be switched dynamically if needed (if previously properly initialized)
  */
 
+/// brief A class created as a workaround for
+/// ActorPlugin problem related with not saving
+/// a velocity, an acceleration, a bounding box;
+/// it stores all actors' data that could not
+/// be saved in the world file
 class CommonInfo {
 
 public:
@@ -65,8 +70,8 @@ public:
 	/// an actor's name and his ID
 	void addActor 			(const std::string &name);
 
-	/// \brief Methods that updated appropriate instance
-	/// in whole vector
+	/// \brief Methods that update appropriate instance
+	/// in a whole vector
 	void setBoundingBox		(const actor::inflation::Box &bb);
 	void setBoundingCircle	(const actor::inflation::Circle &bc);
 	void setBoundingEllipse	(const actor::inflation::Ellipse &be);
