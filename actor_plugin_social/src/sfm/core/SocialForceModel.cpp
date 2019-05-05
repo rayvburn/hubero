@@ -564,7 +564,7 @@ ignition::math::Pose3d SocialForceModel::computeNewPose(const ignition::math::Po
 	ignition::math::Pose3d new_pose;
 	new_pose.Set(actor_pose.Pos().X() + result_vel.X() * dt,
 				 actor_pose.Pos().Y() + result_vel.Y() * dt,
-				 1.2138,
+				 actor_pose.Pos().Z(), //1.2138,
 				 (IGN_PI/2),
 				 0,
 				 yaw_new.Radian() + IGN_PI_2); 	// V2 // transform back to actor's CS
