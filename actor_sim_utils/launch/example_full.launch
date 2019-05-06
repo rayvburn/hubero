@@ -12,6 +12,9 @@
     <arg name="gui" default="true"/>
     <arg name="rviz" default="true"/>
 
+    <arg name="actor_params_ns" default="/gazebo/actor_plugin_ros_interface/actor"/>
+    <arg name="sfm_params_ns" default="/gazebo/actor_plugin_ros_interface/sfm"/>
+
     <!-- ========================= start Gazebo Server ========================================= -->
     <node name="gazebo" pkg="gazebo_ros" type="gzserver" output="screen"
         args="$(arg world_file)" />
@@ -29,11 +32,21 @@
     <!-- 
     <rosparam file="$(find actor_sim_utils)/config/actor_param.yaml" command="load" ns="/gazebo/actor_plugin_ros_interface/actor"/>
     -->
-    <rosparam file="$(find actor_sim_utils)/config/sfm_param.yaml"   command="load" ns="/gazebo/actor_plugin_ros_interface/sfm"/>
+    <rosparam file="$(find actor_sim_utils)/config/sfm_param.yaml"   command="load" ns="$(arg sfm_params_ns)"/>
     
 
     <group if="$(eval world == 'living_room')">
-        <rosparam file="$(find actor_sim_utils)/config/actor_param_living.yaml" command="load" ns="/gazebo/actor_plugin_ros_interface/actor"/>
+        <rosparam file="$(find actor_sim_utils)/config/actor_param_living.yaml" command="load" ns="$(arg actor_params_ns)"/>
+        <rosparam param="$(arg actor_params_ns)/world_bound_x">[+7.80, -5.00]</rosparam>
+        <rosparam param="$(arg actor_params_ns)/world_bound_y">[-5.70, +5.70]</rosparam>
+        <rosparam param="$(arg actor_params_ns)/limit_actors_workspace">false</rosparam>
+    </group>
+
+    <group if="$(eval world == 'parking')">
+        <rosparam file="$(find actor_sim_utils)/config/actor_param_parking.yaml" command="load" ns="$(arg actor_params_ns)"/>
+        <rosparam param="$(arg actor_params_ns)/world_bound_x">[+21.5, -6.5]</rosparam>
+        <rosparam param="$(arg actor_params_ns)/world_bound_y">[-7.0, +21.0]</rosparam>
+        <rosparam param="$(arg actor_params_ns)/limit_actors_workspace">true</rosparam>
     </group>
 
 </launch>
