@@ -131,7 +131,16 @@ void Actor::initInflator(const double &semi_major, const double &semi_minor, con
 void Actor::initSFM() {
 
 	// initialize SFM
-	// sfm_.Init(80.0, 2.0, 1.0, world_ptr_);
+	sfm_.init(params_.getSfmParams().internal_force_factor,
+			  params_.getSfmParams().interaction_force_factor,
+			  static_cast<unsigned int>(params_.getSfmParams().mass),
+			  params_.getSfmParams().max_speed,
+			  params_.getSfmParams().fov,
+			  params_.getSfmParams().min_force,
+			  params_.getSfmParams().max_force,
+			  static_cast<sfm::core::StaticObjectInteraction>(params_.getSfmParams().static_obj_interaction),
+			  static_cast<sfm::core::InflationType>(params_.getSfmParams().box_inflation_type),
+			  world_ptr_);
 
 }
 
@@ -226,6 +235,9 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 
 	}
 
+	// - - - - - - - - - - - - - - - - - - - - - - -
+	// initialize SFM with loaded parameters set
+	initSFM();
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// debugging section
