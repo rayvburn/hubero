@@ -37,35 +37,35 @@ visualization_msgs::MarkerArray Point::createLineListArray(const std::vector<ign
 		array.markers.push_back( createLineList(poses.at(i), poses.at(i+1), i) );
 	}
 
-	/* check if a maximum line ID is bigger than a poses' size */
-	if ( line_id_max_ > (poses.size() - 1) ) {
-
-		/* copy the size value, as after entering the for loop
-		 * the size of a vector will be increased */
-		size_t lines_size_backup = poses.size() - 1;
-
-		/* if true, then fill the marker array with blank markers (action DELETE);
-		 * start `for` loop with poses.size() index because (size() - 1) objects
-		 * were already created */
-		visualization_msgs::Marker marker;
-		marker.header.frame_id = frame_;
-		marker.type = visualization_msgs::Marker::LINE_LIST;
-		marker.action = visualization_msgs::Marker::DELETE;
-
-		for ( size_t i = poses.size(); i <= line_id_max_; i++ ) {
-			marker.id = i;
-			array.markers.push_back(marker);
-		}
-
-		// save a new max ID of a lines array
-		line_id_max_ = lines_size_backup;
-
-	} else {
-
-		// save a new max ID of a lines array
-		line_id_max_ = poses.size() - 1;
-
-	}
+//	 /* check if a maximum line ID is bigger than a poses' size */
+//	 if ( line_id_max_ > (poses.size() - 1) ) {
+//
+//	 	/* copy the size value, as after entering the for loop
+//	 	 * the size of a vector will be increased */
+//	 	size_t lines_size_backup = poses.size() - 1;
+//
+//	 	/* if true, then fill the marker array with blank markers (action DELETE);
+//	 	 * start `for` loop with poses.size() index because (size() - 1) objects
+//	 	 * were already created */
+//	 	visualization_msgs::Marker marker;
+//	 	marker.header.frame_id = frame_;
+//	 	marker.type = visualization_msgs::Marker::LINE_LIST;
+//	 	marker.action = visualization_msgs::Marker::DELETE;
+//
+//	 	for ( size_t i = poses.size(); i <= line_id_max_; i++ ) {
+//	 		marker.id = i;
+//	 		array.markers.push_back(marker);
+//	 	}
+//
+//	 	// save a new max ID of a lines array
+//	 	line_id_max_ = lines_size_backup;
+//
+//	 } else {
+//
+//	 	// save a new max ID of a lines array
+//	 	line_id_max_ = poses.size() - 1;
+//
+//	 }
 
 	return (array);
 
