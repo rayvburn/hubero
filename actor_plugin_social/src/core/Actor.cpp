@@ -130,7 +130,52 @@ void Actor::initInflator(const double &semi_major, const double &semi_minor, con
 
 void Actor::initSFM() {
 
-	// initialize SFM
+	/* choose a proper inflation type - convert from actor's inflation types
+	 * available; number of types are not equal for actor and for SFM thus
+	 * a conversion is done */
+	sfm::core::InflationType sfm_inflation;
+
+	/* using param value instead of member variable
+	 * in case of different module initialization order */
+	switch ( static_cast<actor::ActorBoundingType>(params_.getActorInflatorParams().bounding_type)  ) {
+
+		case(actor::ActorBoundingType::ACTOR_BOUNDING_BOX):
+
+			/* based on `box inflation type` parameter - choose the right
+			 * SFM's box inflation type (actor is insensitive to this parameter);
+			 * see sfm::core::InflationType */
+			if ( static_cast<sfm::core::InflationType>(params_.getSfmParams().box_inflation_type) ==
+					sfm::core::InflationType::INFLATION_BOX_ALL_OBJECTS ) {
+
+				std::cout << "SFM init: inflation type - BOX ALL OBJECTS" << std::endl;
+				sfm_inflation = sfm::core::InflationType::INFLATION_BOX_ALL_OBJECTS;
+
+			} else if ( static_cast<sfm::core::InflationType>(params_.getSfmParams().box_inflation_type) ==
+					sfm::core::InflationType::INFLATION_BOX_OTHER_OBJECTS ) {
+
+				std::cout << "SFM init: inflation type - BOX OTHER OBJECTS" << std::endl;
+				sfm_inflation = sfm::core::InflationType::INFLATION_BOX_OTHER_OBJECTS;
+
+			}
+			break;
+
+		case(actor::ActorBoundingType::ACTOR_BOUNDING_CIRCLE):
+				std::cout << "SFM init: inflation type - CIRCLE" << std::endl;
+				sfm_inflation = sfm::core::InflationType::INFLATION_CIRCLE;
+				break;
+
+		case(actor::ActorBoundingType::ACTOR_BOUNDING_ELLIPSE):
+				std::cout << "SFM init: inflation type - ELLIPSE" << std::endl;
+				sfm_inflation = sfm::core::InflationType::INFLATION_ELLIPSE;
+				break;
+
+		case(actor::ActorBoundingType::ACTOR_NO_BOUNDING):
+				/* TODO this bounding type seems to not have a correspondence in code? */
+				std::cout << "SFM init: inflation type - NONE" << std::endl;
+
+	}
+
+	// initialize SFM parameters
 	sfm_.init(params_.getSfmParams().internal_force_factor,
 			  params_.getSfmParams().interaction_force_factor,
 			  static_cast<unsigned int>(params_.getSfmParams().mass),
@@ -139,9 +184,9 @@ void Actor::initSFM() {
 			  params_.getSfmParams().min_force,
 			  params_.getSfmParams().max_force,
 			  static_cast<sfm::core::StaticObjectInteraction>(params_.getSfmParams().static_obj_interaction),
-			  static_cast<sfm::core::InflationType>(params_.getSfmParams().box_inflation_type),
+			  sfm_inflation,
 			  world_ptr_);
-
+	
 }
 
 // ------------------------------------------------------------------- //

@@ -52,9 +52,10 @@ typedef enum {
 /// a model creates an artificial `inflation
 /// layer` known from mobile robots navigation
 typedef enum {
-	ACTOR_BOUNDING_BOX = 0,//!< ACTOR_BOUNDING_BOX a cuboid is created around the actor
-	ACTOR_BOUNDING_CIRCLE, //!< ACTOR_BOUNDING_CIRCLE a cyllinder is created around the actor
-	ACTOR_BOUNDING_ELLIPSE //!< ACTOR_BOUNDING_ELLIPSE an ellipsoidal cyllinder is created around the actor
+	ACTOR_BOUNDING_BOX = 0,	//!< ACTOR_BOUNDING_BOX a cuboid is created around the actor
+	ACTOR_BOUNDING_CIRCLE, 	//!< ACTOR_BOUNDING_CIRCLE a cyllinder is created around the actor
+	ACTOR_BOUNDING_ELLIPSE, //!< ACTOR_BOUNDING_ELLIPSE an ellipsoidal cyllinder is created around the actor
+	ACTOR_NO_BOUNDING		//!< ACTOR_NO_BOUNDING no bounding is created around the actor
 } ActorBoundingType;
 
 // -------------------------
