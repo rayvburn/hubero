@@ -16,8 +16,7 @@
     <arg name="sfm_params_ns"   default="/gazebo/actor_plugin_ros_interface/sfm"/>
 
     <!-- ========================= start Gazebo Server ========================================= -->
-    <node name="gazebo" pkg="gazebo_ros" type="gzserver" output="screen"
-        args="$(arg world_file)" />
+    <node name="gazebo" pkg="gazebo_ros" type="gzserver" output="screen" args="$(arg world_file)" />
 
     <!-- =============================== start rViz ============================================ -->
     <group if="$(arg rviz)">
@@ -35,29 +34,28 @@
     
     <!-- ========================= change parameters based on chosen world ================= -->
     <group if="$(eval world == 'living_room')">
-        <!-- <rosparam file="$(find actor_sim_utils)/config/actor_param_living.yaml" command="load" ns="$(arg actor_params_ns)"/> -->
+    	<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">2</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/world_bound_x">[+7.00, -4.50]</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/world_bound_y">[-5.20, +5.20]</rosparam>
-        <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">true</rosparam>
+        <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">false</rosparam>
         <rosparam param="$(arg sfm_params_ns)/world_dictionary/ignored_models">[ground_plane, sun, figurine_3, clock_digital, lamp_table_metal]</rosparam>
     </group>
 
     <group if="$(eval world == 'parking')">
-        <!--  <rosparam file="$(find actor_sim_utils)/config/actor_param_parking.yaml" command="load" ns="$(arg actor_params_ns)"/> -->
+    	<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/world_bound_x">[+20.5, -5.5]</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/world_bound_y">[-6.0, +20.0]</rosparam>
-        <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">true</rosparam>
+        <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">false</rosparam>
         <rosparam param="$(arg sfm_params_ns)/world_dictionary/ignored_models">[ground_plane, sun]</rosparam>
-        <rosparam param="$(arg sfm_params_ns)/algorithm/min_force">1000.0</rosparam> <!-- to force a faster movement (lack of objects in space makes people walking slowly) -->
+        <rosparam param="$(arg sfm_params_ns)/algorithm/min_force">700.0</rosparam> <!-- to force a faster movement (lack of objects in space makes people walking slowly) -->
     </group>
 
     <group if="$(eval world == 'cafe_example')">
-	    <!--  <rosparam file="$(find actor_sim_utils)/config/actor_param_parking.yaml" command="load" ns="$(arg actor_params_ns)"/> -->
 	    <rosparam param="$(arg actor_params_ns)/inflation/bounding_type">0</rosparam>
 	    <rosparam param="$(arg actor_params_ns)/general/world_bound_x">[+3.80, -3.20]</rosparam>
 	    <rosparam param="$(arg actor_params_ns)/general/world_bound_y">[-10.20, +3.80]</rosparam>
-	    <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">true</rosparam>
-	    <rosparam param="$(arg sfm_params_ns)/world_dictionary/ignored_models">[cafe, ground_plane, sun]</rosparam>
+	    <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">false</rosparam>
+	    <rosparam param="$(arg sfm_params_ns)/world_dictionary/ignored_models">[ground_plane, sun, cafe]</rosparam>
 	    <rosparam param="$(arg sfm_params_ns)/algorithm/min_force">350.0</rosparam>
     </group>
 

@@ -7,6 +7,8 @@
 
 #include <Point.h>
 
+//#define DEBUG_LINE_LIST_RESIZING
+
 namespace sfm {
 namespace vis {
 
@@ -37,35 +39,67 @@ visualization_msgs::MarkerArray Point::createLineListArray(const std::vector<ign
 		array.markers.push_back( createLineList(poses.at(i), poses.at(i+1), i) );
 	}
 
-//	 /* check if a maximum line ID is bigger than a poses' size */
-//	 if ( line_id_max_ > (poses.size() - 1) ) {
-//
-//	 	/* copy the size value, as after entering the for loop
-//	 	 * the size of a vector will be increased */
-//	 	size_t lines_size_backup = poses.size() - 1;
-//
-//	 	/* if true, then fill the marker array with blank markers (action DELETE);
-//	 	 * start `for` loop with poses.size() index because (size() - 1) objects
-//	 	 * were already created */
-//	 	visualization_msgs::Marker marker;
-//	 	marker.header.frame_id = frame_;
-//	 	marker.type = visualization_msgs::Marker::LINE_LIST;
-//	 	marker.action = visualization_msgs::Marker::DELETE;
-//
-//	 	for ( size_t i = poses.size(); i <= line_id_max_; i++ ) {
-//	 		marker.id = i;
-//	 		array.markers.push_back(marker);
-//	 	}
-//
-//	 	// save a new max ID of a lines array
-//	 	line_id_max_ = lines_size_backup;
-//
-//	 } else {
-//
-//	 	// save a new max ID of a lines array
-//	 	line_id_max_ = poses.size() - 1;
-//
-//	 }
+	/* FIXME: it seems that rViz somehow stores all markers internally
+	 * because when some marker of a certain ID is deleted an application
+	 * throws a bad_alloc exception;
+	 * Deletion is needed to get rid of those lines which indicate
+	 * objects which create 0 force on current actor;
+	 * temporarily a blank lines will be left - FIXME issue */
+
+	/* check if a maximum line ID is bigger than a poses' size */
+	if ( line_id_max_ > (poses.size() - 1) ) {
+
+		/* copy the size value, as after entering the for loop
+		 * the size of a vector will be increased */
+		size_t lines_size_backup = poses.size() - 1;
+
+		/* if true, then fill the marker array with blank markers (action DELETE);
+		 * start `for` loop with poses.size() index because (size() - 1) objects
+		 * were already created */
+		visualization_msgs::Marker marker;
+		marker.header.frame_id = frame_;
+		marker.type = visualization_msgs::Marker::LINE_LIST;
+		marker.action = visualization_msgs::Marker::DELETE;
+
+#ifdef DEBUG_LINE_LIST_RESIZING
+		std::cout << "\nSFM VIS - POINT - issue enter - MAX LINE ID BIGGER THAN POSES SIZE" << std::endl;
+		std::cout << "\tcurrent poses number: " << poses.size() << "\tnew_max_idx_value_TO_BE: " << lines_size_backup << "\t | curr_line_id_max: " << line_id_max_ << std::endl;
+		std::cout << "\tENTERING FOR LOOP" << std::endl;
+#endif
+
+		for ( size_t i = poses.size(); i <= line_id_max_; i++ ) {
+
+			#ifdef DEBUG_LINE_LIST_RESIZING
+			std::cout << "\t\titeration: " << i << "\tout of: " << line_id_max_ << std::endl;
+			#endif
+
+			marker.id = i;
+			array.markers.push_back(marker);
+
+		}
+
+#ifdef DEBUG_LINE_LIST_RESIZING
+		std::cout << "\tFOR LOOP ENDED" << std::endl;
+#endif
+
+		// save a new max ID of a lines array
+		line_id_max_ = lines_size_backup;
+
+	} else {
+
+		// save a new max ID of a lines array
+		if ( poses.size() != 0 ) {
+			line_id_max_ = poses.size() - 1;
+		} else {
+			line_id_max_ = 0;
+		}
+
+#ifdef DEBUG_LINE_LIST_RESIZING
+//		std::cout << "\nSFM VIS - POINT - lines list extended" << std::endl;
+//		std::cout << "\t\tcurrent poses number: " << poses.size() << "\tline_id_max: " << line_id_max_ << std::endl;
+#endif
+
+	}
 
 	return (array);
 
