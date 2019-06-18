@@ -332,7 +332,7 @@ visualization_msgs::Marker Ellipse::getMarkerConversion() const {
 	marker.scale.y = 2.0 * b_minor_;
 	marker.scale.z = 1.8f; 	// typical person height
 
-	marker.color.a = 0.3; 	// alpha channel
+	marker.color.a = 0.5; 	// alpha channel
 	marker.color.r = 1.0;
 	marker.color.g = 1.0;
 	marker.color.b = 1.0;

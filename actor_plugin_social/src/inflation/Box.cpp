@@ -141,7 +141,7 @@ visualization_msgs::Marker Box::getMarkerConversion() const {
 	marker.scale.y = std::fabs(bb_.Max().Y() - bb_.Min().Y());
 	marker.scale.z = std::fabs(bb_.Max().Z() - bb_.Min().Z());
 
-	marker.color.a = 0.3; // alpha channel
+	marker.color.a = 0.5; // alpha channel
 	marker.color.r = 1.0;
 	marker.color.g = 1.0;
 	marker.color.b = 1.0;

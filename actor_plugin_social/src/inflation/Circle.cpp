@@ -128,7 +128,7 @@ visualization_msgs::Marker Circle::getMarkerConversion() const {
 	marker.scale.y = radius_ * 2.0;
 	marker.scale.z = 1.8f; // typical person height
 
-	marker.color.a = 0.2; // alpha channel
+	marker.color.a = 0.5; // alpha channel
 	marker.color.r = 1.0;
 	marker.color.g = 1.0;
 	marker.color.b = 1.0;
