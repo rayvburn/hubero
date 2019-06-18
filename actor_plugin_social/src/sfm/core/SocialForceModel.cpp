@@ -249,7 +249,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 				// no inflation
 //				std::cout << "\tINFLATION - DEFAULT" << std::endl;
-//				leave centers as closest
+//				leave centers as closest (already done above the `switch`)
 //				actor_closest_to_model_pose = actor_pose;
 //				model_closest_point_pose = model_ptr->WorldPose();
 				break;
@@ -986,9 +986,9 @@ ignition::math::Vector3d SocialForceModel::computeForceStaticObstacle(const igni
 	f_alpha_i = this->Aw_ * exp(-w_alpha_i/this->Bw_) * ((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()) /
 			    2*w_alpha_i) * 0.5 * (d_alpha_i.Normalized() + (d_alpha_i - y_alpha_i).Normalized());
 
-	// FIXME: temp mass factor
+	// FIXME: temp mass factor, make it a parameter
 	// setting too high produces noticeable accelerations around objects
-	f_alpha_i *= 30.0;
+	f_alpha_i *= 35.0; // 30.0;
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
 	if ( SfmGetPrintData() ) {

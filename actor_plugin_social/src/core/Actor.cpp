@@ -53,8 +53,11 @@ void Actor::initRosInterface() {
 
 	if ( params_.getSfmVisParams().publish_grid ) {
 		sfm_vis_grid_.setColorArrow(0.2f, 1.0f, 0.0f, 0.7f);
-		sfm_vis_grid_.createGrid(params_.getActorParams().world_bound_x.at(0), params_.getActorParams().world_bound_x.at(1),
-								 params_.getActorParams().world_bound_y.at(0), params_.getActorParams().world_bound_y.at(1),
+		/* make grid artificially bigger than a world's bounds;
+		 * it makes random targets to be located further from
+		 * walls */
+		sfm_vis_grid_.createGrid(params_.getActorParams().world_bound_x.at(0) - 3.0, params_.getActorParams().world_bound_x.at(1) + 3.0,
+								 params_.getActorParams().world_bound_y.at(0) - 3.0, params_.getActorParams().world_bound_y.at(1) + 3.0,
 								 params_.getSfmVisParams().grid_resolution);
 	}
 
@@ -172,6 +175,8 @@ void Actor::initSFM() {
 		case(actor::ActorBoundingType::ACTOR_NO_BOUNDING):
 				/* TODO this bounding type seems to not have a correspondence in code? */
 				std::cout << "SFM init: inflation type - NONE" << std::endl;
+				sfm_inflation = sfm::core::InflationType::INFLATION_NONE;
+				break;
 
 	}
 
@@ -698,6 +703,8 @@ void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 				new_target = target_;
 				continue;
 			}
+
+			/* TODO: choose a target that is at least 1 meter from any obstacle */
 
 		} // for
 

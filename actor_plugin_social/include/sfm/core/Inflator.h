@@ -150,7 +150,7 @@ public:
 		/* bb's Intersect returns intersection point whose X and Y are equal
 		 * to actor's X and Y thus 0 distance between points and no solutions
 		 * are generated in quadratic equation (happens when actor steps into
-		 * obstacle; as a hack - set intersection point as a object's center */
+		 * obstacle; as a hack - set intersection point as an object's center */
 		if ( (point_intersect.X() == actor_pose.Pos().X()) && (point_intersect.Y() == actor_pose.Pos().Y()) ) {
 			point_intersect = object_pose.Pos();
 		}
