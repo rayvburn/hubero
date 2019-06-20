@@ -15,17 +15,20 @@
     <arg name="actor_params_ns" default="/gazebo/actor_plugin_ros_interface/actor"/>
     <arg name="sfm_params_ns"   default="/gazebo/actor_plugin_ros_interface/sfm"/>
 
-    <!-- ========================= start Gazebo Server ========================================= -->
-    <node name="gazebo" pkg="gazebo_ros" type="gzserver" output="screen" args="$(arg world_file)" />
+    <!-- ========================= launch world (Gazebo server and GUI) ========================================= -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(arg world_file)"/>
+        <arg name="paused" value="false"/>
+        <arg name="use_sim_time" value="true"/>
+        <arg name="gui" value="true"/>
+        <arg name="headless" value="false"/>
+        <arg name="debug" value="false"/>
+        <arg name="verbose" value="true"/>
+    </include>
 
     <!-- =============================== start rViz ============================================ -->
     <group if="$(arg rviz)">
     	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find social_force_vis)/rviz/debug3_group.rviz"/>
-    </group>
-    
-    <!-- ========================= start Gazebo Client ========================================= -->
-    <group if="$(arg gui)">
-        <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" args="--verbose" respawn="false" output="screen"/>
     </group>
 
 	<!-- ========================= load parameters ========================================= -->
