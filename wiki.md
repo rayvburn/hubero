@@ -40,10 +40,17 @@ and optionally
 ***
 
 o when Eclipse STOPPED recognizing symbols and Rebuild or Freshen All Files doesn't help then create a new folder, place some source file in there and run Rebuild again - now the Indexer should run properly and everything should be fixed
+
 o another way is to try to rebuild from a folder that is higher up in a folders tree
+
 o other solution includes cleaning projects first and then rebuilding all of them (cleaning either with catkin or Eclipse)
+
 o it may be that somehow project's `build` folder in `[workspace]/build` somehow changed ownership and group, then revert changes to default user 
+
 o what helps in most cases is creation of a new workspace in the IDE and firing up the C++ indexer again
+
+o see `~/scripts` folder for solution
+
 
 ***
 

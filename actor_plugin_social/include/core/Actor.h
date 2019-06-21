@@ -24,6 +24,7 @@
 #include "ros_interface/ConnectionFwd.h" // must be here due to circular dependency
 #include "ros_interface/Connection.h"
 #include "ros_interface/ParamLoader.h"
+#include "ros_interface/GlobalPlan.h"
 
 // Social Force Model
 #include "sfm/core/SocialForceModel.h"
@@ -49,7 +50,7 @@
 #include <ignition/math/Pose3.hh>
 
 // ROS interface
-#include "ActorROSInterface.h"
+//#include "ActorROSInterface.h"
 
 // -------------------------
 
@@ -326,6 +327,11 @@ private:
     /// avoids pollution of an Actor class with plenty of parameter
     /// variables
     actor::ros_interface::ParamLoader params_;
+
+    // TODO
+    //std::unique_ptr<actor::ros_interface::GlobalPlan> global_plan_ptr_;
+    //actor::ros_interface::GlobalPlan global_plan_;
+    std::unique_ptr<actor::ros_interface::GlobalPlan> global_plan_ptr_;
 
 };
 

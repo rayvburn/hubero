@@ -6,6 +6,7 @@
  */
 
 #include "ros_interface/Node.h"
+#include <ros/ros.h>
 
 namespace actor {
 namespace ros_interface {
@@ -32,6 +33,9 @@ Node::Node() {
 		// create new NodeHandle in a private namespace
 		nh_ptr_.reset(new ros::NodeHandle(("~actor_plugin_ros_interface")));
 
+		// create new TransformListener
+		tf_listener_ptr_.reset(new tf::TransformListener(ros::Duration(10)));
+
 	}
 
 }
@@ -40,6 +44,12 @@ Node::Node() {
 
 std::shared_ptr<ros::NodeHandle> Node::getNodeHandlePtr() const {
 	return (nh_ptr_);
+}
+
+// ------------------------------------------------------------------- //
+
+std::shared_ptr<tf::TransformListener> Node::getTfListenerPtr() const {
+	return (tf_listener_ptr_);
 }
 
 // ------------------------------------------------------------------- //

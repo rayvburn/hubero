@@ -19,14 +19,13 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <geometry_msgs/TransformStamped.h>
-//#include <nav_msgs/Path.h>
+#include <nav_msgs/Path.h>
 
 // ignition library
 #include <ignition/math/Pose3.hh>
 
 // Actor-related
 #include "core/Enums.h"
-
 
 namespace actor {
 namespace ros_interface {
@@ -105,7 +104,7 @@ public:
 	}
 
 	/// \brief Publishes a visualization_msgs::Marker
-	/// or visualization_msgs::MarkerArray message;
+	/// or visualization_msgs::MarkerArray message (TODO: OR PATH?);
 	/// message type is previously defined in ros::Publisher
 	template <typename T1, typename T2>
 	void publishData(const T1 &type, const T2 &marker_msg) {

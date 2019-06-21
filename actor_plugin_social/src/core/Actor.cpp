@@ -8,6 +8,7 @@
 #include "core/Actor.h"
 #include <algorithm>    // std::find
 #include <ignition/math/Line3.hh>
+#include <memory> // make_unique
 
 namespace actor {
 namespace core {
@@ -69,6 +70,7 @@ void Actor::initRosInterface() {
 	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_BOUNDING, "ellipse");
 	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_SF_VECTOR, "social_force");
 	stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, "closest_points");
+	stream_.initPublisher<ActorNavMsgType, nav_msgs::Path>(ActorNavMsgType::ACTOR_NAV_PATH, "path");
 
 	// check if grid usage has been enabled in .YAML file
 	if ( params_.getSfmVisParams().publish_grid ) {
@@ -86,6 +88,19 @@ void Actor::initRosInterface() {
 	// initialize services for Actor control
 	connection_ptr_->initServices();
 	connection_ptr_->startCallbackProcessingThread();
+
+	// initialize global plan provider
+	actor::ros_interface::GlobalPlan *global_planner_ptr =
+			new actor::ros_interface::GlobalPlan(node_.getNodeHandlePtr(), node_.getTfListenerPtr(), actor_ptr_->GetName(), 5);
+//	global_plan_ptr_ = std::unique_ptr<actor::ros_interface::GlobalPlan>(global_planner_ptr);
+
+	//global_plan_ = actor::ros_interface::GlobalPlan(node_.getNodeHandlePtr(), actor_ptr_->GetName(), 5);
+
+	//global_plan_.init(node_.getNodeHandlePtr(), actor_ptr_->GetName(), 10);
+
+	global_plan_ptr_ = std::unique_ptr<actor::ros_interface::GlobalPlan>(global_planner_ptr);
+	//global_plan_ptr_->init(node_.getNodeHandlePtr(), actor_ptr_->GetName(), 5);
+	std::cout << "initialized" << std::endl;
 
 }
 
@@ -712,6 +727,14 @@ void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 
 	// finally found a new target
 	target_ = new_target;
+
+	// -----------------------------------------------------------------
+
+	//global_plan_.makePlan(pose_world_.Pos(), target_);
+	//global_plan_ptr_->makePlan(pose_world_.Pos(), target_);
+	//stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, global_plan_.getPath());
+
+	// -----------------------------------------------------------------
 
 	// save event time
 	time_last_target_selection_ = info.simTime;

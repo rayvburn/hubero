@@ -18,6 +18,11 @@
   <build_depend>actor_sim_utils</build_depend>
   <build_depend>actor_sim_srv</build_depend>
   <build_depend>social_force_vis</build_depend>
+
+  <!-- global planner -->
+  <build_depend>costmap_2d</build_depend>
+  <build_depend>nav_core</build_depend>
+  <build_depend>navfn</build_depend>
   <!-- <build_depend>grid_map_ros</build_depend> -->
   
 
@@ -25,6 +30,11 @@
   <exec_depend>actor_sim_utils</exec_depend>
   <exec_depend>actor_sim_srv</exec_depend>
   <exec_depend>social_force_vis</exec_depend>
+
+  <!-- global planner -->
+  <exec_depend>costmap_2d</exec_depend>
+  <exec_depend>nav_core</exec_depend>
+  <exec_depend>navfn</exec_depend>
   <!-- <exec_depend>grid_map_ros</exec_depend> -->
 
 
