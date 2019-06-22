@@ -8,10 +8,6 @@ find_package(catkin REQUIRED COMPONENTS social_force_vis)
 
 find_package(tf REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED) #################
-find_package(costmap_2d REQUIRED) ####################
-find_package(nav_core REQUIRED) ######################
-find_package(navfn REQUIRED) #########################
 
 include_directories(${roscpp_INCLUDE_DIRS})
 include_directories(${actor_sim_utils_INCLUDE_DIRS})
@@ -20,10 +16,6 @@ include_directories(${social_force_vis_INCLUDE_DIRS})
 
 include_directories(${tf_INCLUDE_DIRS})
 include_directories(${std_msgs_INCLUDE_DIRS})
-include_directories(${geometry_msgs_INCLUDE_DIRS}) ###
-include_directories(${costmap_2d_INCLUDE_DIRS}) ######
-include_directories(${nav_core_INCLUDE_DIRS}) ########
-include_directories(${navfn_INCLUDE_DIRS}) ###########
 
 include_directories(/user/include/sdformat-5.2)
 include_directories(./include)
@@ -118,9 +110,6 @@ target_link_libraries( ${PROJECT_NAME}
   ${roscpp_LIBRARIES} 
   ${tf_LIBRARIES}
   ${catkin_LIBRARIES}
-  ${costmap_2d_LIBRARIES}
-  ${nav_core_LIBRARIES}
-  ${navfn_LIBRARIES}
 #  ${social_force_vis_LIBRARIES} # catkin sees it, gazebo seems to not - plugin does not load
   /home/rayvburn/ros_workspace/ws_people_sim/src/gazebo_ros_people_sim/social_force_vis/lib/libsocial_force_vis.so 
 #  social_force_vis
