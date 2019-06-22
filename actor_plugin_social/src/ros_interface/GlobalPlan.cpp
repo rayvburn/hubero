@@ -7,7 +7,7 @@
 
 #include "ros_interface/GlobalPlan.h"
 #include <iostream>
-#include <thread>
+#include <memory>
 
 namespace actor {
 namespace ros_interface {
@@ -204,8 +204,8 @@ geometry_msgs::PoseStamped GlobalPlan::convertIgnPoseToPoseStamped(const ignitio
 void GlobalPlan::initializeGlobalPlanner() {
 	// global planner initialization
 	std::cout << "initializeGlobalPlanner() - bef costmap extraction" << std::endl;
-	costmap_2d::Costmap2D* temp_costmap = costmap_global_ptr_->getCostmap();
-	std::cout << "initializeGlobalPlanner() - aft costmap extraction" << std::endl;
+	//costmap_2d::Costmap2D* temp_costmap = costmap_global_ptr_->getCostmap();
+	//std::cout << "initializeGlobalPlanner() - aft costmap extraction" << std::endl;
 	glob_planner_ptr_ = new global_planner::GlobalPlanner(ns_, costmap_global_ptr_->getCostmap(), "map");
 	std::cout << "initializeGlobalPlanner() - aft all" << std::endl;
 }
@@ -225,8 +225,9 @@ void GlobalPlan::initializeCostmap() {
 	//tf::TransformListener tf_list;
 
 	//costmap_global_ptr_ = new costmap_2d::Costmap2DROS(ns_, tf_listener_);
-
-	costmap_global_ptr_ = new costmap_2d::Costmap2DROS(ns_, *tf_listener_ptr_.get());
+	std::cout << "GlobalPlan::initializeCostmap() - before" << std::endl;
+	costmap_global_ptr_ = new costmap_2d::Costmap2DROS(ns_, *tf_listener_ptr_); // .get()
+	std::cout << "GlobalPlan::initializeCostmap() - after" << std::endl;
 
 }
 

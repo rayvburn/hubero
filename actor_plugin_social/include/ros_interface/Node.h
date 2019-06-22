@@ -42,7 +42,10 @@ private:
 	/// all of them use the same instance of NodeHandle
 	static std::shared_ptr<ros::NodeHandle> nh_ptr_;
 
-
+	/// \brief Transform listener's shared_ptr which is used by
+	/// global planner; it's safe to initialize it just after ros::init()
+	/// and NodeHandle, otherwise there may be some application hang
+	/// just after start; all classes use the same tf_listener
 	static std::shared_ptr<tf::TransformListener> tf_listener_ptr_;
 
 };

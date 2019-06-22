@@ -90,16 +90,8 @@ void Actor::initRosInterface() {
 	connection_ptr_->startCallbackProcessingThread();
 
 	// initialize global plan provider
-	actor::ros_interface::GlobalPlan *global_planner_ptr =
-			new actor::ros_interface::GlobalPlan(node_.getNodeHandlePtr(), node_.getTfListenerPtr(), actor_ptr_->GetName(), 5);
-//	global_plan_ptr_ = std::unique_ptr<actor::ros_interface::GlobalPlan>(global_planner_ptr);
-
-	//global_plan_ = actor::ros_interface::GlobalPlan(node_.getNodeHandlePtr(), actor_ptr_->GetName(), 5);
-
-	//global_plan_.init(node_.getNodeHandlePtr(), actor_ptr_->GetName(), 10);
-
+	actor::ros_interface::GlobalPlan *global_planner_ptr = new actor::ros_interface::GlobalPlan(node_.getNodeHandlePtr(), node_.getTfListenerPtr(), actor_ptr_->GetName(), 5);
 	global_plan_ptr_ = std::unique_ptr<actor::ros_interface::GlobalPlan>(global_planner_ptr);
-	//global_plan_ptr_->init(node_.getNodeHandlePtr(), actor_ptr_->GetName(), 5);
 	std::cout << "initialized" << std::endl;
 
 }
