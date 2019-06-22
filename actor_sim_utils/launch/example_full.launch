@@ -38,6 +38,9 @@
 
     <!-- ============================== load map =========================================== -->
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+    <!-- ======================== load global planner node ================================= -->
+    <node name="actor_global_planner" pkg="actor_global_plan" type="actor_global_plan" />
     
     <!-- ========================= change parameters based on chosen world ================= -->
     <!-- inflation/bounding_type -> Box - 0, Circle - 1, Ellipse - 2, NoBounding - 3 -->
