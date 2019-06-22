@@ -15,7 +15,6 @@ namespace ros_interface {
 
 bool actor::ros_interface::Node::node_started_ = false;
 std::shared_ptr<ros::NodeHandle> actor::ros_interface::Node::nh_ptr_;
-std::shared_ptr<tf::TransformListener> actor::ros_interface::Node::tf_listener_ptr_;
 
 // ------------------------------------------------------------------- //
 
@@ -34,11 +33,6 @@ Node::Node() {
 		// create new NodeHandle in a private namespace
 		nh_ptr_.reset(new ros::NodeHandle(("~actor_plugin_ros_interface")));
 
-		// create new TransformListener
-		//tf_listener_ptr_.reset(new tf::TransformListener(ros::Duration(10)));
-		tf::TransformListener* tf_listener_local_ptr = new tf::TransformListener(ros::Duration(10));
-		tf_listener_ptr_ = std::shared_ptr<tf::TransformListener>(tf_listener_local_ptr);
-
 	}
 
 }
@@ -47,12 +41,6 @@ Node::Node() {
 
 std::shared_ptr<ros::NodeHandle> Node::getNodeHandlePtr() const {
 	return (nh_ptr_);
-}
-
-// ------------------------------------------------------------------- //
-
-std::shared_ptr<tf::TransformListener> Node::getTfListenerPtr() const {
-	return (tf_listener_ptr_);
 }
 
 // ------------------------------------------------------------------- //

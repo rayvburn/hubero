@@ -328,10 +328,7 @@ private:
     /// variables
     actor::ros_interface::ParamLoader params_;
 
-    // TODO
-    //std::unique_ptr<actor::ros_interface::GlobalPlan> global_plan_ptr_;
-    //actor::ros_interface::GlobalPlan global_plan_;
-    std::unique_ptr<actor::ros_interface::GlobalPlan> global_plan_ptr_;
+    actor::ros_interface::GlobalPlan global_planner_;
 
 };
 

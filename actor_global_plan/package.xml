@@ -1,0 +1,21 @@
+<package format="2">
+	<name>actor_global_plan</name>
+	<version>1.0.0</version>
+	<description>A node providing global plan for actor navigation</description>
+	
+	<maintainer email="j.karwowski@stud.elka.pw.edu.pl">Jaroslaw Karwowski</maintainer>
+	
+	<license>GPLv3</license>
+	
+	<buildtool_depend>catkin</buildtool_depend>
+	
+	<depend>gazebo_ros</depend> 		<!-- ignition library -->
+	<depend>roscpp</depend>
+	<depend>tf</depend>
+	<depend>geometry_msgs</depend>
+	<depend>costmap_2d</depend>
+	<depend>nav_core</depend>
+	<depend>navfn</depend>
+	<depend>global_planner</depend>
+    
+</package>

@@ -92,6 +92,9 @@ add_library(actor_ros
   include/ros_interface/ParamLoader.h
   src/ros_interface/ParamLoader.cpp
 
+  include/ros_interface/Conversion.h
+  src/ros_interface/Conversion.cpp
+
   include/ros_interface/GlobalPlan.h
   src/ros_interface/GlobalPlan.cpp
 )
