@@ -27,6 +27,8 @@
   <exec_depend>social_force_vis</exec_depend>
   <!-- <exec_depend>grid_map_ros</exec_depend> -->
 
+  <depend>actor_global_plan</depend>
+
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
