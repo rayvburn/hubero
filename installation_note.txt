@@ -6,3 +6,10 @@ sudo apt-get install ros-kinetic-gazebo8*
 catkin build actor_sim_srv
 catkin build actor_sim_utils
 catkin build actor_plugin_social
+
+
+sudo apt-get install protobuf-compiler
+https://github.com/hyfan1116/pgm_map_creator
+o 	if map is not properly rotated - invert coordinates signs (i.e. min +X, max -X) but remember to consider that fact in map's .yaml file
+o 	(x-y inversion: https://github.com/aaifox/pgm_map_creator)
+o 	(for ROS Melodic this may be useful: https://github.com/cy20lin/pgm_map_creator)
