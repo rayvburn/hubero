@@ -39,7 +39,7 @@ and optionally
 
 ***
 
-o when Eclipse STOPPED recognizing symbols and Rebuild or Freshen All Files doesn't help then create a new folder, place some source file in there and run Rebuild again - now the Indexer should run properly and everything should be fixed
+o when Eclipse STOPPED recognizing symbols and `Rebuild` or `Freshen All Files` doesn't help then create a new folder, place some source file in there and run `Rbuild` again (or `Update with modified files`) - now the Indexer should run properly and everything should be fixed
 
 o another way is to try to rebuild from a folder that is higher up in a folders tree
 
@@ -49,7 +49,7 @@ o it may be that somehow project's `build` folder in `[workspace]/build` somehow
 
 o what helps in most cases is creation of a new workspace in the IDE and firing up the C++ indexer again
 
-o see `~/scripts` folder for solution
+o see `~/scripts` folder for solution when Eclipse is stuck at boot
 
 
 ***
@@ -64,3 +64,15 @@ Above error seems to be caused by immediate actor's big displacement and as an e
 ***
 
 NOTE: with circular bounding box of an actor it is visible that when he tries to avoid obstacles his path is often similar to parts of a circle
+
+
+***
+
+To make Eclipse IDE recognize created new srv files go to:
+click on the project with a right hand mouse button -> Properties -> C/C++ Include Paths and Preprocessor Symbols
+and Add External Include Path -> Browse -> go to {YOUR WS FOLDER}/devel and click on the "include" folder and choose OK -> OK -> Apply and Close
+
+created services are achieveable via: 
+`#include <{PACKAGE DEFINING NEW SRV}/{SRV_NAME}`
+
+make sure that the files arent broken (symbolic linkage)
