@@ -7757,5 +7757,9 @@
         <projection_type>perspective</projection_type>
       </camera>
     </gui>
+
+    <!-- plugin whose executable is called to create a map in .pgm format -->
+    <plugin filename="libcollision_map_creator.so" name="collision_map_creator"/>
+    
   </world>
 </sdf>
