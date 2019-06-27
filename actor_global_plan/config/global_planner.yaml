@@ -1,0 +1,7 @@
+default_tolerance: 0.20 # 15 cm of gap allowed
+#cost_factor: 
+#lethal_cost: 
+#neutral_cost:
+#orientation_mode:
+#orientation_window_size:
+#publish_potential:

@@ -8,6 +8,9 @@
 #include "ros_interface/GlobalPlan.h"
 #include <iostream>
 
+#include <navfn/MakeNavPlan.h>
+#include <actor_global_plan/MakeNavPlanFrame.h>
+
 namespace actor {
 namespace ros_interface {
 
@@ -16,34 +19,56 @@ const uint8_t GET_WAYPOINT_IN_PROGRESS 	= 0;
 const uint8_t GET_WAYPOINT_FINISHED 	= 1;
 const uint8_t GET_WAYPOINT_PATH_EMPTY 	= 2;
 
+#define USE_ROS_PKG
+
 // ------------------------------------------------------------------- //
 
 GlobalPlan::GlobalPlan(): nh_ptr_(nullptr), waypoint_curr_(0), waypoint_gap_(10), target_reached_(true) { }
 
 // ------------------------------------------------------------------- //
 
-GlobalPlan::GlobalPlan(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &gap)
-		: waypoint_curr_(0), waypoint_gap_(gap), target_reached_(true) {
-	nh_ptr_ = nh_ptr;
-	srv_client_ = nh_ptr_->serviceClient<navfn::MakeNavPlan>("ActorGlobalPlan");
+GlobalPlan::GlobalPlan(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &gap, const std::string &frame_id)
+		: nh_ptr_(nh_ptr), waypoint_curr_(0), waypoint_gap_(gap), target_reached_(true), frame_id_(frame_id) {
+
+#ifdef USE_ROS_PKG
+	srv_client_ = nh_ptr_->serviceClient<navfn::MakeNavPlan>("ActorGlobalPlanner");
+#else
+	srv_client_ = nh_ptr_->serviceClient<actor_global_plan::MakeNavPlanFrame>("ActorGlobalPlanner");
+#endif
+
 }
 
 // ------------------------------------------------------------------- //
 
-void GlobalPlan::setNodeHandle(std::shared_ptr<ros::NodeHandle> nh_ptr) {
+//void GlobalPlan::setNodeHandle(std::shared_ptr<ros::NodeHandle> nh_ptr) {
+//	nh_ptr_ = nh_ptr;
+//	srv_client_ = nh_ptr_->serviceClient<actor_global_plan::MakeNavPlanFrame>("ActorGlobalPlan");
+//}
+//
+//// ------------------------------------------------------------------- //
+//
+//void GlobalPlan::setWaypointGap(const size_t &gap) {
+//	waypoint_gap_ = gap;
+//}
+
+void GlobalPlan::initialize(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &gap, const std::string &frame_id) {
+
 	nh_ptr_ = nh_ptr;
-	srv_client_ = nh_ptr_->serviceClient<navfn::MakeNavPlan>("ActorGlobalPlan");
-}
 
-// ------------------------------------------------------------------- //
+#ifdef USE_ROS_PKG
+	srv_client_ = nh_ptr_->serviceClient<navfn::MakeNavPlan>("ActorGlobalPlanner");
+#else
+	srv_client_ = nh_ptr_->serviceClient<actor_global_plan::MakeNavPlanFrame>("ActorGlobalPlanner");
+#endif
 
-void GlobalPlan::setWaypointGap(const size_t &gap) {
 	waypoint_gap_ = gap;
+	frame_id_ = frame_id;
+
 }
 
 // ------------------------------------------------------------------- //
 
-bool GlobalPlan::makePlan(const ignition::math::Vector3d &start, const ignition::math::Vector3d &goal) {
+GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Vector3d &start, const ignition::math::Vector3d &goal) {
 
 	geometry_msgs::PoseStamped start_pose = converter_.convertIgnVectorToPoseStamped(start);
 	geometry_msgs::PoseStamped goal_pose  = converter_.convertIgnVectorToPoseStamped(goal);
@@ -53,7 +78,7 @@ bool GlobalPlan::makePlan(const ignition::math::Vector3d &start, const ignition:
 
 // ------------------------------------------------------------------- //
 
-bool GlobalPlan::makePlan(const ignition::math::Pose3d &start, const ignition::math::Pose3d &goal) {
+GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Pose3d &start, const ignition::math::Pose3d &goal) {
 
 	geometry_msgs::PoseStamped start_pose = converter_.convertIgnPoseToPoseStamped(start);
 	geometry_msgs::PoseStamped goal_pose  = converter_.convertIgnPoseToPoseStamped(goal);
@@ -63,7 +88,7 @@ bool GlobalPlan::makePlan(const ignition::math::Pose3d &start, const ignition::m
 
 // ------------------------------------------------------------------- //
 
-bool GlobalPlan::makePlan(const ignition::math::Pose3d &start, const ignition::math::Vector3d &goal) {
+GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Pose3d &start, const ignition::math::Vector3d &goal) {
 
 	geometry_msgs::PoseStamped start_pose = converter_.convertIgnPoseToPoseStamped(start);
 	geometry_msgs::PoseStamped goal_pose  = converter_.convertIgnVectorToPoseStamped(goal);
@@ -193,32 +218,91 @@ void GlobalPlan::setPosesFrames(geometry_msgs::PoseStamped &start, geometry_msgs
 
 // ------------------------------------------------------------------- //
 
-bool GlobalPlan::makePlanHandler(geometry_msgs::PoseStamped &start, geometry_msgs::PoseStamped &goal) {
+GlobalPlan::MakePlanStatus GlobalPlan::makePlanHandler(geometry_msgs::PoseStamped &start, geometry_msgs::PoseStamped &goal) {
 
 	path_.clear();
+
+#ifdef USE_ROS_PKG
 	navfn::MakeNavPlan nav_plan;
+#else
+	actor_global_plan::MakeNavPlanFrame nav_plan;
+//	nav_plan.request.start = start;
+//	nav_plan.request.goal = goal;
+//	setPosesFrames(start, goal);	// overwrite previous `frame_id` field
+#endif
 
-	setPosesFrames(start, goal);
-	nav_plan.request.start = start;
-	nav_plan.request.goal = goal;
+	nav_plan.request.start.header.frame_id = "map";
+	nav_plan.request.start.header.stamp = ros::Time::now();
 
-	bool success = srv_client_.call(nav_plan);
+	nav_plan.request.start.pose.position.x = start.pose.position.x;
+	nav_plan.request.start.pose.position.y = start.pose.position.y;
+	nav_plan.request.start.pose.position.z = start.pose.position.z;
+
+	nav_plan.request.start.pose.orientation.x = start.pose.orientation.x;
+	nav_plan.request.start.pose.orientation.y = start.pose.orientation.y;
+	nav_plan.request.start.pose.orientation.z = start.pose.orientation.z;
+	nav_plan.request.start.pose.orientation.w = start.pose.orientation.w;
+
+
+	nav_plan.request.goal.header.frame_id = "map";
+	nav_plan.request.goal.header.stamp = ros::Time::now();
+
+	nav_plan.request.goal.pose.position.x = goal.pose.position.x;
+	nav_plan.request.goal.pose.position.y = goal.pose.position.y;
+	nav_plan.request.goal.pose.position.z = goal.pose.position.z;
+
+	nav_plan.request.goal.pose.orientation.x = goal.pose.orientation.x;
+	nav_plan.request.goal.pose.orientation.y = goal.pose.orientation.y;
+	nav_plan.request.goal.pose.orientation.z = goal.pose.orientation.z;
+	nav_plan.request.goal.pose.orientation.w = goal.pose.orientation.w;
+
+#ifndef USE_ROS_PKG
+	nav_plan.request.controlled_frame = frame_id_;
+#endif
+
+	if ( srv_client_.exists() ) {
+		std::cout << "\t\tSERVICE EXISTS" << std::endl;
+	}
+	if ( srv_client_.isPersistent() ) {
+		std::cout << "\t\tSERVICE IS PERSISTENT" << std::endl;
+	}
+	if ( srv_client_.isValid() ) {
+		std::cout << "\t\tSERVICE IS VALID" << std::endl;
+	}
+
+	bool success = srv_client_.call(nav_plan); // ?????????????
 
 	if ( success ) {
 
+		// planner successfully found a valid path
 		path_ = nav_plan.response.path;
 		target_reached_ = false;
 		std::cout << "Goal is reachable, path size: " << path_.size() << std::endl;
 		//ROS_INFO("Goal is reachable");
+		return (MakePlanStatus::GLOBAL_PLANNER_SUCCESSFUL);
 
 	} else {
 
-		std::cout << "Plan couldn't be calculated, error message: " << nav_plan.response.error_message << std::endl;
-		//ROS_ERROR("Plan couldn't be calculated, error message: ");
+		// planner did not find a valid path
+
+		if ( nav_plan.response.error_message == "!GLOBAL_PLANNER_BUSY!" ) {
+
+			// planner busy now
+			std::cout << "Plan couldn't be calculated - planner is busy now" << std::endl;
+			return (MakePlanStatus::GLOBAL_PLANNER_BUSY);
+
+		} else {
+
+			// planner failed to make a valid plan
+			std::cout << "Plan couldn't be calculated, error message: " << nav_plan.response.error_message << std::endl;
+			//ROS_ERROR("Plan couldn't be calculated, error message: ");
+			return (MakePlanStatus::GLOBAL_PLANNER_FAILED);
+
+		}
 
 	}
 
-	return (success);
+	return (MakePlanStatus::GLOBAL_PLANNER_UNKNOWN);
 
 }
 

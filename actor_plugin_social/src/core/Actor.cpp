@@ -90,8 +90,9 @@ void Actor::initRosInterface() {
 	connection_ptr_->startCallbackProcessingThread();
 
 	// initialize global plan provider
-	global_planner_.setNodeHandle(node_.getNodeHandlePtr());
-	global_planner_.setWaypointGap(10);
+	//global_planner_.setNodeHandle(node_.getNodeHandlePtr());
+	//global_planner_.setWaypointGap(10);
+	global_planner_.initialize(node_.getNodeHandlePtr(), 10, actor_ptr_->GetName());
 
 }
 
@@ -721,7 +722,9 @@ void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 
 	// -----------------------------------------------------------------
 
-	//global_plan_.makePlan(pose_world_.Pos(), target_);
+	//global_planner_.makePlan(pose_world_.Pos(), target_);
+	global_planner_.makePlan(ignition::math::Vector3d(-3.0, 0.0, 0.0), ignition::math::Vector3d(4.0, 0.0, 0.0));
+
 	//global_plan_ptr_->makePlan(pose_world_.Pos(), target_);
 	//stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, global_plan_.getPath());
 

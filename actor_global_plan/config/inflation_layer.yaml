@@ -1,0 +1,4 @@
+# ---- Inflation
+# inflation_layer:
+  inflation_radius: 0.2   # max. distance from an obstacle at which costs are incurred for planning paths.
+  cost_scaling_factor: 5  # exponential rate at which the obstacle cost drops off (default 10)

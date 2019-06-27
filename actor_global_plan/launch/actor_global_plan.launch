@@ -1,0 +1,16 @@
+<launch>
+
+	<arg name="world_map_tf" default="0 0 0 0 0 0"/>
+	<arg name="node_name" default="actor_global_planner"/>
+
+ 	<!-- normal operation, 100 (10Hz), debugging world - actor tf 1 (1000 Hz) -->
+	<node name="$(arg node_name)_tf_static" pkg="tf" type="static_transform_publisher" 	args="$(arg world_map_tf) world map 1" />
+
+	<rosparam command="load" file="$(find actor_global_plan)/config/global_planner.yaml" 	ns="/$(arg node_name)/global_planner" />
+	<rosparam command="load" file="$(find actor_global_plan)/config/global_costmap.yaml" 	ns="/$(arg node_name)/gcm" />
+	<rosparam command="load" file="$(find actor_global_plan)/config/inflation_layer.yaml" 	ns="/$(arg node_name)/gcm/inflation_layer" />
+	<rosparam command="load" file="$(find actor_global_plan)/config/static_map_layer.yaml" 	ns="/$(arg node_name)/gcm/static_layer" />
+
+	<node name="$(arg node_name)" pkg="actor_global_plan" type="actor_global_plan" output="screen" />
+
+</launch>
