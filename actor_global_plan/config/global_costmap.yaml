@@ -3,7 +3,7 @@ plugins:
   - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
 
 # ---- Coordinate frame and tf
-global_frame: "map"
+global_frame: "world"
 robot_base_frame: "actor1"      # NOTE: it must be valid at the startup, otherwise node will never start global planner srv
 transform_tolerance: 1.0        # def 0.5
 

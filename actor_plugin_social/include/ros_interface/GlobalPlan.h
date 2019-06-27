@@ -24,62 +24,169 @@
 namespace actor {
 namespace ros_interface {
 
+/**
+ * @brief Calls a makePlan service hosted by GlobalPlanner and stores poses vector
+ * created by plan maker
+ */
 class GlobalPlan {
 
+	/**
+	 * @brief Indicates the status of makePlan method
+	 */
 	typedef enum {
-		GLOBAL_PLANNER_SUCCESSFUL = 0,
-		GLOBAL_PLANNER_BUSY,
-		GLOBAL_PLANNER_FAILED,
-		GLOBAL_PLANNER_UNKNOWN
+		GLOBAL_PLANNER_SUCCESSFUL = 0,//!< GLOBAL_PLANNER_SUCCESSFUL
+		GLOBAL_PLANNER_BUSY,          //!< GLOBAL_PLANNER_BUSY
+		GLOBAL_PLANNER_FAILED,        //!< GLOBAL_PLANNER_FAILED
+		GLOBAL_PLANNER_UNKNOWN        //!< GLOBAL_PLANNER_UNKNOWN
 	} MakePlanStatus;
 
 public:
 
+	/**
+	 * @brief Default constructor
+	 */
 	GlobalPlan();
 
+	/**
+	 * @brief Parametrized constructor
+	 * @param nh_ptr - a shared node used for communication with ROS to avoid creating a separate one for each actor
+	 * @param gap - how many poses to skip when reading a consecutive waypoint from poses vector
+	 * @param frame_id - name of the frame for which plan needs to be found (usually actor's name)
+	 */
 	GlobalPlan(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &gap, const std::string &frame_id);
 
-	/// \brief Loads a ros::NodeHandle pointer;
-	/// A shared node is used for communication with ROS
-	/// to avoid creating a separate node for each Actor
-	void setNodeHandle(std::shared_ptr<ros::NodeHandle> nh_ptr); // DEPRECATED
-
-	void setWaypointGap(const size_t &gap);	// DEPRECATED
-
+	/**
+	 * @brief Initializer method (same as parametrized constructor)
+	 * @param nh_ptr - a shared node used for communication with ROS to avoid creating a separate one for each actor
+	 * @param gap - how many poses to skip when reading a consecutive waypoint from poses vector
+	 * @param frame_id - name of the frame for which plan needs to be found (usually actor's name)
+	 */
 	void initialize(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &gap, const std::string &frame_id);
 
+	/**
+	 * @brief Runs a conversion from ignition::math::Vector3d to geometry_msgs::PoseStamped,
+	 * calls GlobalPlanner service and saves poses vector when plan was found
+	 * @param start - starting position
+	 * @param goal - goal position
+	 * @return - status based on GlobalPlanner response (see MakePlanStatus enum)
+	 */
 	MakePlanStatus makePlan(const ignition::math::Vector3d &start, const ignition::math::Vector3d &goal);
+
+	/**
+	 * @brief Runs a conversion from ignition::math::Pose3d to geometry_msgs::PoseStamped,
+	 * calls GlobalPlanner service and saves poses vector when plan was found
+	 * @param start - starting pose
+	 * @param goal - goal pose
+	 * @return - status based on GlobalPlanner response (see MakePlanStatus enum)
+	 */
 	MakePlanStatus makePlan(const ignition::math::Pose3d &start, const ignition::math::Pose3d &goal);
+
+	/**
+	 * @brief Runs a conversions from ignition::math::Pose3d and ignition::math::Vector3d
+	 * to geometry_msgs::PoseStamped, calls GlobalPlanner service and saves poses vector when plan was found
+	 * @param start - starting pose
+	 * @param goal - goal pose
+	 * @return - status based on GlobalPlanner response (see MakePlanStatus enum)
+	 */
 	MakePlanStatus makePlan(const ignition::math::Pose3d &start, const ignition::math::Vector3d &goal);
 
+	/**
+	 * Indicates whether a full poses vector has already been checked via getWaypoint() calls
+	 * If first call after finding a valid plan reaches maximum index of poses vector then
+	 * `target_reached_` flag is set `true`
+	 * @return True if whole poses vector was already been checked
+	 */
 	bool isTargetReached() const;
+
+	/**
+	 * @brief Returns poses vector
+	 * @return Vector of poses which calculated plan consists of
+	 */
 	std::vector<geometry_msgs::PoseStamped> getPoses() const;
+
+	/**
+	 * @brief Returns a nav_msgs::Path message
+	 * @return nav_msgs::Path message with a new header (filled during call) and current vector of poses
+	 */
 	nav_msgs::Path getPath() const;
 
+	/**
+	 * Returns a single element of poses vector
+	 * @param index - index of element from poses vector
+	 * @return pose
+	 */
 	ignition::math::Pose3d getWaypoint(const size_t &index);
+
+	/**
+	 * Returns next element of poses vector, index of the element is increased by `gap` value given in ctor
+	 * @return pose
+	 */
 	ignition::math::Pose3d getWaypoint();
 
+	/**
+	 * @brief Destructor
+	 */
 	virtual ~GlobalPlan();
 
 private:
 
 	void setPosesFrames(geometry_msgs::PoseStamped &start, geometry_msgs::PoseStamped &goal);
+
+	/**
+	 * @brief Runs actions after conversion of `start` and `goal` to geometry_msgs::PoseStamped
+	 * @param start
+	 * @param goal
+	 * @return status
+	 */
 	MakePlanStatus makePlanHandler(geometry_msgs::PoseStamped &start, geometry_msgs::PoseStamped &goal);
+
+	/**
+	 * @brief Runs actions common between both `getWaypoint()` methods
+	 * @param index - current index (a given one or `waypoint_curr_`)
+	 * @return status (see source file for details)
+	 */
 	uint8_t getWaypointHandler(const size_t &index);
 
-	/// \brief NodeHandle's shared_ptr
+	/**
+	 * @brief NodeHandle's shared_ptr
+	 */
 	std::shared_ptr<ros::NodeHandle> nh_ptr_;
+
+	/**
+	 * @brief ROS Service client which connects to ActorGlobalPlanner server
+	 */
 	ros::ServiceClient srv_client_;
+
+	/**
+	 * @brief Vector of poses
+	 */
 	std::vector<geometry_msgs::PoseStamped> path_;
+
+	/**
+	 * @brief Helper class providing some conversions to/from geometry_msgs::PoseStamped
+	 */
 	actor::ros_interface::Conversion converter_;
 
-	// helper for iteration through waypoints vector
+	/**
+	 * @brief Helper variable for iteration through waypoints vector; waypoint index is increased by its value
+	 */
 	size_t waypoint_gap_;
+
+	/**
+	 * @brief Helper variable for iteration through waypoints vector; stores an index of the next pose
+	 */
 	size_t waypoint_curr_;
 
-	// flag switched to false when make plan called and then switched true when getWaypoint already went through whole path_ elements or last element already tried to be achieved
+	/**
+	 * @brief Flag set to `false` during makePlan call and then switched `true` when getWaypoint already
+	 * went through all `path_` elements or last element already tried to be achieved (explicitly via index)
+	 */
 	bool target_reached_;
 
+	/**
+	 * @brief Actor's name indicating it's frame - must be a valid name recognized
+	 * by tf::TransformListener (or tf2_ros::Buffer)
+	 */
 	std::string frame_id_;
 
 };

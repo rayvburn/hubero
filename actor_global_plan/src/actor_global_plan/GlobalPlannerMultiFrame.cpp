@@ -9,13 +9,8 @@
 
 GlobalPlannerMultiFrame::GlobalPlannerMultiFrame(std::string name, Costmap2dMultiFrame* costmap, std::string frame_id)
 		: cm_initialized_(false), global_planner::GlobalPlanner(name, costmap->getCostmap(), frame_id), busy_(false)
-		// ?????????? ????????????? ????????????? ??????????????????? ???????????????
-		// NOTE: frame_id is temporary, it doesn't need to be valid, but a valid name will suppress
-		// warnings printed by costmap manager <- this is not true, costmap will not start then
 {
 
-	// ugly way to avoid adding a single virtual method `setFrameId` to source code of ROS navigation
-	// stack metapackage (costmap2d_ros package)
 	this->costmap_ = costmap->getCostmap();
 	costmap_mf_ptr_ = costmap;
 	cm_initialized_ = true;
@@ -26,7 +21,7 @@ bool GlobalPlannerMultiFrame::isBusy() const {
 	return (busy_ && cm_initialized_);
 }
 
-bool GlobalPlannerMultiFrame::setFrameId(const std::string &frame_id) {
+void GlobalPlannerMultiFrame::setFrameId(const std::string &frame_id) {
 
 //	// safe way
 //	if ( !busy_ ) {
@@ -37,7 +32,6 @@ bool GlobalPlannerMultiFrame::setFrameId(const std::string &frame_id) {
 
 	// brute-force way - assumed that planner is not busy which has to be checked before setFrameId() call
 	costmap_mf_ptr_->setFrameId(frame_id);
-	return (true);
 
 }
 

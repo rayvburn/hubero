@@ -19,8 +19,6 @@ const uint8_t GET_WAYPOINT_IN_PROGRESS 	= 0;
 const uint8_t GET_WAYPOINT_FINISHED 	= 1;
 const uint8_t GET_WAYPOINT_PATH_EMPTY 	= 2;
 
-//#define USE_ROS_PKG
-
 // ------------------------------------------------------------------- //
 
 GlobalPlan::GlobalPlan(): nh_ptr_(nullptr), waypoint_curr_(0), waypoint_gap_(10), target_reached_(true) { }
@@ -30,37 +28,16 @@ GlobalPlan::GlobalPlan(): nh_ptr_(nullptr), waypoint_curr_(0), waypoint_gap_(10)
 GlobalPlan::GlobalPlan(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &gap, const std::string &frame_id)
 		: nh_ptr_(nh_ptr), waypoint_curr_(0), waypoint_gap_(gap), target_reached_(true), frame_id_(frame_id) {
 
-#ifdef USE_ROS_PKG
-	srv_client_ = nh_ptr_->serviceClient<navfn::MakeNavPlan>("ActorGlobalPlanner");
-#else
 	srv_client_ = nh_ptr_->serviceClient<actor_global_plan::MakeNavPlanFrame>("ActorGlobalPlanner");
-#endif
 
 }
 
 // ------------------------------------------------------------------- //
 
-//void GlobalPlan::setNodeHandle(std::shared_ptr<ros::NodeHandle> nh_ptr) {
-//	nh_ptr_ = nh_ptr;
-//	srv_client_ = nh_ptr_->serviceClient<actor_global_plan::MakeNavPlanFrame>("ActorGlobalPlan");
-//}
-//
-//// ------------------------------------------------------------------- //
-//
-//void GlobalPlan::setWaypointGap(const size_t &gap) {
-//	waypoint_gap_ = gap;
-//}
-
 void GlobalPlan::initialize(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &gap, const std::string &frame_id) {
 
 	nh_ptr_ = nh_ptr;
-
-#ifdef USE_ROS_PKG
-	srv_client_ = nh_ptr_->serviceClient<navfn::MakeNavPlan>("ActorGlobalPlanner");
-#else
 	srv_client_ = nh_ptr_->serviceClient<actor_global_plan::MakeNavPlanFrame>("ActorGlobalPlanner");
-#endif
-
 	waypoint_gap_ = gap;
 	frame_id_ = frame_id;
 
@@ -140,30 +117,6 @@ ignition::math::Pose3d GlobalPlan::getWaypoint(const size_t &index) {
 		break;
 	}
 
-	/*
-	size_t path_index = 0;
-
-	if ( path_.size() > index ) {
-
-		//return (path_.at(index));
-		path_index = index;
-
-	} else if ( path_.size() != 0 ) { 	//	(path_.size() <= index) <-- assured
-
-		// one tried to get waypoint which is out of allowable index range AND path_.size() is bigger than 0
-		target_reached_ = true;
-		//return (path_.at(path_.size() - 1));
-		path_index = path_.size() - 1;
-
-	} else {
-
-		// path_.size() == 0
-		target_reached_ = true;
-		//return (geometry_msgs::PoseStamped());
-		return (convertPoseStampedToIgnPose(geometry_msgs::PoseStamped()));
-
-	}
-	*/
 	return (converter_.convertPoseStampedToIgnPose(path_.at(path_index)));
 
 }
@@ -191,29 +144,6 @@ ignition::math::Pose3d GlobalPlan::getWaypoint() {
 		break;
 	}
 
-	/*
-	size_t index = 0;
-
-	if ( path_.size() > waypoint_curr_ ) {
-
-		index = waypoint_curr_;
-		waypoint_curr_ += waypoint_gap_;
-
-	} else if ( path_.size() != 0 ) {
-
-		// index (waypoint_curr_) is out of allowable range
-		target_reached_ = true;
-		index = path_.size() - 1;
-
-	} else {
-
-		// path_.size() == 0
-		target_reached_ = true;
-		return (convertPoseStampedToIgnPose(geometry_msgs::PoseStamped()));
-
-	}
-	*/
-
 	std::cout << "GlobalPlan::getWaypoint() - index: " << index << std::endl;
 	return (converter_.convertPoseStampedToIgnPose(path_.at(index)));
 
@@ -223,8 +153,8 @@ ignition::math::Pose3d GlobalPlan::getWaypoint() {
 
 void GlobalPlan::setPosesFrames(geometry_msgs::PoseStamped &start, geometry_msgs::PoseStamped &goal) {
 
-	start.header.frame_id = "map";	// TODO: world
-	goal.header.frame_id = "map";	// TODO: world
+	start.header.frame_id = "world";
+	goal.header.frame_id = "world";
 
 }
 
@@ -232,59 +162,33 @@ void GlobalPlan::setPosesFrames(geometry_msgs::PoseStamped &start, geometry_msgs
 
 GlobalPlan::MakePlanStatus GlobalPlan::makePlanHandler(geometry_msgs::PoseStamped &start, geometry_msgs::PoseStamped &goal) {
 
-#ifdef USE_ROS_PKG
-	navfn::MakeNavPlan nav_plan;
-#else
 	actor_global_plan::MakeNavPlanFrame nav_plan;
-//	nav_plan.request.start = start;
-//	nav_plan.request.goal = goal;
-//	setPosesFrames(start, goal);	// overwrite previous `frame_id` field
-#endif
+	ros::Time time_curr = ros::Time::now();
 
-	nav_plan.request.start.header.frame_id = "map";
-	//nav_plan.request.start.header.stamp = ros::Time::now();
+	// fill start fields
+	nav_plan.request.start.header.frame_id = "world";
+	nav_plan.request.start.header.stamp = time_curr;
+	nav_plan.request.start.pose = start.pose;
 
-	nav_plan.request.start.pose.position.x = start.pose.position.x;
-	nav_plan.request.start.pose.position.y = start.pose.position.y;
-	nav_plan.request.start.pose.position.z = start.pose.position.z;
+	// fill goal fields
+	nav_plan.request.goal.header.frame_id = "world";
+	nav_plan.request.goal.header.stamp = time_curr;
+	nav_plan.request.goal.pose = goal.pose;
 
-	nav_plan.request.start.pose.orientation.x = start.pose.orientation.x;
-	nav_plan.request.start.pose.orientation.y = start.pose.orientation.y;
-	nav_plan.request.start.pose.orientation.z = start.pose.orientation.z;
-	nav_plan.request.start.pose.orientation.w = start.pose.orientation.w;
-
-
-	nav_plan.request.goal.header.frame_id = "map";
-	//nav_plan.request.goal.header.stamp = ros::Time::now();
-
-	nav_plan.request.goal.pose.position.x = goal.pose.position.x;
-	nav_plan.request.goal.pose.position.y = goal.pose.position.y;
-	nav_plan.request.goal.pose.position.z = goal.pose.position.z;
-
-	nav_plan.request.goal.pose.orientation.x = goal.pose.orientation.x;
-	nav_plan.request.goal.pose.orientation.y = goal.pose.orientation.y;
-	nav_plan.request.goal.pose.orientation.z = goal.pose.orientation.z;
-	nav_plan.request.goal.pose.orientation.w = goal.pose.orientation.w;
-
-#ifndef USE_ROS_PKG
+	// set a new frame for costmap
 	nav_plan.request.controlled_frame = frame_id_;
-#endif
 
+	// call the service server's callback
 	bool success = srv_client_.call(nav_plan);
 
 	if ( success ) {
 
 		path_.clear();
+
 		// planner successfully found a valid path
 		path_ = nav_plan.response.path;
 		target_reached_ = false;
-		std::cout << "\tGoal is reachable, path size: " << path_.size() << std::endl;
-
-//		for ( size_t i = 0; i < path_.size(); i++ ) {
-//			std::cout << path_.at(i).pose.position << std::endl;
-//		}
-
-		//ROS_INFO("Goal is reachable");
+		//std::cout << "\tGoal is reachable, path size: " << path_.size() << std::endl;
 		return (MakePlanStatus::GLOBAL_PLANNER_SUCCESSFUL);
 
 	} else {
@@ -301,7 +205,6 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlanHandler(geometry_msgs::PoseStampe
 
 			// planner failed to make a valid plan
 			std::cout << "Plan couldn't be calculated, error message: " << nav_plan.response.error_message << std::endl;
-			//ROS_ERROR("Plan couldn't be calculated, error message: ");
 			return (MakePlanStatus::GLOBAL_PLANNER_FAILED);
 
 		}

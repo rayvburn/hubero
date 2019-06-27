@@ -9,20 +9,22 @@
 #include <iostream>
 
 
+// --------------------------------------------------------------------------------------
+
 Costmap2dMultiFrame::Costmap2dMultiFrame(std::string name, tf::TransformListener& tf)
-		: costmap_2d::Costmap2DROS(name, tf)
-{
+		: costmap_2d::Costmap2DROS(name, tf) { }
 
-	std::cout << "\n\n\n\nCostmap2dMultiFrame::Costmap2dMultiFrame(2 args)\n\n\n\n" << std::endl;
-
-}
-
+// --------------------------------------------------------------------------------------
 
 void Costmap2dMultiFrame::setFrameId(const std::string &frame_id) {
-	std::cout << "\n\n\n\nCostmap2dMultiFrame::setFrameId()\n\n\n\n" << std::endl;
+
+	ROS_INFO("Multiframed costmap's new frame is: %s", frame_id.c_str());
 	this->robot_base_frame_ = frame_id;
+
 }
 
+// --------------------------------------------------------------------------------------
 
 Costmap2dMultiFrame::~Costmap2dMultiFrame() { }
 
+// --------------------------------------------------------------------------------------
