@@ -9,6 +9,11 @@
 	
 	<buildtool_depend>catkin</buildtool_depend>
 	
+	<!-- MakeNavPlanFrame service -->
+	<build_depend>std_msgs</build_depend>
+	<build_depend>message_generation</build_depend>
+	<exec_depend>message_runtime</exec_depend>
+
 	<depend>gazebo_ros</depend> 		<!-- ignition library -->
 	<depend>roscpp</depend>
 	<depend>tf</depend>
@@ -17,10 +22,5 @@
 	<depend>nav_core</depend>
 	<depend>navfn</depend>
 	<depend>global_planner</depend>
-
-	<!-- MakeNavPlanFrame service -->
-	<build_depend>std_msgs</build_depend>
-	<build_depend>message_generation</build_depend>
-	<exec_depend>message_runtime</exec_depend>
     
 </package>
