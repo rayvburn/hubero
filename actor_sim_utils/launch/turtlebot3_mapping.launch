@@ -1,5 +1,8 @@
 <launch>
 
+  <!-- make sure to add TURTLEBOT3_MODEL env variable to the `~/.bashrc` file; simply add this line to the end of the file:
+  export TURTLEBOT3_MODEL=burger # Turtlebot3 model
+  -->
   <arg name="world" default="living_room_vid_friendly"/>  <!-- cafe_example -->
   <arg name="slam_method" default="gmapping"/>
   <arg name="rviz_slam" default="true"/>
