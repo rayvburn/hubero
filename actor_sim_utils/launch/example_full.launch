@@ -42,6 +42,8 @@
     <!-- ======================== load global planner node ================================= 
     <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
     -->
+    <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
+    <!-- <arg name="world_map_tf" value="0.97528 0.99136 0 0.31 0 0"/>  0.428 -0.1541 0 || NOTE [x, y, z, Y, P, R] -->
     
     <!-- ========================= change parameters based on chosen world ================= -->
     <!-- inflation/bounding_type -> Box - 0, Circle - 1, Ellipse - 2, NoBounding - 3 -->
@@ -66,10 +68,6 @@
         <rosparam param="$(arg sfm_params_ns)/world_dictionary/ignored_models">[ground_plane, sun, figurine_3, clock_digital, lamp_table_metal]</rosparam>
         <rosparam param="$(arg sfm_params_ns)/algorithm/internal_force_factor">500.0</rosparam>
         <rosparam param="$(arg sfm_params_ns)/algorithm/interaction_force_factor">1000.0</rosparam>
-        
-        <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> 
-            <arg name="world_map_tf" value="0.97528 0.99136 0 0.31 0 0"/> <!-- 0.428 -0.1541 0 || NOTE [x, y, z, Y, P, R] -->
-        </include>
 
     </group>
 
