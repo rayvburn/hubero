@@ -24,7 +24,7 @@
 //#include <tf2_ros/buffer.h>
 //#include <tf2_ros/transform_listener.h>
 
-#define USE_ROS_PKG
+//#define USE_ROS_PKG
 
 // global planner ----------------------------------------------------------------------------
 #ifdef USE_ROS_PKG
@@ -69,6 +69,18 @@ int main(int argc, char** argv) {
 
 	std::cout << "\n[actor_global_plan_node] ros inited\n" << std::endl;
 
+	std::cout << "\n[actor_global_plan_node] args counter: " << argc << "\n" << std::endl;
+	for ( size_t i = 0; i < argc; i++ ) {
+		std::cout << "\n[actor_global_plan_node] arg " << i << ": " << argv[i] << "\n" << std::endl;
+	}
+
+	if ( argc < 2 ) {
+		ROS_ERROR("Namespace of actors NodeHandle must be provided! Service needs it");
+		return (0);
+	}
+
+	std::string srv_ns = argv[1];
+
 	// initialize transform listener
 	tf::TransformListener tf_listener(ros::Duration(10.0));
 	tf_listener_ptr_ = &tf_listener;
@@ -100,10 +112,10 @@ int main(int argc, char** argv) {
 
 	// start plan making service
 #ifdef USE_ROS_PKG
-	make_plan_service_navfn_ = nh.advertiseService(std::string("/gazebo/actor_plugin_ros_interface/ActorGlobalPlanner"), MakePlanServiceNavfn); // Navfn
+	make_plan_service_navfn_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner"), MakePlanServiceNavfn); // Navfn
 	// <navfn::MakeNavPlan::Request, navfn::MakeNavPlan::Response>
 #else
-	make_plan_service_ = nh.advertiseService(std::string("ActorGlobalPlanner"), MakePlanService);
+	make_plan_service_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner"), MakePlanService);
 	// <actor_global_plan::MakeNavPlanFrame>
 #endif
 
@@ -147,6 +159,12 @@ bool MakePlanService(actor_global_plan::MakeNavPlanFrame::Request& req, actor_gl
 		resp.plan_found = false;
 		return (false);
 	}
+
+	// debugging request
+//	std::cout << "\tstart_pos: \n" << req.start.pose.position << "\n\tgoal_pos: \n" << req.goal.pose.position << std::endl;
+//	std::cout << "\tpath_size initial: " << path_.size() << std::endl;
+//	std::cout << "\tcontrolled_frame: " << req.controlled_frame << std::endl;
+//	std::cout << "\n\n" << std::endl;
 
 	// if global planner is not busy, let's try to find a path for a proper frame
 	glob_planner_ptr_->setFrameId(req.controlled_frame);

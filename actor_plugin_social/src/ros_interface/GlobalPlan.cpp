@@ -19,7 +19,7 @@ const uint8_t GET_WAYPOINT_IN_PROGRESS 	= 0;
 const uint8_t GET_WAYPOINT_FINISHED 	= 1;
 const uint8_t GET_WAYPOINT_PATH_EMPTY 	= 2;
 
-#define USE_ROS_PKG
+//#define USE_ROS_PKG
 
 // ------------------------------------------------------------------- //
 
@@ -72,7 +72,7 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Vector3d &
 
 	geometry_msgs::PoseStamped start_pose = converter_.convertIgnVectorToPoseStamped(start);
 	geometry_msgs::PoseStamped goal_pose  = converter_.convertIgnVectorToPoseStamped(goal);
-	return (makePlanHandler(start_pose, start_pose));
+	return (makePlanHandler(start_pose, goal_pose));
 
 }
 
@@ -82,7 +82,7 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Pose3d &st
 
 	geometry_msgs::PoseStamped start_pose = converter_.convertIgnPoseToPoseStamped(start);
 	geometry_msgs::PoseStamped goal_pose  = converter_.convertIgnPoseToPoseStamped(goal);
-	return (makePlanHandler(start_pose, start_pose));
+	return (makePlanHandler(start_pose, goal_pose));
 
 }
 
@@ -92,7 +92,7 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Pose3d &st
 
 	geometry_msgs::PoseStamped start_pose = converter_.convertIgnPoseToPoseStamped(start);
 	geometry_msgs::PoseStamped goal_pose  = converter_.convertIgnVectorToPoseStamped(goal);
-	return (makePlanHandler(start_pose, start_pose));
+	return (makePlanHandler(start_pose, goal_pose));
 
 }
 
@@ -104,8 +104,20 @@ bool GlobalPlan::isTargetReached() const {
 
 // ------------------------------------------------------------------- //
 
-std::vector<geometry_msgs::PoseStamped> GlobalPlan::getPath() const {
+std::vector<geometry_msgs::PoseStamped> GlobalPlan::getPoses() const {
 	return (path_);
+}
+
+// ------------------------------------------------------------------- //
+
+nav_msgs::Path GlobalPlan::getPath() const {
+
+	nav_msgs::Path path_msg;
+	path_msg.poses = path_;
+	path_msg.header.frame_id = "map";
+	path_msg.header.stamp = ros::Time::now();
+	return (path_msg);
+
 }
 
 // ------------------------------------------------------------------- //
@@ -220,8 +232,6 @@ void GlobalPlan::setPosesFrames(geometry_msgs::PoseStamped &start, geometry_msgs
 
 GlobalPlan::MakePlanStatus GlobalPlan::makePlanHandler(geometry_msgs::PoseStamped &start, geometry_msgs::PoseStamped &goal) {
 
-	path_.clear();
-
 #ifdef USE_ROS_PKG
 	navfn::MakeNavPlan nav_plan;
 #else
@@ -232,7 +242,7 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlanHandler(geometry_msgs::PoseStampe
 #endif
 
 	nav_plan.request.start.header.frame_id = "map";
-	nav_plan.request.start.header.stamp = ros::Time::now();
+	//nav_plan.request.start.header.stamp = ros::Time::now();
 
 	nav_plan.request.start.pose.position.x = start.pose.position.x;
 	nav_plan.request.start.pose.position.y = start.pose.position.y;
@@ -245,7 +255,7 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlanHandler(geometry_msgs::PoseStampe
 
 
 	nav_plan.request.goal.header.frame_id = "map";
-	nav_plan.request.goal.header.stamp = ros::Time::now();
+	//nav_plan.request.goal.header.stamp = ros::Time::now();
 
 	nav_plan.request.goal.pose.position.x = goal.pose.position.x;
 	nav_plan.request.goal.pose.position.y = goal.pose.position.y;
@@ -260,24 +270,20 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlanHandler(geometry_msgs::PoseStampe
 	nav_plan.request.controlled_frame = frame_id_;
 #endif
 
-	if ( srv_client_.exists() ) {
-		std::cout << "\t\tSERVICE EXISTS" << std::endl;
-	}
-	if ( srv_client_.isPersistent() ) {
-		std::cout << "\t\tSERVICE IS PERSISTENT" << std::endl;
-	}
-	if ( srv_client_.isValid() ) {
-		std::cout << "\t\tSERVICE IS VALID" << std::endl;
-	}
-
-	bool success = srv_client_.call(nav_plan); // ?????????????
+	bool success = srv_client_.call(nav_plan);
 
 	if ( success ) {
 
+		path_.clear();
 		// planner successfully found a valid path
 		path_ = nav_plan.response.path;
 		target_reached_ = false;
-		std::cout << "Goal is reachable, path size: " << path_.size() << std::endl;
+		std::cout << "\tGoal is reachable, path size: " << path_.size() << std::endl;
+
+//		for ( size_t i = 0; i < path_.size(); i++ ) {
+//			std::cout << path_.at(i).pose.position << std::endl;
+//		}
+
 		//ROS_INFO("Goal is reachable");
 		return (MakePlanStatus::GLOBAL_PLANNER_SUCCESSFUL);
 

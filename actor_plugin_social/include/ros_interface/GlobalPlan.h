@@ -16,6 +16,7 @@
 #include <ignition/math/Pose3.hh>
 #include <vector>
 #include <geometry_msgs/PoseStamped.h>
+#include <nav_msgs/Path.h>
 
 #include <stdint.h>
 #include "ros_interface/Conversion.h"
@@ -52,7 +53,8 @@ public:
 	MakePlanStatus makePlan(const ignition::math::Pose3d &start, const ignition::math::Vector3d &goal);
 
 	bool isTargetReached() const;
-	std::vector<geometry_msgs::PoseStamped> getPath() const;
+	std::vector<geometry_msgs::PoseStamped> getPoses() const;
+	nav_msgs::Path getPath() const;
 
 	ignition::math::Pose3d getWaypoint(const size_t &index);
 	ignition::math::Pose3d getWaypoint();

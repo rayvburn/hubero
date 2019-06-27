@@ -723,7 +723,7 @@ void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 	// -----------------------------------------------------------------
 
 	//global_planner_.makePlan(pose_world_.Pos(), target_);
-	global_planner_.makePlan(ignition::math::Vector3d(-3.0, 0.0, 0.0), ignition::math::Vector3d(4.0, 0.0, 0.0));
+	global_planner_.makePlan(ignition::math::Vector3d(-3.0, 0.1, 0.0), ignition::math::Vector3d(4.0, -0.1, 0.0));
 
 	//global_plan_ptr_->makePlan(pose_world_.Pos(), target_);
 	//stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, global_plan_.getPath());
@@ -1066,6 +1066,8 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 		updateTransitionFunctionPtr();
 	}
 
+	// TODO: vis freq as parameter
+
 	// publish data for visualization
 	// proper bounding object to publish needs to be chosen
 	switch ( bounding_type_ ) {
@@ -1083,6 +1085,8 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	stream_.publishData(ActorTfType::ACTOR_TF_SELF, pose_world_);
 	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_),
 																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
+	stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, global_planner_.getPath());
+
 	// check if grid publication has been enabled in parameter file
 	if ( params_.getSfmVisParams().publish_grid ) {
 
@@ -1093,6 +1097,7 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 		}
 
 	}
+
 
 	// ellipse
 //	std::cout << "\tBOUNDING ELLIPSE\n";
