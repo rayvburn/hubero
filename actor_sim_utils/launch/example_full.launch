@@ -29,7 +29,7 @@
 
     <!-- =============================== start rViz ============================================ -->
     <group if="$(arg rviz)">
-    	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find social_force_vis)/rviz/debug3_group.rviz"/>
+    	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find actor_sim_utils)/rviz/actor_groups_map.rviz"/>
     </group>
 
 	<!-- ========================= load parameters ========================================= -->
