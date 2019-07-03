@@ -8,7 +8,7 @@
 #include <actor_global_plan/GlobalPlannerMultiFrame.h>
 
 GlobalPlannerMultiFrame::GlobalPlannerMultiFrame(std::string name, Costmap2dMultiFrame* costmap, std::string frame_id)
-		: cm_initialized_(false), global_planner::GlobalPlanner(name, costmap->getCostmap(), frame_id), busy_(false)
+		: busy_(false), cm_initialized_(false), global_planner::GlobalPlanner(name, costmap->getCostmap(), frame_id)
 {
 
 	this->costmap_ = costmap->getCostmap();

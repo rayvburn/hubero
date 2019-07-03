@@ -8,7 +8,11 @@
 #include "core/Actor.h"
 #include <algorithm>    // std::find
 #include <ignition/math/Line3.hh>
-#include <memory> // make_unique
+#include <memory> 		// make_unique
+
+
+// FIXME: move to target manager later
+#include <chrono>
 
 namespace actor {
 namespace core {
@@ -36,6 +40,9 @@ void Actor::initGazeboInterface(const gazebo::physics::ActorPtr &actor, const ga
 	/* add an instance to common info class (missing velocity,
 	 * bounding box of Actor in WorldPtr) */
 	common_info_.addActor(actor_ptr_->GetName());
+
+	// FIXME:
+	start_time_gp_ = world->SimTime();
 
 }
 
@@ -272,19 +279,33 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// initial target setup section
+
+	// says `yes` before costmap initialization
+//	std::cout << "\t\tBEFORE WAITING FOR SERVICE" << std::endl;
+//	// target selection is depends on global planner which is needed for global plan creation (wait for it)
+//	ros::service::waitForService("/gazebo/actor_plugin_ros_interface/ActorGlobalPlanner/CostmapStatus", 10000);
+//	std::cout << "\t\tAFTER WAITING FOR SERVICE" << std::endl;
+
+	th_wait_ = std::thread(&Actor::globalPlannerWaitingThreadHandler, this);
+	th_wait_.join();
+
 	// check if target coordinates have been set in .YAML - vector of 3 elements expected
 	if ( params_.getActorParams().init_target.size() == 3 ) {
 
 		// set target according to .YAML
 		target_ = ignition::math::Vector3d( params_.getActorParams().init_target.at(0), params_.getActorParams().init_target.at(1), params_.getActorParams().init_target.at(2) );
+		// TODO: global plan
 
 	} else if ( sdf && sdf->HasElement("target") ) {
 
 		// target coordinates in .YAML haven't been defined - use .sdf
 		target_ = sdf->Get<ignition::math::Vector3d>("target");
+		// TODO: global plan
 
 	} else {
 
+//		std::cout << "SLEEPING for 5 secs" << std::endl;
+//		std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 		// improper/no position set - choose random target
 		gazebo::common::UpdateInfo info_init;
 		info_init.simTime = world_ptr_->SimTime();
@@ -307,6 +328,15 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 }
 
 // ------------------------------------------------------------------- //
+
+void Actor::globalPlannerWaitingThreadHandler() {
+
+	while ( !global_planner_.isCostmapInitialized() ) {
+		std::cout << "\n\tSLEEPING for 500 ms\n" << std::endl;
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	}
+
+}
 
 void Actor::readSDFParameters(const sdf::ElementPtr sdf) {
 
@@ -362,6 +392,7 @@ bool Actor::setNewTarget(const ignition::math::Pose3d &pose) {
 		return (false);
 	}
 	target_ = pose.Pos();
+	// TODO: check whether global planner finds valid plan
 
 	// TODO:
 	//target_checkpoints_.push(target_);
@@ -441,6 +472,8 @@ bool Actor::setNewTarget(const std::string &object_name) {
 	}
 
 	setNewTarget( ignition::math::Pose3d(pt_intersection, model->WorldPose().Rot()) );
+	// TODO: global plan
+
 	return (true);
 
 }
@@ -577,7 +610,7 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 	ignition::math::Vector3d sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), pose_world_,
-														  velocity_lin_, target_, common_info_, dt);
+														  velocity_lin_, target_checkpoint_, common_info_, dt); // target_
 
 //	if ( print_info ) {
 //		std::cout << "\t TOTAL force: " << sf << std::endl;
@@ -597,19 +630,16 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 //		std::cout << std::endl << std::endl;
 //	}
 
-	// calculate a distance to a target
-	double to_target_distance = (target_ - pose_world_.Pos()).Length();
-
-	// choose a new target position if the actor has reached its current target
-//	if (to_target_distance < 0.3) {
-
-	/* the smaller tolerance the bigger probability that actor will
-	 * step into some obstacle */
-	if (to_target_distance < params_.getActorParams().target_tolerance ) {
+	if ( isTargetReached() ) {
 
 		chooseNewTarget(info);
 		// after setting new target, first let's rotate to its direction
 		fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
+
+	} else if ( isCheckpointReached() ) {
+
+		// take next checkpoint from vector (path)
+		target_checkpoint_ = global_planner_.getWaypoint().Pos();
 
 	}
 
@@ -667,10 +697,18 @@ void Actor::stateHandlerTeleoperation (const gazebo::common::UpdateInfo &info) {
 
 void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 
-	ignition::math::Vector3d new_target(target_);
+	// FIXME: watch out for a situation in which actor's position is not in map bounds!
 
-	// look for target that is located at least 2 meters from the current one
-	while ( (new_target - target_).Length() < 2.0 ) {
+	ignition::math::Vector3d new_target(target_);
+	bool reachable_gp = false; // whether global planner found a valid plan
+
+	// 1) look for target that is located at least 2 meters from the current one
+	// 2) look for target that is reachable (global plan can be found)
+//	while ( ((new_target - target_).Length() < 2.0) || !reachable_gp ) {
+
+	while ( ((new_target - target_).Length() < (2.0 * params_.getActorParams().target_tolerance))
+			|| !reachable_gp )
+	{
 
 		// get random coordinates based on world limits
 		new_target.X(ignition::math::Rand::DblUniform( params_.getActorParams().world_bound_x.at(0), params_.getActorParams().world_bound_x.at(1)) );
@@ -715,15 +753,25 @@ void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 
 		} // for
 
+//		if ( (info.simTime - start_time_gp_).Double() > 15.0 ) { // time for costmap initialization etc.
+			// seems that a proper target has been found, check whether it is reachable according to a global planner
+			if ( generatePathPlan(new_target) ) {
+				reachable_gp = true;
+			} else {
+				reachable_gp = false;
+			}
+//		} else {
+//			reachable_gp = true;
+//		}
+
+
 	} // while
 
 	// finally found a new target
 	target_ = new_target;
+	target_checkpoint_ = global_planner_.getWaypoint().Pos();
 
 	// -----------------------------------------------------------------
-
-	//global_planner_.makePlan(pose_world_.Pos(), target_);
-	global_planner_.makePlan(ignition::math::Vector3d(-3.0, 0.1, 0.0), ignition::math::Vector3d(4.0, -0.1, 0.0));
 
 	//global_plan_ptr_->makePlan(pose_world_.Pos(), target_);
 	//stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, global_plan_.getPath());
@@ -739,6 +787,7 @@ void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 
 bool Actor::isTargetStillReachable(const gazebo::common::UpdateInfo &info) {
 
+	// TODO: generate global plan?
 	// check periodically, no need to do this in each iteration
 	if ( (info.simTime - time_last_reachability_).Double() > params_.getActorParams().target_reachable_check_period ) {
 
@@ -788,6 +837,99 @@ bool Actor::isTargetNotReachedForTooLong(const gazebo::common::UpdateInfo &info)
 		return (true);
 
 	}
+	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Actor::isTargetReached() const {
+
+	// calculate a distance to a target
+	double distance_to_target = (target_ - pose_world_.Pos()).Length();
+
+	// choose a new target position if the actor has reached its current target
+	/* the smaller tolerance the bigger probability that actor will
+	 * step into some obstacle */
+	if ( distance_to_target > params_.getActorParams().target_tolerance ) {
+		return (false);
+	}
+
+	// Also, check whether whole path has been traveled (sometimes it may happen
+	// that path goes near the wall which has to be skipped over to reach
+	// the actual goal)
+	if ( !global_planner_.isTargetReached() ) {
+		return (false);
+	}
+
+	// otherwise return true
+	return (true);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Actor::isCheckpointReached() const {
+
+	// as a threshold value of length choose half of the `target_tolerance`
+	double dist_to_checkpoint = (pose_world_.Pos() - target_checkpoint_).Length();
+	if ( dist_to_checkpoint < (params_.getActorParams().target_tolerance * 0.5) ) {
+		return (true);
+	}
+	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Actor::generatePathPlan(const ignition::math::Vector3d &target_to_be) {
+
+	// GLOBAL PLANNING SECTION
+//	debugging
+//	global_planner_.makePlan(ignition::math::Vector3d(-3.0, 0.1, 0.0), ignition::math::Vector3d(4.0, -0.1, 0.0));
+	actor::ros_interface::GlobalPlan::MakePlanStatus status = actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_UNKNOWN;
+
+	size_t tries_num = 0;
+
+	// repeat up to 10 times (more than 1 execution will be performed only when planner is busy)
+	while ( tries_num++ <= 10 ) {
+
+		std::cout << "\n\n\n\n\n[generatePathPlan] Starting iteration number " << tries_num << std::endl;
+
+		// try to make plan
+		status = global_planner_.makePlan(pose_world_.Pos(), target_to_be);;
+
+		// check action status
+		switch (status) {
+
+		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_SUCCESSFUL):
+			std::cout << "\n\n\n[generatePathPlan] Global planning successfull\n\n\n" << std::endl;
+			return (true);
+			break;
+
+		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_FAILED):
+			std::cout << "\n\n\n[generatePathPlan] Global planning failed\n\n\n" << std::endl;
+			return (false);
+			break;
+
+		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_BUSY):
+			std::cout << "\n\n\n[generatePathPlan] OOPS, need to wait for the global planner...\n\n\n" << std::endl;
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			continue;
+			break;
+
+		default:
+			// unexpected behavior
+			std::cout << "\n\n\n[generatePathPlan] UNEXPECTED BEHAVIOR\n\n\n" << std::endl;
+			return (false);
+			break;
+
+		}
+
+	}
+
+	// if managed to get there then many tries were performed but planner is still busy
+	std::cout << "\n\n\n[generatePathPlan] PLANNER UNABLE TO PROCESS THE REQUEST\n\n\n" << std::endl;
 	return (false);
 
 }
@@ -906,7 +1048,10 @@ bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 //	ignition::math::Angle yaw_target(std::atan2( target.Y(), target.X() ) + (IGN_PI/2) );
 	// V2 ------------------------------------------------------------------------------------------------------
 	// yaw target expressed as an angle that depends on current IDEAL_TO_TARGET vector
-	ignition::math::Vector3d to_target_vector = target_ - pose_world_.Pos();							// in world coord. system
+//	ignition::math::Vector3d to_target_vector = target_ - pose_world_.Pos();							// in world coord. system
+	// NOTE: the above was before (before target_checkpoint_ version)
+	ignition::math::Vector3d to_target_vector = target_checkpoint_ - pose_world_.Pos();
+
 	to_target_vector.Normalize();
 	ignition::math::Angle yaw_target(std::atan2( to_target_vector.Y(), to_target_vector.X() ) + (IGN_PI/2) );	// +90 deg transforms the angle from actor's coord. system to the world's one
 	//    ------------------------------------------------------------------------------------------------------
@@ -1028,7 +1173,7 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	 * std::cout << actor->GetName() << " | script time: " << actor->ScriptTime() << "\tdist_trav: " << _dist_traveled << "\tanim_factor: " << animation_factor << std::endl;
 	 *
 	 * for some reason (very likely some very small number returned as interaction force
-	 * in social force model) dist_traveled sometimes turns out to be a NaN - then change
+	 * in social force model) dist_traveled sometimes turns out to be a NaN - one should then change
 	 * it to a typical value of 0.005; NaN value of dist seems to be the cause of such error:
 	 *
 	 * "gazebo::common::NodeAnimation::FrameAt(double, bool) const: Assertion
@@ -1084,6 +1229,8 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 
 	stream_.publishData(ActorTfType::ACTOR_TF_SELF, pose_world_);
 	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_),
+																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
+	stream_.publishData(ActorTfType::ACTOR_TF_CHECKPOINT, ignition::math::Pose3d(ignition::math::Vector3d(target_checkpoint_),
 																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
 	stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, global_planner_.getPath());
 
@@ -1340,7 +1487,8 @@ bool Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
 
 				// calculate social force for actor located in current pose
 				// hard-coded time delta
-				sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), pose, velocity_lin_, target_, common_info_, 0.001);
+//				sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), pose, velocity_lin_, target_, common_info_, 0.001);
+				sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), pose, velocity_lin_, target_checkpoint_, common_info_, 0.001);
 
 				// pass a result to vector of grid forces
 				sfm_vis_grid_.addMarker( sfm_vis_grid_.createArrow(pose.Pos(), sf) );

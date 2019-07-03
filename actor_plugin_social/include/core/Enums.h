@@ -99,6 +99,7 @@ typedef enum {
 /// \brief Transform frames IDs
 typedef enum {
 	ACTOR_TF_SELF = 200u,
+	ACTOR_TF_CHECKPOINT,
 	ACTOR_TF_TARGET
 } ActorTfType;
 

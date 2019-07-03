@@ -131,6 +131,8 @@ public:
 		std::string child_frame = namespace_;
 		if ( type == ACTOR_TF_TARGET ) {
 			child_frame.append("_goal");
+		} else if ( type == ACTOR_TF_CHECKPOINT ) {
+			child_frame.append("_checkpoint");
 		}
 
 		geometry_msgs::TransformStamped tf_stamp = convertPoseToTfStamped(pose);

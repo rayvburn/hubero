@@ -10,14 +10,15 @@
 
 #include <navfn/MakeNavPlan.h>
 #include <actor_global_plan/MakeNavPlanFrame.h>
+#include <std_srvs/Trigger.h>
 
 namespace actor {
 namespace ros_interface {
 
 // getWaypointHandler status indicators
-const uint8_t GET_WAYPOINT_IN_PROGRESS 	= 0;
-const uint8_t GET_WAYPOINT_FINISHED 	= 1;
-const uint8_t GET_WAYPOINT_PATH_EMPTY 	= 2;
+static constexpr uint8_t GET_WAYPOINT_IN_PROGRESS 	= 0;
+static constexpr uint8_t GET_WAYPOINT_FINISHED 		= 1;
+static constexpr uint8_t GET_WAYPOINT_PATH_EMPTY 	= 2;
 
 // ------------------------------------------------------------------- //
 
@@ -29,6 +30,7 @@ GlobalPlan::GlobalPlan(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &ga
 		: nh_ptr_(nh_ptr), waypoint_curr_(0), waypoint_gap_(gap), target_reached_(true), frame_id_(frame_id) {
 
 	srv_client_ = nh_ptr_->serviceClient<actor_global_plan::MakeNavPlanFrame>("ActorGlobalPlanner");
+	srv_client_costmap_status_ = nh_ptr_->serviceClient<std_srvs::Trigger>("ActorGlobalPlanner/CostmapStatus");
 
 }
 
@@ -38,8 +40,23 @@ void GlobalPlan::initialize(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_
 
 	nh_ptr_ = nh_ptr;
 	srv_client_ = nh_ptr_->serviceClient<actor_global_plan::MakeNavPlanFrame>("ActorGlobalPlanner");
+	srv_client_costmap_status_ = nh_ptr_->serviceClient<std_srvs::Trigger>("ActorGlobalPlanner/CostmapStatus");
 	waypoint_gap_ = gap;
 	frame_id_ = frame_id;
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool GlobalPlan::isCostmapInitialized() {
+
+	std_srvs::Trigger msg;
+
+	// call the service server's callback
+	bool success = srv_client_costmap_status_.call(msg);
+
+	// return response flag, not success flag itself (SrvCallback always returns true)
+	return (msg.response.success);
 
 }
 

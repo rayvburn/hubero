@@ -30,6 +30,8 @@ namespace ros_interface {
  */
 class GlobalPlan {
 
+public:
+
 	/**
 	 * @brief Indicates the status of makePlan method
 	 */
@@ -62,6 +64,12 @@ public:
 	 * @param frame_id - name of the frame for which plan needs to be found (usually actor's name)
 	 */
 	void initialize(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &gap, const std::string &frame_id);
+
+	/**
+	 * @brief Calls service to check whether global costmap was initialized
+	 * @return True when costmap is already running, false otherwise
+	 */
+	bool isCostmapInitialized();
 
 	/**
 	 * @brief Runs a conversion from ignition::math::Vector3d to geometry_msgs::PoseStamped,
@@ -112,6 +120,7 @@ public:
 
 	/**
 	 * Returns a single element of poses vector
+	 * Not recommended
 	 * @param index - index of element from poses vector
 	 * @return pose
 	 */
@@ -156,6 +165,11 @@ private:
 	 * @brief ROS Service client which connects to ActorGlobalPlanner server
 	 */
 	ros::ServiceClient srv_client_;
+
+	/**
+	 * @brief ROS Service client which connects to ActorGlobalPlanner/CostmapStatus server
+	 */
+	ros::ServiceClient srv_client_costmap_status_;
 
 	/**
 	 * @brief Vector of poses

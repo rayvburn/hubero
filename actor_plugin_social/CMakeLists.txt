@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS social_force_vis)
 
 find_package(tf REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 
 include_directories(${roscpp_INCLUDE_DIRS})
 include_directories(${actor_sim_utils_INCLUDE_DIRS})
@@ -18,6 +19,7 @@ include_directories(${social_force_vis_INCLUDE_DIRS})
 
 include_directories(${tf_INCLUDE_DIRS})
 include_directories(${std_msgs_INCLUDE_DIRS})
+include_directories(${std_srvs_INCLUDE_DIRS})
 
 include_directories(/user/include/sdformat-5.2)
 include_directories(./include)

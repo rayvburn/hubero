@@ -10,12 +10,14 @@
 #include <iostream>
 #include <geometry_msgs/PoseStamped.h>
 #include <navfn/MakeNavPlan.h>
-#include <actor_global_plan/MakeNavPlanFrame.h>	// X
+#include <actor_global_plan/MakeNavPlanFrame.h>	// if not recognized by Eclipse: 1) recompile with catkin, 2) refresh files
 
 #include <nav_core/base_global_planner.h>
 #include <global_planner/planner_core.h>
 #include "actor_global_plan/GlobalPlannerMultiFrame.h"
 #include <costmap_2d/costmap_2d_ros.h>
+
+#include <std_srvs/Trigger.h> // costmap status
 
 // ROS Kinetic
 #include <tf/transform_listener.h>
@@ -27,13 +29,18 @@
 // global planner ----------------------------------------------------------------------------
 static GlobalPlannerMultiFrame* glob_planner_ptr_;
 static std::vector<geometry_msgs::PoseStamped> path_;
-static ros::ServiceServer make_plan_service_;
-static bool MakePlanService(actor_global_plan::MakeNavPlanFrame::Request& req, actor_global_plan::MakeNavPlanFrame::Response& resp);
+static ros::ServiceServer make_plan_srv_;
+static ros::ServiceServer costmap_status_srv_;
+static bool MakePlanSrv(actor_global_plan::MakeNavPlanFrame::Request& req, actor_global_plan::MakeNavPlanFrame::Response& resp);
+static bool CostmapStatusSrv(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& resp);
 
 // costmap -----------------------------------------------------------------------------------
 // NOTE: it was impossible to call costmap's constructor inside a separate class (outside a ROS node)
 // despite providing a proper NodeHandle and TransformListener (checked, stashed among other bad commits)
 static Costmap2dMultiFrame* costmap_global_ptr_;
+static bool costmap_ready_ = false;	// flag set true when node becomes fully initialized; ugly way but Costmap2DROS
+									// has a member `initialized_` set as private, so there is no way to use it in
+									// a derived class (Costmap2dMultiFrame)
 
 // transform listener ------------------------------------------------------------------------
 static tf::TransformListener* tf_listener_ptr_;
@@ -55,6 +62,9 @@ int main(int argc, char** argv) {
 	}
 	std::string srv_ns = argv[1];
 
+	// start costmap status service
+	costmap_status_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner/CostmapStatus"), CostmapStatusSrv);
+
 	// initialize transform listener
 	tf::TransformListener tf_listener(ros::Duration(10.0));
 	tf_listener_ptr_ = &tf_listener;
@@ -69,10 +79,13 @@ int main(int argc, char** argv) {
 	glob_planner_ptr_ = &global_planner;
 
 	// start plan making service
-	make_plan_service_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner"), MakePlanService);
+	make_plan_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner"), MakePlanSrv);
 
 	// print some info
 	ROS_INFO("actor_global_plan Node started successfully");
+
+	// Update costmap status
+	costmap_ready_ = true;
 
 	// process callbacks
 	ros::spin();
@@ -84,7 +97,7 @@ int main(int argc, char** argv) {
 // ----------------------------------------------------------------------------------------------------
 // modified plan maker service callback ---------------------------------------------------------------
 // ----------------------------------------------------------------------------------------------------
-bool MakePlanService(actor_global_plan::MakeNavPlanFrame::Request& req, actor_global_plan::MakeNavPlanFrame::Response& resp) {
+static bool MakePlanSrv(actor_global_plan::MakeNavPlanFrame::Request& req, actor_global_plan::MakeNavPlanFrame::Response& resp) {
 
 	// first, check whether global planner is busy at the moment
 	if ( glob_planner_ptr_->isBusy() ) {
@@ -106,7 +119,7 @@ bool MakePlanService(actor_global_plan::MakeNavPlanFrame::Request& req, actor_gl
 	if ( resp.plan_found ) {
 
 		resp.path = path_;
-		ROS_INFO("Actor global planner made a plan consisting of %u points", resp.path.size());
+		ROS_INFO("Actor global planner made a plan consisting of %u points", static_cast<unsigned int>(resp.path.size()));
 
 	}
 
@@ -114,3 +127,12 @@ bool MakePlanService(actor_global_plan::MakeNavPlanFrame::Request& req, actor_gl
 	return (resp.plan_found);
 
 }
+
+// ----------------------------------------------------------------------------------------------------
+// ---- costmap status service callback ---------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------
+static bool CostmapStatusSrv(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& resp) {
+	resp.success = costmap_ready_;
+	return (true);
+}
+
