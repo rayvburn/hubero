@@ -18,6 +18,7 @@
 #include <costmap_2d/costmap_2d_ros.h>
 
 #include <std_srvs/Trigger.h> // costmap status
+#include <actor_global_plan/GetCost.h> // getcost service
 
 // ROS Kinetic
 #include <tf/transform_listener.h>
@@ -30,9 +31,11 @@
 static GlobalPlannerMultiFrame* glob_planner_ptr_;
 static std::vector<geometry_msgs::PoseStamped> path_;
 static ros::ServiceServer make_plan_srv_;
+static ros::ServiceServer get_cost_srv_;
 static ros::ServiceServer costmap_status_srv_;
 static bool MakePlanSrv(actor_global_plan::MakeNavPlanFrame::Request& req, actor_global_plan::MakeNavPlanFrame::Response& resp);
 static bool CostmapStatusSrv(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& resp);
+static bool GetCostSrv(actor_global_plan::GetCost::Request& req, actor_global_plan::GetCost::Response& resp);
 
 // costmap -----------------------------------------------------------------------------------
 // NOTE: it was impossible to call costmap's constructor inside a separate class (outside a ROS node)
@@ -78,8 +81,9 @@ int main(int argc, char** argv) {
 	GlobalPlannerMultiFrame global_planner(std::string("global_planner"), &costmap_global, frame);
 	glob_planner_ptr_ = &global_planner;
 
-	// start plan making service
+	// start plan making and cost getter services
 	make_plan_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner"), MakePlanSrv);
+	get_cost_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner/GetCost"), GetCostSrv);
 
 	// print some info
 	ROS_INFO("actor_global_plan Node started successfully");
@@ -136,3 +140,17 @@ static bool CostmapStatusSrv(std_srvs::Trigger::Request& req, std_srvs::Trigger:
 	return (true);
 }
 
+// ----------------------------------------------------------------------------------------------------
+// ---- get cost service callback ---------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------
+static bool GetCostSrv(actor_global_plan::GetCost::Request& req, actor_global_plan::GetCost::Response& resp) {
+
+	resp.cost = static_cast<uint8_t>(costmap_global_ptr_->getCost(req.point.x, req.point.y));
+	if ( resp.cost == 255 ) {
+		resp.error_message = "[ERROR] Given position is out of bounds or no information could have been acquired";
+	} else {
+		resp.error_message = "OK";
+	}
+	return (true);
+
+}

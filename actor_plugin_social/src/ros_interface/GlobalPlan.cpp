@@ -11,14 +11,15 @@
 #include <navfn/MakeNavPlan.h>
 #include <actor_global_plan/MakeNavPlanFrame.h>
 #include <std_srvs/Trigger.h>
+#include <actor_global_plan/GetCost.h>
 
 namespace actor {
 namespace ros_interface {
 
 // getWaypointHandler status indicators
-static constexpr uint8_t GET_WAYPOINT_IN_PROGRESS 	= 0;
-static constexpr uint8_t GET_WAYPOINT_FINISHED 		= 1;
-static constexpr uint8_t GET_WAYPOINT_PATH_EMPTY 	= 2;
+static constexpr uint8_t GLOBAL_PLAN_GET_WAYPOINT_IN_PROGRESS 	= 0;
+static constexpr uint8_t GLOBAL_PLAN_GET_WAYPOINT_FINISHED 		= 1;
+static constexpr uint8_t GLOBAL_PLAN_GET_WAYPOINT_PATH_EMPTY 	= 2;
 
 // ------------------------------------------------------------------- //
 
@@ -31,6 +32,7 @@ GlobalPlan::GlobalPlan(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &ga
 
 	srv_client_ = nh_ptr_->serviceClient<actor_global_plan::MakeNavPlanFrame>("ActorGlobalPlanner");
 	srv_client_costmap_status_ = nh_ptr_->serviceClient<std_srvs::Trigger>("ActorGlobalPlanner/CostmapStatus");
+	srv_client_get_cost_ = nh_ptr_->serviceClient<actor_global_plan::GetCost>("ActorGlobalPlanner/GetCost");
 
 }
 
@@ -41,6 +43,7 @@ void GlobalPlan::initialize(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_
 	nh_ptr_ = nh_ptr;
 	srv_client_ = nh_ptr_->serviceClient<actor_global_plan::MakeNavPlanFrame>("ActorGlobalPlanner");
 	srv_client_costmap_status_ = nh_ptr_->serviceClient<std_srvs::Trigger>("ActorGlobalPlanner/CostmapStatus");
+	srv_client_get_cost_ = nh_ptr_->serviceClient<actor_global_plan::GetCost>("ActorGlobalPlanner/GetCost");
 	waypoint_gap_ = gap;
 	frame_id_ = frame_id;
 
@@ -123,13 +126,13 @@ ignition::math::Pose3d GlobalPlan::getWaypoint(const size_t &index) {
 
 	switch(status) {
 
-	case(GET_WAYPOINT_IN_PROGRESS):
+	case(GLOBAL_PLAN_GET_WAYPOINT_IN_PROGRESS):
 		path_index = index;
 		break;
-	case(GET_WAYPOINT_FINISHED):
+	case(GLOBAL_PLAN_GET_WAYPOINT_FINISHED):
 		path_index = path_.size() - 1;
 		break;
-	case(GET_WAYPOINT_PATH_EMPTY):
+	case(GLOBAL_PLAN_GET_WAYPOINT_PATH_EMPTY):
 		return (converter_.convertPoseStampedToIgnPose(geometry_msgs::PoseStamped()));
 		break;
 	}
@@ -149,14 +152,14 @@ ignition::math::Pose3d GlobalPlan::getWaypoint() {
 
 	switch(status) {
 
-	case(GET_WAYPOINT_IN_PROGRESS):
+	case(GLOBAL_PLAN_GET_WAYPOINT_IN_PROGRESS):
 		index = waypoint_curr_;
 		waypoint_curr_ += waypoint_gap_;
 		break;
-	case(GET_WAYPOINT_FINISHED):
+	case(GLOBAL_PLAN_GET_WAYPOINT_FINISHED):
 		index = path_.size() - 1;
 		break;
-	case(GET_WAYPOINT_PATH_EMPTY):
+	case(GLOBAL_PLAN_GET_WAYPOINT_PATH_EMPTY):
 		return (converter_.convertPoseStampedToIgnPose(geometry_msgs::PoseStamped()));
 		break;
 	}
@@ -174,6 +177,43 @@ void GlobalPlan::setPosesFrames(geometry_msgs::PoseStamped &start, geometry_msgs
 	goal.header.frame_id = "world";
 
 }
+
+// ------------------------------------------------------------------- //
+
+//uint8_t GlobalPlan::getCost(const double &x_world, const double &y_world) const {
+//
+//	actor_global_plan::GetCost cost;
+//
+//	cost.request.point.x = x_world;
+//	cost.request.point.y = y_world;
+//	bool success = srv_client_get_cost_.call(cost);
+//
+//	return (static_cast<uint8_t>(cost.response.cost));
+//
+//}
+
+uint8_t GlobalPlan::getCost(const double &x_world, const double &y_world) {
+
+	actor_global_plan::GetCost cost;
+
+	cost.request.point.x = x_world;
+	cost.request.point.y = y_world;
+	bool success = srv_client_get_cost_.call(cost);
+
+	return (static_cast<uint8_t>(cost.response.cost));
+
+}
+
+//bool GlobalPlan::getCost(const double &x_world, const double &y_world) const {
+//
+//	actor_global_plan::GetCost cost;
+//
+//	cost.request.point.x = x_world;
+//	cost.request.point.y = y_world;
+//	bool success = srv_client_get_cost_.call(cost);
+//	return (success);
+//
+//}
 
 // ------------------------------------------------------------------- //
 
@@ -240,20 +280,20 @@ uint8_t GlobalPlan::getWaypointHandler(const size_t &index) {
 
 		//index = waypoint_curr_;
 		//waypoint_curr_ += waypoint_gap_;
-		return (GET_WAYPOINT_IN_PROGRESS);
+		return (GLOBAL_PLAN_GET_WAYPOINT_IN_PROGRESS);
 
 	} else if ( path_.size() != 0 ) {
 
 		// index (waypoint_curr_) is out of allowable range
 		target_reached_ = true;
 		//index = path_.size() - 1;
-		return (GET_WAYPOINT_FINISHED);
+		return (GLOBAL_PLAN_GET_WAYPOINT_FINISHED);
 
 	} else {
 
 		// path_.size() == 0
 		target_reached_ = true;
-		return (GET_WAYPOINT_PATH_EMPTY);
+		return (GLOBAL_PLAN_GET_WAYPOINT_PATH_EMPTY);
 
 	}
 

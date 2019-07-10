@@ -132,6 +132,11 @@ public:
 	 */
 	ignition::math::Pose3d getWaypoint();
 
+	// getCost (friend?) TODO
+//	uint8_t getCost(const double &x_world, const double &y_world) const;
+	uint8_t getCost(const double &x_world, const double &y_world); // mustn't be `const`
+//	bool getCost(const double &x_world, const double &y_world) const;
+
 	/**
 	 * @brief Destructor
 	 */
@@ -170,6 +175,11 @@ private:
 	 * @brief ROS Service client which connects to ActorGlobalPlanner/CostmapStatus server
 	 */
 	ros::ServiceClient srv_client_costmap_status_;
+
+	/**
+	 * @brief ROS Service client which connects to ActorGlobalPlanner/CostmapStatus server
+	 */
+	ros::ServiceClient srv_client_get_cost_;
 
 	/**
 	 * @brief Vector of poses

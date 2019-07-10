@@ -73,6 +73,10 @@ click on the project with a right hand mouse button -> Properties -> C/C++ Inclu
 and Add External Include Path -> Browse -> go to {YOUR WS FOLDER}/devel and click on the "include" folder and choose OK -> OK -> Apply and Close
 
 created services are achieveable via: 
-`#include <{PACKAGE DEFINING NEW SRV}/{SRV_NAME}`
+`#include <{PACKAGE DEFINING NEW SRV}/{SRV_NAME}>`
 
 make sure that the files arent broken (symbolic linkage)
+
+***
+
+It seems that calling the service (by client) must be placed in non-const member function (compilation errors when method marked as const)

@@ -69,9 +69,11 @@ add_library(actor_core
   include/core/Actor.h 
   include/core/CommonInfo.h 
   include/core/FSM.h 
+  include/core/Target.h
   src/core/Actor.cpp 
   src/core/CommonInfo.cpp 
   src/core/FSM.cpp
+  src/core/Target.cpp
 )
 
 add_library(actor_ros 

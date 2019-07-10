@@ -35,6 +35,14 @@ public:
 	void setFrameId(const std::string &frame_id);
 
 	/**
+	 * @brief Converts world coordinates to map cell and checks it's cost
+	 * @param x_world
+	 * @param y_world
+	 * @return
+	 */
+	unsigned char getCost(const double &x_world, const double &y_world);
+
+	/**
 	 * @brief ~Costmap2dMultiFrame() - default destructor
 	 */
 	virtual ~Costmap2dMultiFrame();

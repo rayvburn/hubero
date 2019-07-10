@@ -41,9 +41,6 @@ void Actor::initGazeboInterface(const gazebo::physics::ActorPtr &actor, const ga
 	 * bounding box of Actor in WorldPtr) */
 	common_info_.addActor(actor_ptr_->GetName());
 
-	// FIXME:
-	start_time_gp_ = world->SimTime();
-
 }
 
 // ------------------------------------------------------------------- //
@@ -51,23 +48,25 @@ void Actor::initGazeboInterface(const gazebo::physics::ActorPtr &actor, const ga
 void Actor::initRosInterface() {
 
 	// run parameter loader
-	params_.setActorParamsPrefix("actor");
-	params_.setSfmParamsPrefix("sfm");
-	params_.loadParameters(node_.getNodeHandlePtr());
+	params_ptr_ = std::make_shared<actor::ros_interface::ParamLoader>();
+	params_ptr_->setActorParamsPrefix("actor");
+	params_ptr_->setSfmParamsPrefix("sfm");
+	params_ptr_->loadParameters(node_.getNodeHandlePtr());
 
 	/* initialize SFM visualization instances */
 	sfm_vis_single_.setColorLine(1.0f, 1.0f, 0.0f, 0.7f);
 	sfm_vis_single_.setColorArrow(1.0f, 0.0f, 0.0f, 0.9f);
 
-	if ( params_.getSfmVisParams().publish_grid ) {
+	if ( params_ptr_->getSfmVisParams().publish_grid ) {
 		sfm_vis_grid_.setColorArrow(0.2f, 1.0f, 0.0f, 0.7f);
 		/* make grid artificially bigger than a world's bounds;
 		 * it makes random targets to be located further from
 		 * walls */
-		sfm_vis_grid_.createGrid(params_.getActorParams().world_bound_x.at(0) - 3.0, params_.getActorParams().world_bound_x.at(1) + 3.0,
-								 params_.getActorParams().world_bound_y.at(0) - 3.0, params_.getActorParams().world_bound_y.at(1) + 3.0,
-								 params_.getSfmVisParams().grid_resolution);
+		sfm_vis_grid_.createGrid(params_ptr_->getActorParams().world_bound_x.at(0) - 3.0, params_ptr_->getActorParams().world_bound_x.at(1) + 3.0,
+								 params_ptr_->getActorParams().world_bound_y.at(0) - 3.0, params_ptr_->getActorParams().world_bound_y.at(1) + 3.0,
+								 params_ptr_->getSfmVisParams().grid_resolution);
 	}
+
 
 	/* initialize ROS interface to allow publishing and receiving messages;
 	 * due to inheritance from `enable_shared_from_this`, this method is created
@@ -80,7 +79,7 @@ void Actor::initRosInterface() {
 	stream_.initPublisher<ActorNavMsgType, nav_msgs::Path>(ActorNavMsgType::ACTOR_NAV_PATH, "path");
 
 	// check if grid usage has been enabled in .YAML file
-	if ( params_.getSfmVisParams().publish_grid ) {
+	if ( params_ptr_->getSfmVisParams().publish_grid ) {
 		stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID, "force_grid");
 	}
 
@@ -99,7 +98,11 @@ void Actor::initRosInterface() {
 	// initialize global plan provider
 	//global_planner_.setNodeHandle(node_.getNodeHandlePtr());
 	//global_planner_.setWaypointGap(10);
-	global_planner_.initialize(node_.getNodeHandlePtr(), 10, actor_ptr_->GetName());
+
+	// prev
+//	global_planner_.initialize(node_.getNodeHandlePtr(), 10, actor_ptr_->GetName());
+//	global_plan_ptr_ = std::shared_ptr<actor::ros_interface::GlobalPlan>(node_.getNodeHandlePtr(), 10, actor_ptr_->GetName());
+
 
 }
 
@@ -110,7 +113,7 @@ void Actor::initInflator(const double &circle_radius) {
 	// circle
 	bounding_type_ = ACTOR_BOUNDING_CIRCLE;
 	bounding_circle_.setRadius(circle_radius);
-	bounding_circle_.setCenter(pose_world_.Pos());
+	bounding_circle_.setCenter(pose_world_ptr_->Pos());
 	common_info_.setBoundingCircle(bounding_circle_);
 
 }
@@ -122,7 +125,7 @@ void Actor::initInflator(const double &box_x_half, const double &box_y_half, con
 	// box
 	bounding_type_ = ACTOR_BOUNDING_BOX;
 	bounding_box_.init(box_x_half, box_y_half, box_z_half);
-	bounding_box_.updatePose(pose_world_);
+	bounding_box_.updatePose(*pose_world_ptr_);
 	common_info_.setBoundingBox(bounding_box_);
 
 }
@@ -136,9 +139,9 @@ void Actor::initInflator(const double &semi_major, const double &semi_minor, con
 	bounding_type_ = ACTOR_BOUNDING_ELLIPSE;
 
 	// correct yaw angle to make ellipse abstract from Actor coordinate system's orientation
-	ignition::math::Angle yaw_world( pose_world_.Rot().Yaw() - IGN_PI_2);
+	ignition::math::Angle yaw_world( pose_world_ptr_->Rot().Yaw() - IGN_PI_2);
 	yaw_world.Normalize();
-	bounding_ellipse_.init( semi_major, semi_minor, yaw_world.Radian(), pose_world_.Pos(), ignition::math::Vector3d(center_offset_x, center_offset_y, 0.0) );
+	bounding_ellipse_.init( semi_major, semi_minor, yaw_world.Radian(), pose_world_ptr_->Pos(), ignition::math::Vector3d(center_offset_x, center_offset_y, 0.0) );
 	common_info_.setBoundingEllipse(bounding_ellipse_);
 
 }
@@ -154,20 +157,20 @@ void Actor::initSFM() {
 
 	/* using param value instead of member variable
 	 * in case of different module initialization order */
-	switch ( static_cast<actor::ActorBoundingType>(params_.getActorInflatorParams().bounding_type)  ) {
+	switch ( static_cast<actor::ActorBoundingType>(params_ptr_->getActorInflatorParams().bounding_type)  ) {
 
 		case(actor::ActorBoundingType::ACTOR_BOUNDING_BOX):
 
 			/* based on `box inflation type` parameter - choose the right
 			 * SFM's box inflation type (actor is insensitive to this parameter);
 			 * see sfm::core::InflationType */
-			if ( static_cast<sfm::core::InflationType>(params_.getSfmParams().box_inflation_type) ==
+			if ( static_cast<sfm::core::InflationType>(params_ptr_->getSfmParams().box_inflation_type) ==
 					sfm::core::InflationType::INFLATION_BOX_ALL_OBJECTS ) {
 
 				std::cout << "SFM init: inflation type - BOX ALL OBJECTS" << std::endl;
 				sfm_inflation = sfm::core::InflationType::INFLATION_BOX_ALL_OBJECTS;
 
-			} else if ( static_cast<sfm::core::InflationType>(params_.getSfmParams().box_inflation_type) ==
+			} else if ( static_cast<sfm::core::InflationType>(params_ptr_->getSfmParams().box_inflation_type) ==
 					sfm::core::InflationType::INFLATION_BOX_OTHER_OBJECTS ) {
 
 				std::cout << "SFM init: inflation type - BOX OTHER OBJECTS" << std::endl;
@@ -195,14 +198,14 @@ void Actor::initSFM() {
 	}
 
 	// initialize SFM parameters
-	sfm_.init(params_.getSfmParams().internal_force_factor,
-			  params_.getSfmParams().interaction_force_factor,
-			  static_cast<unsigned int>(params_.getSfmParams().mass),
-			  params_.getSfmParams().max_speed,
-			  params_.getSfmParams().fov,
-			  params_.getSfmParams().min_force,
-			  params_.getSfmParams().max_force,
-			  static_cast<sfm::core::StaticObjectInteraction>(params_.getSfmParams().static_obj_interaction),
+	sfm_.init(params_ptr_->getSfmParams().internal_force_factor,
+			  params_ptr_->getSfmParams().interaction_force_factor,
+			  static_cast<unsigned int>(params_ptr_->getSfmParams().mass),
+			  params_ptr_->getSfmParams().max_speed,
+			  params_ptr_->getSfmParams().fov,
+			  params_ptr_->getSfmParams().min_force,
+			  params_ptr_->getSfmParams().max_force,
+			  static_cast<sfm::core::StaticObjectInteraction>(params_ptr_->getSfmParams().static_obj_interaction),
 			  sfm_inflation,
 			  world_ptr_);
 	
@@ -227,9 +230,15 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
+	// target manager initialization section
+	pose_world_ptr_ = std::make_shared<ignition::math::Pose3d>();
+	target_manager_ = Target(world_ptr_, pose_world_ptr_, params_ptr_);
+	target_manager_.initializeGlobalPlan(node_.getNodeHandlePtr(), 10, "map");
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
 	// initial stance setup section
 	// set initial stance and create custom trajectory
-	setStance( static_cast<actor::ActorStance>(params_.getActorParams().init_stance) );
+	setStance( static_cast<actor::ActorStance>(params_ptr_->getActorParams().init_stance) );
 
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -239,7 +248,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	ignition::math::Pose3d init_pose;
 
 	// check if some values have been set in .YAML
-	if ( params_.getActorParams().init_pose.size() == 0 ) {
+	if ( params_ptr_->getActorParams().init_pose.size() == 0 ) {
 
 		// process parameters added to .world file (.sdf)
 		ignition::math::Vector3d init_orient = actor_ptr_->WorldPose().Rot().Euler();
@@ -249,7 +258,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 
 		// set pose as set in .YAML file - handy for single actor
 		// not very handy for 100 of them
-		init_pose.Set( params_.getActorParams().init_pose.at(0), params_.getActorParams().init_pose.at(1), params_.getActorParams().init_pose.at(2), params_.getActorParams().init_pose.at(3), params_.getActorParams().init_pose.at(4), params_.getActorParams().init_pose.at(5) );
+		init_pose.Set( params_ptr_->getActorParams().init_pose.at(0), params_ptr_->getActorParams().init_pose.at(1), params_ptr_->getActorParams().init_pose.at(2), params_ptr_->getActorParams().init_pose.at(3), params_ptr_->getActorParams().init_pose.at(4), params_ptr_->getActorParams().init_pose.at(5) );
 
 	}
 	updateStanceOrientation(init_pose);
@@ -262,17 +271,17 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// bounding setup section
 	// convert int to enum value and initialize a proper inflator/bounding
-	bounding_type_ = static_cast<actor::ActorBoundingType>(params_.getActorInflatorParams().bounding_type);
+	bounding_type_ = static_cast<actor::ActorBoundingType>(params_ptr_->getActorInflatorParams().bounding_type);
 
 	switch ( bounding_type_ ) {
 	case(ACTOR_BOUNDING_BOX):
-			initInflator( params_.getActorInflatorParams().box_size.at(0), params_.getActorInflatorParams().box_size.at(1), params_.getActorInflatorParams().box_size.at(2) );
+			initInflator( params_ptr_->getActorInflatorParams().box_size.at(0), params_ptr_->getActorInflatorParams().box_size.at(1), params_ptr_->getActorInflatorParams().box_size.at(2) );
 			break;
 	case(ACTOR_BOUNDING_CIRCLE):
-			initInflator( params_.getActorInflatorParams().circle_radius );
+			initInflator( params_ptr_->getActorInflatorParams().circle_radius );
 			break;
 	case(ACTOR_BOUNDING_ELLIPSE):
-			initInflator( params_.getActorInflatorParams().ellipse.at(0), params_.getActorInflatorParams().ellipse.at(1), params_.getActorInflatorParams().ellipse.at(2), params_.getActorInflatorParams().ellipse.at(3) );
+			initInflator( params_ptr_->getActorInflatorParams().ellipse.at(0), params_ptr_->getActorInflatorParams().ellipse.at(1), params_ptr_->getActorInflatorParams().ellipse.at(2), params_ptr_->getActorInflatorParams().ellipse.at(3) );
 			break;
 	}
 
@@ -280,36 +289,30 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// initial target setup section
 
-	// says `yes` before costmap initialization
-//	std::cout << "\t\tBEFORE WAITING FOR SERVICE" << std::endl;
-//	// target selection is depends on global planner which is needed for global plan creation (wait for it)
-//	ros::service::waitForService("/gazebo/actor_plugin_ros_interface/ActorGlobalPlanner/CostmapStatus", 10000);
-//	std::cout << "\t\tAFTER WAITING FOR SERVICE" << std::endl;
-
-	th_wait_ = std::thread(&Actor::globalPlannerWaitingThreadHandler, this);
-	th_wait_.join();
-
 	// check if target coordinates have been set in .YAML - vector of 3 elements expected
-	if ( params_.getActorParams().init_target.size() == 3 ) {
+	if ( params_ptr_->getActorParams().init_target.size() == 3 ) {
 
 		// set target according to .YAML
-		target_ = ignition::math::Vector3d( params_.getActorParams().init_target.at(0), params_.getActorParams().init_target.at(1), params_.getActorParams().init_target.at(2) );
+//		target_ = ignition::math::Vector3d( params_ptr_->getActorParams().init_target.at(0), params_ptr_->getActorParams().init_target.at(1), params_ptr_->getActorParams().init_target.at(2) );
+		target_manager_.setNewTarget(ignition::math::Vector3d( params_ptr_->getActorParams().init_target.at(0), params_ptr_->getActorParams().init_target.at(1), params_ptr_->getActorParams().init_target.at(2) ));
 		// TODO: global plan
 
 	} else if ( sdf && sdf->HasElement("target") ) {
 
 		// target coordinates in .YAML haven't been defined - use .sdf
-		target_ = sdf->Get<ignition::math::Vector3d>("target");
+//		target_ = sdf->Get<ignition::math::Vector3d>("target");
+		target_manager_.setNewTarget(sdf->Get<ignition::math::Vector3d>("target"));
 		// TODO: global plan
 
 	} else {
 
 //		std::cout << "SLEEPING for 5 secs" << std::endl;
 //		std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-		// improper/no position set - choose random target
-		gazebo::common::UpdateInfo info_init;
-		info_init.simTime = world_ptr_->SimTime();
-		chooseNewTarget(info_init);
+
+		// improper/no position set - choose random target during first OnUpdate TODO
+//		gazebo::common::UpdateInfo info_init;
+//		info_init.simTime = world_ptr_->SimTime();
+//		chooseNewTarget(info_init); // do not execute this (at least not now)
 
 	}
 
@@ -320,23 +323,14 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// debugging section
 //	std::cout << actor_ptr_->GetName() << "\tIGNORED MODELS VECTOR:" << std::endl;
-//	for ( size_t i = 0; i < params_.getSfmDictionary().ignored_models_.size(); i++ ) {
-//		std::cout << i << "\t" << params_.getSfmDictionary().ignored_models_.at(i) << std::endl;
+//	for ( size_t i = 0; i < params_ptr_->getSfmDictionary().ignored_models_.size(); i++ ) {
+//		std::cout << i << "\t" << params_ptr_->getSfmDictionary().ignored_models_.at(i) << std::endl;
 //	}
 //	std::cout << "\n\n" << std::endl;
 
 }
 
 // ------------------------------------------------------------------- //
-
-void Actor::globalPlannerWaitingThreadHandler() {
-
-	while ( !global_planner_.isCostmapInitialized() ) {
-		std::cout << "\n\tSLEEPING for 500 ms\n" << std::endl;
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
-	}
-
-}
 
 void Actor::readSDFParameters(const sdf::ElementPtr sdf) {
 
@@ -383,114 +377,12 @@ void Actor::readSDFParameters(const sdf::ElementPtr sdf) {
 }
 
 
-// ------------------------------------------------------------------- //
-
-bool Actor::setNewTarget(const ignition::math::Pose3d &pose) {
-
-	if ( std::isinf(pose.Pos().X()) ||  std::isnan(pose.Pos().X()) ||
-		 std::isinf(pose.Pos().Y()) ||  std::isnan(pose.Pos().Y()) ) {
-		return (false);
-	}
-	target_ = pose.Pos();
-	// TODO: check whether global planner finds valid plan
-
-	// TODO:
-	//target_checkpoints_.push(target_);
-
-	return (true);
-}
-
-// ------------------------------------------------------------------- //
-
-bool Actor::setNewTarget(const std::string &object_name) {
-
-	bool is_valid = false;
-	gazebo::physics::ModelPtr model;
-	std::tie(is_valid, model) = isModelValid(object_name);
-
-	if ( !is_valid ) {
-		return (false);
-	}
-
-	if ( model->GetType() == actor::ACTOR_MODEL_TYPE_ID ) {
-		/* not allowable, actor is a dynamic model;
-		 * use follow object instead */
-		return (false);
-	}
-
-	/* let's find the line from the current actor's pose to the closest
-	 * point of an object's bounding box; shift the point to the free
-	 * space direction a little and set it as a new target;
-	 * this way a rise of an `unreachable target` flag won't occur,
-	 * because target is located in a free space) */
-
-	ignition::math::Line3d line;
-	line.Set( pose_world_.Pos(), model->WorldPose().Pos() ); // line_angle expressed from the actor to an object
-	/* NOTE:
-	 * line.Set( model->WorldPose().Pos(), pose_world_.Pos() );
-	 * with commented version line_angle is expressed from object to actor,
-	 * but for some reason Box always return pt of intersection equal
-	 * to BoundingBox'es center (also, all 0.05 signs have to be inverted
-	 * in below `if` conditions) */
-	ignition::math::Vector3d pt_intersection;
-	bool does_intersect = false;
-	std::tie(does_intersect, std::ignore, pt_intersection) = model->BoundingBox().Intersect( line );
-
-	if ( !does_intersect ) {
-		// this should not happen, something went wrong
-		return (false);
-	}
-
-	/* check the line's direction and based on the angle shift
-	 * the intersection point a little in proper direction */
-	double line_angle = std::atan2( line.Direction().Y(), line.Direction().X() );
-
-	if ( line_angle >= 0.00 && line_angle <= IGN_PI_2 ) {
-
-		// I quarter
-		pt_intersection.X( pt_intersection.X() - 0.05 );
-		pt_intersection.Y( pt_intersection.Y() - 0.05 );
-
-	} else if ( line_angle > IGN_PI_2 && line_angle <= IGN_PI ) {
-
-		// II quarter
-		pt_intersection.X( pt_intersection.X() + 0.05 );
-		pt_intersection.Y( pt_intersection.Y() - 0.05 );
-
-	} else if ( line_angle < 0.00 && line_angle >= -IGN_PI_2 ) {
-
-		// IV quarter
-		pt_intersection.X( pt_intersection.X() - 0.05 );
-		pt_intersection.Y( pt_intersection.Y() + 0.05 );
-
-	} else if ( line_angle < -IGN_PI_2 && line_angle >= -IGN_PI ) {
-
-		// III quarter
-		pt_intersection.X( pt_intersection.X() + 0.05 );
-		pt_intersection.Y( pt_intersection.Y() + 0.05 );
-
-	}
-
-	setNewTarget( ignition::math::Pose3d(pt_intersection, model->WorldPose().Rot()) );
-	// TODO: global plan
-
-	return (true);
-
-}
-
-// ------------------------------------------------------------------- //
-
 bool Actor::followObject(const std::string &object_name, const bool &stop_after_arrival) {
 
-	bool is_valid = false;
-	std::tie(is_valid, std::ignore) = isModelValid(object_name);
-
-	if ( !is_valid ) {
-		return (false);
-	}
-
+	// TODO: FIXME:
 	object_to_follow_ = object_name;
 	fsm_.setState(ACTOR_STATE_FOLLOW_OBJECT);
+
 	return (true);
 
 }
@@ -577,7 +469,7 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 	// copy the actor's current rotation to local variable
-	ignition::math::Vector3d new_rpy = pose_world_.Rot().Euler();
+	ignition::math::Vector3d new_rpy = pose_world_ptr_->Rot().Euler();
 
 	/* if already aligned - switch to a certain state, otherwise proceed to the next
 	 * rotation procedure */
@@ -590,13 +482,13 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 
 	// update the local copy of the actor's pose (orientation only)
 	ignition::math::Quaterniond quat(new_rpy);
-	pose_world_.Rot() = quat;
+	pose_world_ptr_->Rot() = quat;
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 	/* forced close-to-zero distance traveled to avoid actor oscillations;
 	 * of course 0.0 linear distance is traveled when pure rotation is performed */
-	applyUpdate(info, params_.getActorParams().animation_speed_rotation);
+	applyUpdate(info, params_ptr_->getActorParams().animation_speed_rotation);
 
 }
 
@@ -609,8 +501,19 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	ignition::math::Vector3d sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), pose_world_,
-														  velocity_lin_, target_checkpoint_, common_info_, dt); // target_
+	std::cout << "[STATUS] stateHandlerMoveAround" << std::endl;
+	// check whether a target exists
+	if ( !target_manager_.isTargetChosen() ) {
+		target_manager_.chooseNewTarget(info);
+	}
+	// check whether a target has plan generated
+	if ( !target_manager_.isPlanGenerated() ) {
+		target_manager_.generatePathPlan(target_manager_.getTarget());
+	}
+
+	ignition::math::Vector3d sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), *pose_world_ptr_,
+														  velocity_lin_, target_manager_.getCheckpoint(),
+														  common_info_, dt); // target_
 
 //	if ( print_info ) {
 //		std::cout << "\t TOTAL force: " << sf << std::endl;
@@ -622,7 +525,7 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 //		std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;
 //	}
 
-	ignition::math::Pose3d new_pose = sfm_.computeNewPose(pose_world_, velocity_lin_, sf, dt);
+	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_lin_, sf, dt);
 
 //	if ( print_info ) {
 //		std::cout << "\t NEW pose: " << new_pose;
@@ -630,16 +533,16 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 //		std::cout << std::endl << std::endl;
 //	}
 
-	if ( isTargetReached() ) {
+	if ( target_manager_.isTargetReached() ) {
 
-		chooseNewTarget(info);
+		target_manager_.chooseNewTarget(info);
 		// after setting new target, first let's rotate to its direction
 		fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
 
-	} else if ( isCheckpointReached() ) {
+	} else if ( target_manager_.isCheckpointReached() ) {
 
 		// take next checkpoint from vector (path)
-		target_checkpoint_ = global_planner_.getWaypoint().Pos();
+		target_manager_.updateCheckpoint();
 
 	}
 
@@ -647,7 +550,7 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 	double dist_traveled = (new_pose.Pos() - actor_ptr_->WorldPose().Pos()).Length();
 
 	// update the local copy of the actor's pose
-	pose_world_ = new_pose;
+	*pose_world_ptr_ = new_pose;
 
 	// publish social force vector and closest points lines
 	stream_.publishData(ActorMarkerType::ACTOR_MARKER_SF_VECTOR, sfm_vis_single_.createArrow(new_pose.Pos(), sf) );
@@ -695,316 +598,7 @@ void Actor::stateHandlerTeleoperation (const gazebo::common::UpdateInfo &info) {
 // private section
 
 
-void Actor::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
-
-	// FIXME: watch out for a situation in which actor's position is not in map bounds!
-
-	ignition::math::Vector3d new_target(target_);
-	bool reachable_gp = false; // whether global planner found a valid plan
-
-	// 1) look for target that is located at least 2 meters from the current one
-	// 2) look for target that is reachable (global plan can be found)
-//	while ( ((new_target - target_).Length() < 2.0) || !reachable_gp ) {
-
-	while ( ((new_target - target_).Length() < (2.0 * params_.getActorParams().target_tolerance))
-			|| !reachable_gp )
-	{
-
-		// get random coordinates based on world limits
-		new_target.X(ignition::math::Rand::DblUniform( params_.getActorParams().world_bound_x.at(0), params_.getActorParams().world_bound_x.at(1)) );
-		new_target.Y(ignition::math::Rand::DblUniform( params_.getActorParams().world_bound_y.at(0), params_.getActorParams().world_bound_y.at(1)) );
-
-		// check distance to all world's objects
-		for (unsigned int i = 0; i < world_ptr_->ModelCount(); ++i) {
-
-			/* distance-based target selection - could fail for very big objects
-			 *
-			//double dist = (world_ptr_->ModelByIndex(i)->WorldPose().Pos() - new_target).Length();
-			if (dist < 2.0) {
-				// if distance to some object is less than 2 meters
-				// discard - discard current target and look
-				// for another one
-				new_target = target;
-				break;
-			}
-			*
-			*/
-
-			/* bounding-box-based target selection - safer for big obstacles,
-			 * accounting some tolerance for a target accomplishment - an actor should
-			 * not step into an object;
-			 * also, check if current model is not listed as neglible */
-
-			if ( isModelNegligible(world_ptr_->ModelByIndex(i)->GetName(), params_.getSfmDictionary().ignored_models_) ) {
-				std::cout << "MODEL NEGLIGIBLE: " << world_ptr_->ModelByIndex(i)->GetName() << "\tfor " << actor_ptr_->GetName() << std::endl;
-				continue;
-			}
-
-			// check if model's bounding box contains target point
-			if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), new_target) ) {
-				// TODO: make this an error log message
-				std::cout << "chooseNewTarget() - selection failed -> model containing target's pos: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
-				std::cout << std::endl;
-				new_target = target_;
-				continue;
-			}
-
-			/* TODO: choose a target that is at least 1 meter from any obstacle */
-
-		} // for
-
-//		if ( (info.simTime - start_time_gp_).Double() > 15.0 ) { // time for costmap initialization etc.
-			// seems that a proper target has been found, check whether it is reachable according to a global planner
-			if ( generatePathPlan(new_target) ) {
-				reachable_gp = true;
-			} else {
-				reachable_gp = false;
-			}
-//		} else {
-//			reachable_gp = true;
-//		}
-
-
-	} // while
-
-	// finally found a new target
-	target_ = new_target;
-	target_checkpoint_ = global_planner_.getWaypoint().Pos();
-
-	// -----------------------------------------------------------------
-
-	//global_plan_ptr_->makePlan(pose_world_.Pos(), target_);
-	//stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, global_plan_.getPath());
-
-	// -----------------------------------------------------------------
-
-	// save event time
-	time_last_target_selection_ = info.simTime;
-
-}
-
 // ------------------------------------------------------------------- //
-
-bool Actor::isTargetStillReachable(const gazebo::common::UpdateInfo &info) {
-
-	// TODO: generate global plan?
-	// check periodically, no need to do this in each iteration
-	if ( (info.simTime - time_last_reachability_).Double() > params_.getActorParams().target_reachable_check_period ) {
-
-		// save event time
-		time_last_reachability_ = info.simTime;
-
-		// iterate over all models
-		for (unsigned int i = 0; i < world_ptr_->ModelCount(); ++i) {
-
-			// FIXME: cafe is a specific model that represents whole world
-			if ( world_ptr_->ModelByIndex(i)->GetName() == "cafe" ) {
-				continue;
-			}
-
-			// check if model's bounding box contains target point
-			if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), target_) ) {
-
-				std::cout << "isTargetStillReachable()" << std::endl;
-				std::cout << "\t" << actor_ptr_->GetName() << "\tDETECTED TARGET UNREACHABLE!" << std::endl;
-				std::cout << "\ttarget: " << target_ << "\tmodel containing: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
-				std::cout << std::endl;
-				std::cout << std::endl;
-				std::cout << std::endl;
-				return (false);
-
-			}
-
-		}
-
-	}
-
-	return (true);
-
-}
-
-// ------------------------------------------------------------------- //
-
-bool Actor::isTargetNotReachedForTooLong(const gazebo::common::UpdateInfo &info) const {
-
-	if ( (info.simTime - time_last_target_selection_).Double() > params_.getActorParams().target_reach_max_time ) {
-
-		std::cout << "isTargetNotReachedForTooLong()" << std::endl;
-		std::cout << "\t" << actor_ptr_->GetName() << "\tDETECTED TARGET UNREACHABLE IN FINITE TIME!" << std::endl;
-		std::cout << std::endl;
-		std::cout << std::endl;
-		std::cout << std::endl;
-		return (true);
-
-	}
-	return (false);
-
-}
-
-// ------------------------------------------------------------------- //
-
-bool Actor::isTargetReached() const {
-
-	// calculate a distance to a target
-	double distance_to_target = (target_ - pose_world_.Pos()).Length();
-
-	// choose a new target position if the actor has reached its current target
-	/* the smaller tolerance the bigger probability that actor will
-	 * step into some obstacle */
-	if ( distance_to_target > params_.getActorParams().target_tolerance ) {
-		return (false);
-	}
-
-	// Also, check whether whole path has been traveled (sometimes it may happen
-	// that path goes near the wall which has to be skipped over to reach
-	// the actual goal)
-	if ( !global_planner_.isTargetReached() ) {
-		return (false);
-	}
-
-	// otherwise return true
-	return (true);
-
-}
-
-// ------------------------------------------------------------------- //
-
-bool Actor::isCheckpointReached() const {
-
-	// as a threshold value of length choose half of the `target_tolerance`
-	double dist_to_checkpoint = (pose_world_.Pos() - target_checkpoint_).Length();
-	if ( dist_to_checkpoint < (params_.getActorParams().target_tolerance * 0.5) ) {
-		return (true);
-	}
-	return (false);
-
-}
-
-// ------------------------------------------------------------------- //
-
-bool Actor::generatePathPlan(const ignition::math::Vector3d &target_to_be) {
-
-	// GLOBAL PLANNING SECTION
-//	debugging
-//	global_planner_.makePlan(ignition::math::Vector3d(-3.0, 0.1, 0.0), ignition::math::Vector3d(4.0, -0.1, 0.0));
-	actor::ros_interface::GlobalPlan::MakePlanStatus status = actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_UNKNOWN;
-
-	size_t tries_num = 0;
-
-	// repeat up to 10 times (more than 1 execution will be performed only when planner is busy)
-	while ( tries_num++ <= 10 ) {
-
-		std::cout << "\n\n\n\n\n[generatePathPlan] Starting iteration number " << tries_num << std::endl;
-
-		// try to make plan
-		status = global_planner_.makePlan(pose_world_.Pos(), target_to_be);;
-
-		// check action status
-		switch (status) {
-
-		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_SUCCESSFUL):
-			std::cout << "\n\n\n[generatePathPlan] Global planning successfull\n\n\n" << std::endl;
-			return (true);
-			break;
-
-		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_FAILED):
-			std::cout << "\n\n\n[generatePathPlan] Global planning failed\n\n\n" << std::endl;
-			return (false);
-			break;
-
-		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_BUSY):
-			std::cout << "\n\n\n[generatePathPlan] OOPS, need to wait for the global planner...\n\n\n" << std::endl;
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-			continue;
-			break;
-
-		default:
-			// unexpected behavior
-			std::cout << "\n\n\n[generatePathPlan] UNEXPECTED BEHAVIOR\n\n\n" << std::endl;
-			return (false);
-			break;
-
-		}
-
-	}
-
-	// if managed to get there then many tries were performed but planner is still busy
-	std::cout << "\n\n\n[generatePathPlan] PLANNER UNABLE TO PROCESS THE REQUEST\n\n\n" << std::endl;
-	return (false);
-
-}
-
-// ------------------------------------------------------------------- //
-
-bool Actor::doesBoundingBoxContainPoint(const ignition::math::Box &bb, const ignition::math::Vector3d &pt) const {
-
-	// check if model's bounding box is valid (not 0-length - for actors it is - || NaN || inf)
-	if ( !std::isnan(bb.Max().Length()) && !std::isinf(bb.Max().Length()) && (bb.Max().Length() > 1e-06) ) {
-
-		// check if model's bounding box contains target point
-		if ( bb.Contains(pt) ) {
-			return (true);
-		}
-
-	}
-	return (false);
-
-}
-
-// ------------------------------------------------------------------- //
-/*
-bool Actor::isModelNegligible(const std::string &object_name) {
-
-	// name has to be exactly given in .YAML - NOT HANDY for multiple objects of the same type
-	/*
-	std::vector<std::string>::iterator it;
-	it = std::find ( params_.getSfmDictionary().ignored_models_.begin(), params_.getSfmDictionary().ignored_models_.end(), object_name);
-	if ( it != params_.getSfmDictionary().ignored_models_.end() ) {
-		// element found in `ignored models` vector
-		return (true);
-	}
-	return (false);
-
-}
-*/
-
-// ------------------------------------------------------------------- //
-
-bool Actor::isModelNegligible(const std::string &object_name, const std::vector<std::string> &dictionary) {
-
-	// copy constructor
-	std::string object_name_trim(object_name);
-
-	// trim last character is it's number (model of the same type numbering)
-	while ( std::isdigit(object_name_trim.back())  ) {
-		object_name_trim.pop_back();
-	}
-
-//	std::cout << "isModelNegligible()  -  name: " << object_name << "\tPATTERN TO FIND: " << object_name_trim << "\t";
-
-	// name consisted from numbers only?
-	if ( object_name_trim.length() == 0 ) {
-		return (false);
-	}
-
-	// iterate through whole dictionary to find something that matches
-	std::size_t found;
-	for ( size_t i = 0; i < dictionary.size(); i++ ) {
-
-		found = dictionary.at(i).find(object_name_trim);
-		if ( found != std::string::npos ) {
-			// found something similar
-//			std::cout << "FOUND" << std::endl;
-			return (true);
-		}
-
-	}
-
-//	std::cout << "NOT FOUND" << std::endl;
-	// iterated through whole dictionary and did not found a given pattern
-	return (false);
-
-}
 
 // ------------------------------------------------------------------- //
 
@@ -1048,16 +642,16 @@ bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 //	ignition::math::Angle yaw_target(std::atan2( target.Y(), target.X() ) + (IGN_PI/2) );
 	// V2 ------------------------------------------------------------------------------------------------------
 	// yaw target expressed as an angle that depends on current IDEAL_TO_TARGET vector
-//	ignition::math::Vector3d to_target_vector = target_ - pose_world_.Pos();							// in world coord. system
+//	ignition::math::Vector3d to_target_vector = target_ - pose_world_ptr_->Pos();							// in world coord. system
 	// NOTE: the above was before (before target_checkpoint_ version)
-	ignition::math::Vector3d to_target_vector = target_checkpoint_ - pose_world_.Pos();
+	ignition::math::Vector3d to_target_vector = target_manager_.getCheckpoint() - pose_world_ptr_->Pos();
 
 	to_target_vector.Normalize();
 	ignition::math::Angle yaw_target(std::atan2( to_target_vector.Y(), to_target_vector.X() ) + (IGN_PI/2) );	// +90 deg transforms the angle from actor's coord. system to the world's one
 	//    ------------------------------------------------------------------------------------------------------
 	yaw_target.Normalize();
 
-	double yaw_start = pose_world_.Rot().Yaw();
+	double yaw_start = pose_world_ptr_->Rot().Yaw();
 	//ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );
 	ignition::math::Angle yaw_diff( yaw_target.Radian() - yaw_start );
 	yaw_diff.Normalize();
@@ -1133,9 +727,9 @@ bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 double Actor::prepareForUpdate(const gazebo::common::UpdateInfo &info) {
 
 	// copy pose
-	pose_world_ = actor_ptr_->WorldPose();
+	*pose_world_ptr_ = actor_ptr_->WorldPose();
 
-	updateStanceOrientation(pose_world_);
+	updateStanceOrientation(*pose_world_ptr_);
 
 	double dt = (info.simTime - time_last_update_).Double();
 	calculateVelocity(dt);
@@ -1146,7 +740,7 @@ double Actor::prepareForUpdate(const gazebo::common::UpdateInfo &info) {
 	// actor_ptr_->SetLinearVel(velocity_lin_);
 
 	// update bounding model's pose
-	updateBounding(pose_world_);
+	updateBounding(*pose_world_ptr_);
 
 	// dt is helpful for further calculations
 	return (dt);
@@ -1161,13 +755,13 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	pose_world_prev_ = actor_ptr_->WorldPose();
 
 	// make sure the actor won't go out of bounds
-	if ( params_.getActorParams().limit_actors_workspace ) {
-		pose_world_.Pos().X(std::max( params_.getActorParams().world_bound_x.at(0), std::min( params_.getActorParams().world_bound_x.at(1), pose_world_.Pos().X())));
-		pose_world_.Pos().Y(std::max( params_.getActorParams().world_bound_y.at(0), std::min( params_.getActorParams().world_bound_y.at(1), pose_world_.Pos().Y())));
+	if ( params_ptr_->getActorParams().limit_actors_workspace ) {
+		pose_world_ptr_->Pos().X(std::max( params_ptr_->getActorParams().world_bound_x.at(0), std::min( params_ptr_->getActorParams().world_bound_x.at(1), pose_world_ptr_->Pos().X())));
+		pose_world_ptr_->Pos().Y(std::max( params_ptr_->getActorParams().world_bound_y.at(0), std::min( params_ptr_->getActorParams().world_bound_y.at(1), pose_world_ptr_->Pos().Y())));
 	}
 
 	// update the global pose
-	actor_ptr_->SetWorldPose(pose_world_, false, false);
+	actor_ptr_->SetWorldPose(*pose_world_ptr_, false, false);
 
 	/*
 	 * std::cout << actor->GetName() << " | script time: " << actor->ScriptTime() << "\tdist_trav: " << _dist_traveled << "\tanim_factor: " << animation_factor << std::endl;
@@ -1185,22 +779,22 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	 */
 
 	// update script time to set proper animation speed
-	actor_ptr_->SetScriptTime( actor_ptr_->ScriptTime() + (dist_traveled * params_.getActorParams().animation_factor) );
+	actor_ptr_->SetScriptTime( actor_ptr_->ScriptTime() + (dist_traveled * params_ptr_->getActorParams().animation_factor) );
 
 	// update time
 	time_last_update_ = info.simTime;
 
 	// check if there has been some obstacle put into world since last target selection
-	if ( !isTargetStillReachable(info) ) {
-		chooseNewTarget(info);
+	if ( !target_manager_.isTargetStillReachable(info) ) {
+		target_manager_.chooseNewTarget(info);
 		// after setting new target, first let's rotate to its direction
 		// state will be changed in the next iteration
 		fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
 	}
 
 	// check if actor is stuck
-	if ( isTargetNotReachedForTooLong(info) ) {
-		chooseNewTarget(info);
+	if ( target_manager_.isTargetNotReachedForTooLong(info) ) {
+		target_manager_.chooseNewTarget(info);
 		// after setting new target, first let's rotate to its direction
 		// state will be changed in the next iteration
 		fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
@@ -1227,15 +821,15 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 			break;
 	}
 
-	stream_.publishData(ActorTfType::ACTOR_TF_SELF, pose_world_);
-	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_),
+	stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_);
+	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getTarget()),
 																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
-	stream_.publishData(ActorTfType::ACTOR_TF_CHECKPOINT, ignition::math::Pose3d(ignition::math::Vector3d(target_checkpoint_),
+	stream_.publishData(ActorTfType::ACTOR_TF_CHECKPOINT, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getCheckpoint()),
 																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
-	stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, global_planner_.getPath());
+	stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, target_manager_.getPath());
 
 	// check if grid publication has been enabled in parameter file
-	if ( params_.getSfmVisParams().publish_grid ) {
+	if ( params_ptr_->getSfmVisParams().publish_grid ) {
 
 		/* visualize SFM grid if enough time elapsed from last
 		 * publication and there is some unit subscribing to a topic */
@@ -1248,7 +842,7 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 
 	// ellipse
 //	std::cout << "\tBOUNDING ELLIPSE\n";
-//	std::cout << "\tActor's pos: " << pose_world_.Pos() << std::endl;
+//	std::cout << "\tActor's pos: " << pose_world_ptr_->Pos() << std::endl;
 //	std::cout << "\tEllipse's offset: " << bounding_ellipse_.getCenterOffset() << std::endl;
 //	std::cout << "\tEllipse's center: " << bounding_ellipse_.getCenter() << "\tEllipse's shifted center: " << bounding_ellipse_.getCenterShifted() << std::endl;
 //	std::cout << "\n\n";
@@ -1299,9 +893,9 @@ void Actor::calculateVelocity(const double &dt) {
 	// =============== linear velocity
 
 	ignition::math::Vector3d new_velocity;
-	new_velocity.X( (pose_world_.Pos().X() - pose_world_prev_.Pos().X()) / dt );
-	new_velocity.Y( (pose_world_.Pos().Y() - pose_world_prev_.Pos().Y()) / dt );
-	new_velocity.Z( (pose_world_.Pos().Z() - pose_world_prev_.Pos().Z()) / dt );
+	new_velocity.X( (pose_world_ptr_->Pos().X() - pose_world_prev_.Pos().X()) / dt );
+	new_velocity.Y( (pose_world_ptr_->Pos().Y() - pose_world_prev_.Pos().Y()) / dt );
+	new_velocity.Z( (pose_world_ptr_->Pos().Z() - pose_world_prev_.Pos().Z()) / dt );
 
 	/* Velocity Averaging Block -
 	 * used there to prevent some kind of oscillations in
@@ -1330,9 +924,9 @@ void Actor::calculateVelocity(const double &dt) {
 	velocity_lin_ = new_velocity;
 
 	// =============== angular velocity
-	new_velocity.X( (pose_world_.Rot().Roll()  - pose_world_prev_.Rot().Roll()  ) / dt );
-	new_velocity.Y( (pose_world_.Rot().Pitch() - pose_world_prev_.Rot().Pitch() ) / dt );
-	new_velocity.Z( (pose_world_.Rot().Yaw()   - pose_world_prev_.Rot().Yaw()   ) / dt );
+	new_velocity.X( (pose_world_ptr_->Rot().Roll()  - pose_world_prev_.Rot().Roll()  ) / dt );
+	new_velocity.Y( (pose_world_ptr_->Rot().Pitch() - pose_world_prev_.Rot().Pitch() ) / dt );
+	new_velocity.Z( (pose_world_ptr_->Rot().Yaw()   - pose_world_prev_.Rot().Yaw()   ) / dt );
 
 	// averaging block is not needed as angular velocity is not used by SFM
 	velocity_ang_.X( new_velocity.X() );
@@ -1437,27 +1031,13 @@ std::string Actor::convertStanceToAnimationName() const {
 
 }
 
-// ------------------------------------------------------------------- //
-
-inline std::tuple<bool, gazebo::physics::ModelPtr> Actor::isModelValid(const std::string &object_name) const {
-
-	// Gazebo::Physics::World - ModelByName() says:
-	/// `\return A pointer to the Model, or NULL if no model was found.`
-	gazebo::physics::ModelPtr model_p = world_ptr_->ModelByName(object_name);
-
-	if ( model_p == NULL || model_p == nullptr ) {
-		return ( std::make_tuple(false, nullptr) );
-	}
-	return ( std::make_tuple(true, model_p) );
-
-}
 
 // ------------------------------------------------------------------- //
 
 bool Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
 
 	// do not publish too often
-	if ( (info.simTime - time_last_vis_pub_).Double() > params_.getSfmVisParams().grid_pub_period ) {
+	if ( (info.simTime - time_last_vis_pub_).Double() > params_ptr_->getSfmVisParams().grid_pub_period ) {
 
 		/* update the sim time even when grid will not be published
 		 * to avoid calling getSubscribersNum() in each iteration */
@@ -1480,7 +1060,7 @@ bool Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
 			while ( !sfm_vis_grid_.isWholeGridChecked() ) {
 
 				// set an actor's virtual pose
-				pose = ignition::math::Pose3d( sfm_vis_grid_.getNextGridElement(), pose_world_.Rot() );
+				pose = ignition::math::Pose3d( sfm_vis_grid_.getNextGridElement(), pose_world_ptr_->Rot() );
 
 				// update the bounding of an actor
 				updateBounding(pose);
@@ -1488,7 +1068,7 @@ bool Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
 				// calculate social force for actor located in current pose
 				// hard-coded time delta
 //				sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), pose, velocity_lin_, target_, common_info_, 0.001);
-				sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), pose, velocity_lin_, target_checkpoint_, common_info_, 0.001);
+				sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), pose, velocity_lin_, target_manager_.getCheckpoint(), common_info_, 0.001);
 
 				// pass a result to vector of grid forces
 				sfm_vis_grid_.addMarker( sfm_vis_grid_.createArrow(pose.Pos(), sf) );
