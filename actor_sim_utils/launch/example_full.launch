@@ -12,20 +12,38 @@
     <arg name="map_file"    default="$(find actor_sim_utils)/maps/$(arg world).yaml"/>
     <arg name="gui"         default="true"/>
     <arg name="rviz"        default="true"/>
+    <arg name="gdb"         default="false"/>
 
     <arg name="actor_params_ns" default="/gazebo/actor_plugin_ros_interface/actor"/>
     <arg name="sfm_params_ns"   default="/gazebo/actor_plugin_ros_interface/sfm"/>
 
     <!-- ========================= launch world (Gazebo server and GUI) ========================================= -->
-    <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="world_name" value="$(arg world_file)"/>
-        <arg name="paused" value="false"/>
-        <arg name="use_sim_time" value="true"/>
-        <arg name="gui" value="true"/>
-        <arg name="headless" value="false"/>
-        <arg name="debug" value="false"/>
-        <arg name="verbose" value="true"/>
-    </include>
+
+    <group if="$(arg gdb)">
+        <include file="$(find actor_sim_utils)/launch/empty_world_dbg.launch">
+            <arg name="world_name" value="$(arg world_file)"/>
+            <arg name="paused" value="false"/>
+            <arg name="use_sim_time" value="true"/>
+            <arg name="gui" value="false"/>
+            <arg name="headless" value="false"/>
+            <arg name="debug" value="false"/>
+            <arg name="verbose" value="true"/>
+        </include>
+    </group>
+
+    <!-- ================= launch world (Gazebo server and GUI in debugger mode) =============================== -->
+    
+    <group unless="$(arg gdb)">
+        <include file="$(find gazebo_ros)/launch/empty_world.launch">
+            <arg name="world_name" value="$(arg world_file)"/>
+            <arg name="paused" value="false"/>
+            <arg name="use_sim_time" value="true"/>
+            <arg name="gui" value="true"/>
+            <arg name="headless" value="false"/>
+            <arg name="debug" value="false"/>
+            <arg name="verbose" value="true"/>
+        </include>
+    </group>
 
     <!-- =============================== start rViz ============================================ -->
     <group if="$(arg rviz)">
