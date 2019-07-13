@@ -71,6 +71,11 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Vector3d &
 
 	geometry_msgs::PoseStamped start_pose = converter_.convertIgnVectorToPoseStamped(start);
 	geometry_msgs::PoseStamped goal_pose  = converter_.convertIgnVectorToPoseStamped(goal);
+
+	// forcing planar calculations
+	start_pose.pose.position.z = 0.0;
+	goal_pose.pose.position.z = 0.0;
+
 	return (makePlanHandler(start_pose, goal_pose));
 
 }
@@ -81,6 +86,11 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Pose3d &st
 
 	geometry_msgs::PoseStamped start_pose = converter_.convertIgnPoseToPoseStamped(start);
 	geometry_msgs::PoseStamped goal_pose  = converter_.convertIgnPoseToPoseStamped(goal);
+
+	// forcing planar calculations
+	start_pose.pose.position.z = 0.0;
+	goal_pose.pose.position.z = 0.0;
+
 	return (makePlanHandler(start_pose, goal_pose));
 
 }
@@ -91,6 +101,11 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Pose3d &st
 
 	geometry_msgs::PoseStamped start_pose = converter_.convertIgnPoseToPoseStamped(start);
 	geometry_msgs::PoseStamped goal_pose  = converter_.convertIgnVectorToPoseStamped(goal);
+
+	// forcing planar calculations
+	start_pose.pose.position.z = 0.0;
+	goal_pose.pose.position.z = 0.0;
+
 	return (makePlanHandler(start_pose, goal_pose));
 
 }
