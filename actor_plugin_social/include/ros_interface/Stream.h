@@ -24,6 +24,9 @@
 // ignition library
 #include <ignition/math/Pose3.hh>
 
+// Gazebo
+#include <gazebo/common/Time.hh>
+
 // Actor-related
 #include "core/Enums.h"
 
@@ -125,7 +128,9 @@ public:
 	 * overloaded function is created */
 	/// \brief Publishes a geometry_msgs::TransformStamped message;
 	/// publisher initialization is not needed in this case (tf_broadcaster)
-	void publishData(const ActorTfType &type, const ignition::math::Pose3d &pose) {
+	void publishData(const ActorTfType &type, const ignition::math::Pose3d &pose
+					 ,const gazebo::common::Time &sim_time
+	){
 
 		// append _goal to a namespace when broadcasting target pose
 		std::string child_frame = namespace_;
@@ -136,8 +141,10 @@ public:
 		}
 
 		geometry_msgs::TransformStamped tf_stamp = convertPoseToTfStamped(pose);
-		tf_stamp.header.frame_id = "map";
-		tf_stamp.header.stamp = ros::Time::now();
+		tf_stamp.header.frame_id = "world";
+//		tf_stamp.header.stamp = ros::Time::now();
+		tf_stamp.header.stamp.nsec = sim_time.nsec;
+		tf_stamp.header.stamp.sec = sim_time.sec;
 		tf_stamp.child_frame_id = child_frame;
 
 		tf_broadcaster_.sendTransform(tf_stamp);

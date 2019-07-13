@@ -42,6 +42,17 @@ Target::Target(gazebo::physics::WorldPtr world_ptr, std::shared_ptr<const igniti
 
 // ------------------------------------------------------------------- //
 
+void Target::initializeTarget(gazebo::physics::WorldPtr world_ptr, std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr,
+		   std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr) {
+
+	world_ptr_ = world_ptr;
+	pose_world_ptr_ = pose_world_ptr;
+	params_ptr_ = params_ptr;
+
+}
+
+// ------------------------------------------------------------------- //
+
 void Target::initializeGlobalPlan(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &gap, const std::string &frame_id) {
 
 	global_planner_.initialize(nh_ptr, gap, frame_id);
@@ -179,6 +190,10 @@ bool Target::followObject(const std::string &object_name, const bool &stop_after
 
 }
 
+bool Target::isCostmapInitialized() {
+	std::cout << "\t[Target] isCostmapInitialized into" << std::endl;
+	return (global_planner_.isCostmapInitialized());
+}
 ignition::math::Vector3d Target::getTarget() const {
 	return (target_);
 }

@@ -14,6 +14,9 @@
 // FIXME: move to target manager later
 #include <chrono>
 
+// sleeper
+#include <thread>
+
 namespace actor {
 namespace core {
 
@@ -232,7 +235,8 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// target manager initialization section
 	pose_world_ptr_ = std::make_shared<ignition::math::Pose3d>();
-	target_manager_ = Target(world_ptr_, pose_world_ptr_, params_ptr_);
+//	target_manager_ = Target(world_ptr_, pose_world_ptr_, params_ptr_);
+	target_manager_.initializeTarget(world_ptr_, pose_world_ptr_, params_ptr_);
 	target_manager_.initializeGlobalPlan(node_.getNodeHandlePtr(), 10, "map");
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -464,6 +468,19 @@ void Actor::executeTransitionFunction(const gazebo::common::UpdateInfo &info) {
 
 void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 
+	std::cout << "\t[Actor] stateHandlerALIGN TARGET into" << std::endl;
+	// check whether global planner is running
+	if ( !target_manager_.isCostmapInitialized() ) {
+		std::cout << "\t[Actor] stateHandlerALIGN TARGET: isCostmapInitialized()" << std::endl;
+		stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_, info.simTime);
+		std::cout << "\t[Actor] stateHandlerALIGN TARGET: isCostmapInitialized() AFTER TF" << std::endl;
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		return;
+	}
+	std::cout << "\t[Actor] stateHandlerALIGN TARGET passed!" << std::endl;
+
+	// ---------------------------------------------
+
 	prepareForUpdate(info);
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -496,12 +513,25 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 
 void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 
+	std::cout << "\t[Actor] stateHandlerMoveAround into" << std::endl;
+	// check whether global planner is running
+	while ( !target_manager_.isCostmapInitialized() ) {
+		std::cout << "\t[Actor] stateHandlerMoveAround: isCostmapInitialized()" << std::endl;
+		stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_, info.simTime);
+		std::cout << "\t[Actor] stateHandlerMoveAround: isCostmapInitialized() AFTER TF" << std::endl;
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+//		return;
+	}
+
+	// ---------------------------------------------
+
 	// Social Force Model
 	double dt = prepareForUpdate(info);
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 	std::cout << "[STATUS] stateHandlerMoveAround" << std::endl;
+
 	// check whether a target exists
 	if ( !target_manager_.isTargetChosen() ) {
 		target_manager_.chooseNewTarget(info);
@@ -729,7 +759,7 @@ double Actor::prepareForUpdate(const gazebo::common::UpdateInfo &info) {
 	// copy pose
 	*pose_world_ptr_ = actor_ptr_->WorldPose();
 
-	updateStanceOrientation(*pose_world_ptr_);
+	updateStanceOrientation(*pose_world_ptr_); // FIXME
 
 	double dt = (info.simTime - time_last_update_).Double();
 	calculateVelocity(dt);
@@ -821,11 +851,13 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 			break;
 	}
 
-	stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_);
+	stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_, info.simTime);
 	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getTarget()),
-																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
+																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)),
+						info.simTime);
 	stream_.publishData(ActorTfType::ACTOR_TF_CHECKPOINT, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getCheckpoint()),
-																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
+																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)),
+						info.simTime);
 	stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, target_manager_.getPath());
 
 	// check if grid publication has been enabled in parameter file

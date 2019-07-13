@@ -54,11 +54,13 @@
     <rosparam file="$(find actor_sim_utils)/config/actor_param.yaml" command="load" ns="$(arg actor_params_ns)"/>
     <rosparam file="$(find actor_sim_utils)/config/sfm_param.yaml"   command="load" ns="$(arg sfm_params_ns)"/>
 
-    <!-- ============================== load map =========================================== -->
-    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+    <!-- ============================== load map =========================================== 
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" /> -->
 
     <!-- ======================== load global planner node ================================= -->
+    <!-- <group unless="$(arg gdb)">  test -->
     <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
+    <!-- </group> -->
     <!-- <arg name="world_map_tf" value="0.97528 0.99136 0 0.31 0 0"/>  0.428 -0.1541 0 || NOTE [x, y, z, Y, P, R] -->
     
     <!-- ========================= change parameters based on chosen world ================= -->

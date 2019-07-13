@@ -13,6 +13,8 @@
 #include <std_srvs/Trigger.h>
 #include <actor_global_plan/GetCost.h>
 
+#include <thread> // FIXME: debugging
+
 namespace actor {
 namespace ros_interface {
 
@@ -53,13 +55,35 @@ void GlobalPlan::initialize(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_
 
 bool GlobalPlan::isCostmapInitialized() {
 
+	std::cout << "\t[GlobalPlan] isCostmapInitialized into" << std::endl;
 	std_srvs::Trigger msg;
+	std::cout << "\t[GlobalPlan] isCostmapInitialized msg created" << std::endl;
+
+	if ( srv_client_costmap_status_.isValid() ) {
+		std::cout << "\t[GlobalPlan] isCostmapInitialized SRV isValid" << std::endl;
+	}
+	if ( srv_client_costmap_status_.exists() ) {
+		std::cout << "\t[GlobalPlan] isCostmapInitialized SRV exists" << std::endl;
+	}
+	if ( srv_client_costmap_status_.isPersistent() ) {
+		std::cout << "\t[GlobalPlan] isCostmapInitialized SRV isPersistent" << std::endl;
+	}
+//	std::cout << "\t[GlobalPlan] isCostmapInitialized sleeping" << std::endl;
+//	std::this_thread::sleep_for(std::chrono::milliseconds(20000));
+//	std::cout << "\t[GlobalPlan] isCostmapInitialized awake" << std::endl;
+//	if ( srv_client_costmap_status_.waitForExistence()) {
+//
+//	}
 
 	// call the service server's callback
-	bool success = srv_client_costmap_status_.call(msg);
+//	bool success = srv_client_costmap_status_.call(msg);
+//	std::cout << "\t[GlobalPlan] isCostmapInitialized AFTER CALL, result: " << success << std::endl;
+//	// return response flag, not success flag itself (SrvCallback always returns true)
+//	return (msg.response.success);
 
-	// return response flag, not success flag itself (SrvCallback always returns true)
-	return (msg.response.success);
+	// hard-code response
+	std::cout << "\t[GlobalPlan] isCostmapInitialized AFTER CALL, result: " << std::endl;
+	return (false);
 
 }
 

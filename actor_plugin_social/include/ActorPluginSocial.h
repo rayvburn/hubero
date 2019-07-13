@@ -138,6 +138,8 @@ namespace gazebo
     /// \brief TODO
     private: bool ReadSDF();
 
+    private: bool controller_enabled_;
+
 
 #ifdef VISUALIZE_SFM
 

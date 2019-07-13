@@ -37,6 +37,10 @@ public:
 	Target(gazebo::physics::WorldPtr world_ptr, std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr,
 		   std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr);
 
+	// FIXME: this was created only for debugging purposes
+	void initializeTarget(gazebo::physics::WorldPtr world_ptr, std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr,
+			   std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr);
+
 	void initializeGlobalPlan(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &gap, const std::string &frame_id);
 
 	bool setNewTarget(const ignition::math::Vector3d &target);
@@ -54,6 +58,12 @@ public:
 	// TODO: stop_after_arrival handling
 	bool followObject(const std::string &object_name, const bool &stop_after_arrival);
 
+	/**
+	 * @brief Checks whether costmap is already initialized. Calls ROS Service Client.
+	 * @note Non-const because internally calls service. Does not change any part of the class though.
+	 * @return
+	 */
+	bool isCostmapInitialized();
 
 	/**
 	 * Checks whether global plan was generated for the current target

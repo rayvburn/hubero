@@ -80,3 +80,8 @@ make sure that the files arent broken (symbolic linkage)
 ***
 
 It seems that calling the service (by client) must be placed in non-const member function (compilation errors when method marked as const)
+
+
+***
+
+`Timed out waiting for transform from actor1 to world to become available before running costmap, tf error: canTransform: source_frame actor1 does not exist.. canTransform returned after 0.101011 timeout was 0.1.` -> Check params file somewhere in `actor_global_planner/config/global_costmap` .yaml

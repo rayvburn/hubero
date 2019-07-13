@@ -18,6 +18,9 @@
 #include <functional>
 #include <tgmath.h>		// fabs()
 
+#include <thread> // sleeper
+#include <chrono>
+
 #include <ignition/math.hh>
 #include "gazebo/physics/physics.hh"
 #include "ActorPluginSocial.h"
@@ -49,7 +52,7 @@ GZ_REGISTER_MODEL_PLUGIN(ActorPlugin)
 
 /////////////////////////////////////////////////
 
-ActorPlugin::ActorPlugin() { }
+ActorPlugin::ActorPlugin(): controller_enabled_(false) { }
 
 /////////////////////////////////////////////////
 void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
@@ -107,20 +110,48 @@ void ActorPlugin::Reset()
 
 void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 {
+//
+//	if ( first_update_ ) {
+//		std::cout << "[onUpdate] first - realTime: " << _info.realTime.Double() << std::endl;
+//		std::cout << "[onUpdate] first - simTime: " << _info.simTime.Double() << std::endl;
+//		first_update_ = false;
+//	}
+//
+//	std::cout << "[onUpdate] realTime: " << _info.realTime.Double() << std::endl;
+//	std::cout << "[onUpdate] simTime: " << _info.simTime.Double() << std::endl;
 
-	bool to_start = true;
-	if (_info.simTime.Double() < 8.0f ) {
-		static int last_sec = 0;
-		int curr_sec = static_cast<int>(_info.simTime.Double());
-		if ( curr_sec != last_sec ) {
-			std::cout << curr_sec << "\tWAITING..." << std::endl;
-			last_sec = curr_sec;
-
+	// NOTE: `_info.realTime.Double()` returns seconds from the launch
+	//
+	// Not waiting for the ROS to initialize produces further problems
+	// (mainly with GetCostmapStatus service). The longest task in the
+	// `actor_global_plan_node` is the costmap initialization which
+	// somehow blocks processing callbacks from services (probably ros::spin()
+	// is called after costmap's initialization and that creates this bad behaviour).
+	if ( !controller_enabled_ ) {
+		if ( _info.realTime.Double() >= 1.5 ) {
+			std::cout << "\t[ActorPlugin] Actor controller starting the job!" << std::endl;
+			controller_enabled_ = true;
 		}
-		to_start = false;
+		return;
 	}
 
-	if ( !to_start ) {
+
+
+//	bool to_start = true;
+//	if (_info.realTime.Double() < 1.0f ) {
+////		std::this_thread::sleep_for(std::chrono::milliseconds(999));
+//		static int last_sec = 0;
+//		int curr_sec = static_cast<int>(_info.realTime.Double());
+//		if ( curr_sec != last_sec ) {
+//			std::cout << curr_sec << "\tWAITING..." << std::endl;
+//			last_sec = curr_sec;
+//
+//		}
+//		to_start = false;
+//	}
+
+//	if ( !to_start ) {
+	if ( !controller_enabled_ ) {
 		SfmSetPrintData(false); // for some reason - REMOVING THIS completely FROM onUpdate makes Gazebo crash
 		return;
 	};
@@ -131,6 +162,9 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	//}
 
 
+//	std::cout << "\t[onUpdate] Before sleep" << std::endl;
+//	std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+//	std::cout << "\t[onUpdate] after sleep" << std::endl;
 
 #ifndef ACTOR_SHARED_PTR
 	actor_object.executeTransitionFunction(_info);

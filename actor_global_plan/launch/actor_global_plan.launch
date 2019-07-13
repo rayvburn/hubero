@@ -1,6 +1,6 @@
 <launch>
 
-	<arg name="world_map_tf" default="0 0 0 0 0 0"/>
+	<arg name="world_map_tf" default="0 0 0 0 0 0 1"/>
 	<arg name="node_name" default="actor_global_planner"/>
 
 	<!-- NOTE: it must match the private node handle's namespace which is defined in actor::ros_interface::node (with `gazebo` added in front) -->
@@ -14,5 +14,8 @@
 	<rosparam command="load" file="$(find actor_global_plan)/config/static_map_layer.yaml" 	ns="/$(arg node_name)/gcm/static_layer" />
 
 	<node name="$(arg node_name)" pkg="actor_global_plan" type="actor_global_plan" args="$(arg srv_ns)" output="screen" />
+
+	<!-- test -->
+	<node name="map_server" pkg="map_server" type="map_server" args="$(find actor_sim_utils)/maps/living_room_vid_friendly.yaml" />
 
 </launch>

@@ -52,7 +52,7 @@ Example:
 
 ***
 
-## 6) In Eclipse choose `Run->Debug Configurations`. Try to unfold `C/C++ Remote Application`, currently edited project should appear there. Click it.
+## 6) In Eclipse choose `Run->Debug Configurations`. Try to unfold `C/C++ Remote Application` (double click), currently edited project should appear there. Click it.
 
 ***
 
