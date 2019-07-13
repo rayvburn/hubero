@@ -404,7 +404,7 @@ bool Target::isCheckpointReached() const { // const ignition::math::Pose3d &pose
 
 	// as a threshold value of length choose half of the `target_tolerance`
 	double dist_to_checkpoint = (pose_world_ptr_->Pos() - target_checkpoint_).Length();
-	if ( dist_to_checkpoint < (params_ptr_->getActorParams().target_tolerance * 0.5) ) {
+	if ( dist_to_checkpoint < (params_ptr_->getActorParams().target_tolerance) ) { // was multiplied by 0.5 but this forces a little too high accuracy to be met with SFM
 		return (true);
 	}
 	return (false);
@@ -436,6 +436,7 @@ bool Target::generatePathPlan(const ignition::math::Vector3d &target_to_be) {
 
 		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_SUCCESSFUL):
 			std::cout << "\n\n\n[generatePathPlan] Global planning successfull\n\n\n" << std::endl;
+
 			has_global_plan_ = true;
 			return (true);
 			break;

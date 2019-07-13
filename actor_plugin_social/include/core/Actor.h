@@ -297,7 +297,6 @@ private:
     /// stores parameters for a whole system (SFM too),
     /// avoids pollution of an Actor class with plenty of parameter
     /// variables
-//    actor::ros_interface::ParamLoader params_; // TODO: unique ptr, rename to parameters?
     std::shared_ptr<actor::ros_interface::ParamLoader> params_ptr_;
 
     Target target_manager_;

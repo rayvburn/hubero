@@ -128,9 +128,7 @@ public:
 	 * overloaded function is created */
 	/// \brief Publishes a geometry_msgs::TransformStamped message;
 	/// publisher initialization is not needed in this case (tf_broadcaster)
-	void publishData(const ActorTfType &type, const ignition::math::Pose3d &pose
-					 ,const gazebo::common::Time &sim_time
-	){
+	void publishData(const ActorTfType &type, const ignition::math::Pose3d &pose) {
 
 		// append _goal to a namespace when broadcasting target pose
 		std::string child_frame = namespace_;
@@ -141,11 +139,15 @@ public:
 		}
 
 		geometry_msgs::TransformStamped tf_stamp = convertPoseToTfStamped(pose);
-		tf_stamp.header.frame_id = "world";
-//		tf_stamp.header.stamp = ros::Time::now();
-		tf_stamp.header.stamp.nsec = sim_time.nsec;
-		tf_stamp.header.stamp.sec = sim_time.sec;
 		tf_stamp.child_frame_id = child_frame;
+
+		tf_stamp.header.frame_id = "world";
+		tf_stamp.header.stamp = ros::Time::now();
+
+		// NOTE: Gazebo's time does not seem to match ROS (tf_tree is always empty)
+		// ARG: `,const gazebo::common::Time &sim_time`
+//		tf_stamp.header.stamp.nsec = sim_time.nsec;
+//		tf_stamp.header.stamp.sec = sim_time.sec;
 
 		tf_broadcaster_.sendTransform(tf_stamp);
 

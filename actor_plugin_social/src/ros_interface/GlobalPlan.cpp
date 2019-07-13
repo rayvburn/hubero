@@ -111,6 +111,7 @@ std::vector<geometry_msgs::PoseStamped> GlobalPlan::getPoses() const {
 
 nav_msgs::Path GlobalPlan::getPath() const {
 
+	// NOTE: path is definitely related to `map` coordinate system
 	nav_msgs::Path path_msg;
 	path_msg.poses = path_;
 	path_msg.header.frame_id = "map";
@@ -147,8 +148,6 @@ ignition::math::Pose3d GlobalPlan::getWaypoint(const size_t &index) {
 
 ignition::math::Pose3d GlobalPlan::getWaypoint() {
 
-	std::cout << "GlobalPlan::getWaypoint() - size: " << path_.size() << std::endl;
-
 	size_t index = 0;
 	uint8_t status = getWaypointHandler(waypoint_curr_);
 
@@ -166,7 +165,6 @@ ignition::math::Pose3d GlobalPlan::getWaypoint() {
 		break;
 	}
 
-	std::cout << "GlobalPlan::getWaypoint() - index: " << index << std::endl;
 	return (converter_.convertPoseStampedToIgnPose(path_.at(index)));
 
 }
@@ -182,18 +180,6 @@ void GlobalPlan::setPosesFrames(geometry_msgs::PoseStamped &start, geometry_msgs
 
 // ------------------------------------------------------------------- //
 
-//uint8_t GlobalPlan::getCost(const double &x_world, const double &y_world) const {
-//
-//	actor_global_plan::GetCost cost;
-//
-//	cost.request.point.x = x_world;
-//	cost.request.point.y = y_world;
-//	bool success = srv_client_get_cost_.call(cost);
-//
-//	return (static_cast<uint8_t>(cost.response.cost));
-//
-//}
-
 uint8_t GlobalPlan::getCost(const double &x_world, const double &y_world) {
 
 	actor_global_plan::GetCost cost;
@@ -205,17 +191,6 @@ uint8_t GlobalPlan::getCost(const double &x_world, const double &y_world) {
 	return (static_cast<uint8_t>(cost.response.cost));
 
 }
-
-//bool GlobalPlan::getCost(const double &x_world, const double &y_world) const {
-//
-//	actor_global_plan::GetCost cost;
-//
-//	cost.request.point.x = x_world;
-//	cost.request.point.y = y_world;
-//	bool success = srv_client_get_cost_.call(cost);
-//	return (success);
-//
-//}
 
 // ------------------------------------------------------------------- //
 
@@ -247,6 +222,7 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlanHandler(geometry_msgs::PoseStampe
 		// planner successfully found a valid path
 		path_ = nav_plan.response.path;
 		target_reached_ = false;
+		waypoint_curr_ = 0;
 		//std::cout << "\tGoal is reachable, path size: " << path_.size() << std::endl;
 		return (MakePlanStatus::GLOBAL_PLANNER_SUCCESSFUL);
 

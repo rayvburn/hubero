@@ -18,13 +18,12 @@
 #include "actor_global_plan/GlobalPlannerMultiFrame.h"
 #include <costmap_2d/costmap_2d_ros.h>
 
-#include <std_srvs/Trigger.h> // costmap status
-#include <actor_global_plan/GetCost.h> // getcost service
+#include <std_srvs/Trigger.h> 			// costmap status
+#include <actor_global_plan/GetCost.h> 	// getcost service
 
 // ROS Kinetic
 #include <tf/transform_listener.h>
 #include <tf2_ros/transform_broadcaster.h>
-//#include <tf2_ros/static_transform_broadcaster.h>
 
 // ROS Melodic
 //#include <tf2_ros/buffer.h>
@@ -53,6 +52,7 @@ static tf::TransformListener* tf_listener_ptr_;
 static std::string frame = "world";
 static tf2_ros::TransformBroadcaster* tf_broadcaster_ptr_;
 static void SendTfBlank();
+
 // -------------------------------------------------------------------------------------------
 // main --------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------
@@ -62,6 +62,7 @@ int main(int argc, char** argv) {
 	ros::init(argc, argv, "actor_global_plan_node");
 	ros::NodeHandle nh;
 
+
 	// check if an extra (necessary) argument provided
 	if ( argc < 2 ) {
 		ROS_ERROR("A namespace of actors' shared NodeHandle must be provided! Service needs it. See ''actor_global_plan/launch/actor_global_plan.launch'' for details");
@@ -69,33 +70,37 @@ int main(int argc, char** argv) {
 	}
 	std::string srv_ns = argv[1];
 
+
 	// start costmap status service
 	costmap_status_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner/CostmapStatus"), CostmapStatusSrv);
 
-	std::cout << "\t[global plan] transform listener" << std::endl;
+
 	// initialize transform listener
-	tf::TransformListener tf_listener(ros::Duration(10.0)); // TODO: make shorter as more stable version comes in
+	tf::TransformListener tf_listener(ros::Duration(5.0)); // TODO: make shorter as more stable version comes in
 	tf_listener_ptr_ = &tf_listener;
 
-	std::cout << "\t[global plan] costmap" << std::endl;
 
+	// initialize broadcaster and send a blank TF (NOTE: it may be deleted if static_tf_publisher works OK, see below)
 	tf2_ros::TransformBroadcaster tf_broadcaster;
 	tf_broadcaster_ptr_ = &tf_broadcaster;
 	SendTfBlank(); // this is invoked just in case if `tf_static_publisher` did not start up before costmap initialization process
+
 
 	// initialize global costmap
 	// NOTE: costmap 2d takes tf2_ros::Buffer in ROS Melodic, in Kinetic - tf::TransformListener
 	Costmap2dMultiFrame costmap_global(std::string("gcm"), *tf_listener_ptr_); // ("actor_global_costmap", tf_listener);
 	costmap_global_ptr_ = &costmap_global;
 
-	std::cout << "\n\n\n\n\t[global plan] global planner" << std::endl;
+
 	// initialize global planner
 	GlobalPlannerMultiFrame global_planner(std::string("global_planner"), &costmap_global, frame);
 	glob_planner_ptr_ = &global_planner;
 
+
 	// start plan making and cost getter services
 	make_plan_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner"), MakePlanSrv);
 	get_cost_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner/GetCost"), GetCostSrv);
+
 
 	// print some info
 	ROS_INFO("actor_global_plan Node started successfully");
@@ -105,6 +110,7 @@ int main(int argc, char** argv) {
 
 	// process all callbacks in an instant
 	ros::spin();
+
 
 	return 0;
 

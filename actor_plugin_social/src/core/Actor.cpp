@@ -237,7 +237,8 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	pose_world_ptr_ = std::make_shared<ignition::math::Pose3d>();
 //	target_manager_ = Target(world_ptr_, pose_world_ptr_, params_ptr_);
 	target_manager_.initializeTarget(world_ptr_, pose_world_ptr_, params_ptr_);
-	target_manager_.initializeGlobalPlan(node_.getNodeHandlePtr(), 10, "map");
+	target_manager_.initializeGlobalPlan(node_.getNodeHandlePtr(), 13, actor_ptr_->GetName());
+
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// initial stance setup section
@@ -297,26 +298,26 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	if ( params_ptr_->getActorParams().init_target.size() == 3 ) {
 
 		// set target according to .YAML
-//		target_ = ignition::math::Vector3d( params_ptr_->getActorParams().init_target.at(0), params_ptr_->getActorParams().init_target.at(1), params_ptr_->getActorParams().init_target.at(2) );
-		target_manager_.setNewTarget(ignition::math::Vector3d( params_ptr_->getActorParams().init_target.at(0), params_ptr_->getActorParams().init_target.at(1), params_ptr_->getActorParams().init_target.at(2) ));
-		// TODO: global plan
+		target_manager_.setNewTarget(ignition::math::Vector3d( params_ptr_->getActorParams().init_target.at(0),
+															   params_ptr_->getActorParams().init_target.at(1),
+															   params_ptr_->getActorParams().init_target.at(2) ));
 
 	} else if ( sdf && sdf->HasElement("target") ) {
 
 		// target coordinates in .YAML haven't been defined - use .sdf
-//		target_ = sdf->Get<ignition::math::Vector3d>("target");
 		target_manager_.setNewTarget(sdf->Get<ignition::math::Vector3d>("target"));
-		// TODO: global plan
 
 	} else {
 
-//		std::cout << "SLEEPING for 5 secs" << std::endl;
-//		std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-
+		/*
 		// improper/no position set - choose random target during first OnUpdate TODO
-//		gazebo::common::UpdateInfo info_init;
-//		info_init.simTime = world_ptr_->SimTime();
-//		chooseNewTarget(info_init); // do not execute this (at least not now)
+		gazebo::common::UpdateInfo info_init;
+		info_init.simTime = world_ptr_->SimTime();
+		target_manager_.chooseNewTarget(info_init); // do not execute this (at least not now)
+		*/
+
+		// No target set but do not try to choose it now as costmap is very likely
+		// not initialized yet. Proper state handlers will take care of that afterwards.
 
 	}
 
@@ -380,6 +381,7 @@ void Actor::readSDFParameters(const sdf::ElementPtr sdf) {
 
 }
 
+// ------------------------------------------------------------------- //
 
 bool Actor::followObject(const std::string &object_name, const bool &stop_after_arrival) {
 
@@ -837,13 +839,11 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 			break;
 	}
 
-	stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_, info.simTime);
+	stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_);
 	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getTarget()),
-																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)),
-						info.simTime);
+																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
 	stream_.publishData(ActorTfType::ACTOR_TF_CHECKPOINT, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getCheckpoint()),
-																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)),
-						info.simTime);
+																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
 	stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, target_manager_.getPath());
 
 	// check if grid publication has been enabled in parameter file
