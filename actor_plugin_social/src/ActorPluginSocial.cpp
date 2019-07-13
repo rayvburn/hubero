@@ -128,7 +128,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	// somehow blocks processing callbacks from services (probably ros::spin()
 	// is called after costmap's initialization and that creates this bad behaviour).
 	if ( !controller_enabled_ ) {
-		if ( _info.realTime.Double() >= 1.5 ) {
+		if ( _info.realTime.Double() >= 0.001 ) {
 			std::cout << "\t[ActorPlugin] Actor controller starting the job!" << std::endl;
 			controller_enabled_ = true;
 		}

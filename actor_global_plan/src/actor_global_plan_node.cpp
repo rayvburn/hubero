@@ -11,6 +11,7 @@
 #include <chrono>
 
 #include <ros/ros.h>
+#include <ros/callback_queue.h>	// FIXME: spinOnce self
 #include <geometry_msgs/PoseStamped.h>
 #include <navfn/MakeNavPlan.h>
 #include <actor_global_plan/MakeNavPlanFrame.h>	// if not recognized by Eclipse: 1) recompile with catkin, 2) refresh files
@@ -55,6 +56,10 @@ static tf::TransformListener* tf_listener_ptr_;
 static std::string frame = "world";
 static tf2_ros::TransformBroadcaster* tf_broadcaster_ptr_;
 
+// costmap initialization - helper handlers
+static void CostmapInitializationHandler(ros::NodeHandle &nh, const std::string &srv_ns);
+static void CallbackManagerTempHandler();
+
 // -------------------------------------------------------------------------------------------
 // main --------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------
@@ -79,6 +84,38 @@ int main(int argc, char** argv) {
 	tf::TransformListener tf_listener(ros::Duration(10.0)); // TODO: make shorter as more stable version comes in
 	tf_listener_ptr_ = &tf_listener;
 
+
+
+	/* */
+	// create new threads:
+	// 	o 	costmap initialization - to prevent blockage of callback processing while costmap is being initialized
+	// 	o	temporary callback manager - to periodically check and process callbacks
+	std::thread* costmap_init_thread = new std::thread(CostmapInitializationHandler, std::ref(nh), std::ref(srv_ns));
+	std::thread* callback_mngr_temp = new std::thread(CallbackManagerTempHandler);
+
+	// join both threads if costmap has already initialized
+	costmap_init_thread->join();
+
+	std::cout << "\n\n\t\t[global plan] COSTMAP INITIALIZATION THREAD FINISHED JOB" << std::endl;
+
+	delete costmap_init_thread;
+
+	callback_mngr_temp->join();
+
+	std::cout << "\t\t[global plan] THREADS JOINED" << std::endl;
+
+	delete callback_mngr_temp;
+
+	/*
+	///////
+	/// async spinner
+
+	ros::AsyncSpinner* spinner_ptr = new ros::AsyncSpinner(1); // Use 1 thread
+	spinner_ptr->start();
+
+	///
+	//////
+
 	std::cout << "\t[global plan] costmap" << std::endl;
 //	std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 	tf2_ros::TransformBroadcaster tf_broadcaster;
@@ -97,7 +134,7 @@ int main(int argc, char** argv) {
 	tf_broadcaster_ptr_->sendTransform(tf);
 	// initialize global costmap
 	// NOTE: costmap 2d takes tf2_ros::Buffer in ROS Melodic, in Kinetic - tf::TransformListener
-	Costmap2dMultiFrame costmap_global(std::string("gcm"), tf_listener); // ("actor_global_costmap", tf_listener);
+	Costmap2dMultiFrame costmap_global(std::string("gcm"), *tf_listener_ptr_); // ("actor_global_costmap", tf_listener);
 	costmap_global_ptr_ = &costmap_global;
 
 	std::cout << "\t[global plan] global planner" << std::endl;
@@ -116,8 +153,15 @@ int main(int argc, char** argv) {
 	// Update costmap status
 	costmap_ready_ = true;
 
-	// process callbacks
-	ros::spin();
+	spinner_ptr->stop();
+	delete spinner_ptr;
+	// switch back to a sync spinner
+	std::cout << "\n\n\t\t[global plan] spinner_ptr deleted, switching back to default spinner\n\n" << std::endl;
+	 */
+
+//
+//	// process all callbacks in an instant
+//	ros::spin();
 
 	return 0;
 
@@ -161,7 +205,7 @@ static bool MakePlanSrv(actor_global_plan::MakeNavPlanFrame::Request& req, actor
 // ---- costmap status service callback ---------------------------------------------------------------
 // ----------------------------------------------------------------------------------------------------
 static bool CostmapStatusSrv(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& resp) {
-	std::cout << "\t[global plan] CostmapStatusSrv check" << std::endl;
+	std::cout << "\t\t[global plan] CostmapStatusSrv check" << std::endl;
 	resp.success = costmap_ready_;
 	return (true);
 }
@@ -180,3 +224,80 @@ static bool GetCostSrv(actor_global_plan::GetCost::Request& req, actor_global_pl
 	return (true);
 
 }
+/* */
+// ----------------------------------------------------------------------------------------------------
+// ---- costmap initialization thread handler ---------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------
+static void CostmapInitializationHandler(ros::NodeHandle &nh, const std::string &srv_ns) {
+
+	std::cout << "\t\t[global plan] NEW THREAD STARTED: CostmapInitializationHandler" << std::endl;
+	std::cout << "\t[global plan] costmap" << std::endl;
+//	std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+	tf2_ros::TransformBroadcaster tf_broadcaster;
+	tf_broadcaster_ptr_ = &tf_broadcaster;
+	geometry_msgs::TransformStamped tf;
+	tf.child_frame_id = "map";
+	tf.header.frame_id = "world";
+	tf.header.stamp = ros::Time::now();
+	tf.transform.translation.x = 0.0;
+	tf.transform.translation.y = 0.0;
+	tf.transform.translation.z = 0.0;
+	tf.transform.rotation.x = 0.0;
+	tf.transform.rotation.y = 0.0;
+	tf.transform.rotation.z = 0.0;
+	tf.transform.rotation.w = 1.0;
+	tf_broadcaster_ptr_->sendTransform(tf);
+	// initialize global costmap
+	// NOTE: costmap 2d takes tf2_ros::Buffer in ROS Melodic, in Kinetic - tf::TransformListener
+	Costmap2dMultiFrame costmap_global(std::string("gcm"), *tf_listener_ptr_); // ("actor_global_costmap", tf_listener);
+	costmap_global_ptr_ = &costmap_global;
+
+	std::cout << "\t[global plan] global planner" << std::endl;
+	// initialize global planner
+	GlobalPlannerMultiFrame global_planner(std::string("global_planner"), &costmap_global, frame);
+	glob_planner_ptr_ = &global_planner;
+
+	std::cout << "\t[global plan] services" << std::endl;
+	// start plan making and cost getter services
+	make_plan_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner"), MakePlanSrv);
+	get_cost_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner/GetCost"), GetCostSrv);
+
+	// print some info
+	ROS_INFO("actor_global_plan Node started successfully");
+
+	// Update costmap status
+	costmap_ready_ = true;
+
+	std::cout << "\n\n\t\t[global plan] THREAD CostmapInitializationHandler finished job" << std::endl;
+	std::cout << "\t\t[global plan] costmap_ready_: " << costmap_ready_ << "\n\n" << std::endl;
+
+}
+// ----------------------------------------------------------------------------------------------------
+// ---- callback processing thread handler ------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------
+static void CallbackManagerTempHandler() {
+
+	// process callbacks
+	ros::spin();
+//
+//	std::cout << "\t\t[global plan] NEW THREAD STARTED: CallbackManagerTempHandler" << std::endl;
+//	ros::Rate r(10); // 2000 Hz
+//	while ( !costmap_ready_ ) {
+//
+////	    ros::spinOnce();
+////	    r.sleep();
+//
+////		ros::spin();
+//
+//		ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
+//		r.sleep();
+//
+//	}
+//
+//	std::cout << "\n\n\t\t[global plan] THREAD CallbackManagerTempHandler finished job" << std::endl;
+//	std::cout << "\t\t[global plan] costmap_ready_: " << costmap_ready_ << "\n\n" << std::endl;
+
+	std::cout << "\t\t[global plan] EXIT from CallbackManagerHandler()" << "\n\n" << std::endl;
+
+}
+

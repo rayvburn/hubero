@@ -76,14 +76,14 @@ bool GlobalPlan::isCostmapInitialized() {
 //	}
 
 	// call the service server's callback
-//	bool success = srv_client_costmap_status_.call(msg);
-//	std::cout << "\t[GlobalPlan] isCostmapInitialized AFTER CALL, result: " << success << std::endl;
-//	// return response flag, not success flag itself (SrvCallback always returns true)
-//	return (msg.response.success);
+	bool success = srv_client_costmap_status_.call(msg);
+	std::cout << "\t[GlobalPlan] isCostmapInitialized AFTER CALL, result: " << success << std::endl;
+	// return response flag, not success flag itself (SrvCallback always returns true)
+	return (msg.response.success);
 
-	// hard-code response
-	std::cout << "\t[GlobalPlan] isCostmapInitialized AFTER CALL, result: " << std::endl;
-	return (false);
+//	// hard-code response
+//	std::cout << "\t[GlobalPlan] isCostmapInitialized AFTER CALL, result: " << std::endl;
+//	return (false);
 
 }
 
