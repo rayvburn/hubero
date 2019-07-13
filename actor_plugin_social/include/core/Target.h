@@ -74,7 +74,7 @@ public:
 	bool isTargetChosen() const;
 
     /// \brief Helper function to choose a new target location
-    void chooseNewTarget(const gazebo::common::UpdateInfo &info); // const ignition::math::Pose3d &pose_current,
+    bool chooseNewTarget(const gazebo::common::UpdateInfo &info); // const ignition::math::Pose3d &pose_current,
 
     /// \brief Helper function to check if target is still
     /// reachable (for example after addition of a new model
@@ -96,6 +96,7 @@ public:
     void updateCheckpoint();
     ignition::math::Vector3d getCheckpoint() const;
 	ignition::math::Vector3d getTarget() const;
+	void abandonTarget();
 
 
 

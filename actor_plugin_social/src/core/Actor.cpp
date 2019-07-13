@@ -468,17 +468,6 @@ void Actor::executeTransitionFunction(const gazebo::common::UpdateInfo &info) {
 
 void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 
-	std::cout << "\t[Actor] stateHandlerALIGN TARGET into" << std::endl;
-	// check whether global planner is running
-	if ( !target_manager_.isCostmapInitialized() ) {
-		std::cout << "\t[Actor] stateHandlerALIGN TARGET: isCostmapInitialized()" << std::endl;
-		stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_, info.simTime);
-		std::cout << "\t[Actor] stateHandlerALIGN TARGET: isCostmapInitialized() AFTER TF" << std::endl;
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		return;
-	}
-	std::cout << "\t[Actor] stateHandlerALIGN TARGET passed!" << std::endl;
-
 	// ---------------------------------------------
 
 	prepareForUpdate(info);
@@ -513,16 +502,6 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 
 void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 
-	std::cout << "\t[Actor] stateHandlerMoveAround into" << std::endl;
-	// check whether global planner is running
-	while ( !target_manager_.isCostmapInitialized() ) {
-		std::cout << "\t[Actor] stateHandlerMoveAround: isCostmapInitialized()" << std::endl;
-		stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_, info.simTime);
-		std::cout << "\t[Actor] stateHandlerMoveAround: isCostmapInitialized() AFTER TF" << std::endl;
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-//		return;
-	}
-
 	// ---------------------------------------------
 
 	// Social Force Model
@@ -530,15 +509,18 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	std::cout << "[STATUS] stateHandlerMoveAround" << std::endl;
-
 	// check whether a target exists
 	if ( !target_manager_.isTargetChosen() ) {
-		target_manager_.chooseNewTarget(info);
+		if ( !target_manager_.chooseNewTarget(info) ) {
+			return;
+		}
 	}
+
 	// check whether a target has plan generated
 	if ( !target_manager_.isPlanGenerated() ) {
-		target_manager_.generatePathPlan(target_manager_.getTarget());
+		if ( !target_manager_.generatePathPlan(target_manager_.getTarget()) ) {
+			target_manager_.abandonTarget();
+		}
 	}
 
 	ignition::math::Vector3d sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), *pose_world_ptr_,
@@ -793,6 +775,7 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	// update the global pose
 	actor_ptr_->SetWorldPose(*pose_world_ptr_, false, false);
 
+
 	/*
 	 * std::cout << actor->GetName() << " | script time: " << actor->ScriptTime() << "\tdist_trav: " << _dist_traveled << "\tanim_factor: " << animation_factor << std::endl;
 	 *
@@ -808,6 +791,7 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	 *
 	 */
 
+
 	// update script time to set proper animation speed
 	actor_ptr_->SetScriptTime( actor_ptr_->ScriptTime() + (dist_traveled * params_ptr_->getActorParams().animation_factor) );
 
@@ -816,18 +800,20 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 
 	// check if there has been some obstacle put into world since last target selection
 	if ( !target_manager_.isTargetStillReachable(info) ) {
-		target_manager_.chooseNewTarget(info);
-		// after setting new target, first let's rotate to its direction
-		// state will be changed in the next iteration
-		fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
+		if ( target_manager_.chooseNewTarget(info) ) {
+			// after setting new target, first let's rotate to its direction
+			// state will be changed in the next iteration
+			fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
+		}
 	}
 
 	// check if actor is stuck
 	if ( target_manager_.isTargetNotReachedForTooLong(info) ) {
-		target_manager_.chooseNewTarget(info);
-		// after setting new target, first let's rotate to its direction
-		// state will be changed in the next iteration
-		fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
+		if ( target_manager_.chooseNewTarget(info) ) {
+			// after setting new target, first let's rotate to its direction
+			// state will be changed in the next iteration
+			fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
+		}
 	}
 
 	// check whether state was updated

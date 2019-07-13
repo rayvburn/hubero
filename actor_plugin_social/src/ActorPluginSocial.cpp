@@ -110,15 +110,6 @@ void ActorPlugin::Reset()
 
 void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 {
-//
-//	if ( first_update_ ) {
-//		std::cout << "[onUpdate] first - realTime: " << _info.realTime.Double() << std::endl;
-//		std::cout << "[onUpdate] first - simTime: " << _info.simTime.Double() << std::endl;
-//		first_update_ = false;
-//	}
-//
-//	std::cout << "[onUpdate] realTime: " << _info.realTime.Double() << std::endl;
-//	std::cout << "[onUpdate] simTime: " << _info.simTime.Double() << std::endl;
 
 	// NOTE: `_info.realTime.Double()` returns seconds from the launch
 	//
@@ -127,44 +118,23 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 	// `actor_global_plan_node` is the costmap initialization which
 	// somehow blocks processing callbacks from services (probably ros::spin()
 	// is called after costmap's initialization and that creates this bad behaviour).
+	// To check what did not help, check these commits:
+	// https://github.com/rayvburn/gazebo_ros_people_sim/commit/efc52f04b2c10d764db78295e1a7f3c423a9c26e
+	// https://github.com/rayvburn/gazebo_ros_people_sim/commit/62c8719b25aac5aff53447ba483045364fcd783f
+	// After many tries brought back some delay as below:
 	if ( !controller_enabled_ ) {
-		if ( _info.realTime.Double() >= 0.001 ) {
+		if ( _info.realTime.Double() >= 1.5 ) {
 			std::cout << "\t[ActorPlugin] Actor controller starting the job!" << std::endl;
 			controller_enabled_ = true;
 		}
 		return;
 	}
 
-
-
-//	bool to_start = true;
-//	if (_info.realTime.Double() < 1.0f ) {
-////		std::this_thread::sleep_for(std::chrono::milliseconds(999));
-//		static int last_sec = 0;
-//		int curr_sec = static_cast<int>(_info.realTime.Double());
-//		if ( curr_sec != last_sec ) {
-//			std::cout << curr_sec << "\tWAITING..." << std::endl;
-//			last_sec = curr_sec;
-//
-//		}
-//		to_start = false;
-//	}
-
-//	if ( !to_start ) {
+	// ???????????
 	if ( !controller_enabled_ ) {
 		SfmSetPrintData(false); // for some reason - REMOVING THIS completely FROM onUpdate makes Gazebo crash
 		return;
 	};
-
-	// print only when vis is updated
-	//if ( actor->GetName() == "actor1" ) {
-//		SfmSetPrintData(false);
-	//}
-
-
-//	std::cout << "\t[onUpdate] Before sleep" << std::endl;
-//	std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-//	std::cout << "\t[onUpdate] after sleep" << std::endl;
 
 #ifndef ACTOR_SHARED_PTR
 	actor_object.executeTransitionFunction(_info);

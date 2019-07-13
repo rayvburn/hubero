@@ -191,11 +191,14 @@ bool Target::followObject(const std::string &object_name, const bool &stop_after
 }
 
 bool Target::isCostmapInitialized() {
-	std::cout << "\t[Target] isCostmapInitialized into" << std::endl;
 	return (global_planner_.isCostmapInitialized());
 }
 ignition::math::Vector3d Target::getTarget() const {
 	return (target_);
+}
+void Target::abandonTarget() {
+	has_target_ = false;
+	has_global_plan_ = false;
 }
 ignition::math::Vector3d Target::getCheckpoint() const {
 	return (target_checkpoint_);
@@ -209,9 +212,16 @@ bool Target::isTargetChosen() const {
 	return (has_target_);
 }
 
-void Target::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
+bool Target::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 
 	// FIXME: watch out for a situation in which actor's position is not in map bounds!
+	// THIS IN FACT SHOULD NOT EVEN HAPPEN after some errors will be eliminated
+
+	// check whether global costmap has already initialized so global plan can be generated
+	if ( !global_planner_.isCostmapInitialized() ) {
+		// indicate that target can not be found now
+		return (false);
+	}
 
 	ignition::math::Vector3d new_target(target_);
 	bool reachable_gp = false; // whether global planner found a valid plan
@@ -298,6 +308,9 @@ void Target::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 
 	// save event time
 	time_last_target_selection_ = info.simTime;
+
+	// indicate success
+	return (true);
 
 }
 
