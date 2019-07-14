@@ -185,20 +185,12 @@ public:
 	static bool isModelNegligible(const std::string &object_name, const std::vector<std::string> &dictionary);
 
 	/**
-	 * @brief Helper, static function that checks if model of a given name exists in the world
-	 * @param object_name
-	 * @return A tuple of bool and ModelPtr, bool set to true if model is valid and ModelPtr is set accordingly.
-	 * If bool is false, then ModelPtr is NULL
-	 */
-	static std::tuple<bool, gazebo::physics::ModelPtr> isModelValid(const std::string &object_name) const;
-
-	/**
 	 * @brief Helper, static method that checks if any obstacle's bounding box does contain the investigated point
 	 * @param bb - bounding box
 	 * @param pt - point to be checked
 	 * @return True if BB does contain the point
 	 */
-	static bool doesBoundingBoxContainPoint(const ignition::math::Box &bb, const ignition::math::Vector3d &pt) const;
+	static bool doesBoundingBoxContainPoint(const ignition::math::Box &bb, const ignition::math::Vector3d &pt);
 
 	/**
 	 * @brief Destructor
@@ -206,6 +198,15 @@ public:
 	virtual ~Target();
 
 private:
+
+	/**
+	 * @brief Helper, static function that checks if model of a given name exists in the world
+	 * @param object_name
+	 * @return A tuple of bool and ModelPtr, bool set to true if model is valid and ModelPtr is set accordingly.
+	 * If bool is false, then ModelPtr is NULL
+	 */
+	std::tuple<bool, gazebo::physics::ModelPtr> isModelValid(const std::string &object_name);
+
 
     /// @brief Current target location
     ignition::math::Vector3d target_;

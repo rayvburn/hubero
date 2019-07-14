@@ -462,37 +462,7 @@ nav_msgs::Path Target::getPath() const {
 // ------------------------------------------------------------------- //
 // --- static, public methods section -------------------------------- //
 // ------------------------------------------------------------------- //
-bool Target::doesBoundingBoxContainPoint(const ignition::math::Box &bb, const ignition::math::Vector3d &pt) const {
 
-	// check if model's bounding box is valid (not 0-length - for actors it is - || NaN || inf)
-	if ( !std::isnan(bb.Max().Length()) && !std::isinf(bb.Max().Length()) && (bb.Max().Length() > 1e-06) ) {
-
-		// check if model's bounding box contains target point
-		if ( bb.Contains(pt) ) {
-			return (true);
-		}
-
-	}
-	return (false);
-
-}
-
-// ------------------------------------------------------------------- //
-
-std::tuple<bool, gazebo::physics::ModelPtr> Target::isModelValid(const std::string &object_name) const {
-
-	// Gazebo::Physics::World - ModelByName() says:
-	/// `\return A pointer to the Model, or NULL if no model was found.`
-	gazebo::physics::ModelPtr model_p = world_ptr_->ModelByName(object_name);
-
-	if ( model_p == NULL || model_p == nullptr ) {
-		return ( std::make_tuple(false, nullptr) );
-	}
-	return ( std::make_tuple(true, model_p) );
-
-}
-
-// ------------------------------------------------------------------- //
 /*
 bool Target::isModelNegligible(const std::string &object_name) {
 
@@ -549,9 +519,44 @@ bool Target::isModelNegligible(const std::string &object_name, const std::vector
 
 // ------------------------------------------------------------------- //
 
+bool Target::doesBoundingBoxContainPoint(const ignition::math::Box &bb, const ignition::math::Vector3d &pt) {
+
+	// check if model's bounding box is valid (not 0-length - for actors it is - || NaN || inf)
+	if ( !std::isnan(bb.Max().Length()) && !std::isinf(bb.Max().Length()) && (bb.Max().Length() > 1e-06) ) {
+
+		// check if model's bounding box contains target point
+		if ( bb.Contains(pt) ) {
+			return (true);
+		}
+
+	}
+	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
 Target::~Target() {
 	// TODO Auto-generated destructor stub
 }
+// ------------------------------------------------------------------- //
+
+
+// ------------------------------------------------------------------- //
+// private
+std::tuple<bool, gazebo::physics::ModelPtr> Target::isModelValid(const std::string &object_name) {
+
+	// Gazebo::Physics::World - ModelByName() says:
+	/// `\return A pointer to the Model, or NULL if no model was found.`
+	gazebo::physics::ModelPtr model_p = world_ptr_->ModelByName(object_name);
+
+	if ( model_p == NULL || model_p == nullptr ) {
+		return ( std::make_tuple(false, nullptr) );
+	}
+	return ( std::make_tuple(true, model_p) );
+
+}
+
 // ------------------------------------------------------------------- //
 
 } /* namespace core */
