@@ -35,27 +35,28 @@
     <!-- execute when gzserver started by Eclipse IDE -->
     <group if="$(arg gdb)">
 
-        <!-- set use_sim_time flag -->
-        <param name="/use_sim_time" value="true"/>
+        <!-- set use_sim_time flag
+        **** NOTE: THIS PARAMETER IS BY DEFAULT SET IN empty_world.launch BUT CAUSES MAP_SERVER/COSTMAP TO CRASH when GDB is true ****
+        <param name="/use_sim_time" value="true"/> -->
 
         <!-- start gazebo client -->
         <group if="$(arg gui)">
             <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" respawn="false" output="screen" args="--verbose"/>
-        </group>
+        </group> 
 
     </group>
 
     <!-- =============================== start rViz ============================================ -->
-    <group if="$(arg rviz)">
+    <group if="$(arg rviz)"> 
     	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find actor_sim_utils)/rviz/actor_groups_map.rviz"/>
-    </group>
+    </group> 
 
 	<!-- ========================= load parameters ========================================= -->
     <rosparam file="$(find actor_sim_utils)/config/actor_param.yaml" command="load" ns="$(arg actor_params_ns)"/>
-    <rosparam file="$(find actor_sim_utils)/config/sfm_param.yaml"   command="load" ns="$(arg sfm_params_ns)"/>
+    <rosparam file="$(find actor_sim_utils)/config/sfm_param.yaml"   command="load" ns="$(arg sfm_params_ns)"/> 
 
     <!-- ============================== load map =========================================== -->
-    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" /> 
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" output="screen" /> 
 
     <!-- ======================== load global planner node ================================= -->
     <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>

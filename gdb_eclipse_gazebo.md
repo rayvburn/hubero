@@ -50,6 +50,8 @@ Example:
 `export GAZEBO_PLUGIN_PATH=$GAZEBO_PLUGIN_PATH:/home/rayvburn/ros_workspace/ws_people_sim/src/gazebo_ros_people_sim/actor_plugin_social/lib:/home/rayvburn/ros_workspace/ws_people_sim/src/gazebo_ros_people_sim/social_force_vis/lib`
 `eclipse`
 
+*NOTE* What's very convenient is to paste `export ...` inside Eclipse's `Run->Debug Configurations->C/C++ Remote Application->[Select your project]->Main->Commands to execute before application` so the only thing one could remember is to start Eclipse from terminal with sourced workspace.
+
 ***
 
 ## 6) In Eclipse choose `Run->Debug Configurations`. Try to unfold `C/C++ Remote Application` (double click), currently edited project should appear there. Click it.
@@ -65,7 +67,7 @@ Example:
 Documentation for `gzserver` can be found here: https://www.mankier.com/1/gzserver
 
 Example:
-`gzserver options world_file`
+`gzserver [options] world_file`
 So it can be expanded to:
 `gzserver -v --verbose -u -e ode /home/rayvburn/ros_workspace/ws_people_sim/src/gazebo_ros_people_sim/actor_sim_utils/worlds/living_room_vid_friendly.world`
 
@@ -73,7 +75,19 @@ NOTE: some error occurs when any options are added and `gzserver` is ran from Ec
 
 ***
 
-## 9) Debugging session could be ran successfully with Eclipse IDE now. 
+## 9) If the application uses Gazebo-ROS interface when one additional step must be taken.
+One of `gzserver` run options is loading a `server plugin` (see `gzserver --help` for details).
+To successfuly run gzserver one need to load 2 plugins related to Gazebo-ROS interface. To do this additional launch arguments should be added in Eclipse (they don't produce some errors in contrary to those options from `(8)`):
+`Run->Debug Configurations->C/C++ Remote Application->[Select your project]->Arguments`
+and now add this BEFORE `.world` file path:
+`-s /opt/ros/kinetic/lib/libgazebo_ros_paths_plugin.so -s /opt/ros/kinetic/lib/libgazebo_ros_api_plugin.so`
+
+So finally `Arguments` tab is filled with:
+`-s /opt/ros/kinetic/lib/libgazebo_ros_paths_plugin.so -s /opt/ros/kinetic/lib/libgazebo_ros_api_plugin.so /home/rayvburn/ros_workspace/ws_people_sim/src/gazebo_ros_people_sim/actor_sim_utils/worlds/living_room_vid_friendly.world`
+
+***
+
+## 10) Debugging session could be ran successfully with Eclipse IDE now. 
 One must remember that only `gzserver` will be started. The rest of the system (including ROS nodes) must be run manually in separate terminal (outside Eclipse). Usually it's safer to run `gzserver` after calling `roslaunch ...` with the rest of the system.
 
 For example how to prepare such startup files see `gazebo_ros_people_sim/actor_sim_utils/launch/example_full.launch`. Crucial thing here is the `gdb` argument.
