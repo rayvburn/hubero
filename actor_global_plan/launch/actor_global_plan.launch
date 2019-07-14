@@ -15,7 +15,4 @@
 
 	<node name="$(arg node_name)" pkg="actor_global_plan" type="actor_global_plan" args="$(arg srv_ns)" output="screen" />
 
-	<!-- test -->
-	<node name="map_server" pkg="map_server" type="map_server" args="$(find actor_sim_utils)/maps/living_room_vid_friendly.yaml" />
-
 </launch>

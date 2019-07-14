@@ -17,6 +17,7 @@
 #include <global_planner/planner_core.h>
 #include "actor_global_plan/GlobalPlannerMultiFrame.h"
 #include <costmap_2d/costmap_2d_ros.h>
+//#include <nav_msgs/OccupancyGrid.h>	// FIXME
 
 #include <std_srvs/Trigger.h> 			// costmap status
 #include <actor_global_plan/GetCost.h> 	// getcost service
@@ -46,6 +47,7 @@ static Costmap2dMultiFrame* costmap_global_ptr_;
 static bool costmap_ready_ = false;	// flag set true when node becomes fully initialized; ugly way but Costmap2DROS
 									// has a member `initialized_` set as private, so there is no way to use it in
 									// a derived class (Costmap2dMultiFrame)
+//static void SendMapBlank();
 
 // transform listener ------------------------------------------------------------------------
 static tf::TransformListener* tf_listener_ptr_;
@@ -175,9 +177,16 @@ static bool GetCostSrv(actor_global_plan::GetCost::Request& req, actor_global_pl
 	return (true);
 
 }
-
 // ----------------------------------------------------------------------------------------------------
-// ---- blank transform sender ---------------------------------------------------------------------
+// ---- blank map sender ------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------
+//static void SendMapBlank() {
+//
+//	nav_msgs::OccupancyGrid map;
+//
+//}
+// ----------------------------------------------------------------------------------------------------
+// ---- blank transform sender ------------------------------------------------------------------------
 // ----------------------------------------------------------------------------------------------------
 static void SendTfBlank() {
 

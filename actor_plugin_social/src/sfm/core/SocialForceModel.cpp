@@ -537,18 +537,6 @@ ignition::math::Pose3d SocialForceModel::computeNewPose(const ignition::math::Po
 	result_vel.X( cos(yaw_new.Radian()) * result_vel.Length() );
 	result_vel.Y( sin(yaw_new.Radian()) * result_vel.Length() );
 
-	/* HACK to not mess with angles but to check behavior like maths is right here */
-//	if ( result_vel.X() * _social_force.X() < 0.0 ) {
-//		// different signs
-//		result_vel.X( result_vel.X()*(-1.00) );
-//	}
-//
-//	if ( result_vel.Y() * _social_force.Y() < 0.0 ) {
-//		// different signs
-//		result_vel.Y( result_vel.Y()*(-1.00) );
-//	}
-
-//	result_vel *= 3.00; // to test behavior without recalculation
 
 	if ( print_info ) {
 		std::cout << "\n\tSMOOTHING ROTATION - RECALCULATED VEL\tdelta_x: " << result_vel.X() * dt << "\tdelta_y: " << result_vel.Y() * dt << '\n' << std::endl;
@@ -1548,10 +1536,11 @@ ignition::math::Angle SocialForceModel::computeYawMovementDirection(const igniti
 	// 2nd step
 	/* yaw_increment is a function of speed - the faster actor goes
 	 * the less maneuverability he has and less rotations will make	*/
-	/// @yaw_increment the less the value is the more reluctant actor
-	/// will be to immediate rotations
-	/// correlated with parameter @force_min
-	double yaw_increment = 0.003 * std::exp( -actor_vel.Length() ); // 0.009 before - many rotations
+	/// @param yaw_increment - the less the value is the more reluctant
+	/// to immediate rotations the actor will be
+	/// @note correlated with parameter @param force_min
+	double yaw_increment = 0.009 * std::exp( -actor_vel.Length() ); // 0.009 before - many rotations
+																	// 0.003 too much inertia?
 
 	// sign determines angle increment direction
 	short int sign = -1;
