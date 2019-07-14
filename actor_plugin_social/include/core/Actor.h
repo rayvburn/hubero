@@ -19,7 +19,7 @@
 #include "core/Enums.h"
 #include "core/CommonInfo.h"
 #include "core/FSM.h"
-#include "core/Target.h"				// TODO:new
+#include "core/Target.h"
 #include "ros_interface/Node.h"
 #include "ros_interface/Stream.h"
 #include "ros_interface/ConnectionFwd.h" // must be here due to circular dependency
@@ -51,10 +51,7 @@
 #include <ignition/math/Pose3.hh>
 
 // ROS interface
-//#include "ActorROSInterface.h"
-
-// FIXME: move to target manager later
-#include <thread>
+//#include "ActorROSInterface.h" // FIXME: old
 
 // -------------------------
 
@@ -132,8 +129,7 @@ public:
 
 	/// \brief Method to set new target for actor - object's name
 	/// \return True if object is valid
-	// TODO: stop_after_arrival handling
-	bool followObject(const std::string &object_name, const bool &stop_after_arrival);
+	bool followObject(const std::string &object_name, const bool &stop_after_arrival); 	// TODO: stop_after_arrival handling
 
 	/// \brief Get velocity vector (linear x, linear y and angular `yaw`)
 	std::array<double, 3> getVelocity() const;
@@ -236,7 +232,6 @@ private:
 
     /// \brief Actor's world pose - note: the coordinate system of an actor
     /// is rotated 90 deg CCW around world coordinate system's Z axis
-//    ignition::math::Pose3d pose_world_;
     std::shared_ptr<ignition::math::Pose3d> pose_world_ptr_;
 
     /// \brief Previous actor_ptr_'s pose
@@ -273,10 +268,6 @@ private:
     /// \brief Custom trajectory info
     gazebo::physics::TrajectoryInfoPtr trajectory_info_;
 
-    /// \brief Time scaling factor. Used to coordinate translational motion
-    /// with the actor_ptr_'s walking animation.
-//    double animation_factor_; // DEPRECATED - stored in ParamLoader instead
-
     /// \brief Node for ROS Interface
     actor::ros_interface::Node node_;
 
@@ -296,6 +287,10 @@ private:
     /// variables
     std::shared_ptr<actor::ros_interface::ParamLoader> params_ptr_;
 
+    /// \brief Target class manages target-related operations,
+    /// internally has a GlobalPlan class which is viable of
+    /// calling ROS global_planner server asking for a global
+    /// plan to be generated to a newly chosen target.
     Target target_manager_;
 
 };

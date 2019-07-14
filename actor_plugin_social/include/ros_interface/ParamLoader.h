@@ -38,7 +38,7 @@ public:
 		std::vector<double> init_target;					// if empty - there will be random values chosen
 		unsigned short int	init_stance						= 0;
 
-		double 				animation_factor 				= 4.5;
+		double 				animation_factor 				= 4.5;				/// \brief Time scaling factor. Used to coordinate translational motion with the actor_ptr_'s walking animation.
 		double 				animation_speed_rotation 		= 0.007;
 		double 				target_tolerance 				= 1.25;
 		double 				target_reach_max_time 			= 60.0;

@@ -6,14 +6,12 @@
  */
 
 #include "ros_interface/GlobalPlan.h"
-#include <iostream>
+#include <iostream>	// FIXME: debugging
 
 #include <navfn/MakeNavPlan.h>
 #include <actor_global_plan/MakeNavPlanFrame.h>
 #include <std_srvs/Trigger.h>
 #include <actor_global_plan/GetCost.h>
-
-#include <thread> // FIXME: debugging
 
 namespace actor {
 namespace ros_interface {
@@ -181,15 +179,6 @@ ignition::math::Pose3d GlobalPlan::getWaypoint() {
 	}
 
 	return (converter_.convertPoseStampedToIgnPose(path_.at(index)));
-
-}
-
-// ------------------------------------------------------------------- //
-
-void GlobalPlan::setPosesFrames(geometry_msgs::PoseStamped &start, geometry_msgs::PoseStamped &goal) {
-
-	start.header.frame_id = "world";
-	goal.header.frame_id = "world";
 
 }
 

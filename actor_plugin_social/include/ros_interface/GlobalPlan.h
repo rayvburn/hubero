@@ -133,10 +133,16 @@ public:
 	 */
 	ignition::math::Pose3d getWaypoint();
 
-	// getCost (friend?) TODO
-//	uint8_t getCost(const double &x_world, const double &y_world) const;
-	uint8_t getCost(const double &x_world, const double &y_world); // mustn't be `const`
-//	bool getCost(const double &x_world, const double &y_world) const;
+	/**
+	 * @brief Asks a ROS service server what cost does have a certain point in the map/
+	 * @param x_world - x-coordinate of a point to check
+	 * @param y_world - y-coordinate of a point to check
+	 * @return Cost value of a point with given coordinates. Returns a value in 0-255 range.
+	 * @note Some often used cost values can be found at:
+	 * https://github.com/ros-planning/navigation/blob/kinetic-devel/costmap_2d/include/costmap_2d/cost_values.h
+	 * @note It must not be `const`.
+	 */
+	uint8_t getCost(const double &x_world, const double &y_world);
 
 	/**
 	 * @brief Destructor
@@ -144,9 +150,6 @@ public:
 	virtual ~GlobalPlan();
 
 private:
-
-	// TODO
-	void setPosesFrames(geometry_msgs::PoseStamped &start, geometry_msgs::PoseStamped &goal);
 
 	/**
 	 * @brief Runs actions after conversion of `start` and `goal` to geometry_msgs::PoseStamped
