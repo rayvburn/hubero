@@ -29,133 +29,230 @@ class Target {
 
 public:
 
+	/**
+	 * @brief Default constructor
+	 */
 	Target();
 
-	// TODO: copy constructor?
-	Target(const Target &obj);
-
+	/**
+	 * @brief Parametrized constructor
+	 * @param world_ptr
+	 * @param pose_world_ptr
+	 * @param params_ptr
+	 */
 	Target(gazebo::physics::WorldPtr world_ptr, std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr,
 		   std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr);
 
-	// FIXME: this was created only for debugging purposes
-	void initializeTarget(gazebo::physics::WorldPtr world_ptr, std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr,
-			   std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr);
-
-	void initializeGlobalPlan(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &gap, const std::string &frame_id);
-
-	bool setNewTarget(const ignition::math::Vector3d &target);
-
-	/// \brief Method to set new target for actor - static objet's pose
-	/// \return True if [x,y] position is valid
-	bool setNewTarget(const ignition::math::Pose3d &pose);
-
-	/// \brief Method to set new target for actor - object's name
-	/// \return True if object is valid
-	bool setNewTarget(const std::string &object_name);
-
-	/// \brief Method to set new target for actor - object's name
-	/// \return True if object is valid
-	// TODO: stop_after_arrival handling
-	bool followObject(const std::string &object_name, const bool &stop_after_arrival);
+	/**
+	 * @brief Copy constructor
+	 * @param obj - object to be copied
+	 */
+	Target(const Target &obj);
 
 	/**
-	 * @brief Checks whether costmap is already initialized. Calls ROS Service Client.
+	 * @brief Initializer of the `actor::ros_interface::GlobalPlan` class
+	 * @param nh_ptr
+	 * @param gap
+	 * @param frame_id
+	 */
+	void initializeGlobalPlan(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &gap, const std::string &frame_id);
+
+	/**
+	 * @brief Method to set new target for actor - object's name
+	 * @param object_name
+	 * @return True if object is valid
+	 */
+	bool followObject(const std::string &object_name);
+
+	/**
+	 * @brief Method to set a new target for the actor
+	 * @param target - static object's position
+	 * @return True if [x,y] position is valid
+	 */
+	bool setNewTarget(const ignition::math::Vector3d &target);
+
+	/**
+	 * @brief Method to set a new target for the actor
+	 * @param target - static object's pose
+	 * @return True if [x,y] position is valid
+	 */
+	bool setNewTarget(const ignition::math::Pose3d &pose);
+
+	/**
+	 * @brief Method to set a new target for the actor
+	 * @param target - static object's name
+	 * @return True if object is valid and free space could be found nearby
+	 */
+	bool setNewTarget(const std::string &object_name);
+
+    /**
+     * @brief Tries to find some new (random) target location that is far enough from the current one
+     * and is reachable in terms of global plan
+     * @param info
+     * @return True if found and saved, false otherwise
+     */
+	bool chooseNewTarget(const gazebo::common::UpdateInfo &info); // const ignition::math::Pose3d &pose_current,
+
+    /**
+     *
+     * @param target_to_be
+     * @return
+     */
+    bool generatePathPlan(const ignition::math::Vector3d &target_to_be); // const ignition::math::Pose3d &pose_current,
+
+    /**
+     * @brief Discards the current target. Resets `has_target` flag.
+     */
+    void abandonTarget();
+
+	/**
+	 * @brief Sets checkpoint that is further away from the current one. All consecutive checkpoints
+	 * are elements of Path vector (see GlobalPlan)
+	 */
+    void updateCheckpoint();
+
+	/**
+	 * @brief Checks whether costmap is initialized. Calls ROS Service Client.
+	 * @return True if costmap is initialized
 	 * @note Non-const because internally calls service. Does not change any part of the class though.
-	 * @return
 	 */
 	bool isCostmapInitialized();
 
 	/**
-	 * Checks whether global plan was generated for the current target
-	 * @return
+	 * @brief Checks whether global plan was generated for the current target
+	 * @return True if plan is generated
 	 */
 	bool isPlanGenerated() const;
 
+	/**
+	 * @brief Checks `has_target` flag
+	 * @return True if target is set
+	 */
 	bool isTargetChosen() const;
 
-    /// \brief Helper function to choose a new target location
-    bool chooseNewTarget(const gazebo::common::UpdateInfo &info); // const ignition::math::Pose3d &pose_current,
+    /**
+     * @brief Checks if the target is still reachable. For example after addition of a new model
+     * the current target may not be reachable any more.
+     * @param info - Gazebo Update info
+     * @return
+     */
+	bool isTargetStillReachable(const gazebo::common::UpdateInfo &info);
 
-    /// \brief Helper function to check if target is still
-    /// reachable (for example after addition of a new model
-    /// a current target may not be reachable any more)
-    bool isTargetStillReachable(const gazebo::common::UpdateInfo &info);
-
-    /// \brief Helper function to check if target is not
-    /// reached for a certain amount of time
+    /**
+     * @brief Checks if the target is not reached for a certain amount of time
+     * @param info - Gazebo Update info
+     * @return True is threshold time has elapsed
+     */
     bool isTargetNotReachedForTooLong(const gazebo::common::UpdateInfo &info) const;
 
-    /// \brief TODO:
-    bool isTargetReached() const; // const ignition::math::Pose3d &pose_current
+    /**
+     * @brief Calculates distance to current target
+     * @return True if target is close enough. Threshold distance is a parameter value (`target_tolerance`).
+     */
+    bool isTargetReached() const;
 
-    /// \brief TODO
-    bool isCheckpointReached() const; 	// const gazebo::common::UpdateInfo &info
-    									// const ignition::math::Pose3d &pose_current
-    bool generatePathPlan(const ignition::math::Vector3d &target_to_be); // const ignition::math::Pose3d &pose_current,
+    /**
+     * @brief Calculates distance to currently chased checkpoint
+     * @return True if checkpoint is close enough. Threshold distance is a parameter value (`target_tolerance`).
+     */
+    bool isCheckpointReached() const;
 
-    void updateCheckpoint();
+    /**
+     * @brief Returns current checkpoint
+     * @return Checkpoint
+     */
     ignition::math::Vector3d getCheckpoint() const;
+
+    /**
+     * @brief Returns current target
+     * @return Target
+     */
 	ignition::math::Vector3d getTarget() const;
-	void abandonTarget();
 
+	/**
+	 * @brief Calls GlobalPlan method which creates a Path message based on vector of PoseStamped
+	 * @return
+	 */
+	nav_msgs::Path getPath() const;
 
-
-	/// \brief Helper method that checks if a given object is
-	/// listed in a ignored_model vector passed in .YAML;
-    /// made it static as it will be useful for SFM
+	/**
+	 * @brief Helper, static method that checks if a given object is listed in a ignored_model vector passed in .YAML
+	 * @param object_name
+	 * @param dictionary
+	 * @return True if model is listed in `ignored` list
+	 * @note Static as it will be useful for SFM
+	 */
 	static bool isModelNegligible(const std::string &object_name, const std::vector<std::string> &dictionary);
 
-	nav_msgs::Path getPath() const; // from GlobalPlanner
+	/**
+	 * @brief Helper, static function that checks if model of a given name exists in the world
+	 * @param object_name
+	 * @return A tuple of bool and ModelPtr, bool set to true if model is valid and ModelPtr is set accordingly.
+	 * If bool is false, then ModelPtr is NULL
+	 */
+	static std::tuple<bool, gazebo::physics::ModelPtr> isModelValid(const std::string &object_name) const;
 
+	/**
+	 * @brief Helper, static method that checks if any obstacle's bounding box does contain the investigated point
+	 * @param bb - bounding box
+	 * @param pt - point to be checked
+	 * @return True if BB does contain the point
+	 */
+	static bool doesBoundingBoxContainPoint(const ignition::math::Box &bb, const ignition::math::Vector3d &pt) const;
+
+	/**
+	 * @brief Destructor
+	 */
 	virtual ~Target();
 
 private:
 
-	// TODO: new class: TargetManager + queue
-
-
-	// ====================================================================================================
-
-	/// \brief Helper method that checks if any obstacle's bounding box
-	/// does contain the investigated point
-	bool doesBoundingBoxContainPoint(const ignition::math::Box &bb, const ignition::math::Vector3d &pt) const;
-
-	// ====================================================================================================
-
-
-    /// \brief Helper function that check if model of given name exists in the world
-    inline std::tuple<bool, gazebo::physics::ModelPtr> isModelValid(const std::string &object_name) const;
-
-    /// \brief Current target location
+    /// @brief Current target location
     ignition::math::Vector3d target_;
 
-    /// \brief Queue of consecutive target locations
     // TODO
-    std::queue<ignition::math::Vector3d> target_queue_; // TODO
+    /// @brief Queue of consecutive target locations
+    std::queue<ignition::math::Vector3d> target_queue_;
 
-    /// \brief A certain point from path to target_ (generated by global
+	// TODO: (from Actor.h)
+	// queue of objects to follow (checkpoints)
+
+    /// @brief A certain point from path to target_ (generated by global
     /// planner; it was chosen as closest checkpoint (according to current
     /// position) to the actor's target location
     ignition::math::Vector3d target_checkpoint_;
 
-    /// \brief Time of the last new target selection
+    /// @brief Time of the last new target selection
 	gazebo::common::Time time_last_target_selection_;
 
-    /// \brief Time of the last reachability test.
+    /// @brief Time of the last reachability test.
 	gazebo::common::Time time_last_reachability_;
 
-    /// \brief Global plan provider class;
+    /// @brief Global plan provider class;
     /// New global plan can be requested via this object
     actor::ros_interface::GlobalPlan global_planner_;
-//	std::shared_ptr<actor::ros_interface::GlobalPlan> global_planner_ptr_;
 
+    /// @brief Flag indicating that actor has valid target set (does not mean
+    /// that a global plan was already generated or found).
     bool has_target_;
+
+    /// @brief Flag indicating that actor has a global plan for the current
+    /// target generated. This flag is set `false` in target setter methods.
 	bool has_global_plan_; // when target is chosen, this flag will be set `false`
 
-	// TODO
+	/// @brief Shared pointer to `pose_world` object from actor::core::Actor class.
+	/// This is set in constructor.
 	std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr_;
+
+	/// @brief Shared pointer to ParamLoader class. This is set in constructor.
 	std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr_;
-	gazebo::physics::WorldPtr world_ptr_; // unable to make it const
+
+	/// @brief Pointer do world instance. This is set in constructor.
+	/// @note WorldPtr is typedef'ed boost::shared_ptr. It is not marked
+	/// const here but is read only in this (Target) class.
+	/// This is set in constructor.
+	gazebo::physics::WorldPtr world_ptr_;
+
 };
 
 } /* namespace core */

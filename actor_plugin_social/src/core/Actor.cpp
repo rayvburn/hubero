@@ -235,8 +235,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// target manager initialization section
 	pose_world_ptr_ = std::make_shared<ignition::math::Pose3d>();
-//	target_manager_ = Target(world_ptr_, pose_world_ptr_, params_ptr_);
-	target_manager_.initializeTarget(world_ptr_, pose_world_ptr_, params_ptr_);
+	target_manager_ = Target(world_ptr_, pose_world_ptr_, params_ptr_);
 	target_manager_.initializeGlobalPlan(node_.getNodeHandlePtr(), 13, actor_ptr_->GetName());
 
 
@@ -385,7 +384,8 @@ void Actor::readSDFParameters(const sdf::ElementPtr sdf) {
 
 bool Actor::followObject(const std::string &object_name, const bool &stop_after_arrival) {
 
-	// TODO: FIXME:
+	// TODO: stop_after_arrival
+	// FIXME: fill handler for this state
 	object_to_follow_ = object_name;
 	fsm_.setState(ACTOR_STATE_FOLLOW_OBJECT);
 
@@ -448,6 +448,7 @@ bool Actor::setState(const actor::ActorState &new_state) {
 	unsigned int state_to_be = static_cast<unsigned int>(new_state);
 	unsigned int state_lower_bound = static_cast<unsigned int>(actor::ACTOR_STATE_ALIGN_TARGET);
 
+	// TODO:
 	// NOTE: below needs to be adjusted if new state will be added!
 	unsigned int state_upper_bound = static_cast<unsigned int>(actor::ACTOR_STATE_TELEOPERATION);
 

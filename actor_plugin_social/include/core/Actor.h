@@ -146,9 +146,6 @@ public:
 	/// \return True if state is valid
 	bool setState(const actor::ActorState &new_state);
 
-	// TODO:
-	// queue of objects to follow (checkpoints)
-
 	/// \brief Executes handler for currently set state
 	void executeTransitionFunction(const gazebo::common::UpdateInfo &info);
 
