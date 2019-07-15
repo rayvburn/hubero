@@ -193,17 +193,7 @@ void Actor::initSFM() {
 	}
 
 	// initialize SFM parameters
-//	sfm_.init(params_ptr_->getSfmParams().internal_force_factor,
-//			  params_ptr_->getSfmParams().interaction_force_factor,
-//			  static_cast<unsigned int>(params_ptr_->getSfmParams().mass),
-//			  params_ptr_->getSfmParams().max_speed,
-//			  params_ptr_->getSfmParams().fov,
-//			  params_ptr_->getSfmParams().min_force,
-//			  params_ptr_->getSfmParams().max_force,
-//			  static_cast<sfm::core::StaticObjectInteraction>(params_ptr_->getSfmParams().static_obj_interaction),
-//			  sfm_inflation,
-//			  actor_ptr_->GetName(),
-//			  world_ptr_);
+	sfm_.init(params_ptr_, sfm_inflation, actor_ptr_->GetName(), world_ptr_);
 	
 }
 
