@@ -85,3 +85,16 @@ It seems that calling the service (by client) must be placed in non-const member
 ***
 
 `Timed out waiting for transform from actor1 to world to become available before running costmap, tf error: canTransform: source_frame actor1 does not exist.. canTransform returned after 0.101011 timeout was 0.1.` -> Check params file somewhere in `actor_global_planner/config/global_costmap` .yaml
+
+
+***
+
+To add new models to Gazebo - edit `/usr/share/gazebo-8/setup.sh` as shown below and place `3dgems models` accordingly:
+
+	export GAZEBO_MASTER_URI=http://localhost:11345
+	export GAZEBO_MODEL_DATABASE_URI=http://models.gazebosim.org
+	export GAZEBO_RESOURCE_PATH=/usr/share/gazebo-8:${GAZEBO_RESOURCE_PATH}
+	export GAZEBO_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/gazebo-8/plugins:${GAZEBO_PLUGIN_PATH}
+	export GAZEBO_MODEL_PATH=/usr/share/gazebo-8/models:/usr/share/gazebo-8/3dgems_decoration:/usr/share/gazebo-8/3dgems_furniture:${GAZEBO_MODEL_PATH}
+	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib/x86_64-linux-gnu/gazebo-8/plugins
+	export OGRE_RESOURCE_PATH=/usr/lib/x86_64-linux-gnu/OGRE-1.9.0
