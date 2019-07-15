@@ -157,7 +157,6 @@ static bool MakePlanSrv(actor_global_plan::MakeNavPlanFrame::Request& req, actor
 // ----------------------------------------------------------------------------------------------------
 static bool CostmapStatusSrv(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& resp) {
 
-	std::cout << "\n\t\t[actor_global_plan] CostmapStatusSrv\n\n" << std::endl;
 	// set status in response message
 	resp.success = costmap_ready_;
 	return (true);
