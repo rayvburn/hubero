@@ -297,11 +297,13 @@ bool Target::generatePathPlan(const ignition::math::Vector3d &target_to_be) {
 			break;
 
 		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_FAILED):
+			// TODO: check if within map bounds
 			std::cout << "\n\n\n[generatePathPlan] Global planning failed\n\n\n" << std::endl;
 			return (false);
 			break;
 
 		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_BUSY):
+			// TODO: debug this
 			std::cout << "\n\n\n[generatePathPlan] OOPS, need to wait for the global planner...\n\n\n" << std::endl;
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			continue;

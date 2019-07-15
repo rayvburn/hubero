@@ -469,7 +469,7 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 #ifndef SILENT_
 		std::cout << "\n\n\t\t\tALIGNED\n\n";
 #endif
-		fsm_.setState(actor::ACTOR_STATE_MOVE_AROUND);
+		fsm_.setState(actor::ACTOR_STATE_MOVE_AROUND); // restore previous?
 	}
 
 	// update the local copy of the actor's pose (orientation only)

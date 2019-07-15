@@ -212,7 +212,6 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 	ignition::math::Vector3d point_intersect;
 
 	// actor's bounding box point that is closest to object's bounding box
-//	line.Set(object_pose.Pos().X(), object_pose.Pos().Y(), actor_pose.Pos().X(), actor_pose.Pos().Y(), actor_box.getCenter().Z() );
 	line.Set(object_box.getCenter().X(), object_box.getCenter().Y(), actor_pose.Pos().X(), actor_pose.Pos().Y(), actor_box.getCenter().Z() );
 	std::tie(does_intersect, point_intersect) = actor_box.doesIntersect(line);
 
@@ -234,7 +233,6 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 
 
 	// object's bounding box point that is closest to actor's bounding box
-//	line.Set(actor_pose.Pos().X(), actor_pose.Pos().Y(), object_pose.Pos().X(), object_pose.Pos().Y(), object_box.getCenter().Z() );
 	line.Set(actor_pose.Pos().X(), actor_pose.Pos().Y(), object_box.getCenter().X(), object_box.getCenter().Y(), object_box.getCenter().Z() );
 	std::tie(does_intersect, point_intersect) = object_box.doesIntersect(line);
 
