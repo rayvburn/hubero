@@ -145,18 +145,11 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 	bool is_an_actor = false;
 	gazebo::physics::ModelPtr model_ptr;
 
-	std::cout << "\n\t\t[SocialForceModel::init] MODELS LIST" << std::endl;
 	// iterate over all world's objects
 	for ( unsigned int i = 0; i < world_ptr->ModelCount(); i++ ) {
 
 		// save new model's pointer
 		model_ptr = world_ptr->ModelByIndex(i);
-
-		std::cout << "\t" << model_ptr->GetName() << "\t" << model_ptr->WorldPose().Pos() << std::endl;
-		if ( model_ptr->WorldPose().Pos().Length() < 0.1 ) {
-			std::cout << "\n*********************************************************************\n";
-		}
-		std::cout << "\n";
 
 		// check whether social force calculation is necessary
 		if ( isModelNegligible(model_ptr->GetName()) ) {
@@ -193,33 +186,6 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 			model_box.setBox(model_ptr->BoundingBox()); // conversion
 
 		}
-
-//		if ( !is_an_actor ) {
-//			std::cout << "Coordinates comparison: " << model_ptr->GetName() << std::endl;
-//			std::cout << "\tworld_pose: " << model_ptr->WorldPose().Pos() << "\tbox: " << model_box.getCenter() << std::endl;
-//			std::cout << "\tbox_min: " << model_box.getMin() << "\tbox_max: " << model_box.getMax() << std::endl;
-//		}
-
-//		if ( model_ptr->GetName() == "vase_large_3_2" ) {
-//			if ( inflation_type_ == INFLATION_CIRCLE ) {
-//				ignition::math::Line3d line;
-//				bool intersects_test = false;
-//				ignition::math::Vector3d point_intersect_test;
-//				std::cout << "Coordinates comparison: world_pose: " << model_ptr->WorldPose().Pos() << "\tbox: " << model_box.getCenter() << std::endl;
-//				line.Set(actor_pose.Pos().X(), 				actor_pose.Pos().Y(),
-////						 model_ptr->WorldPose().Pos().X(), 	model_ptr->WorldPose().Pos().Y(),
-//						 model_box.getCenter().X(), 		model_box.getCenter().Y(),
-//						 model_box.getCenter().Z() );
-//				std::tie(intersects_test, point_intersect_test) = model_box.doesIntersect(line);
-//				int a = 0;
-//				a++;
-//				line.Set(model_box.getCenter().X(), 		model_box.getCenter().Y(),
-//						 actor_pose.Pos().X(), 				actor_pose.Pos().Y(),
-//						 model_box.getCenter().Z() );
-//				std::tie(intersects_test, point_intersect_test) = model_box.doesIntersect(line);
-//				a++;
-//			}
-//		}
 
 		// ============================================================================
 
@@ -333,9 +299,6 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		 * note that actor's pose lies on its bounding
 		 * figure's border (in most cases) */
 		if ( f_alpha_beta.Length() > 1e-06 ) {
-			if ( model_closest_point_pose.Pos().X() < 0.1 && model_closest_point_pose.Pos().Y() < 0.1 ) {
-				std::cout << "++++++++++\t" << model_ptr->GetName() << "\t" << model_closest_point_pose.Pos() << "\t++++++++++++" << std::endl;
-			}
 			closest_points_.push_back(model_closest_point_pose);
 			closest_points_.push_back(actor_closest_to_model_pose);
 		}

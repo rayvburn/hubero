@@ -127,13 +127,6 @@ public:
 		 * of objects in the world - this provides some kind of an inflation
 		 * around the objects */
 
-		if ( object_name == "vase_large_3_2" ) {
-			std::cout << "actor pose: " << actor_pose << std::endl;
-			std::cout << "obj pose: " << object_pose << std::endl;
-			std::cout << "obj box min: " << object_box.getMin() << "\tmax: " << object_box.getMax() << std::endl;
-			std::cout << std::endl;
-		}
-
 		ignition::math::Pose3d actor_pose_shifted = actor_pose;
 		ignition::math::Line3d line;
 		ignition::math::Vector3d point_intersect;
@@ -162,12 +155,10 @@ public:
 		bool intersects = false;
 		std::tie(intersects, point_intersect) = object_box.doesIntersect(line);
 
-		std::cout << "\t[line] dir: " << line.Direction() << std::endl;
-		std::cout << "\t[line] len: " << line.Length() << std::endl;
-
-		// FIXME: somehow did not manage to find intersection point
+		// if somehow did not manage to find intersection point
 		if ( !intersects ) {
-			point_intersect = object_pose.Pos();
+			// This should not happen. Unable to catch this line with debugger so should be fine
+			point_intersect = object_box.getCenter();
 		}
 
 		/* bb's Intersect returns intersection point whose X and Y are equal
