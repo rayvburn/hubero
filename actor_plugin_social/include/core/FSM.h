@@ -40,6 +40,11 @@ public:
 	/// invocation
 	bool didStateChange();
 
+	/// \brief Sets state to the previous one. This can't be utilized to set
+	/// pre-previous state, buffer stores only the current and the previous value.
+	/// After restoring previous value next restoration try will not change state.
+	void restorePreviousState();
+
 	/// \brief Returns a current state of an FSM
 	actor::ActorState getState() const;
 
@@ -55,6 +60,9 @@ private:
 
 	/// \brief Stores a current state
 	actor::ActorState state_curr_;
+
+	/// \brief Stores a previous state
+	actor::ActorState state_prev_;
 
 	/// \brief Stores a flag indicating whether
 	/// a state has changed

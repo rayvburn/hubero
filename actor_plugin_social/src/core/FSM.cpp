@@ -17,6 +17,7 @@ FSM::FSM(): state_changed_flag_(true) {
 
 	addState(ACTOR_STATE_INITIAL);
 	state_curr_ = ACTOR_STATE_INITIAL;
+	state_prev_ = ACTOR_STATE_INITIAL;
 
 }
 
@@ -46,6 +47,7 @@ void FSM::setState(const actor::ActorState &new_state) {
 
 		if ( is_valid ) {
 			std::cout << "FSM: state set is VALID!\t" << new_state << std::endl;
+			state_prev_ = state_curr_;
 			state_curr_ = states_.at(index);
 			state_changed_flag_ = true;
 		}
@@ -62,6 +64,12 @@ bool FSM::didStateChange() {
 	bool flag = state_changed_flag_;
 	state_changed_flag_ = false;
 	return (flag);
+}
+
+// ------------------------------------------------------------------- //
+
+void FSM::restorePreviousState() {
+	state_curr_ = state_prev_;
 }
 
 // ------------------------------------------------------------------- //
