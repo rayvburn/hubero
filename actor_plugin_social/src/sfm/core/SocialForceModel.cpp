@@ -6,9 +6,10 @@
  */
 
 #include "sfm/core/SocialForceModel.h"
-#include <cmath>		// atan2()
-#include <tgmath.h>		// fabs()
-#include <math.h>		// exp()
+#include <cmath>			// atan2()
+#include <tgmath.h>			// fabs()
+#include <math.h>			// exp()
+#include <core/Target.h>	// isModelNegligible static function
 
 // ----------------------------------------
 
@@ -65,26 +66,75 @@ SocialForceModel::SocialForceModel():
 
 // ------------------------------------------------------------------- //
 
-void SocialForceModel::init(const double &internal_force_factor, const double &interaction_force_factor,
-		  const unsigned int &mass, const double &max_speed, const double &fov,
-		  const double &min_force, const double &max_force, const StaticObjectInteraction &stat_obj_type,
-		  const InflationType &inflation_type, const gazebo::physics::WorldPtr &world_ptr)
+//void SocialForceModel::init(const double &internal_force_factor, const double &interaction_force_factor,
+//		  const unsigned int &mass, const double &max_speed, const double &fov,
+//		  const double &min_force, const double &max_force, const StaticObjectInteraction &stat_obj_type,
+//		  const InflationType &inflation_type, const std::string &actor_name,
+//		  const gazebo::physics::WorldPtr &world_ptr)
+//{
+//
+//	internal_force_factor_ = internal_force_factor;
+//	interaction_force_factor_ = interaction_force_factor;
+//	person_mass_ = mass;
+//	speed_max_ = max_speed;
+//	fov_ = fov;
+//	force_min_ = min_force;
+//	force_max_ = max_force;
+//	interaction_static_type_ = stat_obj_type;
+//	inflation_type_ = inflation_type;
+//
+//	owner_name_ = actor_name;
+//
+//	// initialize historical relative locations map with arbitrary values,
+//	// discard objects that should be ignored
+//	for ( unsigned int i = 0; i < world_ptr->ModelCount(); i++ ) {
+//
+//		// save new model's pointer
+//		gazebo::physics::ModelPtr model_ptr = world_ptr->ModelByIndex(i);
+//
+//		if ( actor::core::Target::isModelNegligible(model_ptr->GetName(), dictionary_ptr_->ignored_models_) ||
+//			 model_ptr->GetName() == actor_name ) {
+//			// do not save data for objects that should be ignored and for itself
+//			continue;
+//		}
+//
+//		map_models_rel_locations_[ world_ptr->ModelByIndex(i)->GetName() ] = LOCATION_UNSPECIFIED;
+//
+//	}
+//
+//}
+
+// ------------------------------------------------------------------- //
+
+void SocialForceModel::init(std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr,
+		  const InflationType &inflation_type, const std::string &actor_name,
+		  const gazebo::physics::WorldPtr &world_ptr)
 {
 
-	internal_force_factor_ = internal_force_factor;
-	interaction_force_factor_ = interaction_force_factor;
-	person_mass_ = mass;
-	speed_max_ = max_speed;
-	fov_ = fov;
-	force_min_ = min_force;
-	force_max_ = max_force;
-	interaction_static_type_ = stat_obj_type;
+	params_ptr_ = params_ptr;
+
+	internal_force_factor_ = params_ptr_->getSfmParams().internal_force_factor;
+	interaction_force_factor_ = params_ptr_->getSfmParams().interaction_force_factor;
+	person_mass_ = static_cast<unsigned short int>(params_ptr_->getSfmParams().mass);
+	speed_max_ = params_ptr_->getSfmParams().max_speed;
+	fov_ = params_ptr_->getSfmParams().fov;
+	force_min_ = params_ptr_->getSfmParams().min_force;
+	force_max_ = params_ptr_->getSfmParams().max_force;
+	interaction_static_type_ = static_cast<sfm::core::StaticObjectInteraction>(params_ptr_->getSfmParams().static_obj_interaction);
 	inflation_type_ = inflation_type;
 
-	// initialize historical relative locations map with arbitrary values
-	// TODO: discard the objects that should be ignored
+	owner_name_ = actor_name;
+
+	// initialize historical relative locations map with arbitrary values,
+	// discard objects that should be ignored
 	for ( unsigned int i = 0; i < world_ptr->ModelCount(); i++ ) {
+
+		if ( isModelNegligible(world_ptr->ModelByIndex(i)->GetName()) ) {
+			continue;
+		}
+
 		map_models_rel_locations_[ world_ptr->ModelByIndex(i)->GetName() ] = LOCATION_UNSPECIFIED;
+
 	}
 
 }
@@ -92,9 +142,8 @@ void SocialForceModel::init(const double &internal_force_factor, const double &i
 // ------------------------------------------------------------------- //
 
 ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world_ptr,
-		const std::string &actor_name, const ignition::math::Pose3d &actor_pose,
-		const ignition::math::Vector3d &actor_velocity, const ignition::math::Vector3d &actor_target,
-		const actor::core::CommonInfo &actor_info, const double &dt)
+		const ignition::math::Pose3d &actor_pose, const ignition::math::Vector3d &actor_velocity,
+		const ignition::math::Vector3d &actor_target, const actor::core::CommonInfo &actor_info, const double &dt)
 {
 
 #ifdef DEBUG_LOG_ALL_INTERACTIONS
@@ -105,7 +154,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 	( SfmGetPrintData() ) ? (print_info = true) : (0);
 
-//	if ( _actor_name == "actor1" && SfmGetPrintData()) {
+//	if ( owner_name_ == "actor1" && SfmGetPrintData()) {
 //		debugEllipseSet(true);
 //	} else {
 //		debugEllipseSet(false);
@@ -139,30 +188,21 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 	// iterate over all world's objects
 	for ( unsigned int i = 0; i < world_ptr->ModelCount(); i++ ) {
 
+		// save new model's pointer
 		model_ptr = world_ptr->ModelByIndex(i);
 
-		if ( model_ptr->GetName() == actor_name ) {
-			// do not calculate social force from itself
-			continue;
-		}
-
-		// test world specific names
-		// FIXME
-		if ( model_ptr->GetName() == "cafe" || model_ptr->GetName() == "ground_plane" ) {
-			// do not calculate social force from the objects he is stepping on
+		// check whether social force calculation is necessary
+		if ( isModelNegligible(model_ptr->GetName()) ) {
 			continue;
 		}
 
 		//////////////////////////////////////////////////////////////////////////////////////////////////////
 		// catch especially table1 - debugging ///////////////////////////////////////////////////////////////
 		SfmDebugSetCurrentObjectName(model_ptr->GetName()); ////////////////////////////////////////////////////
-		SfmDebugSetCurrentActorName(actor_name); //////////////////////////////////////////////////////////////
+		SfmDebugSetCurrentActorName(owner_name_); //////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//		if ( print_info ) {
-//			std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
-//		}
-
+		// decode information if the current model is of `Actor` type
 		if ( (is_an_actor = actor_decoder_.isActor(model_ptr->GetType())) ) {
 
 			// decoder of the CommonInfo class
@@ -249,7 +289,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 				// no inflation
 //				std::cout << "\tINFLATION - DEFAULT" << std::endl;
-//				leave centers as closest (already done above the `switch`)
+//				leave centers as `closest` (already done above the `switch`)
 //				actor_closest_to_model_pose = actor_pose;
 //				model_closest_point_pose = model_ptr->WorldPose();
 				break;
@@ -263,8 +303,8 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 
 		/* closest points ellipse debugging */
-//		if ( actor_name == "actor1" ) {
-//			std::cout << "CLOSEST POINTS ELLIPSE DEBUGGING\tactor: " << actor_name << "\tmodel: " << model_ptr->GetName() << "\n";
+//		if ( owner_name_ == "actor1" ) {
+//			std::cout << "CLOSEST POINTS ELLIPSE DEBUGGING\tactor: " << owner_name_ << "\tmodel: " << model_ptr->GetName() << "\n";
 //			std::cout << "\tactor_center: " << actor_pose << "\tactor_closest: " << actor_closest_to_model_pose << std::endl;
 //			std::cout << "\tactor ellipse's center: " << actor_info.getBoundingEllipse().getCenter() << "\tactor ellipse's SHIFTED center: " << actor_info.getBoundingEllipse().getCenterShifted() << std::endl;
 //			std::cout << "\tmodel_center: " << model_ptr->WorldPose() << "\tmodel_closest: " << model_closest_point_pose << std::endl;
@@ -308,7 +348,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		// ============================================================================
 
 #ifdef DEBUG_OSCILLATIONS
-		if ( _actor_name == "actor1" && model_ptr->GetName() == "table1" ) {
+		if ( _owner_name_ == "actor1" && model_ptr->GetName() == "table1" ) {
 			std::cout << "\tactor1-table1 interaction vector: " << f_alpha_beta.X() << "\t" << f_alpha_beta.Y() << std::endl;
 		}
 #endif
@@ -412,9 +452,9 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 	if ( print_info ) {
 		std::cout << "-----------------------\n";
-		std::cout << actor_name << " | SocialForce: " << f_total << "\tinternal: " << internal_force_factor_ * f_alpha << "\tinteraction: " << interaction_force_factor_ * f_interaction_total;
+		std::cout << owner_name_ << " | SocialForce: " << f_total << "\tinternal: " << internal_force_factor_ * f_alpha << "\tinteraction: " << interaction_force_factor_ * f_interaction_total;
 	}
-//	std::cout << _actor_name << " | SocialForce: " << f_total << "\tinternal: " << desired_force_factor * f_alpha << "\tinteraction: " << interaction_force_factor * f_interaction_total;
+//	std::cout << _owner_name_ << " | SocialForce: " << f_total << "\tinternal: " << desired_force_factor * f_alpha << "\tinteraction: " << interaction_force_factor * f_interaction_total;
 
 #ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	( SfmGetPrintData() ) ? (print_info = false) : (0);
@@ -738,7 +778,7 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	// check length to other object (beta)
 	if ( d_alpha_beta.Length() > 7.5 ) {
 
-		// TODO: if no objects nearby the threshold should be increased
+		// TODO: if no objects nearby the threshold should be increased?
 		#ifdef DEBUG_INTERACTION_FORCE
 		if ( print_info ) {
 			std::cout << "\t OBJECT TOO FAR AWAY, ZEROING FORCE! \t d_alpha_beta_length: " << _d_alpha_beta.Length();
@@ -1539,7 +1579,7 @@ ignition::math::Angle SocialForceModel::computeYawMovementDirection(const igniti
 	/// @param yaw_increment - the less the value is the more reluctant
 	/// to immediate rotations the actor will be
 	/// @note correlated with parameter @param force_min
-	double yaw_increment = 0.009 * std::exp( -actor_vel.Length() ); // 0.009 before - many rotations
+	double yaw_increment = 0.013 * std::exp( -actor_vel.Length() ); // 0.009 before - many rotations
 																	// 0.003 too much inertia?
 
 	// sign determines angle increment direction
@@ -1595,6 +1635,18 @@ ignition::math::Angle SocialForceModel::computeYawMovementDirection(const igniti
 
 }
 
+// ------------------------------------------------------------------- //
+
+bool SocialForceModel::isModelNegligible(const std::string &model_name) {
+
+	if ( actor::core::Target::isModelNegligible(model_name, params_ptr_->getSfmDictionary().ignored_models_) ||
+		 model_name == owner_name_ ) {
+		// do not save data for objects that should be ignored and for itself
+		return (true);
+	}
+	return (false);
+
+}
 
 // ------------------------------------------------------------------- //
 

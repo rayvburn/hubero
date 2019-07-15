@@ -24,6 +24,9 @@
 // Actor's data storage
 #include "core/CommonInfo.h"
 
+// Helper
+#include <ros_interface/ParamLoader.h>	// objects dictionary
+
 // Bounding models of an actor
 #include "inflation/Ellipse.h"
 #include "inflation/Circle.h"
@@ -137,20 +140,17 @@ public:
 	/// \brief Default constructor
 	SocialForceModel();
 
-	/// \brief Function which sets internal parameters
-	/// according to given values
-	void init(const double &internal_force_factor, const double &interaction_force_factor,
-			  const unsigned int &mass, const double &max_speed, const double &fov,
-			  const double &min_force, const double &max_force, const StaticObjectInteraction &stat_obj_type,
-			  const InflationType &inflation_type, const gazebo::physics::WorldPtr &world_ptr);
+	/// \brief Function which sets internal parameters according to loaded parameters
+	void init(std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr,
+			  const InflationType &inflation_type, const std::string &actor_name,
+			  const gazebo::physics::WorldPtr &world_ptr);
 
 	/// \brief Function which calculates social force
 	/// for an actor taking whole world's objects
 	/// into consideration
-	ignition::math::Vector3d computeSocialForce(const gazebo::physics::WorldPtr &world_ptr, const std::string &actor_name,
+	ignition::math::Vector3d computeSocialForce(const gazebo::physics::WorldPtr &world_ptr,
 			const ignition::math::Pose3d &actor_pose, const ignition::math::Vector3d &actor_velocity,
-			const ignition::math::Vector3d &actor_target, const actor::core::CommonInfo &actor_info,
-			const double &dt);
+			const ignition::math::Vector3d &actor_target, const actor::core::CommonInfo &actor_info, const double &dt);
 
 	/// \brief Function which computes a new pose
 	/// for an actor based on current one and the calculated
@@ -280,11 +280,18 @@ private:
 	ignition::math::Angle computeYawMovementDirection(const ignition::math::Pose3d &actor_pose,
 			const ignition::math::Vector3d &actor_vel, const ignition::math::Vector3d &sf_vel);
 
+	/// \brief Checks whether a given object is listed in the `ignored models` set of objects
+	/// called dictionary here. Uses actor::core::Target static function as helper.
+	bool isModelNegligible(const std::string &model_name);
+
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 	/// \brief A vector of poses of closest points
 	/// between actor's and object's boundings
 	std::vector<ignition::math::Pose3d> closest_points_;
+
+	/// \brief Name of the actor owning SFM instance
+	std::string owner_name_;
 
 	/// \brief A map which stores previous location
 	/// of a model relative to an actor;
@@ -316,6 +323,9 @@ private:
 
 	sfm::fuzz::Fuzzifier fuzz_;
 	sfm::fuzz::Defuzzifier defuzz_;
+
+	/// @brief Shared pointer to element of ParamLoader class.
+	std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr_;
 
 	/* Model C -> Rudloff et al. (2011) model's parameters based on  S. Seer et al. (2014) */
 	/* setting parameters static will create a population of actors moving in the same way */

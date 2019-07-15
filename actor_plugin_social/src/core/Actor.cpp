@@ -168,49 +168,42 @@ void Actor::initSFM() {
 			 * SFM's box inflation type (actor is insensitive to this parameter);
 			 * see sfm::core::InflationType */
 			if ( static_cast<sfm::core::InflationType>(params_ptr_->getSfmParams().box_inflation_type) ==
-					sfm::core::InflationType::INFLATION_BOX_ALL_OBJECTS ) {
-
-				std::cout << "SFM init: inflation type - BOX ALL OBJECTS" << std::endl;
+				 sfm::core::InflationType::INFLATION_BOX_ALL_OBJECTS ) {
 				sfm_inflation = sfm::core::InflationType::INFLATION_BOX_ALL_OBJECTS;
 
 			} else if ( static_cast<sfm::core::InflationType>(params_ptr_->getSfmParams().box_inflation_type) ==
-					sfm::core::InflationType::INFLATION_BOX_OTHER_OBJECTS ) {
-
-				std::cout << "SFM init: inflation type - BOX OTHER OBJECTS" << std::endl;
+						sfm::core::InflationType::INFLATION_BOX_OTHER_OBJECTS ) {
 				sfm_inflation = sfm::core::InflationType::INFLATION_BOX_OTHER_OBJECTS;
-
 			}
 			break;
 
 		case(actor::ActorBoundingType::ACTOR_BOUNDING_CIRCLE):
-				std::cout << "SFM init: inflation type - CIRCLE" << std::endl;
 				sfm_inflation = sfm::core::InflationType::INFLATION_CIRCLE;
 				break;
 
 		case(actor::ActorBoundingType::ACTOR_BOUNDING_ELLIPSE):
-				std::cout << "SFM init: inflation type - ELLIPSE" << std::endl;
 				sfm_inflation = sfm::core::InflationType::INFLATION_ELLIPSE;
 				break;
 
 		case(actor::ActorBoundingType::ACTOR_NO_BOUNDING):
 				/* TODO this bounding type seems to not have a correspondence in code? */
-				std::cout << "SFM init: inflation type - NONE" << std::endl;
 				sfm_inflation = sfm::core::InflationType::INFLATION_NONE;
 				break;
 
 	}
 
 	// initialize SFM parameters
-	sfm_.init(params_ptr_->getSfmParams().internal_force_factor,
-			  params_ptr_->getSfmParams().interaction_force_factor,
-			  static_cast<unsigned int>(params_ptr_->getSfmParams().mass),
-			  params_ptr_->getSfmParams().max_speed,
-			  params_ptr_->getSfmParams().fov,
-			  params_ptr_->getSfmParams().min_force,
-			  params_ptr_->getSfmParams().max_force,
-			  static_cast<sfm::core::StaticObjectInteraction>(params_ptr_->getSfmParams().static_obj_interaction),
-			  sfm_inflation,
-			  world_ptr_);
+//	sfm_.init(params_ptr_->getSfmParams().internal_force_factor,
+//			  params_ptr_->getSfmParams().interaction_force_factor,
+//			  static_cast<unsigned int>(params_ptr_->getSfmParams().mass),
+//			  params_ptr_->getSfmParams().max_speed,
+//			  params_ptr_->getSfmParams().fov,
+//			  params_ptr_->getSfmParams().min_force,
+//			  params_ptr_->getSfmParams().max_force,
+//			  static_cast<sfm::core::StaticObjectInteraction>(params_ptr_->getSfmParams().static_obj_interaction),
+//			  sfm_inflation,
+//			  actor_ptr_->GetName(),
+//			  world_ptr_);
 	
 }
 
@@ -526,9 +519,9 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 		}
 	}
 
-	ignition::math::Vector3d sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), *pose_world_ptr_,
-														  velocity_lin_, target_manager_.getCheckpoint(),
-														  common_info_, dt); // target_
+	ignition::math::Vector3d sf = sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_lin_,
+														  target_manager_.getCheckpoint(),
+														  common_info_, dt);
 
 //	if ( print_info ) {
 //		std::cout << "\t TOTAL force: " << sf << std::endl;
@@ -1087,7 +1080,7 @@ bool Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
 				// calculate social force for actor located in current pose
 				// hard-coded time delta
 //				sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), pose, velocity_lin_, target_, common_info_, 0.001);
-				sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), pose, velocity_lin_, target_manager_.getCheckpoint(), common_info_, 0.001);
+				sf = sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), common_info_, 0.001);
 
 				// pass a result to vector of grid forces
 				sfm_vis_grid_.addMarker( sfm_vis_grid_.createArrow(pose.Pos(), sf) );
