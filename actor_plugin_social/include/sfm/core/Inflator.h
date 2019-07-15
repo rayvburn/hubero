@@ -11,7 +11,8 @@
 
 #include <ignition/math/Pose3.hh>
 #include <ignition/math/Vector3.hh>
-#include <ignition/math/Line3.hh>
+#include <ignition/math/Line3.hh> 	// FIXME:
+#include <ignition/math/Line2.hh>	// test
 #include <ignition/math/Angle.hh>
 
 #include "inflation/Box.h"
@@ -122,9 +123,16 @@ public:
 		/* BoundingEllipse and BoundingBox -> actor and static object */
 
 		/* this function finds points that are located within the bounding
-		 * box/circle range that are further treated as a real position
+		 * box/circle range that are later on treated as a real positions
 		 * of objects in the world - this provides some kind of an inflation
 		 * around the objects */
+
+		if ( object_name == "vase_large_3_2" ) {
+			std::cout << "actor pose: " << actor_pose << std::endl;
+			std::cout << "obj pose: " << object_pose << std::endl;
+			std::cout << "obj box min: " << object_box.getMin() << "\tmax: " << object_box.getMax() << std::endl;
+			std::cout << std::endl;
+		}
 
 		ignition::math::Pose3d actor_pose_shifted = actor_pose;
 		ignition::math::Line3d line;
@@ -140,12 +148,27 @@ public:
 		}
 		#endif
 
-		// object's bounding box point that is closest to actor's bounding box
-		/* create the line from the actor's center to the object's center and check
+		// object bounding box'es point that is closest to actor's bounding box
+		/* create a line from the actor's center to the object's center and check
 		 * the intersection point of that line with the object's bounding box */
-		line.Set(actor_pose.Pos().X(), actor_pose.Pos().Y(), object_pose.Pos().X(), object_pose.Pos().Y(), object_box.getCenter().Z() );
+
+		/* NOTE: some models have their center not matched with bounding box'es center
+		 * which may produce false `intersects` flag. Let's stick to bounding
+		 * boxes center (instead of `object_pose`. */
+		line.Set(actor_pose.Pos().X(), 			actor_pose.Pos().Y(),
+				 object_box.getCenter().X(), 	object_box.getCenter().Y(), 	// object_pose.Pos().X(), object_pose.Pos().Y()
+				 object_box.getCenter().Z() );
+
 		bool intersects = false;
 		std::tie(intersects, point_intersect) = object_box.doesIntersect(line);
+
+		std::cout << "\t[line] dir: " << line.Direction() << std::endl;
+		std::cout << "\t[line] len: " << line.Length() << std::endl;
+
+		// FIXME: somehow did not manage to find intersection point
+		if ( !intersects ) {
+			point_intersect = object_pose.Pos();
+		}
 
 		/* bb's Intersect returns intersection point whose X and Y are equal
 		 * to actor's X and Y thus 0 distance between points and no solutions

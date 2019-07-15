@@ -314,6 +314,7 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findInt
 	switch(type) {
 
 	case(INTERSECTION_ACTORS):
+	case(INTERSECTION_ACTOR_OBJECT):
 			/* Below is OK under assumption that both bounding `boxes` have the same shape and dimensions
 			 * 1) 	create a line which divides the connection into 2 parts
 			 * 2) 	re-assign shifted points - place then just around the center of the line
@@ -325,7 +326,7 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findInt
 			return (std::make_tuple(actor_shifted, object_shifted));
 			break;
 
-	case(INTERSECTION_ACTOR_OBJECT):
+	case(2): // case(INTERSECTION_ACTOR_OBJECT):
 			/* initially a factor was 0.97 but the smaller the distance between actor and an obstacle
 			 * the smaller repulsion is produced; when the repulsion in small distances from an obstacle
 			 * is too weak then the factor should be a little smaller  */
