@@ -386,7 +386,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 //		}
 
 		if ( f_alpha_beta.Length() > 1e-06 ) {
-			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << f_alpha_beta << "\tlen: " << f_alpha_beta.Length() << std::endl;
+			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << std::endl;
 		}
 
 	} // for
@@ -440,8 +440,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 #endif
 
 	// truncate the force value to max to prevent strange speedup of an actor
-	double force_length = f_total.Length();
-	if ( force_length > force_max_ ) {
+	if ( f_total.Length() >= force_max_ ) {
 
 		f_total = f_total.Normalize() * force_max_;
 
@@ -449,12 +448,22 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 			std::cout << "\tTRUNCATED";
 		}
 
-	} /* */ else if ( force_length < force_min_ ) {
+	} else if ( f_total.Length() <= force_min_ ) {
 
-		f_total = f_total.Normalize() * force_min_;
+		sf_values_.update(f_total);
+		f_total = sf_values_.getAverage().Normalize() * force_min_;
 
 		if ( print_info ) {
 			std::cout << "\tEXTENDED";
+		}
+
+	} else {
+
+		// force in allowable range
+
+		// clear social forces vector used for averaging
+		if ( !sf_values_.isEmpty() ) {
+			sf_values_.clear();
 		}
 
 	}

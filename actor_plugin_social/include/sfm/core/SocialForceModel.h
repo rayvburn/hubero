@@ -35,6 +35,7 @@
 // SFM's other files
 #include <sfm/core/Inflator.h>
 #include <sfm/core/ActorInfoDecoder.h>
+#include <sfm/core/ShiftRegister.h>
 #include <sfm/fuzz/Fuzzifier.h>
 #include <sfm/fuzz/Defuzzifier.h>
 
@@ -299,6 +300,8 @@ private:
 	/// a historical data is used when relative location
 	/// value oscillates from one side to the other
 	std::map<std::string, RelativeLocation> map_models_rel_locations_;
+
+	ShiftRegister<ignition::math::Vector3d> sf_values_{50};
 
 	/// \brief Social Force Model parameters variables
 	float relaxation_time_;

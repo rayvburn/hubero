@@ -39,6 +39,7 @@ add_library(social_force_model
   include/sfm/core/Inflator.h 
   include/sfm/core/SFMDebug.h
   include/sfm/core/ActorInfoDecoder.h
+  include/sfm/core/ShiftRegister.h
 
   src/sfm/core/SocialForceModel.cpp
   src/sfm/core/Inflator.cpp
