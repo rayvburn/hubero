@@ -98,3 +98,17 @@ To add new models to Gazebo - edit `/usr/share/gazebo-8/setup.sh` as shown below
 	export GAZEBO_MODEL_PATH=/usr/share/gazebo-8/models:/usr/share/gazebo-8/3dgems_decoration:/usr/share/gazebo-8/3dgems_furniture:${GAZEBO_MODEL_PATH}
 	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib/x86_64-linux-gnu/gazebo-8/plugins
 	export OGRE_RESOURCE_PATH=/usr/lib/x86_64-linux-gnu/OGRE-1.9.0
+
+
+***
+
+Social force REALLY OSCILLATES when actor approaches the target which is located in neighbourhood of other obstacles. This is the result of internal and repulsive forces compensation (total force, after sum up, is close to 0). If total force vector is too short it is extended to `min_force: 300.0` length. Constant changes in orientation of SF vector affects actor's behaviour. To prevent this, when forces compensate, set of consecutive forces are saved in a container (std::vector) and average vector of social force is then applied as a valid interaction result.
+
+***
+
+## Parameters description:
+
+If `interaction_force_factor: 1500.0` parameter is set too high then you will notice big SF changes when actor's orientation is about PI/2 relative to target (checkpoint). This can be explained as a d_alpha_beta vector (where beta is target) oriented about +/-(PI/2) relative to actor's velocity vector. This is noticable especially when `static_obj_interaction: 1` (repulsion from static objects is calculated as in non-elliptical formulae).
+
+If `target_tolerance: 1.25` is too small, especially smaller than bounding figure's radius (or half of the diagonal, when bounding box is set etc.) the target can never be reached and actor will start to rotate many times when approaching target (result of big repulsion force presence which tends overall force vector to point in opposite direction relative to target location). It's safe to set this parameter at least 110% of the bounding radius/half-diagonal/semi-major-axis.
+
