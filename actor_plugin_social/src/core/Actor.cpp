@@ -523,7 +523,8 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 //		std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;
 //	}
 
-	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_lin_, sf, dt);
+	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_lin_, sf,
+														  target_manager_.getCheckpoint(), dt);
 
 //	if ( print_info ) {
 //		std::cout << "\t NEW pose: " << new_pose;

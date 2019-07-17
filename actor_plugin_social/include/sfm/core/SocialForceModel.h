@@ -156,7 +156,7 @@ public:
 	/// for an actor based on current one and the calculated
 	/// social force
 	ignition::math::Pose3d computeNewPose(const ignition::math::Pose3d &actor_pose, const ignition::math::Vector3d &actor_vel,
-			const ignition::math::Vector3d &social_force, const double &dt);
+			const ignition::math::Vector3d &social_force, const ignition::math::Vector3d &target, const double &dt);
 
 	/// \brief Returns vector of poses of closest points between
 	/// actor and other objects; makes use out of bounding
@@ -207,7 +207,7 @@ private:
 	/// the displacement of pedestrian β"
 	double computeThetaAlphaBetaAngle(const ignition::math::Vector3d &actor_vel, const ignition::math::Angle &actor_yaw,
 									  const ignition::math::Vector3d &object_vel, const ignition::math::Angle &object_yaw,
-									  const bool &is_actor);
+									  const ignition::math::Vector3d &d_alpha_beta, const bool &is_actor);
 
 	/// \brief Helper function which computes theta_αβ angle;
 	/// fits 2014 configuration, where this angle is defined
@@ -278,7 +278,8 @@ private:
 	/// exponential function);
 	/// it has a big impact on actors' behavior
 	ignition::math::Angle computeYawMovementDirection(const ignition::math::Pose3d &actor_pose,
-			const ignition::math::Vector3d &actor_vel, const ignition::math::Vector3d &sf_vel);
+			const ignition::math::Vector3d &actor_vel, const ignition::math::Vector3d &sf_vel,
+			const ignition::math::Vector3d &target);
 
 	/// \brief Checks whether a given object is listed in the `ignored models` set of objects
 	/// called dictionary here. Uses actor::core::Target static function as helper.
