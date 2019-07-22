@@ -1713,8 +1713,9 @@ ignition::math::Angle SocialForceModel::computeYawMovementDirection(const igniti
 	/// @param yaw_increment - the less the value is the more reluctant
 	/// to immediate rotations the actor will be
 	/// @note correlated with parameter @param force_min
-	double yaw_increment = 0.013 * std::exp( -actor_vel.Length() ); // 0.009 before - many rotations
+	double yaw_increment = 0.0065 * std::exp( -actor_vel.Length() ); // 0.009 before - many rotations
 																	// 0.003 too much inertia?
+																	// 0.013 near obstacles orientation oscillates very much
 
 //	// first version of angle_change calculation, based on yaw_diff
 //	// sign determines angle increment direction
