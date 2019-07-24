@@ -1,4 +1,4 @@
-default_tolerance: 0.20 # 15 cm of gap allowed
+default_tolerance: 0.90 # 15 cm of gap allowed
 #cost_factor: 
 #lethal_cost: 
 #neutral_cost:

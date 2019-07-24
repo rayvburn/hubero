@@ -19,8 +19,9 @@
 #include <costmap_2d/costmap_2d_ros.h>
 //#include <nav_msgs/OccupancyGrid.h>	// FIXME
 
-#include <std_srvs/Trigger.h> 			// costmap status
-#include <actor_global_plan/GetCost.h> 	// getcost service
+#include <std_srvs/Trigger.h> 				// Costmap status
+#include <actor_global_plan/GetCost.h> 		// GetCost service
+#include <actor_global_plan/SetTolerance.h>	// SetTolerance service
 
 // ROS Kinetic
 #include <tf/transform_listener.h>
@@ -31,14 +32,18 @@
 //#include <tf2_ros/transform_listener.h>
 
 // global planner ----------------------------------------------------------------------------
+static std::string* node_name_;
+static ros::NodeHandle* nh_;
 static GlobalPlannerMultiFrame* glob_planner_ptr_;
 static std::vector<geometry_msgs::PoseStamped> path_;
 static ros::ServiceServer make_plan_srv_;
 static ros::ServiceServer get_cost_srv_;
 static ros::ServiceServer costmap_status_srv_;
+static ros::ServiceServer set_tolerance_srv_;
 static bool MakePlanSrv(actor_global_plan::MakeNavPlanFrame::Request& req, actor_global_plan::MakeNavPlanFrame::Response& resp);
 static bool CostmapStatusSrv(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& resp);
 static bool GetCostSrv(actor_global_plan::GetCost::Request& req, actor_global_plan::GetCost::Response& resp);
+static bool SetToleranceSrv(actor_global_plan::SetTolerance::Request& req, actor_global_plan::SetTolerance::Response& resp);
 
 // costmap -----------------------------------------------------------------------------------
 // NOTE: it was impossible to call costmap's constructor inside a separate class (outside a ROS node)
@@ -63,14 +68,22 @@ int main(int argc, char** argv) {
 	// node initialization
 	ros::init(argc, argv, "actor_global_plan_node");
 	ros::NodeHandle nh;
+	nh_ = &nh;
 
 
 	// check if an extra (necessary) argument provided
 	if ( argc < 2 ) {
-		ROS_ERROR("A namespace of actors' shared NodeHandle must be provided! Service needs it. See ''actor_global_plan/launch/actor_global_plan.launch'' for details");
+		ROS_ERROR("The namespace of actors' shared NodeHandle must be provided! Service needs it. See ''actor_global_plan/launch/actor_global_plan.launch'' for details");
 		return (-1);
 	}
+	if ( argc < 3 ) {
+		ROS_ERROR("The name of the node must be provided! See ''actor_global_plan/launch/actor_global_plan.launch'' for details");
+		return (-1);
+	}
+
 	std::string srv_ns = argv[1];
+	std::string node_name = argv[2];
+	node_name_ = &node_name;
 
 
 	// start costmap status service
@@ -102,6 +115,7 @@ int main(int argc, char** argv) {
 	// start plan making and cost getter services
 	make_plan_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner"), MakePlanSrv);
 	get_cost_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner/GetCost"), GetCostSrv);
+	set_tolerance_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner/SetTolerance"), SetToleranceSrv);
 
 
 	// print some info
@@ -208,5 +222,16 @@ static void SendTfBlank() {
 	tf.transform.rotation.w = 1.0;
 
 	tf_broadcaster_ptr_->sendTransform(tf);
+
+}
+// ----------------------------------------------------------------------------------------------------
+// ---- global planner's tolerance setter -------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------
+static bool SetToleranceSrv(actor_global_plan::SetTolerance::Request& req, actor_global_plan::SetTolerance::Response& resp) {
+
+	nh_->setParam(*node_name_ + "/global_planner/default_tolerance", req.tolerance);
+	resp.success = true;
+	resp.error_message = "OK";
+	return (true);
 
 }

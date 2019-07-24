@@ -13,6 +13,6 @@
 	<rosparam command="load" file="$(find actor_global_plan)/config/inflation_layer.yaml" 	ns="/$(arg node_name)/gcm/inflation_layer" />
 	<rosparam command="load" file="$(find actor_global_plan)/config/static_map_layer.yaml" 	ns="/$(arg node_name)/gcm/static_layer" />
 
-	<node name="$(arg node_name)" pkg="actor_global_plan" type="actor_global_plan" args="$(arg srv_ns)" output="screen" />
+	<node name="$(arg node_name)" pkg="actor_global_plan" type="actor_global_plan" args="$(arg srv_ns) $(arg node_name)" output="screen" />
 
 </launch>
