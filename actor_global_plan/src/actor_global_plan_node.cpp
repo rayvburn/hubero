@@ -17,11 +17,9 @@
 #include <global_planner/planner_core.h>
 #include "actor_global_plan/GlobalPlannerMultiFrame.h"
 #include <costmap_2d/costmap_2d_ros.h>
-//#include <nav_msgs/OccupancyGrid.h>	// FIXME
 
 #include <std_srvs/Trigger.h> 				// Costmap status
 #include <actor_global_plan/GetCost.h> 		// GetCost service
-//#include <actor_global_plan/SetTolerance.h>	// SetTolerance service
 
 // ROS Kinetic
 #include <tf/transform_listener.h>
@@ -33,17 +31,14 @@
 
 // global planner ----------------------------------------------------------------------------
 static std::string* node_name_;
-//static ros::NodeHandle* nh_;
 static GlobalPlannerMultiFrame* glob_planner_ptr_;
 static std::vector<geometry_msgs::PoseStamped> path_;
 static ros::ServiceServer make_plan_srv_;
 static ros::ServiceServer get_cost_srv_;
 static ros::ServiceServer costmap_status_srv_;
-//static ros::ServiceServer set_tolerance_srv_;
 static bool MakePlanSrv(actor_global_plan::MakeNavPlanFrame::Request& req, actor_global_plan::MakeNavPlanFrame::Response& resp);
 static bool CostmapStatusSrv(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& resp);
 static bool GetCostSrv(actor_global_plan::GetCost::Request& req, actor_global_plan::GetCost::Response& resp);
-//static bool SetToleranceSrv(actor_global_plan::SetTolerance::Request& req, actor_global_plan::SetTolerance::Response& resp);
 
 // costmap -----------------------------------------------------------------------------------
 // NOTE: it was impossible to call costmap's constructor inside a separate class (outside a ROS node)
@@ -52,7 +47,6 @@ static Costmap2dMultiFrame* costmap_global_ptr_;
 static bool costmap_ready_ = false;	// flag set true when node becomes fully initialized; ugly way but Costmap2DROS
 									// has a member `initialized_` set as private, so there is no way to use it in
 									// a derived class (Costmap2dMultiFrame)
-//static void SendMapBlank();
 static void SetPlannerTolerance(ros::NodeHandle &nh, const std::string &srv_ns);
 
 // transform listener ------------------------------------------------------------------------
@@ -69,10 +63,9 @@ int main(int argc, char** argv) {
 	// node initialization
 	ros::init(argc, argv, "actor_global_plan_node");
 	ros::NodeHandle nh;
-//	nh_ = &nh;
 
 
-	// check if an extra (necessary) argument provided
+	// check if an extra (necessary) argument(s) provided
 	if ( argc < 2 ) {
 		ROS_ERROR("The namespace of actors' shared NodeHandle must be provided! Service needs it. See ''actor_global_plan/launch/actor_global_plan.launch'' for details");
 		return (-1);
@@ -117,7 +110,6 @@ int main(int argc, char** argv) {
 	// start plan making and cost getter services
 	make_plan_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner"), MakePlanSrv);
 	get_cost_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner/GetCost"), GetCostSrv);
-//	set_tolerance_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner/SetTolerance"), SetToleranceSrv);
 
 
 	// print some info
@@ -194,14 +186,6 @@ static bool GetCostSrv(actor_global_plan::GetCost::Request& req, actor_global_pl
 
 }
 // ----------------------------------------------------------------------------------------------------
-// ---- blank map sender ------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------------------------------
-//static void SendMapBlank() {
-//
-//	nav_msgs::OccupancyGrid map;
-//
-//}
-// ----------------------------------------------------------------------------------------------------
 // ---- blank transform sender ------------------------------------------------------------------------
 // ----------------------------------------------------------------------------------------------------
 static void SendTfBlank() {
@@ -229,31 +213,27 @@ static void SendTfBlank() {
 // ----------------------------------------------------------------------------------------------------
 // ---- global planner's tolerance setter -------------------------------------------------------------
 // ----------------------------------------------------------------------------------------------------
-//static bool SetToleranceSrv(actor_global_plan::SetTolerance::Request& req, actor_global_plan::SetTolerance::Response& resp) {
-//
-//	nh_->setParam(*node_name_ + "/global_planner/default_tolerance", req.tolerance);
-//	resp.success = true;
-//	resp.error_message = "OK";
-//	return (true);
-//
-//}
-
 /**
  * @brief Global planner's 'default_tolerance' parameter setter. This parameter determines
  * how much gap (at least) is preserved from the closest obstacle.
+ *
  * @details This operation is performed in here instead of actor::ros_interface::GlobalPlan class
  * to avoid checking if tolerance was set in each iteration (Gazebo plugin must wait until
  * global_plan_node gets fully initialized, so tolerance setup can't be done in the Actor
  * constructor - only during first "valid" OnUpdate action). "Valid" means here that ROS node
  * was already initialized.
+ *
  * @note If actors do not share all parameters then this function will do nothing. In such situation
  * one must use `http://wiki.ros.org/roslaunch/XML/param` tag in the .launch file or adjust
  * "gazebo_ros_people_sim/actor_global_plan/config/global_planner.yaml".
+ *
+ * @param nh: NodeHandle instance (in global namespace)
+ * @param srv_ns: namespace services are located in (parameters as well)
  */
 static void SetPlannerTolerance(ros::NodeHandle &nh, const std::string &srv_ns) {
 
 	// stores bounding type id (default value is invalid)
-	int bounding_type = 4;
+	int bounding_type = 100;
 
 	if ( !nh.getParam(srv_ns + "/actor/inflation/bounding_type", bounding_type) ) {
 		ROS_ERROR("'bounding_type' parameter could not be found, 'default_tolerance' planner parameter will not be set");
@@ -331,6 +311,7 @@ static void SetPlannerTolerance(ros::NodeHandle &nh, const std::string &srv_ns) 
 
 	}
 
+	// update parameter if `getParam()` was successful
 	nh.setParam(*node_name_ + "/global_planner/default_tolerance", tolerance);
 
 }
