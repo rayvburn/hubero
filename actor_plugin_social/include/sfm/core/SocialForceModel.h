@@ -301,6 +301,7 @@ private:
 	/// value oscillates from one side to the other
 	std::map<std::string, RelativeLocation> map_models_rel_locations_;
 
+	// TODO: save only 1/100 samples instead of 50 consecutive ones
 	ShiftRegister<ignition::math::Vector3d> sf_values_{50};
 
 	/// \brief Social Force Model parameters variables

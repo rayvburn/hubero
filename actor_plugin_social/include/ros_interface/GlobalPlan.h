@@ -182,7 +182,7 @@ private:
 	ros::ServiceClient srv_client_costmap_status_;
 
 	/**
-	 * @brief ROS Service client which connects to ActorGlobalPlanner/CostmapStatus server
+	 * @brief ROS Service client which connects to ActorGlobalPlanner/GetCost server
 	 */
 	ros::ServiceClient srv_client_get_cost_;
 

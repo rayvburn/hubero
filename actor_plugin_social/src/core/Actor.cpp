@@ -52,7 +52,7 @@ void Actor::initRosInterface() {
 
 	// run parameter loader
 	params_ptr_ = std::make_shared<actor::ros_interface::ParamLoader>();
-	params_ptr_->setActorParamsPrefix("actor");
+	params_ptr_->setActorParamsPrefix("actor");	// if this prefix will be changed then "actor_global_plan_node"'s SetPlannerTolerance function must be adjusted accordingly
 	params_ptr_->setSfmParamsPrefix("sfm");
 	params_ptr_->loadParameters(node_.getNodeHandlePtr());
 
