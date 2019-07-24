@@ -219,7 +219,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	// target manager initialization section
 	pose_world_ptr_ = std::make_shared<ignition::math::Pose3d>();
 	target_manager_ = Target(world_ptr_, pose_world_ptr_, params_ptr_);
-	target_manager_.initializeGlobalPlan(node_.getNodeHandlePtr(), 13, actor_ptr_->GetName());
+	target_manager_.initializeGlobalPlan(node_.getNodeHandlePtr(), 20, actor_ptr_->GetName());
 
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
