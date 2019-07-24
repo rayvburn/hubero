@@ -8255,6 +8255,7 @@
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
+
       <model name='actor1'>
         <pose frame=''>-2.5 -0.85 1 1.5708 -0 1.267</pose>
         <scale>1 1 1</scale>
@@ -8451,6 +8452,7 @@
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
+
       <model name='bookshelf_large'>
         <pose frame=''>5.86168 5.59914 0 0 -0 0</pose>
         <scale>1 1 1</scale>
@@ -9056,6 +9058,7 @@
         <projection_type>perspective</projection_type>
       </camera>
     </gui>
+
     <actor name='actor1'>
       <pose frame=''>1.45 -3.9 1 0 -0 0.78</pose>
       <skin>
@@ -10874,6 +10877,7 @@
         <enable_wind>0</enable_wind>
       </link>
     </actor>
+
     <model name='6_Cube_StorageE_1'>
       <link name='Wall_0'>
         <pose frame=''>0 0 0.01 0 -0 0</pose>
@@ -11908,6 +11912,85 @@
       <static>1</static>
       <pose frame=''>-4.79903 -2.52851 0 0 -0 1.5708</pose>
     </model>
+
+    <actor name="actor2">
+      <pose>1.45 -1.9 1.00 0 0 0.78</pose>
+      <skin>
+        <!-- <filename>walk.dae</filename>  -->
+        <filename>walk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+      <!--  Animations could be added within animation tag
+            The ones available by default are listed in
+            /usr/share/gazebo-8/media/models -->
+      <animation name="walk">
+        <filename>walk.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand">
+        <filename>stand.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sit_down">
+        <filename>sit_down.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sitting">
+        <filename>sitting.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="run">
+        <filename>run.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_a">
+        <filename>talk_a.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_b">
+        <filename>talk_b.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+                        
+
+      <plugin name="actor2_plugin" filename="libactor_plugin_social.so">
+        <target>0.25 5.5 1.2138</target>
+        <animation_factor>5.1</animation_factor>
+        <!-- Usage: Modify the set of models that the vector field should
+             ignore when moving the actor -->
+        <ignore_obstacles>
+          <model>cafe</model>
+          <model>ground_plane</model>
+        </ignore_obstacles>
+      </plugin>
+    </actor>
+
 
     <!-- plugin whose executable is called to create a map in .pgm format -->
     <plugin filename="libcollision_map_creator.so" name="collision_map_creator"/>
