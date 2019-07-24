@@ -21,16 +21,16 @@ find_package(catkin REQUIRED COMPONENTS
 ## service section ##
 
 add_service_files(
-  FILES
-  MakeNavPlanFrame.srv
-  GetCost.srv
-  SetTolerance.srv
+	FILES
+	MakeNavPlanFrame.srv
+	GetCost.srv
+	#SetTolerance.srv
 )
 
- generate_messages(
-   DEPENDENCIES
-   std_msgs
-   geometry_msgs
+generate_messages(
+	DEPENDENCIES
+	std_msgs
+	geometry_msgs
 )
 
 #####################
