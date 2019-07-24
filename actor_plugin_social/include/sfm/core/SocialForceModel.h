@@ -302,7 +302,7 @@ private:
 	std::map<std::string, RelativeLocation> map_models_rel_locations_;
 
 	// TODO: save only 1/100 samples instead of 50 consecutive ones
-	ShiftRegister<ignition::math::Vector3d> sf_values_{50};
+	ShiftRegister<ignition::math::Vector3d> sf_values_{25, 15};
 
 	/// \brief Social Force Model parameters variables
 	float relaxation_time_;
