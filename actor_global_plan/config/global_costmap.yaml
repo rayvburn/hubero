@@ -4,7 +4,7 @@ plugins:
 
 # ---- Coordinate frame and tf
 global_frame: "world"
-robot_base_frame: "map"      # NOTE: it must be valid at the startup, otherwise node will never start global planner srv
+robot_base_frame: "map"         # NOTE: it must be valid at the startup, otherwise node will never start global planner srv
 transform_tolerance: 1.0        # def 0.5
 
 # ---- Rate
@@ -19,7 +19,6 @@ static_map: true
 publish_potential: true
 
 # ---- Footprint
-# robot's not circular
-footprint: [[0.3, -0.15], [0.3, +0.15], [-0.3, +0.15], [-0.3, -0.15]] 
+robot_radius: 1.9                                                       # robot circular (default option, see `actor_global_plan_node` code for details)
+#footprint: [[0.3, -0.15], [0.3, +0.15], [-0.3, +0.15], [-0.3, -0.15]]  # robot's not circular
 footprint_padding: 0.05
-#default_tolerance: 0.20   # X cm of gap allowed

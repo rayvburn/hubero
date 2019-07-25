@@ -24,7 +24,6 @@ add_service_files(
 	FILES
 	MakeNavPlanFrame.srv
 	GetCost.srv
-	#SetTolerance.srv
 )
 
 generate_messages(

@@ -47,7 +47,14 @@ static Costmap2dMultiFrame* costmap_global_ptr_;
 static bool costmap_ready_ = false;	// flag set true when node becomes fully initialized; ugly way but Costmap2DROS
 									// has a member `initialized_` set as private, so there is no way to use it in
 									// a derived class (Costmap2dMultiFrame)
-static void SetPlannerTolerance(ros::NodeHandle &nh, const std::string &srv_ns);
+
+// NOTE: Firstly the footprint size was changed but this parameter (`footprint` / `robot_radius`)
+// has only graphical interpretation (plan still strikes too close to the obstacle even if footprint
+// was set very big.
+// So as a hack the `inflation_radius` is modified so area close to obstacles is marked as `no-go`.
+// This is marked as FIXME, but must be checked at least.
+// NOTE: with a single actor in the world everything is the same.
+static void SetInflationRadius(ros::NodeHandle &nh, const std::string &srv_ns);
 
 // transform listener ------------------------------------------------------------------------
 static tf::TransformListener* tf_listener_ptr_;
@@ -94,9 +101,9 @@ int main(int argc, char** argv) {
 	tf_broadcaster_ptr_ = &tf_broadcaster;
 	SendTfBlank(); // this is invoked just in case if `tf_static_publisher` did not start up before costmap initialization process
 
-
 	// initialize global costmap
 	// NOTE: costmap 2d takes tf2_ros::Buffer in ROS Melodic, in Kinetic - tf::TransformListener
+	SetInflationRadius(nh, srv_ns); // NOTE: it's safer to call this before costmap ctor
 	Costmap2dMultiFrame costmap_global(std::string("gcm"), *tf_listener_ptr_); // ("actor_global_costmap", tf_listener);
 	costmap_global_ptr_ = &costmap_global;
 
@@ -104,7 +111,7 @@ int main(int argc, char** argv) {
 	// initialize global planner
 	GlobalPlannerMultiFrame global_planner(std::string("global_planner"), &costmap_global, frame);
 	glob_planner_ptr_ = &global_planner;
-	SetPlannerTolerance(nh, srv_ns);
+
 
 
 	// start plan making and cost getter services
@@ -137,12 +144,6 @@ static bool MakePlanSrv(actor_global_plan::MakeNavPlanFrame::Request& req, actor
 		resp.plan_found = false;
 		return (false);
 	}
-
-	// debugging request
-//	std::cout << "\tstart_pos: \n" << req.start.pose.position << "\n\tgoal_pos: \n" << req.goal.pose.position << std::endl;
-//	std::cout << "\tpath_size initial: " << path_.size() << std::endl;
-//	std::cout << "\tcontrolled_frame: " << req.controlled_frame << std::endl;
-//	std::cout << "\n\n" << std::endl;
 
 	// if global planner is not busy, let's try to find a path for a proper frame
 	glob_planner_ptr_->setFrameId(req.controlled_frame);
@@ -211,26 +212,23 @@ static void SendTfBlank() {
 
 }
 // ----------------------------------------------------------------------------------------------------
-// ---- global planner's tolerance setter -------------------------------------------------------------
+// ---- costmap's `inflation_radius` setter -------------------------------------------------------------
 // ----------------------------------------------------------------------------------------------------
 /**
- * @brief Global planner's 'default_tolerance' parameter setter. This parameter determines
+ * @brief Costmap2d's 'inflation_radius' parameter setter. This parameter determines
  * how much gap (at least) is preserved from the closest obstacle.
  *
  * @details This operation is performed in here instead of actor::ros_interface::GlobalPlan class
- * to avoid checking if tolerance was set in each iteration (Gazebo plugin must wait until
+ * to avoid checking if `inflation_radius` was set in each iteration (Gazebo plugin must wait until
  * global_plan_node gets fully initialized, so tolerance setup can't be done in the Actor
- * constructor - only during first "valid" OnUpdate action). "Valid" means here that ROS node
+ * constructor - only during the first "valid" OnUpdate action). "Valid" means here that ROS node
  * was already initialized.
  *
- * @note If actors do not share all parameters then this function will do nothing. In such situation
- * one must use `http://wiki.ros.org/roslaunch/XML/param` tag in the .launch file or adjust
- * "gazebo_ros_people_sim/actor_global_plan/config/global_planner.yaml".
  *
  * @param nh: NodeHandle instance (in global namespace)
  * @param srv_ns: namespace services are located in (parameters as well)
  */
-static void SetPlannerTolerance(ros::NodeHandle &nh, const std::string &srv_ns) {
+static void SetInflationRadius(ros::NodeHandle &nh, const std::string &srv_ns) {
 
 	// stores bounding type id (default value is invalid)
 	int bounding_type = 100;
@@ -241,7 +239,7 @@ static void SetPlannerTolerance(ros::NodeHandle &nh, const std::string &srv_ns) 
 	}
 
 	// stores tolerance parameter (default value is invalid)
-	float tolerance = -1.0f;
+	float inflation = -1.0f;
 
 	// helper variables (to not allocate them inside switch statement)
 	double size   = -1.0;
@@ -269,7 +267,7 @@ static void SetPlannerTolerance(ros::NodeHandle &nh, const std::string &srv_ns) 
 		size_x = static_cast<double>( sublist["x_half"] );
 		size_y = static_cast<double>( sublist["y_half"] );
 		size = std::max(size_x, size_y);
-		tolerance = size * (std::sqrt(2));
+		inflation = size * (std::sqrt(2));
 		break;
 
 	/* ACTOR_BOUNDING_CIRCLE */
@@ -279,7 +277,7 @@ static void SetPlannerTolerance(ros::NodeHandle &nh, const std::string &srv_ns) 
 			ROS_ERROR("BoundingCircle's size could not be found");
 			return;
 		}
-		tolerance = size;
+		inflation = size;
 		break;
 
 	/* ACTOR_BOUNDING_ELLIPSE */
@@ -294,13 +292,13 @@ static void SetPlannerTolerance(ros::NodeHandle &nh, const std::string &srv_ns) 
 		size_x = static_cast<double>( sublist["semi_major"] );
 		size_y = static_cast<double>( sublist["semi_minor"] );
 		size = std::max(size_x, size_y);
-		tolerance = size;
+		inflation = size;
 		break;
 
 	/* ACTOR_NO_BOUNDING */
 	case(3):
 
-		tolerance = 0.01;
+		inflation = 0.01f;
 		break;
 
 	/* UNKNOWN id */
@@ -312,6 +310,7 @@ static void SetPlannerTolerance(ros::NodeHandle &nh, const std::string &srv_ns) 
 	}
 
 	// update parameter if `getParam()` was successful
-	nh.setParam(*node_name_ + "/global_planner/default_tolerance", tolerance);
+	nh.setParam(*node_name_ + "/gcm/inflation_layer/inflation_radius", inflation);
+	nh.setParam(*node_name_ + "/gcm/robot_radius", inflation);
 
 }
