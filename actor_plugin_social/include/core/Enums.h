@@ -10,8 +10,11 @@
 
 namespace actor {
 
-/// \brief Gazebo model ID for ActorPlugin obejcts
+/// \brief Gazebo model ID for ActorPlugin objects
 static constexpr unsigned int ACTOR_MODEL_TYPE_ID = 32771;
+
+/// \brief Gazebo model ID for static obstacle objects
+static constexpr unsigned int STATIC_OBSTACLE_MODEL_TYPE_ID = 3;
 
 // -------------------------
 
