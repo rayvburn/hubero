@@ -197,6 +197,12 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 //		std::cout << "START DEBUGGING\n\t" << SfmDebugGetCurrentActorName() << "\t\t" << SfmDebugGetCurrentObjectName() << std::endl;
 //		std::cout << "\tinitial actor_pose: " << _actor_pose << "\tmodel_pose: " << model_ptr->WorldPose() << std::endl;
 
+		if ( is_an_actor ) {
+			// FIXME: just catching breakpoint with debugger
+			int abc = 0;
+			abc++;
+		}
+
 		// calculate closest points
 		switch(inflation_type_) {
 
@@ -386,7 +392,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 //		}
 
 		if ( f_alpha_beta.Length() > 1e-06 ) {
-			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << std::endl;
+			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
 		}
 
 	} // for

@@ -184,6 +184,9 @@ bool Target::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 	// FIXME: watch out for a situation in which actor's position is not in map bounds!
 	// THIS IN FACT SHOULD NOT EVEN HAPPEN after some errors will be eliminated
 
+	// FIXME: dynamic reconfiguration - any change hangs `global_planner_.makePlan` see `generatePathPlan`
+	// check if costmap ready or sth? or check status of the error message
+
 	// check whether global costmap has already initialized so global plan can be generated
 	if ( !global_planner_.isCostmapInitialized() ) {
 		// indicate that target can not be found now
