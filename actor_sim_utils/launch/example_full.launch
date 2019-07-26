@@ -48,7 +48,7 @@
 
     <!-- =============================== start rViz ============================================ -->
     <group if="$(arg rviz)"> 
-    	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find actor_sim_utils)/rviz/actor_groups_map.rviz"/>
+    	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find actor_sim_utils)/rviz/actor_groups_map_costmap.rviz"/>
     </group> 
 
 	<!-- ========================= load parameters ========================================= -->
