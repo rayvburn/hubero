@@ -158,6 +158,13 @@ public:
     bool isCheckpointReached() const;
 
     /**
+     * @brief Checks angle between actor's direction and checkpoint location.
+     * @return If the angle is bigger than threshold then returns true (checkpoint
+     * considered `abandonable` and a next one to be chosen).
+     */
+    bool isCheckpointAbandonable() const;
+
+    /**
      * @brief Returns current checkpoint
      * @return Checkpoint
      */

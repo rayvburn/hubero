@@ -450,6 +450,28 @@ bool Target::isCheckpointReached() const {
 }
 
 // ------------------------------------------------------------------- //
+
+// FIXME: this does not need to be called in each iteration (twice per second is enough)
+bool Target::isCheckpointAbandonable() const {
+
+	// NOTE: conversion to global coordinate system
+	ignition::math::Angle actor_glob_orient(pose_world_ptr_->Rot().Yaw() - IGN_PI_2);
+	actor_glob_orient.Normalize();
+
+	ignition::math::Vector3d actor_checkpoint_v = pose_world_ptr_->Pos() - target_checkpoint_;
+	ignition::math::Angle actor_checkpoint_ang(std::atan2(actor_checkpoint_v.Y(), actor_checkpoint_v.X()));
+
+	ignition::math::Angle angle_diff = actor_glob_orient - actor_checkpoint_ang;
+	angle_diff.Normalize();
+
+	if ( std::fabs(angle_diff.Radian()) > IGN_DTOR(70) && std::fabs(angle_diff.Radian()) <= IGN_DTOR(90) ) {
+		return (true);
+	}
+	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
 ignition::math::Vector3d Target::getTarget() const {
 	return (target_);
 }
