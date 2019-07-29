@@ -99,6 +99,7 @@ To add new models to Gazebo - edit `/usr/share/gazebo-8/setup.sh` as shown below
 	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib/x86_64-linux-gnu/gazebo-8/plugins
 	export OGRE_RESOURCE_PATH=/usr/lib/x86_64-linux-gnu/OGRE-1.9.0
 
+Details (local): /media/rayvburn/5f5f31c2-2827-464f-aa2e-da6a25d79297/home/rayvburn/PC_Setup/GazeboModelsConfiguration.txt (Ubuntu 18 partition)
 
 ***
 
