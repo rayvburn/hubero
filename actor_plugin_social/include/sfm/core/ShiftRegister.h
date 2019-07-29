@@ -32,7 +32,7 @@ public:
 	 * 0 will force to save all values.
 	 */
 	ShiftRegister(const size_t &length, const uint64_t &latch):
-		capacity_(length), counter_(0), latch_val_(latch), to_avg_(false) {}
+		capacity_(length), counter_(latch), latch_val_(latch), to_avg_(false) {}
 
 	/**
 	 * @brief Checks current size of the register.
