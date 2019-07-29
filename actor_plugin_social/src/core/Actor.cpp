@@ -219,7 +219,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	// target manager initialization section
 	pose_world_ptr_ = std::make_shared<ignition::math::Pose3d>();
 	target_manager_ = Target(world_ptr_, pose_world_ptr_, params_ptr_);
-	target_manager_.initializeGlobalPlan(node_.getNodeHandlePtr(), 20, actor_ptr_->GetName());
+	target_manager_.initializeGlobalPlan(node_.getNodeHandlePtr(), 40, actor_ptr_->GetName());
 
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -507,6 +507,11 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 		if ( !target_manager_.generatePathPlan(target_manager_.getTarget()) ) {
 			target_manager_.abandonTarget();
 		}
+	}
+
+	// check whether a current checkpoint is abandonable
+	if ( target_manager_.isCheckpointAbandonable() ) {
+		target_manager_.updateCheckpoint();
 	}
 
 	ignition::math::Vector3d sf = sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_lin_,
