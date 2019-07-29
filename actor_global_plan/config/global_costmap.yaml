@@ -19,6 +19,6 @@ static_map: true
 publish_potential: true
 
 # ---- Footprint
-robot_radius: 1.9                                                       # robot circular (default option, see `actor_global_plan_node` code for details)
+robot_radius: 0.1                                                       # robot circular (default option, see `actor_global_plan_node` code for details)
 #footprint: [[0.3, -0.15], [0.3, +0.15], [-0.3, +0.15], [-0.3, -0.15]]  # robot's not circular
 footprint_padding: 0.05
