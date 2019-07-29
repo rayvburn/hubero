@@ -107,10 +107,6 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		const double &dt)
 {
 
-#ifdef DEBUG_LOG_ALL_INTERACTIONS
-	std::stringstream log_msg; // debug
-#endif
-
 	closest_points_.clear();
 
 	( SfmGetPrintData() ) ? (print_info = true) : (0);
@@ -151,6 +147,12 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 	 * velocity and acceleration in the gazebo::physics::WorldPtr */
 	bool is_an_actor = false;
 	gazebo::physics::ModelPtr model_ptr;
+
+	/* store distance vector (connecting actor's and obstacle's
+	 * `closest` points) and its length */
+	ignition::math::Vector3d distance_v;
+	double distance = 0.0;
+
 
 	// iterate over all world's objects
 	for ( unsigned int i = 0; i < world_ptr->ModelCount(); i++ ) {
@@ -292,15 +294,13 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		// based on a parameter and an object type - calculate a force from a static object properly
 		if ( is_an_actor || interaction_static_type_ == INTERACTION_REPULSIVE_EVASIVE ) {
 
-//			std::cout << "\tf_alpha_beta - NON STATIC" << std::endl;
 			// calculate interaction force
-			f_alpha_beta = computeInteractionForce(	actor_closest_to_model_pose, actor_velocity,
+			std::tie(f_alpha_beta, distance_v, distance) = computeInteractionForce(	actor_closest_to_model_pose, actor_velocity,
 													model_closest_point_pose, model_vel, is_an_actor);
 
 		} else {
 
-//			std::cout << "\tf_alpha_beta - STATIC" << std::endl;
-			f_alpha_beta = computeForceStaticObstacle(actor_closest_to_model_pose, actor_velocity,
+			std::tie(f_alpha_beta, distance_v, distance) = computeForceStaticObstacle(actor_closest_to_model_pose, actor_velocity,
 													  model_closest_point_pose, dt);
 
 		}
@@ -360,64 +360,26 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 //		}
 		 */
 
-		/* Kind of a hack connected with very strong repulsion when actors are close to each other
-		 * whereas in bigger distances the force is quite weak;
-		 * Truncate very big forces from single objects */
-//		if ( is_an_actor ) {
-//			f_alpha_beta *= 0.50;
-//		} else {
-//			f_alpha_beta *= 1.75;
-//		}
-
 
 
 		// extra factor (applicable only for dynamic objects)
 		if ( is_an_actor && f_alpha_beta.Length() > 1e-06 ) {
-			// TODO: d_alpha_beta (equality)
-			double arg = (actor_closest_to_model_pose - model_closest_point_pose).Pos().Length();
-			f_alpha_beta *= 4.0 * std::exp(-2.0 * arg);
+			f_alpha_beta *= 4.0 * std::exp(-2.0 * distance);
 		}
 
 
 
-//		// truncate if force is too big -> causes immediate speed-up
-//		// or `sliding` when rotation smoothing is disabled (getNewPose())
-//		if ( f_alpha_beta.Length() > 1000.0 ) {
-//			f_alpha_beta = f_alpha_beta.Normalized() * 1000.0;
-//		}
-
-
-
-		// save distance to the closest obstacle
-		double dist_curr = (actor_closest_to_model_pose - model_closest_point_pose).Pos().Length();
-		if ( dist_curr < dist_closest ) {
-			dist_closest = dist_curr;
+		// save distance to the closest obstacle (if smaller than the one considered closest so far)
+		if ( distance < dist_closest ) {
+			dist_closest = distance;
 		}
 
 
 
 		// sum all forces
 		f_interaction_total += f_alpha_beta;
-//		if ( print_info ) {
-//			std::cout << " model's name: " << model_ptr->GetName() << "  pose: " << model_ptr->WorldPose() << "  lin vel: " << model_vel << "  force: " << f_alpha_beta << std::endl;
-//		}
 
-#ifdef DEBUG_LOG_ALL_INTERACTIONS
-		if ( SfmGetPrintData() ) {
-		log_msg << "\t" << model_ptr->GetName();
-		log_msg << "\t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\n";
-		}
-#endif
-
-		// check that vase_large bug
-//		if ( model_ptr->GetName() == "vase_large_3_1" ) {
-//			if ( f_alpha_beta.Length() > 1e-06 ) {
-//				std::cout << "\tvase_large_3_1 repulsion: " << f_alpha_beta << "\tlen: " << f_alpha_beta.Length() << std::endl << std::endl;
-//				int d = 0;
-//				d++;
-//			}
-//		}
-
+		// just debugging
 		if ( f_alpha_beta.Length() > 1e-06 ) {
 			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << "\tdist: " << (actor_closest_to_model_pose - model_closest_point_pose).Pos().Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
 		}
@@ -427,20 +389,6 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 	std::cout << "\n\t\tINTERNAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha << std::endl;
 	std::cout << "\t\tTOTAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total << std::endl;
 	std::cout << "**************************************************************************\n\n";
-
-#ifdef DEBUG_LOG_ALL_INTERACTIONS
-	// TODO:LOG MSG PRINTS WRONG DATA? VASE_LARGE BUG...s
-	if ( SfmGetPrintData() ) {
-	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
-		std::cout << "**************************************************************************\n";
-		std::cout << "LOG_MESSAGE - ALL OBJECTS ----- " << SfmDebugGetCurrentActorName() << std::endl;
-		std::cout << "\tInternal: " << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha << std::endl;
-		std::cout << log_msg.str() << std::endl;
-		std::cout << "\tTOTAL FORCE: " << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total << std::endl;
-		std::cout << "**************************************************************************\n\n\n";
-	}
-	}
-#endif
 
 	if ( print_info ) {
 		std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
@@ -482,12 +430,19 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		}
 
 	} else if ( f_total.Length() <= force_min_ ) {
-//	} else if ( f_total.Length() <= force_min_sf ) {
 
+		// NOTE: this algorithm in fact allows the total force to stay
+		// below the threshold value (force_min_).
+		// Aim is to allow higher maneuverability
+		// when there is some obstacle nearby.
+		// Higher maneuverability is achieved because extension
+		// of the force vector to the force_min length
+		// creates additional `inertia` when actor got into
+		// close-to-zero potential zone. The inertia pushes
+		// him to the place when potential is far away from 0.
 		force_min_sf = std::exp(0.75 * dist_closest);
 		(force_min_sf > 1.00) ? (force_min_sf = 1.00) : (0);
 		sf_values_.update(f_total);
-//		f_total = sf_values_.getAverage().Normalize() * force_min_;
 		f_total = sf_values_.getAverage().Normalize() * force_min_sf * force_min_;
 
 		if ( print_info ) {
@@ -760,8 +715,9 @@ ignition::math::Vector3d SocialForceModel::computeInternalForce(const ignition::
 
 /// \return F_alpha_beta - repulsive force created by `beta` object
 /// \return d_alpha_beta - distance vector pointing from `alpha` to `beta`
-/// \return theta_alpha_beta - angle
-ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_pose,
+/// \return theta_alpha_beta - angle	////// ? is this still needed?
+std::tuple<ignition::math::Vector3d, ignition::math::Vector3d, double>
+SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_pose,
 		const ignition::math::Vector3d &actor_vel, const ignition::math::Pose3d &object_pose,
 		const ignition::math::Vector3d &object_vel, const bool &is_actor)
 {
@@ -770,7 +726,6 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	// already taken into consideration -
 	// vector between objects positions
 	ignition::math::Vector3d d_alpha_beta = object_pose.Pos() - actor_pose.Pos();
-
 
 #ifdef DEBUG_OSCILLATIONS
 	if ( SfmDebugGetCurrentObjectName() == "table1" && SfmDebugGetCurrentActorName() == "actor1" ) {
@@ -781,6 +736,8 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 
 	// TODO: adjust Z according to stance?
 	d_alpha_beta.Z(0.0); // it is assumed that all objects are in the actor's plane
+
+	double d_alpha_beta_length = d_alpha_beta.Length(); // Length calculates vector's distance with each call
 
 	/* actor's normal (based on velocity vector, whose direction could
 	 * be also acquired from his yaw angle */
@@ -801,16 +758,16 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	ignition::math::Vector3d f_alpha_beta(0.0, 0.0, 0.0);
 
 	// check length to other object (beta)
-	if ( d_alpha_beta.Length() > 7.5 ) {
+	if ( d_alpha_beta_length > 7.5 ) {
 
 		// TODO: if no objects nearby the threshold should be increased?
 		#ifdef DEBUG_INTERACTION_FORCE
 		if ( print_info ) {
-			std::cout << "\t OBJECT TOO FAR AWAY, ZEROING FORCE! \t d_alpha_beta_length: " << _d_alpha_beta.Length();
+			std::cout << "\t OBJECT TOO FAR AWAY, ZEROING FORCE! \t d_alpha_beta_length: " << d_alpha_beta_length;
 			std::cout << std::endl;
 		}
 		#endif
-		return (f_alpha_beta);
+		return (std::make_tuple(f_alpha_beta, d_alpha_beta, d_alpha_beta_length));
 
 	}
 
@@ -848,14 +805,14 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	if ( isOutOfFOV(beta_angle_rel) ) {
 
 		// exp function used: e^(-0.5*x)
-		total_force_factor = std::exp( -0.5 * d_alpha_beta.Length() );
+		total_force_factor = std::exp( -0.5 * d_alpha_beta_length );
 		#ifdef DEBUG_FORCE_EACH_OBJECT
 		if ( SfmGetPrintData() ) {
 			#ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 			std::cout << SfmDebugGetCurrentActorName();
 			#endif
 			std::cout << "\nDYNAMIC OBSTACLE (*) --- OUT OF FOV!" << std::endl;
-			std::cout << "\t" << SfmDebugGetCurrentObjectName() << " is BEHIND, dist: " << d_alpha_beta.Length() << ",   force will be multiplied by: " << total_force_factor << std::endl;
+			std::cout << "\t" << SfmDebugGetCurrentObjectName() << " is BEHIND, dist: " << d_alpha_beta_length << ",   force will be multiplied by: " << total_force_factor << std::endl;
 		}
 		#endif
 
@@ -873,13 +830,13 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 		}
 		#endif
 
-		return f_alpha_beta;
+		return (std::make_tuple(f_alpha_beta, d_alpha_beta, d_alpha_beta_length));
 
 	}
 
 	/* angle between velocities of alpha and beta is needed for Fuzzifier */
 	double velocities_angle = computeThetaAlphaBetaAngle(actor_vel, actor_yaw, object_vel, object_yaw, d_alpha_beta, is_actor);
-	fuzz_.setDistanceVectorLength(d_alpha_beta.Length());
+	fuzz_.setDistanceVectorLength(d_alpha_beta_length);
 	fuzz_.setToObjectDirectionRelativeAngle(beta_angle_rel);
 	fuzz_.setVelocitiesRelativeAngle(velocities_angle);
 	fuzz_.setOtherObjectVelocity(object_vel);
@@ -907,8 +864,8 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 	}
 
 	ignition::math::Vector3d p_alpha = computePerpendicularToNormal(n_alpha, beta_rel_location); 	// actor's perpendicular (based on velocity vector)
-	double exp_normal = ( (-Bn_ * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn_ * d_alpha_beta.Length();
-	double exp_perpendicular = ( (-Bp_ * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp_ * d_alpha_beta.Length();
+	double exp_normal = ( (-Bn_ * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn_ * d_alpha_beta_length;
+	double exp_perpendicular = ( (-Bp_ * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp_ * d_alpha_beta_length;
 	f_alpha_beta = n_alpha * An_ * exp(exp_normal) + p_alpha * Ap_ * exp(exp_perpendicular);
 
 	// weaken the interaction force when beta is behind alpha
@@ -926,7 +883,7 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 		std::cout << "\t" << SfmDebugGetCurrentObjectName() << ": ";
 		std::cout << "\tv_rel: " << v_rel << std::endl;
 		std::cout << "\tn_alpha: " << n_alpha;
-		std::cout << "\texp_n: " << exp_normal << "\ttheta_alpha_beta: " << theta_alpha_beta << "\td_alpha_beta_len: " << d_alpha_beta.Length() << std::endl;
+		std::cout << "\texp_n: " << exp_normal << "\ttheta_alpha_beta: " << theta_alpha_beta << "\td_alpha_beta_len: " << d_alpha_beta_length << std::endl;
 		std::cout << "\tp_alpha: " << p_alpha;
 		std::cout << "\texp_p: " << exp_perpendicular;
 
@@ -965,8 +922,8 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 #endif
 
 
-	return (f_alpha_beta);
-
+//	return (f_alpha_beta);
+	return (std::make_tuple(f_alpha_beta, d_alpha_beta, d_alpha_beta_length));
 
 	/* Algorithm INPUTS are:
 	 * - dt
@@ -994,49 +951,51 @@ ignition::math::Vector3d SocialForceModel::computeInteractionForce(const ignitio
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d SocialForceModel::computeForceStaticObstacle(const ignition::math::Pose3d &actor_pose,
+std::tuple<ignition::math::Vector3d, ignition::math::Vector3d, double>
+SocialForceModel::computeForceStaticObstacle(const ignition::math::Pose3d &actor_pose,
 		const ignition::math::Vector3d &actor_velocity, const ignition::math::Pose3d &object_pose,
 		const double &dt)
 {
 
-	/* elliptic formulation - `14 article - equations (3) and (4) */
+	/* elliptical formulation - `14 article - equations (3) and (4) */
 
 	// distance vector
 	ignition::math::Vector3d d_alpha_i = actor_pose.Pos() - object_pose.Pos(); // proper direction
 	d_alpha_i.Z(0.00); // planar
+	double d_alpha_i_len = d_alpha_i.Length();
 
 	// acceleration
 	ignition::math::Vector3d y_alpha_i = actor_velocity * dt;
 	y_alpha_i.Z(0.00); // planar
 
 	// semi-minor axis of the elliptic formulation
-	double w_alpha_i = 0.5 * sqrt( std::pow((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()),2) -
+	double w_alpha_i = 0.5 * sqrt( std::pow((d_alpha_i_len + (d_alpha_i - y_alpha_i).Length()),2) -
 								   std::pow(y_alpha_i.Length(), 2) );
 
 	// division by ~0 prevention - returning zeros vector instead of NaNs
-	if ( (std::fabs(w_alpha_i) < 1e-08) || (std::isnan(w_alpha_i)) || (d_alpha_i.Length() < 1e-08) ) {
+	if ( (std::fabs(w_alpha_i) < 1e-08) || (std::isnan(w_alpha_i)) || (d_alpha_i_len < 1e-08) ) {
 
 		#ifdef DEBUG_FORCE_EACH_OBJECT
 		if ( SfmGetPrintData() ) {
 			std::cout << "\n-----------------------\n" << SfmDebugGetCurrentActorName();
 			std::cout << "\nSTATIC OBSTACLE ============= ERROR ===================" << std::endl;
 			std::cout << "\t" << SfmDebugGetCurrentObjectName() << ": ";
-			std::cout << "\td_alpha_i: " << d_alpha_i << " \tlen: " << d_alpha_i.Length() << std::endl;
+			std::cout << "\td_alpha_i: " << d_alpha_i << " \tlen: " << d_alpha_i_len << std::endl;
 			std::cout << "\ty_alpha_i: " << y_alpha_i;
 			std::cout << "\tw_alpha_i: " << w_alpha_i << std::endl;
 			std::cout << "\tFAIL w_alpha_i small: " << (std::fabs(w_alpha_i) < 1e-08) << std::endl;
 			std::cout << "\tFAIL w_alpha_i NaN: " << (std::isnan(w_alpha_i)) << std::endl;
-			std::cout << "\td_alpha_i Length FAIL: " << (d_alpha_i.Length() < 1e-08) << std::endl;
+			std::cout << "\td_alpha_i Length FAIL: " << (d_alpha_i_len < 1e-08) << std::endl;
 			std::cout << "\tf_alpha_i: " << ignition::math::Vector3d(0.0, 0.0, 0.0) << std::endl;
 		}
 		#endif
 
-		return ( ignition::math::Vector3d(0.0, 0.0, 0.0) );
+		return (std::make_tuple(ignition::math::Vector3d(), d_alpha_i, d_alpha_i_len));
 	}
 
 	// ~force (acceleration) calculation
 	ignition::math::Vector3d f_alpha_i;
-	f_alpha_i = this->Aw_ * exp(-w_alpha_i/this->Bw_) * ((d_alpha_i.Length() + (d_alpha_i - y_alpha_i).Length()) /
+	f_alpha_i = this->Aw_ * exp(-w_alpha_i/this->Bw_) * ((d_alpha_i_len + (d_alpha_i - y_alpha_i).Length()) /
 			    2*w_alpha_i) * 0.5 * (d_alpha_i.Normalized() + (d_alpha_i - y_alpha_i).Normalized());
 
 	// FIXME: temp mass factor, make it a parameter
@@ -1052,7 +1011,7 @@ ignition::math::Vector3d SocialForceModel::computeForceStaticObstacle(const igni
 	#endif
 		std::cout << "\nSTATIC OBSTACLE" << std::endl;
 		std::cout << "\t" << SfmDebugGetCurrentObjectName() << ": ";
-		std::cout << "\td_alpha_i: " << d_alpha_i << " \tlen: " << d_alpha_i.Length() << std::endl;
+		std::cout << "\td_alpha_i: " << d_alpha_i << " \tlen: " << d_alpha_i_len << std::endl;
 		std::cout << "\ty_alpha_i: " << y_alpha_i;
 		std::cout << "\tw_alpha_i: " << w_alpha_i << std::endl;
 		std::cout << "\tf_alpha_i: " << f_alpha_i * interaction_force_factor_ << std::endl;
@@ -1062,7 +1021,8 @@ ignition::math::Vector3d SocialForceModel::computeForceStaticObstacle(const igni
 	}
 #endif
 
-	return (f_alpha_i);
+//	return (f_alpha_i);
+	return (std::make_tuple(f_alpha_i, d_alpha_i, d_alpha_i_len));
 
 }
 

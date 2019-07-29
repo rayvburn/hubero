@@ -186,15 +186,21 @@ private:
 
 	/// \brief Helper function which calculates interaction
 	/// force which another object (static or dynamic)
-	/// exerts on the actor
-	ignition::math::Vector3d computeInteractionForce(const ignition::math::Pose3d &actor_pose,
+	/// exerts on the actor (tuple's first element).
+	/// Additionally, a distance vector to the currently
+	/// considered obstacle is returned as the tuple's second
+	/// element. Third element is a length of that vector.
+	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d, double> computeInteractionForce(const ignition::math::Pose3d &actor_pose,
 			const ignition::math::Vector3d &actor_vel, const ignition::math::Pose3d &object_pose,
 			const ignition::math::Vector3d &object_vel, const bool &is_actor);
 
 	/// \brief Helper function which computes a repulsive
 	/// force which static obstacle exerts on the actor;
-	/// fits 2014 configuration and used only in this case
-	ignition::math::Vector3d computeForceStaticObstacle(const ignition::math::Pose3d &actor_pose,
+	/// fits 2014 configuration and used only in this case.
+	/// \return 1st element - force vector
+	/// 		2nd element - distance vector (between actor and obstacle)
+	/// 		3rd element - distance vector's length
+	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d, double> computeForceStaticObstacle(const ignition::math::Pose3d &actor_pose,
 			const ignition::math::Vector3d &actor_velocity, const ignition::math::Pose3d &object_pose,
 			const double &dt);
 
