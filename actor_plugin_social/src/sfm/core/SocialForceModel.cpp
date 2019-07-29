@@ -795,9 +795,9 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 	double beta_angle_rel = 0.0;
 	std::tie(beta_rel_location, beta_angle_rel) = computeObjectRelativeLocation(actor_yaw, d_alpha_beta);
 
-	/* total force factor is used to make objects'
-	 * that are behind actor interactions weaker */
-	double total_force_factor = 1.00;
+	/* FOV factor is used to make interaction of objects
+	 * that are behind the actor weaker */
+	double fov_factor = 1.00;
 
 	/* check whether beta is within the field of view
 	 * to determine proper factor for force in case
@@ -805,14 +805,14 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 	if ( isOutOfFOV(beta_angle_rel) ) {
 
 		// exp function used: e^(-0.5*x)
-		total_force_factor = std::exp( -0.5 * d_alpha_beta_length );
+		fov_factor = std::exp( -0.5 * d_alpha_beta_length );
 		#ifdef DEBUG_FORCE_EACH_OBJECT
 		if ( SfmGetPrintData() ) {
 			#ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 			std::cout << SfmDebugGetCurrentActorName();
 			#endif
 			std::cout << "\nDYNAMIC OBSTACLE (*) --- OUT OF FOV!" << std::endl;
-			std::cout << "\t" << SfmDebugGetCurrentObjectName() << " is BEHIND, dist: " << d_alpha_beta_length << ",   force will be multiplied by: " << total_force_factor << std::endl;
+			std::cout << "\t" << SfmDebugGetCurrentObjectName() << " is BEHIND, dist: " << d_alpha_beta_length << ",   force will be multiplied by: " << fov_factor << std::endl;
 		}
 		#endif
 
@@ -866,10 +866,12 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 	ignition::math::Vector3d p_alpha = computePerpendicularToNormal(n_alpha, beta_rel_location); 	// actor's perpendicular (based on velocity vector)
 	double exp_normal = ( (-Bn_ * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn_ * d_alpha_beta_length;
 	double exp_perpendicular = ( (-Bp_ * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp_ * d_alpha_beta_length;
-	f_alpha_beta = n_alpha * An_ * exp(exp_normal) + p_alpha * Ap_ * exp(exp_perpendicular);
+	f_alpha_beta = n_alpha * An_ * std::exp(exp_normal) + p_alpha * Ap_ * std::exp(exp_perpendicular);
+
+	// TODO: fuzz_ (save n_alpha and p_alpha components separately - p_alpha may need to be rotated)
 
 	// weaken the interaction force when beta is behind alpha
-	f_alpha_beta *= total_force_factor;
+	f_alpha_beta *= fov_factor;
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
 
