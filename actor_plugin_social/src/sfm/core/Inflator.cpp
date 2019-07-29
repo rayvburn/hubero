@@ -310,23 +310,34 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findInt
 
 	// needed for 2 actors case
 	ignition::math::Vector3d object_shifted = pt_intersect;
+	double length = 0.0;
 
 	switch(type) {
 
 	case(INTERSECTION_ACTORS):
-	case(INTERSECTION_ACTOR_OBJECT):
+			/* Try to keep some threshold distance between intersected models,
+			 * this is just a hack for a smoother SFM operation */
+			length = line_actor_intersection.Length();
+			if ( length > 0.1 ) {
+				// keep distance long enough
+				length = (length - 0.1 / length) / 2.0;
+			} else {
+				// unable to keep the distance long enough
+				length = 0.495 * line_actor_intersection.Length();
+			}
+
 			/* Below is OK under assumption that both bounding `boxes` have the same shape and dimensions
 			 * 1) 	create a line which divides the connection into 2 parts
 			 * 2) 	re-assign shifted points - place then just around the center of the line
 			 * 		to force very small distance between objects to strengthen their repulsion */
-			actor_shifted.X( actor_pos.X() + 0.495 * line_actor_intersection.Length() * cos(line_slope.Radian() ));
-			actor_shifted.Y( actor_pos.Y() + 0.495 * line_actor_intersection.Length() * sin(line_slope.Radian() ));
-			object_shifted.X( pt_intersect.X() - 0.495 * line_actor_intersection.Length() * cos(line_slope.Radian() ));
-			object_shifted.Y( pt_intersect.Y() - 0.495 * line_actor_intersection.Length() * sin(line_slope.Radian() ));
+			actor_shifted.X( actor_pos.X() + length * cos(line_slope.Radian() ));
+			actor_shifted.Y( actor_pos.Y() + length * sin(line_slope.Radian() ));
+			object_shifted.X( pt_intersect.X() - length * cos(line_slope.Radian() ));
+			object_shifted.Y( pt_intersect.Y() - length * sin(line_slope.Radian() ));
 			return (std::make_tuple(actor_shifted, object_shifted));
 			break;
 
-	case(2): // case(INTERSECTION_ACTOR_OBJECT):
+	case(INTERSECTION_ACTOR_OBJECT):
 			/* initially a factor was 0.97 but the smaller the distance between actor and an obstacle
 			 * the smaller repulsion is produced; when the repulsion in small distances from an obstacle
 			 * is too weak then the factor should be a little smaller  */
