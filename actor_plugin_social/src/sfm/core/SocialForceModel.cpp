@@ -125,14 +125,20 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 	// compute internal acceleration
 	ignition::math::Vector3d f_alpha = computeInternalForce(actor_pose, actor_velocity, actor_target);
 
-	// extra coefficient - Fuzzy logic affects internal force
-	double fuzzy_factor_f_alpha = 1.00;
-
 	// allocate variables needed in loop
 	ignition::math::Vector3d f_interaction_total(0.0, 0.0, 0.0);
 	ignition::math::Vector3d f_alpha_beta(0.0, 0.0, 0.0);
 
 #ifdef CALCULATE_INTERACTION
+
+	// extra coefficient - Fuzzy logic affects internal force
+	double fuzzy_factor_f_alpha = 1.00;
+
+	// TODO: Minimal force, choose `force_min_` parameter value as default
+	float force_min_sf = force_min_;
+
+	// TODO: initialize with limit value
+	float dist_closest = 9999.0f;
 
 	/* model_vel contains model's velocity (world's object or actor) - for the actor this is set differently
 	 * it was impossible to set actor's linear velocity by setting it by the model's class method */
@@ -357,17 +363,38 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		/* Kind of a hack connected with very strong repulsion when actors are close to each other
 		 * whereas in bigger distances the force is quite weak;
 		 * Truncate very big forces from single objects */
-		if ( is_an_actor ) {
-			f_alpha_beta *= 0.50;
-		} else {
-			f_alpha_beta *= 1.75;
+//		if ( is_an_actor ) {
+//			f_alpha_beta *= 0.50;
+//		} else {
+//			f_alpha_beta *= 1.75;
+//		}
+
+
+
+		// extra factor (applicable only for dynamic objects)
+		if ( is_an_actor && f_alpha_beta.Length() > 1e-06 ) {
+			// TODO: d_alpha_beta (equality)
+			double arg = (actor_closest_to_model_pose - model_closest_point_pose).Pos().Length();
+			f_alpha_beta *= 4.0 * std::exp(-2.0 * arg);
 		}
 
-		// truncate if force is too big -> causes immediate speed-up
-		// or `sliding` when rotation smoothing is disabled (getNewPose())
-		if ( f_alpha_beta.Length() > 1000.0 ) {
-			f_alpha_beta = f_alpha_beta.Normalized() * 1000.0;
+
+
+//		// truncate if force is too big -> causes immediate speed-up
+//		// or `sliding` when rotation smoothing is disabled (getNewPose())
+//		if ( f_alpha_beta.Length() > 1000.0 ) {
+//			f_alpha_beta = f_alpha_beta.Normalized() * 1000.0;
+//		}
+
+
+
+		// save distance to the closest obstacle
+		double dist_curr = (actor_closest_to_model_pose - model_closest_point_pose).Pos().Length();
+		if ( dist_curr < dist_closest ) {
+			dist_closest = dist_curr;
 		}
+
+
 
 		// sum all forces
 		f_interaction_total += f_alpha_beta;
@@ -392,7 +419,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 //		}
 
 		if ( f_alpha_beta.Length() > 1e-06 ) {
-			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
+			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << "\tdist: " << (actor_closest_to_model_pose - model_closest_point_pose).Pos().Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
 		}
 
 	} // for
@@ -455,9 +482,13 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		}
 
 	} else if ( f_total.Length() <= force_min_ ) {
+//	} else if ( f_total.Length() <= force_min_sf ) {
 
+		force_min_sf = std::exp(0.75 * dist_closest);
+		(force_min_sf > 1.00) ? (force_min_sf = 1.00) : (0);
 		sf_values_.update(f_total);
-		f_total = sf_values_.getAverage().Normalize() * force_min_;
+//		f_total = sf_values_.getAverage().Normalize() * force_min_;
+		f_total = sf_values_.getAverage().Normalize() * force_min_sf * force_min_;
 
 		if ( print_info ) {
 			std::cout << "\tEXTENDED";
@@ -1010,7 +1041,7 @@ ignition::math::Vector3d SocialForceModel::computeForceStaticObstacle(const igni
 
 	// FIXME: temp mass factor, make it a parameter
 	// setting too high produces noticeable accelerations around objects
-	f_alpha_i *= 35.0; // 30.0;
+	f_alpha_i *= 61.25; // 35.0; // 30.0;
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
 	if ( SfmGetPrintData() ) {
@@ -1761,7 +1792,8 @@ ignition::math::Angle SocialForceModel::computeYawMovementDirection(const igniti
 	 * close to -PI or PI. In such a situation it's safer to take direction to goal
 	 * into consideration. This will avoid rotations in place which usually are performed
 	 * in the wrong direction (CW/CCW).
-	 * Very primitive target-reach algorithm is presented below (simple going to target direction) */
+	 * Very primitive target-reach algorithm is presented below (simple going in the
+	 * target direction) */
 	if ( std::fabs(yaw_diff.Radian()) >= (0.85 * IGN_PI) ) {
 
 		if ( counter_internal_dbg++ == 25 ) {
