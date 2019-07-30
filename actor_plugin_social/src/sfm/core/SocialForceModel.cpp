@@ -122,8 +122,9 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 	ignition::math::Vector3d f_alpha = computeInternalForce(actor_pose, actor_velocity, actor_target);
 
 	// allocate variables needed in loop
-	ignition::math::Vector3d f_interaction_total(0.0, 0.0, 0.0);
-	ignition::math::Vector3d f_alpha_beta(0.0, 0.0, 0.0);
+	ignition::math::Vector3d f_interaction_total;
+	ignition::math::Vector3d f_alpha_beta;
+	ignition::math::Vector3d f_alpha_beta_social;
 
 #ifdef CALCULATE_INTERACTION
 
@@ -326,65 +327,57 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		}
 #endif
 
-
-		/* check if some condition is met based on
-		 * parameters previously passed to Fuzzifier */
-		/*
-//		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
-			// easier debugging with a single actor
-			if ( fuzz_.isConditionDetected() ) {
-
-				sfm::fuzz::SocialCondition soc_cond;
-				sfm::fuzz::FuzzyLevel fuzz_lvl;
-				std::tie(soc_cond, fuzz_lvl) = fuzz_.getSocialConditionAndLevel();
-				defuzz_.setSocialConditionAndLevel( soc_cond, fuzz_lvl );
-
-				if ( SfmDebugGetCurrentActorName() == "actor1" && fuzz_lvl != sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_UNKNOWN ) {
-					std::string level_txt, condition_txt;
-					if ( soc_cond == sfm::fuzz::SocialCondition::SFM_CONDITION_DYNAMIC_OBJECT_RIGHT ) { condition_txt = "SFM_CONDITION_DYNAMIC_OBJECT_RIGHT"; } else if ( soc_cond == sfm::fuzz::SocialCondition::SFM_CONDITION_FORCE_DRIVES_INTO_OBSTACLE ) { condition_txt = "SFM_CONDITION_FORCE_DRIVES_INTO_OBSTACLE"; } else if ( soc_cond == sfm::fuzz::SocialCondition::SFM_CONDITION_DYNAMIC_OBJECT_RIGHT_MOVES_PERPENDICULAR ) { condition_txt = "SFM_CONDITION_DYNAMIC_OBJECT_RIGHT_MOVES_PERPENDICULAR"; } else { condition_txt = "SFM_CONDITION_UNKNOWN"; };
-					if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_EXTREME ) { level_txt = "FUZZY_LEVEL_EXTREME"; } else if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_HIGH ) { level_txt = "FUZZY_LEVEL_HIGH"; } else if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_MEDIUM ) { level_txt = "FUZZY_LEVEL_MEDIUM"; } else if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_LOW ) { level_txt = "FUZZY_LEVEL_LOW"; } else { level_txt = "FUZZY_LEVEL_UNKNOWN"; };
-					std::cout << SfmDebugGetCurrentActorName() << "\t" << SfmDebugGetCurrentObjectName() << "\t" << condition_txt << "\t" << level_txt << std::endl;
-					std::cout << "\tfuzzy_factor_BEF: " << fuzzy_factor_f_alpha << "\tf_alpha_beta BEF: " << f_alpha_beta << std::endl;
-				}
-
-				std::tie(fuzzy_factor_f_alpha, f_alpha_beta) = defuzz_.defuzzifyObjectRight(fuzzy_factor_f_alpha, f_alpha_beta);
-
-				if ( SfmDebugGetCurrentActorName() == "actor1" && fuzz_lvl != sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_UNKNOWN ) {
-					std::cout << "\tfuzzy_factor_AFTER: " << fuzzy_factor_f_alpha << "\tf_alpha_beta AFTER: " << f_alpha_beta << std::endl;
-					std::cout << std::endl;
-					std::cout << std::endl;
-				}
-
-			}
-			fuzz_.resetParameters();
-//		}
-		 */
-
-
-
-		// extra factor (applicable only for dynamic objects)
-		if ( is_an_actor && f_alpha_beta.Length() > 1e-06 ) {
-			f_alpha_beta *= 4.0 * std::exp(-2.0 * distance);
-		}
-
-
-
-		// save distance to the closest obstacle (if smaller than the one considered closest so far)
-		if ( distance < dist_closest ) {
-			dist_closest = distance;
-		}
-
-
-
-		// sum all forces
-		f_interaction_total += f_alpha_beta;
-
 		// just debugging
 		if ( f_alpha_beta.Length() > 1e-06 ) {
 			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << "\tdist: " << (actor_closest_to_model_pose - model_closest_point_pose).Pos().Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
 		}
 
-	} // for
+		/* check if some condition is met based on
+		 * parameters previously passed to Fuzzifier */
+		/* */
+		if ( fuzz_.isApplicable() ) {
+
+			defuzz_.setInternalForce(f_alpha);
+			defuzz_.setFuzzState(fuzz_.getFuzzyState());
+			f_alpha_beta_social = defuzz_.defuzzifySocialForce();
+			fuzz_.resetParameters(); // must be reset before each new world model investigation
+
+			// just debugging
+			if ( f_alpha_beta_social.Length() > 1e-06 ) {
+				std::cout << "\tFUZZed\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * (f_alpha_beta + f_alpha_beta_social) * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * (f_alpha_beta + f_alpha_beta_social) * interaction_force_factor_).Length() << "\tdist: " << (actor_closest_to_model_pose - model_closest_point_pose).Pos().Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
+			}
+
+//			if ( SfmDebugGetCurrentActorName() == "actor1" && fuzz_lvl != sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_UNKNOWN ) {
+//				std::string level_txt, condition_txt;
+//				if ( soc_cond == sfm::fuzz::SocialCondition::SFM_CONDITION_DYNAMIC_OBJECT_RIGHT ) { condition_txt = "SFM_CONDITION_DYNAMIC_OBJECT_RIGHT"; } else if ( soc_cond == sfm::fuzz::SocialCondition::SFM_CONDITION_FORCE_DRIVES_INTO_OBSTACLE ) { condition_txt = "SFM_CONDITION_FORCE_DRIVES_INTO_OBSTACLE"; } else if ( soc_cond == sfm::fuzz::SocialCondition::SFM_CONDITION_DYNAMIC_OBJECT_RIGHT_MOVES_PERPENDICULAR ) { condition_txt = "SFM_CONDITION_DYNAMIC_OBJECT_RIGHT_MOVES_PERPENDICULAR"; } else { condition_txt = "SFM_CONDITION_UNKNOWN"; };
+//				if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_EXTREME ) { level_txt = "FUZZY_LEVEL_EXTREME"; } else if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_HIGH ) { level_txt = "FUZZY_LEVEL_HIGH"; } else if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_MEDIUM ) { level_txt = "FUZZY_LEVEL_MEDIUM"; } else if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_LOW ) { level_txt = "FUZZY_LEVEL_LOW"; } else { level_txt = "FUZZY_LEVEL_UNKNOWN"; };
+//				std::cout << SfmDebugGetCurrentActorName() << "\t" << SfmDebugGetCurrentObjectName() << "\t" << condition_txt << "\t" << level_txt << std::endl;
+//				std::cout << "\tfuzzy_factor_BEF: " << fuzzy_factor_f_alpha << "\tf_alpha_beta BEF: " << f_alpha_beta << std::endl;
+//			}
+//
+//			std::tie(fuzzy_factor_f_alpha, f_alpha_beta) = defuzz_.defuzzifyObjectRight(fuzzy_factor_f_alpha, f_alpha_beta);
+//
+//			if ( SfmDebugGetCurrentActorName() == "actor1" && fuzz_lvl != sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_UNKNOWN ) {
+//				std::cout << "\tfuzzy_factor_AFTER: " << fuzzy_factor_f_alpha << "\tf_alpha_beta AFTER: " << f_alpha_beta << std::endl;
+//				std::cout << std::endl;
+//				std::cout << std::endl;
+//			}
+
+		}
+
+
+		// save distance to the closest obstacle (if smaller than the one considered closest so far)
+		// note: non-linear modifications
+		if ( distance < dist_closest ) {
+			dist_closest = distance;
+		}
+
+		// TODO: add f_alpha_beta_social
+		// sum all forces
+		f_interaction_total += f_alpha_beta + f_alpha_beta_social;
+
+
+	} /* for loop ends here (iterates over all world models) */
 
 	std::cout << "\n\t\tINTERNAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha << std::endl;
 	std::cout << "\t\tTOTAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total << std::endl;
@@ -836,10 +829,6 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 
 	/* angle between velocities of alpha and beta is needed for Fuzzifier */
 	double velocities_angle = computeThetaAlphaBetaAngle(actor_vel, actor_yaw, object_vel, object_yaw, d_alpha_beta, is_actor);
-	fuzz_.setDistanceVectorLength(d_alpha_beta_length);
-	fuzz_.setToObjectDirectionRelativeAngle(beta_angle_rel);
-	fuzz_.setVelocitiesRelativeAngle(velocities_angle);
-	fuzz_.setOtherObjectVelocity(object_vel);
 
 	// store angle between objects' (in most cases) velocities
 	double theta_alpha_beta = 0.0;
@@ -863,15 +852,41 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 
 	}
 
+	/* For details see `Social force equation` in the articles listed in .h file */
 	ignition::math::Vector3d p_alpha = computePerpendicularToNormal(n_alpha, beta_rel_location); 	// actor's perpendicular (based on velocity vector)
 	double exp_normal = ( (-Bn_ * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn_ * d_alpha_beta_length;
 	double exp_perpendicular = ( (-Bp_ * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp_ * d_alpha_beta_length;
-	f_alpha_beta = n_alpha * An_ * std::exp(exp_normal) + p_alpha * Ap_ * std::exp(exp_perpendicular);
 
-	// TODO: fuzz_ (save n_alpha and p_alpha components separately - p_alpha may need to be rotated)
+	// `fov_factor`: weaken the interaction force when beta is behind alpha
+	ignition::math::Vector3d n_alpha_scaled = n_alpha * An_ * std::exp(exp_normal) * fov_factor;
+	ignition::math::Vector3d p_alpha_scaled = p_alpha * Ap_ * std::exp(exp_perpendicular) * fov_factor;
 
-	// weaken the interaction force when beta is behind alpha
-	f_alpha_beta *= fov_factor;
+	// extra factor - applicable only for dynamic objects
+	if ( object_vel.Length() > 1e-06 ) {
+
+		// (n_alpha_scaled + p_alpha_scaled).Length() > 1e-06 (condition deprecated, when got here then
+		// force will surely be non-zero)
+
+		// interaction strength exponentially decreases as distance between objects becomes bigger
+		double factor = 4.0 * std::exp(-2.0 * d_alpha_beta_length);
+		n_alpha_scaled *= factor;
+		p_alpha_scaled *= factor;
+
+	}
+
+	// save interaction force vector
+	f_alpha_beta = n_alpha_scaled + p_alpha_scaled;
+
+	// set Fuzzifier's internal components
+	fuzz_.setDistanceVectorLength(d_alpha_beta_length);
+	fuzz_.setObjectDirRelativeAngle(theta_alpha_beta);
+	fuzz_.setObjectVelocity(object_vel);
+	fuzz_.setVelsRelativeAngle(beta_angle_rel);
+
+	// set Defuzzifier's internal components (utilized to modify actor's behavior)
+	defuzz_.setInteractionForceNorm(n_alpha_scaled);
+	defuzz_.setInteractionForcePerp(p_alpha_scaled);
+
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
 
@@ -1092,6 +1107,7 @@ double SocialForceModel::computeThetaAlphaBetaAngle(const ignition::math::Vector
 	#endif
 
 	// TODO: change conditions structure, check
+	// TODO: consider separately `is_actor` and `is_dynamic_object`
 	// if ( is_actor || object_vel.Length() < 1e-06 )
 
 	// check if the other object is an actor
