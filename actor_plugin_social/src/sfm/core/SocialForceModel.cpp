@@ -108,6 +108,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 {
 
 	closest_points_.clear();
+	defuzz_.reset();
 
 	( SfmGetPrintData() ) ? (print_info = true) : (0);
 
@@ -332,19 +333,25 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << "\tdist: " << (actor_closest_to_model_pose - model_closest_point_pose).Pos().Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
 		}
 
-		/* check if some condition is met based on
-		 * parameters previously passed to Fuzzifier */
-		/* */
+		/* Check if some condition is met based on parameters previously passed to Fuzzifier */
 		if ( fuzz_.isApplicable() ) {
+
+			static int fuzz_ctr = 0;
+			bool modded = false;
 
 			defuzz_.setInternalForce(f_alpha);
 			defuzz_.setFuzzState(fuzz_.getFuzzyState());
 			f_alpha_beta_social = defuzz_.defuzzifySocialForce();
+//			ignition::math::Vector3d test = defuzz_.defuzzifySocialForce();
 			fuzz_.resetParameters(); // must be reset before each new world model investigation
 
 			// just debugging
 			if ( f_alpha_beta_social.Length() > 1e-06 ) {
+				modded = true;
 				std::cout << "\tFUZZed\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * (f_alpha_beta + f_alpha_beta_social) * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * (f_alpha_beta + f_alpha_beta_social) * interaction_force_factor_).Length() << "\tdist: " << (actor_closest_to_model_pose - model_closest_point_pose).Pos().Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
+			}
+			if ( fuzz_ctr++ >= 50 && modded ) {
+				fuzz_ctr = 0;
 			}
 
 //			if ( SfmDebugGetCurrentActorName() == "actor1" && fuzz_lvl != sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_UNKNOWN ) {

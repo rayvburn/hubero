@@ -47,6 +47,11 @@ public:
 	/// \return Social force component which needs to be aggregated while summing forces (new force type produced)
 	ignition::math::Vector3d defuzzifySocialForce() const;
 
+	///
+	/// \brief Used to reset `slow_down` flag which is used to prevent multiple slow downs
+	/// of the actor (may occur only when there are multiple actors present in the world).
+	void reset();
+
 	/// \brief Default destructor
 	virtual ~Defuzzifier();
 
@@ -56,6 +61,21 @@ private:
 	ignition::math::Vector3d passRight() const;
 	ignition::math::Vector3d passLeft() const;
 	ignition::math::Vector3d letPass() const;
+
+	/// \brief Modifies perpendicular component of the `social force` vector (argument)
+	/// so it points to the direction given by `dir`. Based on `level_` the vector
+	/// is extended appropriately.
+	/// \param dir
+	/// \return Modified `social_force` vector
+	ignition::math::Vector3d assertPerpDirection(const unsigned int &dir, bool slow_down = false) const;
+
+	/// \brief Based on `level_` incorporates inverted `f_alpha` vector into `social_force`
+	/// vector given as argument to this method.
+	/// \return Modified `social_force` vector
+	ignition::math::Vector3d weakenInternalForce() const;
+
+	void assertPerpRight(ignition::math::Vector3d &social_force);
+	void assertPerpLeft(ignition::math::Vector3d &social_force);
 	// ---------------------------------------------------------
 
 	/// \brief 2D rotation around Z-axis
@@ -64,6 +84,9 @@ private:
 	ignition::math::Vector3d f_alpha_;
 	ignition::math::Vector3d f_alpha_beta_n_;
 	ignition::math::Vector3d f_alpha_beta_p_;
+
+	/// \brief Indicator whether actor has been slowed down in this iteration already.
+	bool slowed_down_;
 
 	sfm::fuzz::FuzzLocation location_;
 	sfm::fuzz::FuzzDirection direction_;

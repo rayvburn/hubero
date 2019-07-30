@@ -6,9 +6,15 @@
  */
 
 #include <sfm/fuzz/Defuzzifier.h>
+#include <ignition/math/Angle.hh>
 
 namespace sfm {
 namespace fuzz {
+
+typedef enum {
+	ASSERT_DIR_RIGHT = 0u,
+	ASSERT_DIR_LEFT
+} PerpAssertDir;
 
 // ------------------------------------------------------------------- //
 Defuzzifier::Defuzzifier(): location_(FUZZ_LOCATION_UNKNOWN), direction_(FUZZ_DIR_UNKNOWN), level_(FUZZY_LEVEL_NONE)
@@ -53,10 +59,11 @@ ignition::math::Vector3d Defuzzifier::defuzzifySocialForce() const {
 				// do nothing
 			} else if ( direction_ == FUZZ_DIR_OPPOSITE ) {
 				// do nothing, default SFM formulation should take care of slight turning right
+//				social_force = assertPerpDirection(ASSERT_DIR_RIGHT);
 			} else if ( direction_ == FUZZ_DIR_PERP_OUT ) {
-
+//				social_force = assertPerpDirection(ASSERT_DIR_LEFT);	std::cout << "\tdefuzzify\tLOC_FRONT\tDIR_PERP_OUT" << std::endl;
 			} else if ( direction_ == FUZZ_DIR_PERP_CROSS ) {
-
+//				social_force = assertPerpDirection(ASSERT_DIR_RIGHT);	std::cout << "\tdefuzzify\tLOC_FRONT\tDIR_PERP_CROSS" << std::endl;
 			}
 
 			break;
@@ -68,9 +75,9 @@ ignition::math::Vector3d Defuzzifier::defuzzifySocialForce() const {
 			} else if ( direction_ == FUZZ_DIR_OPPOSITE ) {
 				// do nothing, default SFM formulation should take care of slight turning right
 			} else if ( direction_ == FUZZ_DIR_PERP_OUT ) {
-
+//				social_force = assertPerpDirection(ASSERT_DIR_RIGHT);	std::cout << "\tdefuzzify\tLOC_LEFT\tDIR_PERP_OUT" << std::endl;
 			} else if ( direction_ == FUZZ_DIR_PERP_CROSS ) {
-
+//				social_force = assertPerpDirection(ASSERT_DIR_RIGHT);	std::cout << "\tdefuzzify\tLOC_LEFT\tDIR_PERP_CROSS" << std::endl;
 			}
 
 			break;
@@ -82,9 +89,9 @@ ignition::math::Vector3d Defuzzifier::defuzzifySocialForce() const {
 			} else if ( direction_ == FUZZ_DIR_OPPOSITE ) {
 				// do nothing, default SFM formulation should take care of slight turning right
 			} else if ( direction_ == FUZZ_DIR_PERP_OUT ) {
-
+				// do nothing
 			} else if ( direction_ == FUZZ_DIR_PERP_CROSS ) {
-
+				// do nothing
 			}
 
 			break;
@@ -108,6 +115,13 @@ ignition::math::Vector3d Defuzzifier::defuzzifySocialForce() const {
 	return (social_force);
 
 }
+
+// ------------------------------------------------------------------- //
+
+void Defuzzifier::reset() {
+	slowed_down_ = false;
+}
+
 // ------------------------------------------------------------------- //
 // ------------------------------------------------------------------- //
 // ------------------------------------------------------------------- //
@@ -116,37 +130,26 @@ ignition::math::Vector3d Defuzzifier::passRight() const {
 
 	ignition::math::Vector3d social_force;
 
+	social_force = assertPerpDirection(ASSERT_DIR_RIGHT); // , true
+
+	if ( !slowed_down_ ) {
+		social_force += weakenInternalForce();
+	}
+
 	return (social_force);
 
 }
 
 // ------------------------------------------------------------------- //
 
-// FIXME: passLeft for left side will probably be different
 ignition::math::Vector3d Defuzzifier::passLeft() const {
 
 	ignition::math::Vector3d social_force;
 
-	// rotate f_alpha_beta perpendicular component by Pi
-	social_force = rotateVector(f_alpha_beta_p_, IGN_PI);
+	social_force = assertPerpDirection(ASSERT_DIR_LEFT); // , true
 
-	// rotated component must be multiplied (>1.00) to have an opposite effect
-	// (relative to perpendicular component), otherwise it will just be `equalized`
-	switch (level_) {
-
-	case(FUZZY_LEVEL_LOW):
-			social_force *= 1.20;
-			break;
-	case(FUZZY_LEVEL_MEDIUM):
-			social_force *= 1.75;
-			break;
-	case(FUZZY_LEVEL_HIGH):
-			social_force *= 2.25;
-			break;
-	case(FUZZY_LEVEL_EXTREME):
-			social_force *= 3.00;
-			break;
-
+	if ( !slowed_down_ ) {
+		social_force += weakenInternalForce();
 	}
 
 	return (social_force);
@@ -156,6 +159,91 @@ ignition::math::Vector3d Defuzzifier::passLeft() const {
 // ------------------------------------------------------------------- //
 
 ignition::math::Vector3d Defuzzifier::letPass() const {
+
+	ignition::math::Vector3d social_force;
+
+	social_force = assertPerpDirection(ASSERT_DIR_RIGHT); // , true
+
+	if ( !slowed_down_ ) {
+		social_force += weakenInternalForce();
+	}
+
+	return (social_force);
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Vector3d Defuzzifier::assertPerpDirection(const unsigned int &dir, bool slow_down) const {
+
+	ignition::math::Vector3d social_force;
+
+	// Check whether direction of the perpendicular component
+	// of f_alpha_beta points to the DIR. If it doesn't
+	// then rotate it appropriately.
+	double n_alpha_dir = std::atan2(f_alpha_beta_n_.Y(), f_alpha_beta_n_.X());
+	double p_alpha_dir = std::atan2(f_alpha_beta_p_.Y(), f_alpha_beta_p_.X());
+	ignition::math::Angle dir_diff(p_alpha_dir - n_alpha_dir);
+	dir_diff.Normalize();
+
+	// It is assumed that perpendicular component is almost perfectly perpendicular indeed.
+	// Check ~90 degree angle condition, if it is not fulfilled then likely direction
+	// of the perpendicular component is the opposite.
+	if ( dir_diff.Radian() > IGN_DTOR(87) && dir_diff.Radian() < IGN_DTOR(93) ) {
+
+		// `dir_diff` is ~(+90) -> perpendicular component points to the LEFT
+		if ( dir == ASSERT_DIR_LEFT ) {
+			// do nothing
+		} else if ( dir == ASSERT_DIR_RIGHT ) {
+			// rotate
+			social_force = rotateVector(f_alpha_beta_p_, IGN_PI);
+			// perpendicular component has wrong orientation, let's (over)compensate it
+			social_force *= 2.0;
+		}
+
+	} else {
+
+		// `dir_diff` is ~(-90) -> perpendicular component points to the RIGHT
+		if ( dir == ASSERT_DIR_LEFT ) {
+			// rotate
+			social_force = rotateVector(f_alpha_beta_p_, IGN_PI);
+			// perpendicular component has wrong orientation, let's (over)compensate it
+			social_force *= 2.0;
+		} else if ( dir == ASSERT_DIR_RIGHT ) {
+			// do nothing
+		}
+
+	}
+
+	// check `slow_down` flag
+	if ( slow_down ) {
+		// rotated component must be multiplied (>1.00) to have an opposite effect
+		// (relative to perpendicular component), otherwise it will just be `equalized`
+		switch (level_) {
+
+		case(FUZZY_LEVEL_LOW):
+				social_force *= 1.00;
+				break;
+		case(FUZZY_LEVEL_MEDIUM):
+				social_force *= 1.50;
+				break;
+		case(FUZZY_LEVEL_HIGH):
+				social_force *= 2.25;
+				break;
+		case(FUZZY_LEVEL_EXTREME):
+				social_force *= 3.00;
+				break;
+
+		}
+	}
+
+	return (social_force);
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Vector3d Defuzzifier::weakenInternalForce() const {
 
 	ignition::math::Vector3d social_force;
 
@@ -203,100 +291,6 @@ Defuzzifier::~Defuzzifier() {
 }
 
 // ------------------------------------------------------------------- //
-
-// ------------------------------------------------------------------- //
-// ------------------------------------------------------------------- //
-// ------------------------------------------------------------------- //
-// ------------------------------------------------------------------- //
-// ------------------------------------------------------------------- //
-// ------------------------------------------------------------------- //
-//
-//std::tuple<double, ignition::math::Vector3d> Defuzzifier::defuzzifyObjectRight(const double &fuzzy_f_alpha, const ignition::math::Vector3d &f_alpha_beta) {
-//
-//	if ( location_ == sfm::fuzz::FuzzLocation::SFM_CONDITION_UNKNOWN ||
-//		 level_ == sfm::fuzz::FuzzLevel::FUZZY_LEVEL_UNKNOWN ) {
-//		/* nothing has been detected by Fuzzifier - return
-//		 * non-changed vector and non-modifying coefficient (1.00) */
-//		return ( std::make_tuple(fuzzy_f_alpha, f_alpha_beta) );
-//	}
-//
-//	double internal_force_coeff = fuzzy_f_alpha;
-//	ignition::math::Vector3d f_alpha_beta_rot( f_alpha_beta.X(), f_alpha_beta.Y(), 0.0 );
-//
-//	switch ( location_ ) {
-//
-//	case(sfm::fuzz::FuzzLocation::SFM_CONDITION_DYNAMIC_OBJECT_RIGHT):
-//
-//			switch ( level_ ) {
-//
-//			case(sfm::fuzz::FuzzLevel::FUZZY_LEVEL_LOW):
-//					internal_force_coeff = 0.80;
-//					break;
-//			case(sfm::fuzz::FuzzLevel::FUZZY_LEVEL_MEDIUM):
-//					internal_force_coeff = 0.70;
-//					break;
-//			case(sfm::fuzz::FuzzLevel::FUZZY_LEVEL_HIGH):
-//					internal_force_coeff = 0.60;
-//					break;
-//			case(sfm::fuzz::FuzzLevel::FUZZY_LEVEL_EXTREME):
-//					internal_force_coeff = 0.50;
-//					break;
-//
-//			} /* switch ( level_ ) */
-//
-//			break; /* SFM_CONDITION_DYNAMIC_OBJECT_RIGHT */
-//
-//	case(sfm::fuzz::FuzzLocation::SFM_CONDITION_DYNAMIC_OBJECT_RIGHT_MOVES_PERPENDICULAR):
-//
-//			/* rotate vector 180 deg */
-//			f_alpha_beta_rot = rotateVector(f_alpha_beta, IGN_PI_2);
-//
-//			switch ( level_ ) {
-//
-//			case(sfm::fuzz::FuzzLevel::FUZZY_LEVEL_LOW):
-//					internal_force_coeff = 0.75;
-//					break;
-//			case(sfm::fuzz::FuzzLevel::FUZZY_LEVEL_MEDIUM):
-//					internal_force_coeff = 0.60;
-//					break;
-//			case(sfm::fuzz::FuzzLevel::FUZZY_LEVEL_HIGH):
-//					internal_force_coeff = 0.45;
-//					break;
-//			case(sfm::fuzz::FuzzLevel::FUZZY_LEVEL_EXTREME):
-//					internal_force_coeff = 0.30;
-//					break;
-//
-//			} /* switch ( level_ ) */
-//
-//			break; /* SFM_CONDITION_DYNAMIC_OBJECT_RIGHT_MOVES_PERPENDICULAR */
-//
-//	case(sfm::fuzz::FuzzLocation::SFM_CONDITION_FORCE_DRIVES_INTO_OBSTACLE):
-//
-//			switch ( level_ ) {
-//
-//			case(sfm::fuzz::FuzzLevel::FUZZY_LEVEL_LOW):
-//					break;
-//			case(sfm::fuzz::FuzzLevel::FUZZY_LEVEL_MEDIUM):
-//					break;
-//			case(sfm::fuzz::FuzzLevel::FUZZY_LEVEL_HIGH):
-//					break;
-//			case(sfm::fuzz::FuzzLevel::FUZZY_LEVEL_EXTREME):
-//					break;
-//
-//			} /* switch ( level_ ) */
-//
-//			break; /* SFM_CONDITION_FORCE_DRIVES_INTO_OBSTACLE */
-//
-//	}
-//
-//	// leave the smallest coefficient
-//	if ( fuzzy_f_alpha < internal_force_coeff ) {
-//		internal_force_coeff = fuzzy_f_alpha;
-//	}
-//
-//	return ( std::make_tuple(internal_force_coeff, f_alpha_beta_rot) );
-//
-//}
 
 
 } /* namespace fuzz */

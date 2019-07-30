@@ -270,9 +270,11 @@ void Fuzzifier::computeFuzzLocation() {
 	} else if ( std::fabs(object_dir_relative_angle_) >= IGN_DTOR(160) ) {
 		location_ = FUZZ_LOCATION_BACK;
 	} else if ( object_dir_relative_angle_ > IGN_DTOR(10) ) {
-		location_ = FUZZ_LOCATION_LEFT;
-	} else if ( object_dir_relative_angle_ < IGN_DTOR(-10) ) {
+//		location_ = FUZZ_LOCATION_LEFT;
 		location_ = FUZZ_LOCATION_RIGHT;
+	} else if ( object_dir_relative_angle_ < IGN_DTOR(-10) ) {
+//		location_ = FUZZ_LOCATION_RIGHT;
+		location_ = FUZZ_LOCATION_LEFT;
 	} else {
 		location_ = FUZZ_LOCATION_UNKNOWN;
 	}
@@ -292,16 +294,16 @@ void Fuzzifier::computeFuzzDirection() {
 	} else if ( vels_relative_angle_ > IGN_DTOR(10) ) {
 		// this can be determined knowing the location
 		if ( location_ == FUZZ_LOCATION_LEFT ) {
-			direction_ = FUZZ_DIR_PERP_OUT;
-		} else {
 			direction_ = FUZZ_DIR_PERP_CROSS;
+		} else {
+			direction_ = FUZZ_DIR_PERP_OUT;
 		}
 	} else if ( vels_relative_angle_ < IGN_DTOR(-10) ) {
 		// this can be determined knowing the location
 		if ( location_ == FUZZ_LOCATION_LEFT ) {
-			direction_ = FUZZ_DIR_PERP_CROSS;
-		} else {
 			direction_ = FUZZ_DIR_PERP_OUT;
+		} else {
+			direction_ = FUZZ_DIR_PERP_CROSS;
 		}
 	} else {
 		direction_ = FUZZ_DIR_UNKNOWN;
@@ -314,13 +316,13 @@ void Fuzzifier::computeFuzzDirection() {
 void Fuzzifier::computeFuzzLevel() {
 
 	// differentiate level (intensity) of the social extension based on d_alpha_beta length
-	if ( d_alpha_beta_len_ < 0.15 ) {
+	if ( d_alpha_beta_len_ < 0.10 ) {
 		level_ = FUZZY_LEVEL_EXTREME;
-	} else if (d_alpha_beta_len_ < 0.60 ) {
+	} else if (d_alpha_beta_len_ < 0.25 ) {
 		level_ = FUZZY_LEVEL_HIGH;
-	} else if (d_alpha_beta_len_ < 1.00 ) {
+	} else if (d_alpha_beta_len_ < 0.40 ) {
 		level_ = FUZZY_LEVEL_MEDIUM;
-	} else if (d_alpha_beta_len_ < 1.50 ) {
+	} else if (d_alpha_beta_len_ < 0.60 ) {
 		level_ = FUZZY_LEVEL_LOW;
 	} else {
 		level_ = FUZZY_LEVEL_NONE;
