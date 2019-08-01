@@ -57,13 +57,17 @@ ignition::math::Vector3d Defuzzifier::defuzzifySocialForce() const {
 
 			if ( direction_ == FUZZ_DIR_EQUAL ) {
 				// do nothing
+				std::cout << "\tdefuzzify\tLOC_FRONT\tDIR_EQUAL" << std::endl;
 			} else if ( direction_ == FUZZ_DIR_OPPOSITE ) {
 				// do nothing, default SFM formulation should take care of slight turning right
 //				social_force = assertPerpDirection(ASSERT_DIR_RIGHT);
+				std::cout << "\tdefuzzify\tLOC_FRONT\tDIR_OPPOSITE" << std::endl;
 			} else if ( direction_ == FUZZ_DIR_PERP_OUT ) {
 //				social_force = assertPerpDirection(ASSERT_DIR_LEFT);	std::cout << "\tdefuzzify\tLOC_FRONT\tDIR_PERP_OUT" << std::endl;
+				std::cout << "\tdefuzzify\tLOC_FRONT\tDIR_PERP_OUT" << std::endl;
 			} else if ( direction_ == FUZZ_DIR_PERP_CROSS ) {
 //				social_force = assertPerpDirection(ASSERT_DIR_RIGHT);	std::cout << "\tdefuzzify\tLOC_FRONT\tDIR_PERP_CROSS" << std::endl;
+				std::cout << "\tdefuzzify\tLOC_FRONT\tDIR_PERP_CROSS" << std::endl;
 			}
 
 			break;
@@ -72,12 +76,16 @@ ignition::math::Vector3d Defuzzifier::defuzzifySocialForce() const {
 
 			if ( direction_ == FUZZ_DIR_EQUAL ) {
 				// do nothing
+				std::cout << "\tdefuzzify\tLOC_LEFT\tDIR_EQUAL" << std::endl;
 			} else if ( direction_ == FUZZ_DIR_OPPOSITE ) {
 				// do nothing, default SFM formulation should take care of slight turning right
+				std::cout << "\tdefuzzify\tLOC_LEFT\tDIR_OPPOSITE" << std::endl;
 			} else if ( direction_ == FUZZ_DIR_PERP_OUT ) {
 //				social_force = assertPerpDirection(ASSERT_DIR_RIGHT);	std::cout << "\tdefuzzify\tLOC_LEFT\tDIR_PERP_OUT" << std::endl;
+				std::cout << "\tdefuzzify\tLOC_LEFT\tDIR_PERP_OUT" << std::endl;
 			} else if ( direction_ == FUZZ_DIR_PERP_CROSS ) {
 //				social_force = assertPerpDirection(ASSERT_DIR_RIGHT);	std::cout << "\tdefuzzify\tLOC_LEFT\tDIR_PERP_CROSS" << std::endl;
+				std::cout << "\tdefuzzify\tLOC_LEFT\tDIR_PERP_CROSS" << std::endl;
 			}
 
 			break;
@@ -85,13 +93,14 @@ ignition::math::Vector3d Defuzzifier::defuzzifySocialForce() const {
 	case(FUZZ_LOCATION_BACK):
 
 			if ( direction_ == FUZZ_DIR_EQUAL ) {
-				// do nothing
+				/* do nothing */				std::cout << "\tdefuzzify\tLOC_BACK\tDIR_EQUAL" << std::endl;
 			} else if ( direction_ == FUZZ_DIR_OPPOSITE ) {
-				// do nothing, default SFM formulation should take care of slight turning right
+				// default SFM formulation should take care of slight turning right
+				/* do nothing */				std::cout << "\tdefuzzify\tLOC_BACK\tDIR_OPPOSITE" << std::endl;
 			} else if ( direction_ == FUZZ_DIR_PERP_OUT ) {
-				// do nothing
+				/* do nothing */				std::cout << "\tdefuzzify\tLOC_BACK\tDIR_PERP_OUT" << std::endl;
 			} else if ( direction_ == FUZZ_DIR_PERP_CROSS ) {
-				// do nothing
+				/* do nothing */				std::cout << "\tdefuzzify\tLOC_BACK\tDIR_PERP_CROSS" << std::endl;
 			}
 
 			break;
@@ -99,7 +108,7 @@ ignition::math::Vector3d Defuzzifier::defuzzifySocialForce() const {
 	case(FUZZ_LOCATION_RIGHT):
 
 			if ( direction_ == FUZZ_DIR_EQUAL ) {
-				// do nothing
+				/* do nothing */				std::cout << "\tdefuzzify\tLOC_RIGHT\tDIR_EQUAL" << std::endl;
 			} else if ( direction_ == FUZZ_DIR_OPPOSITE ) {
 				social_force = passRight(); 	std::cout << "\tdefuzzify\tLOC_RIGHT\tDIR_OPPOSITE-passRight" << std::endl;
 			} else if ( direction_ == FUZZ_DIR_PERP_OUT ) {

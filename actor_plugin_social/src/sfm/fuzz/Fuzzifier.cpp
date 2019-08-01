@@ -40,8 +40,28 @@ void Fuzzifier::setObjectVelocity(const ignition::math::Vector3d &vel_beta) {
 	vel_beta_ = vel_beta;
 }
 // ------------------------------------------------------------------- //
+void Fuzzifier::setObjectVelocity(const double &yaw_beta, const double &speed) {
+
+	// create new velocity vector based on orientation and speed
+	ignition::math::Vector3d vel_beta;
+	vel_beta.X( speed*cos(yaw_beta) - speed*sin(yaw_beta) );
+	vel_beta.Y( speed*sin(yaw_beta) + speed*cos(yaw_beta) );
+	vel_beta.Z(0.0);
+	setObjectVelocity(vel_beta);
+
+}
+// ------------------------------------------------------------------- //
 void Fuzzifier::setVelsRelativeAngle(const double &vels_relative_angle) {
 	vels_relative_angle_ = vels_relative_angle;
+}
+// ------------------------------------------------------------------- //
+void Fuzzifier::setVelsRelativeAngle(const double &vel_alpha_angle, const double &vel_beta_angle) {
+
+	ignition::math::Angle diff;
+	diff.Radian(vel_beta_angle - vel_alpha_angle);
+	diff.Normalize();
+	setVelsRelativeAngle(diff.Radian());
+
 }
 // ------------------------------------------------------------------- //
 void Fuzzifier::setObjectDirRelativeAngle(const double &object_dir_relative_angle) {
@@ -265,16 +285,15 @@ inline bool Fuzzifier::isDynamicObject() {
 
 void Fuzzifier::computeFuzzLocation() {
 
+	// TODO: front-left, front-right, back-left, back-right
 	if ( std::fabs(object_dir_relative_angle_) <= IGN_DTOR(10) ) {
 		location_ = FUZZ_LOCATION_FRONT;
-	} else if ( std::fabs(object_dir_relative_angle_) >= IGN_DTOR(160) ) {
+	} else if ( std::fabs(object_dir_relative_angle_) >= IGN_DTOR(100) ) {
 		location_ = FUZZ_LOCATION_BACK;
 	} else if ( object_dir_relative_angle_ > IGN_DTOR(10) ) {
-//		location_ = FUZZ_LOCATION_LEFT;
-		location_ = FUZZ_LOCATION_RIGHT;
-	} else if ( object_dir_relative_angle_ < IGN_DTOR(-10) ) {
-//		location_ = FUZZ_LOCATION_RIGHT;
 		location_ = FUZZ_LOCATION_LEFT;
+	} else if ( object_dir_relative_angle_ < IGN_DTOR(-10) ) {
+		location_ = FUZZ_LOCATION_RIGHT;
 	} else {
 		location_ = FUZZ_LOCATION_UNKNOWN;
 	}
@@ -294,16 +313,16 @@ void Fuzzifier::computeFuzzDirection() {
 	} else if ( vels_relative_angle_ > IGN_DTOR(10) ) {
 		// this can be determined knowing the location
 		if ( location_ == FUZZ_LOCATION_LEFT ) {
-			direction_ = FUZZ_DIR_PERP_CROSS;
-		} else {
 			direction_ = FUZZ_DIR_PERP_OUT;
+		} else {
+			direction_ = FUZZ_DIR_PERP_CROSS;
 		}
 	} else if ( vels_relative_angle_ < IGN_DTOR(-10) ) {
 		// this can be determined knowing the location
 		if ( location_ == FUZZ_LOCATION_LEFT ) {
-			direction_ = FUZZ_DIR_PERP_OUT;
-		} else {
 			direction_ = FUZZ_DIR_PERP_CROSS;
+		} else {
+			direction_ = FUZZ_DIR_PERP_OUT;
 		}
 	} else {
 		direction_ = FUZZ_DIR_UNKNOWN;

@@ -334,6 +334,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		}
 
 		/* Check if some condition is met based on parameters previously passed to Fuzzifier */
+		// owner name condition for easier debugging / owner_name_ == "actor1" &&
 		if ( fuzz_.isApplicable() ) {
 
 			static int fuzz_ctr = 0;
@@ -834,6 +835,9 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 
 	}
 
+	// speed of the Beta object
+	double speed_beta = object_vel.Length();
+
 	/* angle between velocities of alpha and beta is needed for Fuzzifier */
 	double velocities_angle = computeThetaAlphaBetaAngle(actor_vel, actor_yaw, object_vel, object_yaw, d_alpha_beta, is_actor);
 
@@ -869,12 +873,13 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 	ignition::math::Vector3d p_alpha_scaled = p_alpha * Ap_ * std::exp(exp_perpendicular) * fov_factor;
 
 	// extra factor - applicable only for dynamic objects
-	if ( object_vel.Length() > 1e-06 ) {
+	if ( speed_beta > 1e-06 ) {
 
 		// (n_alpha_scaled + p_alpha_scaled).Length() > 1e-06 (condition deprecated, when got here then
 		// force will surely be non-zero)
 
-		// interaction strength exponentially decreases as distance between objects becomes bigger
+		// interaction strength exponentially decreases as distance between objects becomes bigger;
+		// it is also artificially strengthened when distance is small
 		double factor = 4.0 * std::exp(-2.0 * d_alpha_beta_length);
 		n_alpha_scaled *= factor;
 		p_alpha_scaled *= factor;
@@ -886,9 +891,16 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 
 	// set Fuzzifier's internal components
 	fuzz_.setDistanceVectorLength(d_alpha_beta_length);
-	fuzz_.setObjectDirRelativeAngle(theta_alpha_beta);
-	fuzz_.setObjectVelocity(object_vel);
-	fuzz_.setVelsRelativeAngle(beta_angle_rel);
+	fuzz_.setObjectDirRelativeAngle(beta_angle_rel);
+
+	//	fuzz_.setObjectVelocity(object_vel); //
+	if ( is_actor ) {
+		fuzz_.setObjectVelocity(object_pose.Rot().Yaw() - IGN_PI_2, speed_beta);
+		fuzz_.setVelsRelativeAngle(actor_pose.Rot().Yaw(), object_pose.Rot().Yaw()); // angle difference calculation based on angles computed in the same coordinate system, no rotation needed
+	} else {
+		fuzz_.setObjectVelocity(object_pose.Rot().Yaw(), speed_beta);
+		fuzz_.setVelsRelativeAngle(theta_alpha_beta);
+	}
 
 	// set Defuzzifier's internal components (utilized to modify actor's behavior)
 	defuzz_.setInteractionForceNorm(n_alpha_scaled);

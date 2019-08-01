@@ -80,7 +80,9 @@ public:
 
 	// to check whether static or dynamic, static can be omitted!
 	void setObjectVelocity(const ignition::math::Vector3d &vel_beta);				// angle(v_β)
+	void setObjectVelocity(const double &yaw_beta, const double &speed);			// angle(v_β)
 	void setVelsRelativeAngle(const double &vels_relative_angle);					// φ_αβ (FIXME: phi there...)
+	void setVelsRelativeAngle(const double &vel_alpha_angle, const double &vel_beta_angle);
 	void setObjectDirRelativeAngle(const double &object_dir_relative_angle);		// β angle relative to α
 	void setDistanceVectorLength(const double &d_alpha_beta_len);					// ||d_αβ||
 	//
