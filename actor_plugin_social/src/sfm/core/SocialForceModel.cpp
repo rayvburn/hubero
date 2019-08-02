@@ -330,7 +330,9 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 		// just debugging
 		if ( f_alpha_beta.Length() > 1e-06 ) {
-			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << "\tdist: " << (actor_closest_to_model_pose - model_closest_point_pose).Pos().Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
+			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << "\tdist: " << distance_v.Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
+			std::cout << "\t\t\tactor_pos: " << (actor_closest_to_model_pose).Pos() << "\tmodel_pos: " << model_closest_point_pose.Pos() << std::endl;
+			std::cout << "\t\t\td_alpha_beta: " << distance_v << "\t\tlen: " << distance_v.Length() << "\tclosest_o_a diff: " << (model_closest_point_pose.Pos() - actor_closest_to_model_pose.Pos()) << "\tclosest_a_o diff: " << (actor_closest_to_model_pose.Pos() - model_closest_point_pose.Pos()) << std::endl;
 		}
 
 		/* Check if some condition is met based on parameters previously passed to Fuzzifier */
@@ -349,7 +351,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 			// just debugging
 			if ( f_alpha_beta_social.Length() > 1e-06 ) {
 				modded = true;
-				std::cout << "\tFUZZed\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * (f_alpha_beta + f_alpha_beta_social) * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * (f_alpha_beta + f_alpha_beta_social) * interaction_force_factor_).Length() << "\tdist: " << (actor_closest_to_model_pose - model_closest_point_pose).Pos().Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
+				std::cout << "\tFUZZed\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * (f_alpha_beta + f_alpha_beta_social) * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * (f_alpha_beta + f_alpha_beta_social) * interaction_force_factor_).Length() << "\tdist: " << distance_v.Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
 			}
 			if ( fuzz_ctr++ >= 50 && modded ) {
 				fuzz_ctr = 0;
@@ -723,10 +725,12 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 		const ignition::math::Vector3d &object_vel, const bool &is_actor)
 {
 
-	// models' closest points already passed to this function - each bounding type
-	// already taken into consideration -
-	// vector between objects positions
+	// Models' closest points already passed to this function - each bounding type
+	// already taken into consideration.
+	// `d_alpha_beta` is a vector between objects positions.
 	ignition::math::Vector3d d_alpha_beta = object_pose.Pos() - actor_pose.Pos();
+	d_alpha_beta.Z(0.0); // NOTE: in SFM calculations it is assumed that all objects are in the actor's plane
+	double d_alpha_beta_length = d_alpha_beta.Length(); // Length calculates vector's distance with each call
 
 #ifdef DEBUG_OSCILLATIONS
 	if ( SfmDebugGetCurrentObjectName() == "table1" && SfmDebugGetCurrentActorName() == "actor1" ) {
@@ -734,16 +738,9 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 	}
 #endif
 
-
-	// TODO: adjust Z according to stance?
-	d_alpha_beta.Z(0.0); // it is assumed that all objects are in the actor's plane
-
-	double d_alpha_beta_length = d_alpha_beta.Length(); // Length calculates vector's distance with each call
-
 	/* actor's normal (based on velocity vector, whose direction could
 	 * be also acquired from his yaw angle */
 	ignition::math::Vector3d n_alpha = computeNormalAlphaDirection(actor_pose);
-
 
 	// ================================================================================
 	// section from "GetObjectsInteractionForce()" function which is DEPRECATED now
@@ -1000,7 +997,7 @@ SocialForceModel::computeForceStaticObstacle(const ignition::math::Pose3d &actor
 	d_alpha_i.Z(0.00); // planar
 	double d_alpha_i_len = d_alpha_i.Length();
 
-	// acceleration
+	// length (vβ * ∆t) of the stride (step size)
 	ignition::math::Vector3d y_alpha_i = actor_velocity * dt;
 	y_alpha_i.Z(0.00); // planar
 
@@ -1031,7 +1028,7 @@ SocialForceModel::computeForceStaticObstacle(const ignition::math::Pose3d &actor
 
 	// ~force (acceleration) calculation
 	ignition::math::Vector3d f_alpha_i;
-	f_alpha_i = this->Aw_ * exp(-w_alpha_i/this->Bw_) * ((d_alpha_i_len + (d_alpha_i - y_alpha_i).Length()) /
+	f_alpha_i = Aw_ * exp(-w_alpha_i/Bw_) * ((d_alpha_i_len + (d_alpha_i - y_alpha_i).Length()) /
 			    2*w_alpha_i) * 0.5 * (d_alpha_i.Normalized() + (d_alpha_i - y_alpha_i).Normalized());
 
 	// FIXME: temp mass factor, make it a parameter
@@ -1051,13 +1048,14 @@ SocialForceModel::computeForceStaticObstacle(const ignition::math::Pose3d &actor
 		std::cout << "\ty_alpha_i: " << y_alpha_i;
 		std::cout << "\tw_alpha_i: " << w_alpha_i << std::endl;
 		std::cout << "\tf_alpha_i: " << f_alpha_i * interaction_force_factor_ << std::endl;
+//		std::cout << "\tactor_pos: " << actor_pose.Pos() << "\t\tobj_pos: " << object_pose.Pos() << std::endl;
+//		std::cout << "\tdiff__pos: " << (actor_pose.Pos() - object_pose.Pos()) << "\t\tlen: " << (actor_pose.Pos() - object_pose.Pos()).Length() << std::endl;
 	#ifndef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	}
 	#endif
 	}
 #endif
 
-//	return (f_alpha_i);
 	return (std::make_tuple(f_alpha_i, d_alpha_i, d_alpha_i_len));
 
 }
