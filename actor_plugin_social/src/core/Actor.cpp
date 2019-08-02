@@ -540,6 +540,14 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 	if ( target_manager_.isTargetReached() ) {
 
 		target_manager_.chooseNewTarget(info);
+
+		// Update checkpoint. After choosing a new target, the first checkpoint
+		// is equal (nearly) to the current position. This may generate a problem
+		// while actor is trying to align with target direction.
+		// updateCheckpoint() will set temporary target to some further position
+		// than the one actor is currently in.
+		target_manager_.updateCheckpoint();
+
 		// after setting new target, first let's rotate to its direction
 		fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
 
@@ -638,87 +646,92 @@ void Actor::updateStanceOrientation(ignition::math::Pose3d &pose) {
 
 // ------------------------------------------------------------------- //
 
+/// \brief Calculate actor's rotation angle (`YAW`) that needs to be applied to
+/// make actor face the target direction. Rotation is performed around world's Z axis.
+/// \note 90 degrees rotation applied because actor coordinate system is rotated 90 degrees CW.
 bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 
-	// calculate the yaw angle actor need to rotate around world's Z axis
-	// NOTE: +90 deg because actor's coordinate system is rotated 90 deg counter clockwise
-	// V1 ------------------------------------------------------------------------------------------------------
-//	ignition::math::Angle yaw_target(std::atan2( target.Y(), target.X() ) + (IGN_PI/2) );
-	// V2 ------------------------------------------------------------------------------------------------------
-	// yaw target expressed as an angle that depends on current IDEAL_TO_TARGET vector
-//	ignition::math::Vector3d to_target_vector = target_ - pose_world_ptr_->Pos();							// in world coord. system
-	// NOTE: the above was before (before target_checkpoint_ version)
+	// NOTE: Calculations considered in the world coordinate system
+
+	// calculate `to_target_vector` which connects actor current position with current checkpoint
 	ignition::math::Vector3d to_target_vector = target_manager_.getCheckpoint() - pose_world_ptr_->Pos();
 
-	to_target_vector.Normalize();
-	ignition::math::Angle yaw_target(std::atan2( to_target_vector.Y(), to_target_vector.X() ) + (IGN_PI/2) );	// +90 deg transforms the angle from actor's coord. system to the world's one
-	//    ------------------------------------------------------------------------------------------------------
-	yaw_target.Normalize();
+	// calculate `to_target_direction` expressed as an angle that depends on current ideal TO_TARGET vector
+	ignition::math::Angle to_target_direction(std::atan2(to_target_vector.Y(), to_target_vector.X()));
+	to_target_direction.Normalize();
 
-	double yaw_start = pose_world_ptr_->Rot().Yaw();
-	//ignition::math::Angle yaw_diff( yaw_start - yaw_target.Radian() );
-	ignition::math::Angle yaw_diff( yaw_target.Radian() - yaw_start );
+	// transform actor orientation to world coordinate system
+	ignition::math::Angle yaw_actor_w( pose_world_ptr_->Rot().Yaw() - (IGN_PI/2) );
+	yaw_actor_w.Normalize();
+
+	// compute angle difference
+	ignition::math::Angle yaw_diff = to_target_direction - yaw_actor_w;
 	yaw_diff.Normalize();
 
-	/*
-	// choose the right rotation direction (but the direction already calculated properly)
-	if ( std::fabs(yaw_diff.Radian()) > (IGN_PI/2) ) {
+	// helper variable to determine the sign of the angular velocity that needs
+	// to be applied to align with target direction
+	uint8_t sign = +1;
 
-		if ( yaw_diff.Radian() >= 1e-06 ) {
-			// positive value
-			yaw_diff.Radian( -(IGN_PI - yaw_diff.Radian() ));
-		} else {
-			// negative value
-			yaw_diff.Radian( IGN_PI - std::fabs(yaw_diff.Radian() ));
-		}
-
-		if ( actor->GetName() == "actor1" ) {
-			//if ( ctr == 0 ) {
-				std::cout << "\tyaw_diff_changed: " << yaw_diff.Radian() << std::endl;
-			//}
-		}
-
-	}
-	*/
-
-	// smooth the rotation if too big
-	static const double YAW_INCREMENT = 0.001;
-#define IVERT_SIGN // ok with that setting
-
-#ifndef IVERT_SIGN
-	short int sign = -1;
-#else
-	short int sign = +1;
-#endif
-//	ignition::math::Vector3d rpy = pose_actor.Rot().Euler();
-
-	// check the sign of the diff - the movement should be performed in the OPPOSITE direction to yaw_diff angle
-	if ( yaw_diff.Radian() < 0.0f ) {
-#ifndef IVERT_SIGN
-		sign = +1;
-#else
+	// check the sign of the `yaw_diff` - the movement should be performed
+	// in the SAME direction as the `yaw_diff` angle (shorter angular path)
+	if ( yaw_diff.Radian() < 0.0 ) {
 		sign = -1;
-#endif
 	}
 
-	// save the change to tell if actor is already aligned or not
+	// save the `angle_change` which can be associated with angular displacement
+	// applied to actor after this iteration
 	double angle_change = 0.0;
 
-	// consider the difference (increment or decrement)
+	// smooth the rotation (limits angular velocity)
+	static const double YAW_INCREMENT = 0.001;
+
+	// calculate the angular displacement based on the angle difference (increment
+	// or decrement actor's YAW)
 	if ( std::fabs(yaw_diff.Radian()) < YAW_INCREMENT ) {
 		angle_change = static_cast<double>(sign) * yaw_diff.Radian();
 	} else {
 		angle_change = static_cast<double>(sign) * YAW_INCREMENT;
 	}
 
-	ignition::math::Angle yaw_result(yaw_start + angle_change);
-	yaw_result.Normalize();
-	rpy->Z(yaw_result.Radian());
+	// ----------------------------------------------------------------
+//	std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+//	std::cout << "\t\talignToTargetDirection()" << std::endl;
+//	std::cout << "\tisTargetChosen: " << target_manager_.isTargetChosen() << "\tisTargetReached: " << target_manager_.isTargetReached() << std::endl;
+//	std::cout << "\tcheckpoint: " << target_manager_.getCheckpoint() << "\ttarget: " << target_manager_.getTarget() << std::endl;
+//	std::cout << "\tpos_actor: " << pose_world_ptr_->Pos() << std::endl;
+//	std::cout << "\tto_target_vector: " << to_target_vector << "\t\tto_target_direction: " << to_target_direction.Radian() << std::endl;
+//	std::cout << "\tyaw_actor_w: " << yaw_actor_w.Radian() << std::endl;
+//	std::cout << "\tyaw_diff: " << yaw_diff.Radian() << std::endl;
+	// ----------------------------------------------------------------
 
-	// return true if the yaw_diff is small enough, otherwise return false
-	yaw_diff.Radian(yaw_diff.Radian() - angle_change);
+	// apply the change
+	yaw_actor_w.Radian(yaw_actor_w.Radian() + angle_change);
+
+	// ----
+//	std::cout << "\tyaw_actor_w_changed: " << yaw_actor_w.Radian() << std::endl;
+	// ----
+
+	// transform actor `YAW` angle expressed in world coordinate system
+	// to the angle expressed in actor coordinate system
+	// NOTE: using the same variable, may be confusing
+	yaw_actor_w.Radian(yaw_actor_w.Radian() + IGN_PI_2);
+	yaw_actor_w.Normalize();
+
+	// update actor pose with newly calculated `YAW` angle
+	rpy->Z(yaw_actor_w.Radian());
+
+	// Check how far from the perfect alignment the actor is.
+	// True will be returned if the `yaw_diff` is small enough, false otherwise.
+	yaw_diff.Radian(yaw_diff.Radian() + angle_change);
 	yaw_diff.Normalize();
 
+	// ----------------------------------------------------------------
+//	std::cout << "\tyaw_diff_changed: " << yaw_diff.Radian() << "\t\tthreshold: " << IGN_DTOR(10) << std::endl;
+//	std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+//	std::cout << std::endl;
+	// ----------------------------------------------------------------
+
+	// consider 10 degrees tolerance
 	if ( std::fabs(yaw_diff.Radian()) < IGN_DTOR(10) ) {
 		return (true);
 	}
