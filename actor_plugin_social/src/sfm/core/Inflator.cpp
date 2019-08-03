@@ -310,19 +310,27 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findInt
 
 	// needed for 2 actors case
 	ignition::math::Vector3d object_shifted = pt_intersect;
+
+	// save length from actor center to intersection point (with bounding box)
 	double length = line_actor_intersection.Length();
+
+	// depending on `type` another repulsion distance will be considered
+	// to maximize repulsion strength
+	double max_repulsion_dist = 0.0;
 
 	switch(type) {
 
 	case(INTERSECTION_ACTORS):
+
+			max_repulsion_dist = 0.1;
 			/* Try to keep some threshold distance between intersected models,
 			 * this is just a hack for a smoother SFM operation */
-			if ( length > 0.1 ) {
+			if ( length > max_repulsion_dist ) {
 				// keep distance long enough
-				length = (length - 0.1 / length) / 2.0;
+				length = (length - max_repulsion_dist / length) / 2.0;
 			} else {
 				// unable to keep the distance long enough
-				length = 0.495 * line_actor_intersection.Length();
+				length *= 0.495;
 			}
 
 			/* Below is OK under assumption that both bounding `boxes` have the same shape and dimensions
@@ -337,6 +345,7 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findInt
 			break;
 
 	case(INTERSECTION_ACTOR_OBJECT):
+
 			/* initially a factor was 0.97 but the smaller the distance between actor and an obstacle
 			 * the smaller repulsion is produced; when the repulsion in small distances from an obstacle
 			 * is too weak then the factor should be a little smaller  */
@@ -371,15 +380,18 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findInt
 			// FIXME: Experimental version, aim is to generate the strongest repulsion
 			// possible when even slightly stepped into an obstacle.
 			//
-			// 0.4
-			if ( length > 0.3 ) {
+			max_repulsion_dist = 0.3; // 0.4
+
+			if ( length > max_repulsion_dist ) {
 				// keep distance long enough
-				length = (length - 0.3 / length) / 2.0;
+				length = (length - max_repulsion_dist / length) / 2.0;
 				actor_shifted.X( actor_pos.X() + length * cos(line_slope.Radian() ));
 				actor_shifted.Y( actor_pos.Y() + length * sin(line_slope.Radian() ));
 			} else {
-				// unable to keep the distance long enough
-				length = 0.2 * line_actor_intersection.Length();
+				// Unable to keep the distance long enough.
+				// Calculate how far should be shifted to maintain given distance.
+				length = max_repulsion_dist - length;
+				// Shift actor outwards object position (see sign below).
 				actor_shifted.X( actor_pos.X() - length * cos(line_slope.Radian() ));
 				actor_shifted.Y( actor_pos.Y() - length * sin(line_slope.Radian() ));
 			}
