@@ -310,14 +310,13 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findInt
 
 	// needed for 2 actors case
 	ignition::math::Vector3d object_shifted = pt_intersect;
-	double length = 0.0;
+	double length = line_actor_intersection.Length();
 
 	switch(type) {
 
 	case(INTERSECTION_ACTORS):
 			/* Try to keep some threshold distance between intersected models,
 			 * this is just a hack for a smoother SFM operation */
-			length = line_actor_intersection.Length();
 			if ( length > 0.1 ) {
 				// keep distance long enough
 				length = (length - 0.1 / length) / 2.0;
@@ -362,10 +361,29 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findInt
 			 *	chair_1_clone: 	88.3657 522.637 0	len: 530.055	dist: 0.391876	model_type: 3	0.51
 			 * This applies to the circular bounding with radius of 0.8 m. For different size the coefficient
 			 * will not be optimal but still should work properly.
-			 *
 			 */
-			actor_shifted.X( actor_pos.X() + 0.51 * line_actor_intersection.Length() * cos(line_slope.Radian() ));
-			actor_shifted.Y( actor_pos.Y() + 0.51 * line_actor_intersection.Length() * sin(line_slope.Radian() ));
+
+			// based on logged data (see above) a distance with a strongest repulsion
+			// is maintained (if possible).
+			// NOTE: this `case` is connected with another way of interaction calculation
+			// thus `length` is different than in the previous `case`
+			//
+			// FIXME: Experimental version, aim is to generate the strongest repulsion
+			// possible when even slightly stepped into an obstacle.
+			//
+			// 0.4
+			if ( length > 0.3 ) {
+				// keep distance long enough
+				length = (length - 0.3 / length) / 2.0;
+				actor_shifted.X( actor_pos.X() + length * cos(line_slope.Radian() ));
+				actor_shifted.Y( actor_pos.Y() + length * sin(line_slope.Radian() ));
+			} else {
+				// unable to keep the distance long enough
+				length = 0.2 * line_actor_intersection.Length();
+				actor_shifted.X( actor_pos.X() - length * cos(line_slope.Radian() ));
+				actor_shifted.Y( actor_pos.Y() - length * sin(line_slope.Radian() ));
+			}
+
 //			// FIXME: just debugging
 //			std::cout << "\tINTERSECTION_ACTOR_OBJECT | actor_pos: " << actor_pos << "\t\tobject_edge_pos: " << pt_intersect << std::endl;
 //			std::cout << "\tINTERSECTION_ACTOR_OBJECT | actor_center-object_edge len: " << line_actor_intersection.Length() << "\t0.1x: " << 0.1 * line_actor_intersection.Length() << "\t\t0.9x: " << 0.9 * line_actor_intersection.Length() << std::endl;
