@@ -17,7 +17,8 @@ typedef enum {
 } PerpAssertDir;
 
 // ------------------------------------------------------------------- //
-Defuzzifier::Defuzzifier(): location_(FUZZ_LOCATION_UNKNOWN), direction_(FUZZ_DIR_UNKNOWN), level_(FUZZY_LEVEL_NONE)
+Defuzzifier::Defuzzifier(): location_(FUZZ_LOCATION_UNKNOWN), direction_(FUZZ_DIR_UNKNOWN), level_(FUZZY_LEVEL_NONE),
+		slowed_down_(false)
 {}
 // ------------------------------------------------------------------- //
 void Defuzzifier::setInternalForce(const ignition::math::Vector3d &f_alpha) {

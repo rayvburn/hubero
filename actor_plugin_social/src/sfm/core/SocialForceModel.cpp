@@ -331,8 +331,8 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		// just debugging
 		if ( f_alpha_beta.Length() > 1e-06 ) {
 			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << "\tdist: " << distance_v.Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
-			std::cout << "\t\t\tactor_pos: " << (actor_closest_to_model_pose).Pos() << "\tmodel_pos: " << model_closest_point_pose.Pos() << std::endl;
-			std::cout << "\t\t\td_alpha_beta: " << distance_v << "\t\tlen: " << distance_v.Length() << "\tclosest_o_a diff: " << (model_closest_point_pose.Pos() - actor_closest_to_model_pose.Pos()) << "\tclosest_a_o diff: " << (actor_closest_to_model_pose.Pos() - model_closest_point_pose.Pos()) << std::endl;
+//			std::cout << "\t\t\tactor_pos: " << (actor_closest_to_model_pose).Pos() << "\tmodel_pos: " << model_closest_point_pose.Pos() << std::endl;
+//			std::cout << "\t\t\td_alpha_beta: " << distance_v << "\t\tlen: " << distance_v.Length() << "\tclosest_o_a diff: " << (model_closest_point_pose.Pos() - actor_closest_to_model_pose.Pos()) << "\tclosest_a_o diff: " << (actor_closest_to_model_pose.Pos() - model_closest_point_pose.Pos()) << std::endl;
 		}
 
 		/* Check if some condition is met based on parameters previously passed to Fuzzifier */

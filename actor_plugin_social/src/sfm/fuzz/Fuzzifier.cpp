@@ -254,8 +254,8 @@ void Fuzzifier::resetParameters() {
 	direction_ = FUZZ_DIR_UNKNOWN;
 	level_ = FUZZY_LEVEL_NONE;
 
-	// TODO: adjust after changes in `isApplicable()`, to check if object
-	// is dynamic zeroing velocity vector is sufficient
+	// after `isApplicable()` call let's reset `vel_beta_` (by zeroing
+	// velocity vector), which is used to check if object is dynamic
 	vel_beta_ = ignition::math::Vector3d();
 
 //	vels_relative_angle_ = 0.0;
