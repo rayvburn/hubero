@@ -147,6 +147,7 @@ private:
 //	/// Stores only the `perpendicular` component.
 //	ignition::math::Vector3d f_alpha_beta_p_;
 
+	/* Input variables */
 	/// \brief Currently investigated model's velocity vector
 	ignition::math::Vector3d vel_beta_;
 
