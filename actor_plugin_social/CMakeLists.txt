@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(actor_plugin_social)
 
+# note: fuzzylite library utilized by SFM
+find_library(fuzzylite_LIBRARY fuzzylite $ENV{HOME}/libraries/fuzzylite/fuzzylite/release/bin) # path to the .so file
+include_directories($ENV{HOME}/libraries/fuzzylite/fuzzylite) # include fuzzylite's headers folder
+
 find_package(roscpp REQUIRED)
 find_package(actor_sim_utils REQUIRED)
 find_package(actor_sim_srv REQUIRED)
@@ -107,6 +111,7 @@ target_link_libraries(social_force_model social_force_model_fuzzy)
 target_link_libraries( ${PROJECT_NAME} 
   social_force_model 
   social_force_model_utils
+  ${fuzzylite_LIBRARY}
   #actor_bounding_circle
   #actor_common_info
   actor_inflation
