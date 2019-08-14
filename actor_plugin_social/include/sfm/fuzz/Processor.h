@@ -11,6 +11,7 @@
 #include "fl/Headers.h"
 #include <ignition/math/Angle.hh> // angle degree to radian conversion
 #include <tuple>
+#include <map>
 
 namespace sfm {
 namespace fuzz {
@@ -41,7 +42,9 @@ private:
 
 	void configureTermLocationIndependent(const std::string &name, const ignition::math::Angle &gamma_center);
 
-	bool rearrangeTerms(const std::string &name, const uint8_t &status_curr, uint8_t &status_prev);
+	// DEPRECATED?
+	bool rearrangeTerms(const std::string &name, const uint8_t &status_curr, uint8_t &status_global);
+	bool rearrangeTerms(const uint8_t &status_curr, uint8_t &status_global);
 
 	/// \brief Determines location of the \beta element relative to \alpha direction of motion
 	char decodeRelativeLocation(ignition::math::Angle eq, const ignition::math::Angle opp, ignition::math::Angle cc) const;
@@ -63,6 +66,10 @@ private:
 	/// \brief Acts as a status register, in the .cpp there are few masks defined
 	/// so every case possible can be recognized using just one 1-byte variable.
 	uint8_t term_extra_status_;
+
+	/// \brief Array of indexes which `extra terms` are assigned to. Zero is not a valid number
+	/// here (`extra term` with 0 index actually does not exist).
+	uint8_t term_extra_index_[3] = {0, 0, 0};
 
 	/* ----- fuzzylite-related ----- */
 
