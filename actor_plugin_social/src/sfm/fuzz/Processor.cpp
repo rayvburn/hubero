@@ -18,9 +18,97 @@ namespace fuzz {
 #define PROCESSOR_EXTRA_TERM_CROSS_FRONT 	(0x04)
 #define PROCESSOR_EXTRA_TERM_CROSS_BEHIND 	(0x08)
 
-Processor::Processor(): term_extra_status_(PROCESSOR_EXTRA_TERM_NONE) {
-	// TODO Auto-generated constructor stub
-	init(); // TODO: move init() to ctor()
+Processor::Processor()
+		: term_extra_status_(PROCESSOR_EXTRA_TERM_NONE),
+		  d_alpha_beta_angle_(0.0),
+		  alpha_dir_(0.0)
+{
+//	init(); // TODO: move init() to ctor()
+}
+
+// ------------------------------------------------------------------- //
+
+void Processor::checkFl() {
+
+	std::cout << "PROCESSOR_CHECK_FL" << std::endl;
+
+	/* Initialize engine */
+	engine_.setName("SocialBehaviors");
+	engine_.setDescription("");
+
+	/* Initialize second input variable */
+	direction_.setName("direction");
+	direction_.setDescription("");
+	direction_.setEnabled(true);
+	direction_.setRange(-IGN_PI, +IGN_PI);
+	direction_.setLockValueInRange(false);
+	engine_.addInputVariable(&direction_);
+
+	/// TEST1
+//	const double x = IGN_DTOR(-25.0);
+//	direction_.addTerm(new fl::Trapezoid("test1", IGN_DTOR(-180.0), IGN_DTOR(-20.0), IGN_DTOR(+20.0), IGN_DTOR(+180.0)));
+//	direction_.addTerm(new fl::Trapezoid("test2", IGN_DTOR(-180.0), IGN_DTOR(-100.0), IGN_DTOR(+100.0), IGN_DTOR(+180.0)));
+//	std::cout << "highest membership for x=" << x << ": " << direction_.highestMembership(x)->getName() << std::endl;
+//	std::cout << "memberships for x=" << x << " are: " << direction_.fuzzify(x) << std::endl;
+
+	/// TEST2
+	/* Below experiment shows that 2 terms can have the same name and the membership function
+	 * will be calculated properly as long as terms ranges do not intersect. Output:
+	PROCESSOR_CHECK_FL
+	highest membership for x1=-2.18166: test
+	memberships for x1=-2.18166 are: 0.625/test + 0.000/test
+	highest membership for x2=2.18166: test
+	memberships for x2=2.18166 are: 0.000/test + 0.500/test
+	 */
+//
+//	const double x1 = IGN_DTOR(-125.0);
+//	const double x2 = IGN_DTOR(+125.0);
+//	direction_.addTerm(new fl::Trapezoid("test", IGN_DTOR(-180.0), IGN_DTOR(-160.0), IGN_DTOR(-140.0), IGN_DTOR(-100.0)));
+//	direction_.addTerm(new fl::Ramp("test", 	 IGN_DTOR(100.0), IGN_DTOR(150.0)));
+//	std::cout << "highest membership for x1=" << x1 << ": " << direction_.highestMembership(x1)->getName() << std::endl;
+//	std::cout << "memberships for x1=" << x1 << " are: " << direction_.fuzzify(x1) << std::endl;
+//	std::cout << std::endl;
+//	std::cout << "highest membership for x2=" << x2 << ": " << direction_.highestMembership(x2)->getName() << std::endl;
+//	std::cout << "memberships for x2=" << x2 << " are: " << direction_.fuzzify(x2) << std::endl;
+//	std::cout << std::endl;
+//	std::cout << std::endl;
+
+	/// TEST3: term goes out of range when lock value in range is TRUE
+	/*
+	direction_.setLockValueInRange(true);
+	const double x1 = IGN_DTOR(-125.0);
+	const double x2 = IGN_DTOR(+181.0);
+	direction_.addTerm(new fl::Trapezoid("test", IGN_DTOR(-180.0), IGN_DTOR(-160.0), IGN_DTOR(-140.0), IGN_DTOR(-100.0)));
+	direction_.addTerm(new fl::Ramp("test", 	 IGN_DTOR(100.0), IGN_DTOR(180.0)));
+	std::cout << "highest membership for x1=" << x1 << ": " << direction_.highestMembership(x1)->getName() << std::endl;
+	std::cout << "memberships for x1=" << x1 << " are: " << direction_.fuzzify(x1) << std::endl;
+	std::cout << std::endl;
+	std::cout << "highest membership for x2=" << x2 << ": " << direction_.highestMembership(x2)->getName() << std::endl;
+	std::cout << "memberships for x2=" << x2 << " are: " << direction_.fuzzify(x2) << std::endl;
+	std::cout << std::endl;
+	std::cout << std::endl;
+
+	//	Output:
+//	highest membership for x1=-2.18166: test
+//	memberships for x1=-2.18166 are: 0.625/test + 0.000/test
+//	highest membership for x2=3.15905: test
+//	memberships for x2=3.15905 are: 0.000/test + 1.000/test
+	// SO THE ARGUMENT does exceed the allowable range but the membership function is calculated properly
+	*/
+
+	/// TEST 4: syntax of the uninitialized term
+	/*
+	fl::Trapezoid* trap = new fl::Trapezoid("test1");
+	std::cout << "\n\nterm: " << trap->getName() << "'s configuration is: " << trap->parameters() << "\n\n";
+	delete trap;
+	// Output:
+//	term: test1's configuration is: nan nan nan nan
+	 */
+
+
+	int i = 0;
+	while (i++ < 9000000); // delay
+
 }
 
 // ------------------------------------------------------------------- //
@@ -41,10 +129,10 @@ void Processor::init() {
 	// `location` regions
 	location_.addTerm(new fl::Ramp("back", 				IGN_DTOR(-180.0), 	IGN_DTOR(-160.0)));
 	location_.addTerm(new fl::Trapezoid("back_right", 	IGN_DTOR(-180.0), 	IGN_DTOR(-150.0), 	IGN_DTOR(-120.0), 	IGN_DTOR(-90.0)));
-	location_.addTerm(new fl::Trapezoid("front_right", 	IGN_DTOR(-120.0) 	IGN_DTOR(-90.0), 	IGN_DTOR(-30.0), 	IGN_DTOR(0.0)));
+	location_.addTerm(new fl::Trapezoid("front_right", 	IGN_DTOR(-120.0), 	IGN_DTOR(-90.0), 	IGN_DTOR(-30.0), 	IGN_DTOR(0.0)));
 	location_.addTerm(new fl::Triangle("front", 		IGN_DTOR(-20.0), 	IGN_DTOR(0.0), 		IGN_DTOR(+20.0)));
-	location_.addTerm(new fl::Trapezoid("front_left", 	IGN_DTOR(0.0) 		IGN_DTOR(30.0), 	IGN_DTOR(90.0), 	IGN_DTOR(120.0)));
-	location_.addTerm(new fl::Trapezoid("back_left", 	IGN_DTOR(90.0) 		IGN_DTOR(120.0), 	IGN_DTOR(150.0), 	IGN_DTOR(180.0)));
+	location_.addTerm(new fl::Trapezoid("front_left", 	IGN_DTOR(0.0), 		IGN_DTOR(30.0), 	IGN_DTOR(90.0), 	IGN_DTOR(120.0)));
+	location_.addTerm(new fl::Trapezoid("back_left", 	IGN_DTOR(90.0),		IGN_DTOR(120.0), 	IGN_DTOR(150.0), 	IGN_DTOR(180.0)));
 	location_.addTerm(new fl::Ramp("back", 				IGN_DTOR(+160.0), 	IGN_DTOR(+180.0)));
 	engine_.addInputVariable(&location_);
 
@@ -116,25 +204,25 @@ void Processor::updateRegions() {
 
 	/* - - - - - Terms sensitive to side changes - - - - - */
 	// `outwards`
-	status |= configureTermLocationDependent("outwards", side, gamma_eq.Radian(), gamma_opp.Radian());
-//	rearrangeTerms("outwards", status, term_extra_status_);
+//	status |= configureTermLocationDependent("outwards", side, gamma_eq.Radian(), gamma_opp.Radian());
+	//rearrangeTerms("outwards", status, term_extra_status_);
 
 	// `cross_front`
-	status |= configureTermLocationDependent("cross_front", side, gamma_cc.Radian(), gamma_eq.Radian());
-//	rearrangeTerms("cross_front", status, term_extra_status_);
+//	status |= configureTermLocationDependent("cross_front", side, gamma_cc.Radian(), gamma_eq.Radian());
+	//rearrangeTerms("cross_front", status, term_extra_status_);
 
 	// `cross_behind`
-	status |= configureTermLocationDependent("cross_behind", side, gamma_opp.Radian(), gamma_cc.Radian());
-//	rearrangeTerms("cross_behind", status, term_extra_status_);
+//	status |= configureTermLocationDependent("cross_behind", side, gamma_opp.Radian(), gamma_cc.Radian());
+	//rearrangeTerms("cross_behind", status, term_extra_status_);
 
 	rearrangeTerms(status, term_extra_status_);
 
 	/* - - - - - Terms insensitive to side changes - - - - - */
 	// `equal`
-	configureTermLocationIndependent("equal", gamma_eq.Radian());
+//	configureTermLocationIndependent("equal", gamma_eq.Radian());
 
 	// `opposite`
-	configureTermLocationIndependent("opposite", gamma_opp.Radian());
+//	configureTermLocationIndependent("opposite", gamma_opp.Radian());
 
 }
 
@@ -163,133 +251,38 @@ char Processor::decodeRelativeLocation(ignition::math::Angle eq, const ignition:
 
 // ------------------------------------------------------------------- //
 
-uint8_t Processor::configureTermLocationDependent(std::string name, const char &side, const ignition::math::Angle &gamma_start,
-		const ignition::math::Angle &gamma_end) {
-
-	std::string params;
-	bool extra_term_needed;
-	uint8_t status = PROCESSOR_EXTRA_TERM_NONE;
-
-	// based on `side` argument value, let's calculate trapezoid parameters
-	// and decide whether an additional term is needed
-	if ( side == 'r' ) {
-		std::tie(params, extra_term_needed) = calculateTrapezoid(gamma_start.Radian(), gamma_end.Radian());
-	} else {
-		std::tie(params, extra_term_needed) = calculateTrapezoid(gamma_end.Radian(), gamma_start.Radian());
-	}
-
-	// update a term of the given `name`
-	direction_.getTerm(name)->configure(params);
-
-	// check whether an additional term is needed
-	if ( extra_term_needed ) {
-
-		if ( side == 'r' ) {
-			std::tie(params, std::ignore) = calculateTrapezoid(gamma_start.Radian(), gamma_end.Radian(), true);
-		} else {
-			std::tie(params, std::ignore) = calculateTrapezoid(gamma_end.Radian(), gamma_start.Radian(), true);
-		}
-
-		// save status value based on the `name`
-		switch (name) {
-		case("outwards"):
-				status |= PROCESSOR_EXTRA_TERM_OUTWARDS;
-				break;
-		case("cross_front"):
-				status |= PROCESSOR_EXTRA_TERM_CROSS_FRONT;
-				break;
-		case("cross_behind"):
-				status |= PROCESSOR_EXTRA_TERM_CROSS_BEHIND;
-				break;
-		}
-
-		// name of the term to check
-		name += "_extra";
-		if ( !direction_.hasTerm(name) ) {
-			direction_.addTerm(new fl::Trapezoid(name));
-		}
-		direction_.getTerm(name)->configure(params);
-
-	}
-
-	return (status);
-
-}
+//uint8_t Processor::configureTermLocationDependent(std::string name, const char &side, const ignition::math::Angle &gamma_start,
+//		const ignition::math::Angle &gamma_end) {
+//
+//
+//
+//}
 
 // ------------------------------------------------------------------- //
 
-void Processor::configureTermLocationIndependent(const std::string &name, const ignition::math::Angle &gamma_center) {
-
-	std::string params;
-	std::tie(params, std::ignore) = calculateTrapezoid(gamma_center.Radian());
-	direction_.getTerm(name)->configure(params);
-
-}
+//void Processor::configureTermLocationIndependent(const std::string &name, const ignition::math::Angle &gamma_center) {
+//
+//
+//
+//}
 
 // ------------------------------------------------------------------- //
 
 //std::tuple<double, double, double, double> Processor::calculateTrapezoid(const double &center) const {
-std::string Processor::calculateTrapezoid(const double &center) const {
-
-	static const double INTERVAL = IGN_DTOR(5.0);
-	return (calculateTrapezoid(center - INTERVAL, center + INTERVAL));
-
-}
+//std::string Processor::calculateTrapezoid(const double &center) const {
+//
+//
+//
+//}
 
 // ------------------------------------------------------------------- //
 
 //std::tuple<double, double, double, double> Processor::calculateTrapezoid(const double &start,
-std::tuple<std::string, bool> Processor::calculateTrapezoid(const double &start,
-		const double &end, bool comp_breakdown) const {
-
-	// GAP shifts region bounding point towards the region's center
-	static const double GAP = IGN_DTOR(5.0);
-	// INTERSECTION is an interval used to artificially extend the region's range
-	static const double INTERSECTION = IGN_DTOR(15.0);
-
-	// allocate variables
-	ignition::math::Angle gamma;
-	std::string str;
-
-	// check whether `start` angle is smaller than `end` angle
-	if ( start <= end ) {
-
-		// normal operation
-		gamma.Radian(start + GAP - INTERSECTION);	gamma.Normalize();		str += gamma.Radian(); 	str += " ";
-		gamma.Radian(start + GAP);					gamma.Normalize();		str += gamma.Radian(); 	str += " ";
-		gamma.Radian(end - GAP);					gamma.Normalize();		str += gamma.Radian(); 	str += " ";
-		gamma.Radian(end - GAP + INTERSECTION);		gamma.Normalize();		str += gamma.Radian();
-		return (std::make_tuple(str, false));
-
-	} else if ( !comp_breakdown ) {
-
-		// NOTE: Seems that `start` is bigger than `end` so a `breakdown` of ranges occurred.
-		// This kind of situation must be handled differently - see `fuzzylite`'s
-		// `Trapezoid` `membership` method:
-		// https://fuzzylite.github.io/fuzzylite/d0/d26/classfl_1_1_trapezoid.html#a266a40979ac36f6012efce935302e983
-		// 2 separate trapezoids must be created (first with c = d and a != b,
-		// second with a = b and c != d)
-		gamma.Radian(end + GAP - INTERSECTION);	gamma.Normalize();		str += gamma.Radian(); 	str += " ";
-		gamma.Radian(end + GAP);				gamma.Normalize();		str += gamma.Radian(); 	str += " ";
-		gamma.Radian(IGN_PI);					gamma.Normalize();		str += gamma.Radian(); 	str += " ";
-		gamma.Radian(IGN_PI);					gamma.Normalize();		str += gamma.Radian();
-		// FIXME: intersection range must moved to the opposite side of the x-axis
-		// when <end; pi> range is too narrow
-		return (std::make_tuple(str, true));
-
-	} else {
-
-		// compute the second part of the trapezoid
-		gamma.Radian(-IGN_PI);					gamma.Normalize();		str += gamma.Radian(); 	str += " ";
-		gamma.Radian(-IGN_PI);					gamma.Normalize();		str += gamma.Radian(); 	str += " ";
-		gamma.Radian(end + GAP - INTERSECTION);	gamma.Normalize();		str += gamma.Radian(); 	str += " ";
-		gamma.Radian(end + GAP);				gamma.Normalize();		str += gamma.Radian();
-		// FIXME: consider `intersection` movement from the close-to-pi range
-		return (std::make_tuple(str, false));
-
-	}
-
-}
+//std::tuple<std::string, bool> Processor::calculateTrapezoid(const double &start,
+//		const double &end, bool comp_breakdown) const {
+//
+//
+//}
 
 // ------------------------------------------------------------------- //
 
@@ -327,7 +320,7 @@ bool Processor::rearrangeTerms(const std::string &name, const uint8_t &status_cu
 //
 //	return (false);
 
-
+	return (false);
 
 }
 
@@ -381,6 +374,8 @@ bool Processor::rearrangeTerms(const uint8_t &status_curr, uint8_t &status_globa
 
 
 	}
+
+	return (false);
 
 }
 

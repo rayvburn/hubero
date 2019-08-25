@@ -54,6 +54,10 @@ SocialForceModel::SocialForceModel():
 
 	closest_points_.clear();
 
+	// fuzzylite check
+//	proc_dbg_.checkFl();
+
+
 	/* Algorithm PARAMETERS are:
 	 * - relaxation time must be given here
 	 * - kind of coefficient for attraction artificial potential field (decreases over time)

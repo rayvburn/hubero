@@ -21,6 +21,8 @@ class Processor {
 public:
 	Processor();
 
+	void checkFl();
+
 	void init();
 	void updateRegions();
 
@@ -37,25 +39,12 @@ public:
 
 private:
 
-	uint8_t configureTermLocationDependent(std::string name, const char &side, const ignition::math::Angle &gamma_start,
-			const ignition::math::Angle &gamma_end);
-
-	void configureTermLocationIndependent(const std::string &name, const ignition::math::Angle &gamma_center);
-
 	// DEPRECATED?
 	bool rearrangeTerms(const std::string &name, const uint8_t &status_curr, uint8_t &status_global);
 	bool rearrangeTerms(const uint8_t &status_curr, uint8_t &status_global);
 
 	/// \brief Determines location of the \beta element relative to \alpha direction of motion
 	char decodeRelativeLocation(ignition::math::Angle eq, const ignition::math::Angle opp, ignition::math::Angle cc) const;
-
-	/// \brief Calculates trapezoid vertices based on a region's center value.
-//	std::tuple<double, double, double, double> calculateTrapezoid(const double &center) const;
-	std::string calculateTrapezoid(const double &center) const;
-
-	/// \brief Calculates trapezoid vertices based on region's start and end values.
-//	std::tuple<double, double, double, double> calculateTrapezoid(const double &start, const double &end) const;
-	std::tuple<std::string, bool> calculateTrapezoid(const double &start, const double &end, bool comp_breakdown = false) const;
 
 	/// \brief Direction of the vector which connects \alpha 's position with \beta 's position.
 	double d_alpha_beta_angle_;

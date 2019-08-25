@@ -39,6 +39,9 @@
 #include <sfm/fuzz/Fuzzifier.h>
 #include <sfm/fuzz/Defuzzifier.h>
 
+// Processor - checking fuzzylite behavior
+#include <sfm/fuzz/Processor.h>
+
 // ----------------------------------------------------------------------------------------------- //
 /*
  * References:
@@ -334,6 +337,9 @@ private:
 
 	sfm::fuzz::Fuzzifier fuzz_;
 	sfm::fuzz::Defuzzifier defuzz_;
+
+	//
+	sfm::fuzz::Processor proc_dbg_;
 
 	/// @brief Shared pointer to element of ParamLoader class.
 	std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr_;
