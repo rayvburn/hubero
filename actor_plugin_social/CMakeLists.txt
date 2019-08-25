@@ -54,8 +54,11 @@ add_library(social_force_model
 add_library(social_force_model_fuzzy
   include/sfm/fuzz/Fuzzifier.h
   include/sfm/fuzz/Defuzzifier.h
+  include/sfm/fuzz/Processor.h
   src/sfm/fuzz/Fuzzifier.cpp
-  src/sfm/fuzz/Defuzzifier.cpp)
+  src/sfm/fuzz/Defuzzifier.cpp
+  src/sfm/fuzz/Processor.cpp
+)
 
 add_library(social_force_model_utils include/SocialForceModelUtils.h src/SocialForceModelUtils.cpp)
 
@@ -103,7 +106,7 @@ add_library(actor_ros
 )
 
 target_link_libraries(actor_inflation actor_core actor_ros) # ros needed here?
-target_link_libraries(social_force_model social_force_model_fuzzy)
+target_link_libraries(social_force_model social_force_model_fuzzy ${fuzzylite_LIBRARY})
 #target_link_libraries(actor_core actor_ros)
 
 #add_library(enums include/Enums.h)
@@ -111,7 +114,6 @@ target_link_libraries(social_force_model social_force_model_fuzzy)
 target_link_libraries( ${PROJECT_NAME} 
   social_force_model 
   social_force_model_utils
-  ${fuzzylite_LIBRARY}
   #actor_bounding_circle
   #actor_common_info
   actor_inflation
