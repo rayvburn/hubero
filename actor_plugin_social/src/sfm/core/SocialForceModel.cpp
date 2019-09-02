@@ -58,6 +58,7 @@ SocialForceModel::SocialForceModel():
 //	proc_dbg_.checkFl();
 
 
+
 	/* Algorithm PARAMETERS are:
 	 * - relaxation time must be given here
 	 * - kind of coefficient for attraction artificial potential field (decreases over time)
@@ -211,12 +212,6 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 //		std::cout << "START DEBUGGING\n\t" << SfmDebugGetCurrentActorName() << "\t\t" << SfmDebugGetCurrentObjectName() << std::endl;
 //		std::cout << "\tinitial actor_pose: " << _actor_pose << "\tmodel_pose: " << model_ptr->WorldPose() << std::endl;
 
-		if ( is_an_actor ) {
-			// FIXME: just catching breakpoint with debugger
-			int abc = 0;
-			abc++;
-		}
-
 		// calculate closest points
 		switch(inflation_type_) {
 
@@ -334,13 +329,18 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 		// just debugging
 		if ( f_alpha_beta.Length() > 1e-06 ) {
-			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << "\tdist: " << distance_v.Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
+
+			// TODO:
+//			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << "\tdist: " << distance_v.Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
+
 //			std::cout << "\t\t\tactor_pos: " << (actor_closest_to_model_pose).Pos() << "\tmodel_pos: " << model_closest_point_pose.Pos() << std::endl;
 //			std::cout << "\t\t\td_alpha_beta: " << distance_v << "\t\tlen: " << distance_v.Length() << "\tclosest_o_a diff: " << (model_closest_point_pose.Pos() - actor_closest_to_model_pose.Pos()) << "\tclosest_a_o diff: " << (actor_closest_to_model_pose.Pos() - model_closest_point_pose.Pos()) << std::endl;
+
 		}
 
 		/* Check if some condition is met based on parameters previously passed to Fuzzifier */
 		// owner name condition for easier debugging / owner_name_ == "actor1" &&
+		/*
 		if ( fuzz_.isApplicable() ) {
 
 			static int fuzz_ctr = 0;
@@ -378,6 +378,15 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 //			}
 
 		}
+		 */
+
+		// - - - - fuzzylite
+		if ( is_an_actor ) {
+//			std::cout << "\n\n\tFuzzy logic processor - " << owner_name_ << "\n";
+			fuzzy_processor_.process();
+//			std::cout << "" << std::endl << std::endl;
+		}
+		// - - - -
 
 
 		// save distance to the closest obstacle (if smaller than the one considered closest so far)
@@ -393,9 +402,10 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 	} /* for loop ends here (iterates over all world models) */
 
-	std::cout << "\n\t\tINTERNAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha << std::endl;
-	std::cout << "\t\tTOTAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total << std::endl;
-	std::cout << "**************************************************************************\n\n";
+	// TODO:
+//	std::cout << "\n\t\tINTERNAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha << std::endl;
+//	std::cout << "\t\tTOTAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total << std::endl;
+//	std::cout << "**************************************************************************\n\n";
 
 	if ( print_info ) {
 		std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
@@ -906,6 +916,20 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 	// set Defuzzifier's internal components (utilized to modify actor's behavior)
 	defuzz_.setInteractionForceNorm(n_alpha_scaled);
 	defuzz_.setInteractionForcePerp(p_alpha_scaled);
+
+	// ---- fuzzylite
+	// TODO: make a function taking ign angle, offset, calculating normalized value
+	// FIXME: assuming that each object is of `actor` type
+	ignition::math::Angle alpha_dir_angle(actor_pose.Rot().Yaw() - IGN_PI_2);
+	alpha_dir_angle.Normalize();
+	fuzzy_processor_.setDirectionAlpha(alpha_dir_angle.Radian());	// 1st input
+
+	ignition::math::Angle beta_dir_angle(object_pose.Rot().Yaw() - IGN_PI_2);
+	alpha_dir_angle.Normalize();
+	fuzzy_processor_.setDirectionBeta(beta_dir_angle.Radian());		// 2nd input
+
+	fuzzy_processor_.setRelativeLocation(beta_angle_rel);			// 3rd input
+	// ----
 
 
 #ifdef DEBUG_FORCE_EACH_OBJECT

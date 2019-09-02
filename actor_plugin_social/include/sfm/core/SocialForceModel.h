@@ -339,7 +339,7 @@ private:
 	sfm::fuzz::Defuzzifier defuzz_;
 
 	//
-	sfm::fuzz::Processor proc_dbg_;
+	sfm::fuzz::Processor fuzzy_processor_;
 
 	/// @brief Shared pointer to element of ParamLoader class.
 	std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr_;
