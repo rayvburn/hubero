@@ -23,9 +23,12 @@ public:
 	/// to actually be taken into consideration during reasoning
 	TrapezoidLocIndep(std::string name, double intersection_deg, double length_deg);
 
-	/// @param name
+	///
 	/// @param gamma_center
-	void configureTerm(const std::string &name, const ignition::math::Angle &gamma_center);
+	/// @return
+	bool update(const ignition::math::Angle &gamma_center);
+
+//	bool update
 
 	virtual ~TrapezoidLocIndep();
 

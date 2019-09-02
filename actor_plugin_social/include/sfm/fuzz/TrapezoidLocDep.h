@@ -25,9 +25,7 @@ public:
 	/// @param gamma_start
 	/// @param gamma_end
 	/// @return
-	uint8_t configureTerm(	std::string name, const char &side,
-											const ignition::math::Angle &gamma_start,
-											const ignition::math::Angle &gamma_end);
+	bool update(const char &side, const ignition::math::Angle &gamma_start, const ignition::math::Angle &gamma_end);
 
 	virtual ~TrapezoidLocDep();
 

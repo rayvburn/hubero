@@ -12,6 +12,8 @@
 #include <ignition/math/Angle.hh> // angle degree to radian conversion
 #include <tuple>
 #include <map>
+#include "TrapezoidLocDep.h"
+#include "TrapezoidLocIndep.h"
 
 namespace sfm {
 namespace fuzz {
@@ -23,28 +25,45 @@ public:
 
 	void checkFl();
 
-	void init();
-	void updateRegions();
+	void setDirectionAlpha(const double &dir_alpha);
+	void setDirectionBeta(const double &dir_beta);
+	void setRelativeLocation(const double &beta_location_relative_to_alpha_dir_angle);
+
+	/// \brief Executes fuzzy calculations. The `process()` call must be preceded by `updateRegions()`
+	void process();
+
+	/// \brief Based on the output variable's value, calculates the behavior needed to be applied.
+	/// In case of 2 behaviors having non-zero memberships, their `strength` is different than 1.0
+	/// (sums up to 1.0 though).
+	/// \return Vector of tuples. Each tuple consists of behavior name (string) and membership level.
+	std::vector<std::tuple<std::string, double> > getOutput() const;
 
 	// TODO: check object dynamic
 	/// \brief Currently investigated model's velocity vector
 //	ignition::math::Vector3d vel_beta_;
 
-	void setVelsRelativeAngle(const double &vels_relative_angle);					// φ_αβ (FIXME: phi there...)
-	void setVelsRelativeAngle(const double &vel_alpha_angle, const double &vel_beta_angle);
-	void setObjectDirRelativeAngle(const double &object_dir_relative_angle);		// β position direction relative to α direction
+//	void setVelsRelativeAngle(const double &vels_relative_angle);					// φ_αβ (FIXME: phi there...)
+//	void setVelsRelativeAngle(const double &vel_alpha_angle, const double &vel_beta_angle);
+//	void setObjectDirRelativeAngle(const double &object_dir_relative_angle);		// β position direction relative to α direction
 
 	virtual ~Processor();
 
-
 private:
 
+	/// \brief Initializes fuzzy logic system (based on `fuzzylite` library)
+	///  with values proper to this application.
+	void init();
+
 	// DEPRECATED?
-	bool rearrangeTerms(const std::string &name, const uint8_t &status_curr, uint8_t &status_global);
-	bool rearrangeTerms(const uint8_t &status_curr, uint8_t &status_global);
+//	bool rearrangeTerms(const std::string &name, const uint8_t &status_curr, uint8_t &status_global);
+//	bool rearrangeTerms(const uint8_t &status_curr, uint8_t &status_global);
 
 	/// \brief Determines location of the \beta element relative to \alpha direction of motion
 	char decodeRelativeLocation(ignition::math::Angle eq, const ignition::math::Angle opp, ignition::math::Angle cc) const;
+
+	/// \brief Updates trapezoidal regions of input variables.
+	/// \note Must be preceded by `setters` of input variables.
+	void updateRegions();
 
 	/// \brief Direction of the vector which connects \alpha 's position with \beta 's position.
 	double d_alpha_beta_angle_;
@@ -52,13 +71,16 @@ private:
 	/// \brief Determines \alpha 's direction of motion.
 	double alpha_dir_;
 
+	/// \brief Determines \beta 's direction of motion.
+	double beta_dir_;
+
 	/// \brief Acts as a status register, in the .cpp there are few masks defined
 	/// so every case possible can be recognized using just one 1-byte variable.
-	uint8_t term_extra_status_;
+//	uint8_t term_extra_status_;
 
 	/// \brief Array of indexes which `extra terms` are assigned to. Zero is not a valid number
 	/// here (`extra term` with 0 index actually does not exist).
-	uint8_t term_extra_index_[3] = {0, 0, 0};
+//	uint8_t term_extra_index_[3] = {0, 0, 0};
 
 	/* ----- fuzzylite-related ----- */
 
@@ -70,9 +92,30 @@ private:
 	/// \brief An angle which helps specify on which hand-side the object is located relative to the actor
 	fl::InputVariable location_; 	//	double object_dir_relative_angle_;
 
+	// direction input variable section (consists of input variable and related trapezoidal terms)
 	/// \brief A relative angle between 2 objects' velocities vectors; used to determine
 	/// whether objects are moving in the same direction
 	fl::InputVariable direction_; 		//	double vels_relative_angle_;
+
+	/// \brief Trapezoidal term related to the case when `beta` object's
+	/// direction points outwards relative to the `alpha` direction
+	TrapezoidLocDep trapezoid_out_{"outwards", 10};
+
+	/// \brief Trapezoidal term related to the case when `beta` object's
+	/// direction crosses in front of the `alpha` center
+	TrapezoidLocDep trapezoid_cf_{"cross_front", 10};
+
+	/// \brief Trapezoidal term related to the case when `beta` object's
+	/// direction crosses behind the `alpha` center
+	TrapezoidLocDep trapezoid_cb_{"cross_behind", 10};
+
+	/// \brief Trapezoidal term related to the case when `beta` object's
+	/// direction points in the same direction as the `alpha`'s
+	TrapezoidLocIndep trapezoid_eq_{"equal", 10, 5};
+
+	/// \brief Trapezoidal term related to the case when `beta` object's
+	/// direction points in the opposite direction as the `alpha`'s
+	TrapezoidLocIndep trapezoid_opp_{"opposite", 10, 5};
 
 	/* ----- Output variables ----- */
 	fl::OutputVariable social_behavior_;

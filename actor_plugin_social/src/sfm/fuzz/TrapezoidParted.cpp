@@ -25,7 +25,10 @@ TrapezoidParted::TrapezoidParted(std::string name, double intersection_deg)
 
 // ------------------------------------------------------------------- //
 
-TrapezoidParted::~TrapezoidParted() {}
+TrapezoidParted::~TrapezoidParted() {
+	delete trapezoid_ptrs_.at(0);
+	delete trapezoid_ptrs_.at(1);
+}
 
 // ************************************************************************************************************
 // private section
@@ -89,7 +92,7 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 			// TODO: height not need to be cut?
 //			double height = findHeight('a', a.Radian(), b_out_range);
 
-			// first part's configuration (range artificially extended by 5 degree)
+			// first part's configuration (range artificially extended by 5 degrees)
 			params = generateParams(a.Radian(), b_out_range, b_out_range + IGN_DTOR(5.0), b_out_range + IGN_DTOR(5.0), 1.0);
 
 			// consider negative side case now (wrap from the positive side to the negative one)
@@ -205,6 +208,7 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 	// if `wrap` did not occur, let's try to reset the second part (with index of 1)
 	if ( !status ) {
 		// sets all fields to `nan` except for `height`
+		// TODO: is this needed? see below
 		resetWrapped();
 	}
 
@@ -218,8 +222,14 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 
 // ------------------------------------------------------------------- //
 
+std::vector<fl::Trapezoid*> TrapezoidParted::getTrapezoids() const {
+	return (trapezoid_ptrs_);
+}
+
+// ------------------------------------------------------------------- //
+
 std::string TrapezoidParted::generateParams(const double &a, const double &b, const double &c,
-		const double &d, const double &height = 1.0) const {
+		const double &d, const double &height) const {
 
 	std::string params("");
 

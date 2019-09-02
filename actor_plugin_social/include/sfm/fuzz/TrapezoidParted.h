@@ -27,7 +27,7 @@ public:
 	/// @param intersection_deg
 	TrapezoidParted(std::string name, double intersection_deg);
 
-	/// @brief Updates both parttrapezoids
+	/// @brief Updates both trapezoid parts
 	/// @param start
 	/// @param end
 	/// @return

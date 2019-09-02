@@ -55,9 +55,15 @@ add_library(social_force_model_fuzzy
   include/sfm/fuzz/Fuzzifier.h
   include/sfm/fuzz/Defuzzifier.h
   include/sfm/fuzz/Processor.h
+  include/sfm/fuzz/TrapezoidParted.h
+  include/sfm/fuzz/TrapezoidLocIndep.h
+  include/sfm/fuzz/TrapezoidLocDep.h
   src/sfm/fuzz/Fuzzifier.cpp
   src/sfm/fuzz/Defuzzifier.cpp
   src/sfm/fuzz/Processor.cpp
+  src/sfm/fuzz/TrapezoidParted.cpp
+  src/sfm/fuzz/TrapezoidLocIndep.cpp
+  src/sfm/fuzz/TrapezoidLocDep.cpp
 )
 
 add_library(social_force_model_utils include/SocialForceModelUtils.h src/SocialForceModelUtils.cpp)
