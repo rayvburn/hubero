@@ -41,6 +41,7 @@
 
 // Processor - checking fuzzylite behavior
 #include <sfm/fuzz/Processor.h>
+#include <sfm/fuzz/SocialConductor.h>
 
 // ----------------------------------------------------------------------------------------------- //
 /*
@@ -340,6 +341,7 @@ private:
 
 	//
 	sfm::fuzz::Processor fuzzy_processor_;
+	sfm::fuzz::SocialConductor social_conductor_;
 
 	/// @brief Shared pointer to element of ParamLoader class.
 	std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr_;

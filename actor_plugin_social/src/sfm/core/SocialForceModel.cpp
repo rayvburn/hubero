@@ -114,6 +114,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 	closest_points_.clear();
 	defuzz_.reset();
+	social_conductor_.reset();
 
 	( SfmGetPrintData() ) ? (print_info = true) : (0);
 
@@ -331,7 +332,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		if ( f_alpha_beta.Length() > 1e-06 ) {
 
 			// TODO:
-//			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << "\tdist: " << distance_v.Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
+			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << "\tdist: " << distance_v.Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
 
 //			std::cout << "\t\t\tactor_pos: " << (actor_closest_to_model_pose).Pos() << "\tmodel_pos: " << model_closest_point_pose.Pos() << std::endl;
 //			std::cout << "\t\t\td_alpha_beta: " << distance_v << "\t\tlen: " << distance_v.Length() << "\tclosest_o_a diff: " << (model_closest_point_pose.Pos() - actor_closest_to_model_pose.Pos()) << "\tclosest_a_o diff: " << (actor_closest_to_model_pose.Pos() - model_closest_point_pose.Pos()) << std::endl;
@@ -381,10 +382,25 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		 */
 
 		// - - - - fuzzylite
+
 		if ( is_an_actor ) {
-//			std::cout << "\n\n\tFuzzy logic processor - " << owner_name_ << "\n";
+			std::cout << "\n\n\tFuzzy logic processor - " << owner_name_ << "\n";
 			fuzzy_processor_.process();
-//			std::cout << "" << std::endl << std::endl;
+			std::cout << "" << std::endl << std::endl;
+		}
+		// - - - -
+
+		// - - - - social conductor
+		if ( is_an_actor ) {
+			double fuzz_out = 100.0; // initially out of range
+			std::tie(std::ignore, fuzz_out) = fuzzy_processor_.getOutput().at(0); // FIXME
+			social_conductor_.apply(fuzz_out);
+			std::cout << "\n\n\tSocial conductor - " << owner_name_ << "\t" << social_conductor_.getSocialVector() << std::endl << std::endl;
+			if ( social_conductor_.getSocialVector().Length() > 1e-06 ) {
+				int stopit = 0;
+				stopit++;
+			}
+
 		}
 		// - - - -
 
@@ -403,9 +419,9 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 	} /* for loop ends here (iterates over all world models) */
 
 	// TODO:
-//	std::cout << "\n\t\tINTERNAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha << std::endl;
-//	std::cout << "\t\tTOTAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total << std::endl;
-//	std::cout << "**************************************************************************\n\n";
+	std::cout << "\n\t\tINTERNAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha << std::endl;
+	std::cout << "\t\tTOTAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total << std::endl;
+	std::cout << "**************************************************************************\n\n";
 
 	if ( print_info ) {
 		std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
@@ -931,6 +947,12 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 	fuzzy_processor_.setRelativeLocation(beta_angle_rel);			// 3rd input
 	// ----
 
+	// --------------------------------------------------------
+	// social conductor
+	social_conductor_.setDirection(alpha_dir_angle.Radian());
+	social_conductor_.setDistance(d_alpha_beta_length);
+	std::cout << "\t\tSocialConductorSetters | alpha_dir: " << alpha_dir_angle.Radian() << "\t\tdist: " << d_alpha_beta_length << std::endl;
+	// --------------------------------------------------------
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
 

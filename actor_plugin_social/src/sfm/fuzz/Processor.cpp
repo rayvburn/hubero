@@ -6,6 +6,7 @@
  */
 
 #include <sfm/fuzz/Processor.h>
+#include <sfm/fuzz/Regions.h>
 
 // ------------------------------------------------------------------- //
 
@@ -155,6 +156,7 @@ void Processor::init() {
 //	direction_.addTerm(new fl::Trapezoid("equal"));
 //	direction_.addTerm(new fl::Trapezoid("opposite"));
 	// ---
+	// TODO: VFH = vector field histogram
 	// `outwards`
 	direction_.addTerm(trapezoid_out_.getTrapezoids().at(0));
 	direction_.addTerm(trapezoid_out_.getTrapezoids().at(1));
@@ -187,16 +189,35 @@ void Processor::init() {
 //    social_behavior_.addTerm(new fl::Ramp("left", 1.000, 0.000));
 //    social_behavior_.addTerm(new fl::Ramp("right", 0.000, 1.000));
 
-    //
-    social_behavior_.addTerm(new fl::Trapezoid("turn_left", 				0.0, 0.0, 1.0, 1.1));
-    social_behavior_.addTerm(new fl::Trapezoid("turn_left_accelerate", 		0.9, 1.0, 2.0, 2.1));
-    social_behavior_.addTerm(new fl::Trapezoid("accelerate", 				1.9, 2.0, 3.0, 3.1));
-    social_behavior_.addTerm(new fl::Trapezoid("go_along", 					2.9, 3.0, 4.0, 4.1));
-    social_behavior_.addTerm(new fl::Trapezoid("decelerate", 				3.9, 4.0, 5.0, 5.1));
-    social_behavior_.addTerm(new fl::Trapezoid("stop", 						4.9, 5.0, 6.0, 6.1));
-    social_behavior_.addTerm(new fl::Trapezoid("turn_right_deccelerate",	5.9, 6.0, 7.0, 7.1));
-    social_behavior_.addTerm(new fl::Trapezoid("turn_right", 				6.9, 7.0, 8.0, 8.1));
-    social_behavior_.addTerm(new fl::Trapezoid("turn_right_accelerate", 	7.9, 8.0, 9.0, 9.0));
+    // threshold values related to regions
+    const double INTERSECTION = 0.1;
+    double upper = static_cast<double>(FUZZ_BEH_TURN_LEFT);
+    double lower = upper - 1.0;
+    social_behavior_.addTerm(new fl::Trapezoid("turn_left", 				lower, 					lower, 	upper, 	upper + INTERSECTION));
+
+    upper = static_cast<double>(FUZZ_BEH_TURN_LEFT_ACCELERATE); lower = upper - 1.0;
+    social_behavior_.addTerm(new fl::Trapezoid("turn_left_accelerate", 		lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
+
+    upper = static_cast<double>(FUZZ_BEH_ACCELERATE); lower = upper - 1.0;
+    social_behavior_.addTerm(new fl::Trapezoid("accelerate", 				lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
+
+    upper = static_cast<double>(FUZZ_BEH_GO_ALONG); lower = upper - 1.0;
+    social_behavior_.addTerm(new fl::Trapezoid("go_along", 					lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
+
+    upper = static_cast<double>(FUZZ_BEH_DECELERATE); lower = upper - 1.0;
+    social_behavior_.addTerm(new fl::Trapezoid("decelerate", 				lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
+
+    upper = static_cast<double>(FUZZ_BEH_STOP); lower = upper - 1.0;
+    social_behavior_.addTerm(new fl::Trapezoid("stop", 						lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
+
+    upper = static_cast<double>(FUZZ_BEH_TURN_RIGHT_DECELERATE); lower = upper - 1.0;
+    social_behavior_.addTerm(new fl::Trapezoid("turn_right_decelerate",		lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
+
+    upper = static_cast<double>(FUZZ_BEH_TURN_RIGHT); lower = upper - 1.0;
+    social_behavior_.addTerm(new fl::Trapezoid("turn_right", 				lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
+
+    upper = static_cast<double>(FUZZ_BEH_TURN_RIGHT_ACCELERATE); lower = upper - 1.0;
+    social_behavior_.addTerm(new fl::Trapezoid("turn_right_accelerate", 	lower - INTERSECTION,	lower, 	upper, 	upper));
 
     engine_.addOutputVariable(&social_behavior_);
 
@@ -209,7 +230,7 @@ void Processor::init() {
      X turn_left_accelerate
      X turn_right_accelerate
      X turn_right
-     X turn_right_deccelerate
+     X turn_right_decelerate
      X stop
      X decelerate
      */
@@ -233,7 +254,7 @@ void Processor::init() {
     // rule_block_.addRule(fl::Rule::parse("if location is X and direction is Y then behavior is Z", &engine_));
     //
     // location - `front_right`
-    rule_block_.addRule(fl::Rule::parse("if location is front_right and direction is cross_front then behavior is turn_right_deccelerate", &engine_)); 	// 1
+    rule_block_.addRule(fl::Rule::parse("if location is front_right and direction is cross_front then behavior is turn_right_decelerate", &engine_)); 	// 1
     rule_block_.addRule(fl::Rule::parse("if location is front_right and direction is cross_behind then behavior is turn_left", &engine_)); 				// 2
     rule_block_.addRule(fl::Rule::parse("if location is front_right and direction is equal then behavior is go_along", &engine_)); 						// 3
     rule_block_.addRule(fl::Rule::parse("if location is front_right and direction is opposite then behavior is turn_left", &engine_)); 					// 4
@@ -248,7 +269,7 @@ void Processor::init() {
     rule_block_.addRule(fl::Rule::parse("if location is front_left and direction is cross_behind then behavior is turn_right_accelerate", &engine_)); 	// 11
     rule_block_.addRule(fl::Rule::parse("if location is front_left and direction is equal then behavior is go_along", &engine_));						// 12
     rule_block_.addRule(fl::Rule::parse("if location is front_left and direction is opposite then behavior is turn_right", &engine_));					// 13
-    rule_block_.addRule(fl::Rule::parse("if location is front_left and direction is outwards then behavior is turn_right_deccelerate", &engine_));		// 14
+    rule_block_.addRule(fl::Rule::parse("if location is front_left and direction is outwards then behavior is turn_right_decelerate", &engine_));		// 14
     // location - `back_left`
     rule_block_.addRule(fl::Rule::parse("if location is back_left and direction is equal then behavior is go_along", &engine_));						// 15
     rule_block_.addRule(fl::Rule::parse("if location is back_left and direction is opposite then behavior is go_along", &engine_));						// 16
@@ -265,7 +286,7 @@ void Processor::init() {
     engine_.addRuleBlock(&rule_block_);
 //    engine_.configure("AlgebraicProduct", "AlgebraicSum", "AlgebraicProduct", "AlgebraicSum", "Centroid");
 //    engine_.configure("conj", "disj", "implic", "aggreg", "defuzz", "activ");
-    // FIXME
+    // FIXME: below does not overwrite rule block's settings
     engine_.configure("AlgebraicProduct", "AlgebraicSum", "AlgebraicProduct", "Maximum", "Centroid", "General");
     std::cout << "inputs: " << engine_.numberOfInputVariables() << "\toutputs: " << engine_.numberOfOutputVariables() << "\trule_blocks: " << engine_.numberOfRuleBlocks() << std::endl << std::endl;
 
@@ -303,37 +324,6 @@ void Processor::updateRegions() {
 
 //	// trapezoid's specific points (vertices), see `fuzzylite` doc for details:
 //	// https://fuzzylite.github.io/fuzzylite/d0/d26/classfl_1_1_trapezoid.html
-//	double a, b, c, d;
-//
-//	uint8_t status = PROCESSOR_EXTRA_TERM_NONE;
-//
-//	std::string params;
-//	bool extra_term_needed;
-
-	/* - - - - - Terms sensitive to side changes - - - - - */
-	// `outwards`
-//	status |= configureTermLocationDependent("outwards", side, gamma_eq.Radian(), gamma_opp.Radian());
-	//rearrangeTerms("outwards", status, term_extra_status_);
-
-	// `cross_front`
-//	status |= configureTermLocationDependent("cross_front", side, gamma_cc.Radian(), gamma_eq.Radian());
-	//rearrangeTerms("cross_front", status, term_extra_status_);
-
-	// `cross_behind`
-//	status |= configureTermLocationDependent("cross_behind", side, gamma_opp.Radian(), gamma_cc.Radian());
-	//rearrangeTerms("cross_behind", status, term_extra_status_);
-
-
-//	rearrangeTerms(status, term_extra_status_);
-
-
-	/* - - - - - Terms insensitive to side changes - - - - - */
-	// `equal`
-//	trapezoid_out_.upda
-//	configureTermLocationIndependent("equal", gamma_eq.Radian());
-
-	// `opposite`
-//	configureTermLocationIndependent("opposite", gamma_opp.Radian());
 
 	/* - - - - - Terms sensitive to side changes - - - - - */
 	// `outwards`
@@ -352,29 +342,29 @@ void Processor::updateRegions() {
 	// - - - - - - print meaningful data
 	// calculate the gamma angle for the current alpha-beta configuration
 	// FIXME: debugging only
-//	ignition::math::Angle gamma(d_alpha_beta_angle_ - alpha_dir_ - beta_dir_);	gamma.Normalize();
-//	std::cout << "gamma_eq: " << gamma_eq.Radian() << "\t\tgamma_opp: " << gamma_opp.Radian() << "\t\tgamma_cc: " << gamma_cc.Radian() << std::endl;
-//	if ( side == 'l' ) {
-//
-//		if ( 		gamma.Radian() < gamma_eq.Radian()  && gamma.Radian() > gamma_opp.Radian() ) {
-//			std::cout << "LEFT - OUTWARDS" << std::endl;
-//		} else if ( gamma.Radian() < gamma_opp.Radian() && gamma.Radian() > gamma_cc.Radian() ) {
-//			std::cout << "LEFT - CROSS_BEHIND" << std::endl;
-//		} else if ( gamma.Radian() < gamma_cc.Radian() && gamma.Radian() > gamma_eq.Radian() ) {
-//			std::cout << "LEFT - CROSS_FRONT" << std::endl;
-//		}
-//
-//	} else if ( side == 'r' ) {
-//
-//		if ( 		gamma.Radian() > gamma_eq.Radian()  && gamma.Radian() < gamma_opp.Radian() ) {
-//			std::cout << "RIGHT - OUTWARDS" << std::endl;
-//		} else if ( gamma.Radian() > gamma_opp.Radian() && gamma.Radian() < gamma_cc.Radian() ) {
-//			std::cout << "RIGHT - CROSS_BEHIND" << std::endl;
-//		} else if ( gamma.Radian() > gamma_cc.Radian()  && gamma.Radian() < gamma_eq.Radian() ) {
-//			std::cout << "RIGHT - CROSS_FRONT" << std::endl;
-//		}
-//
-//	}
+	ignition::math::Angle gamma(d_alpha_beta_angle_ - alpha_dir_ - beta_dir_);	gamma.Normalize();
+	std::cout << "gamma_eq: " << gamma_eq.Radian() << "\t\tgamma_opp: " << gamma_opp.Radian() << "\t\tgamma_cc: " << gamma_cc.Radian() << std::endl;
+	if ( side == 'l' ) {
+
+		if ( 		gamma.Radian() < gamma_eq.Radian()  && gamma.Radian() > gamma_opp.Radian() ) {
+			std::cout << "LEFT - OUTWARDS" << std::endl;
+		} else if ( gamma.Radian() < gamma_opp.Radian() && gamma.Radian() > gamma_cc.Radian() ) {
+			std::cout << "LEFT - CROSS_BEHIND" << std::endl;
+		} else if ( gamma.Radian() < gamma_cc.Radian()  && gamma.Radian() > gamma_eq.Radian() ) {
+			std::cout << "LEFT - CROSS_FRONT" << std::endl;
+		}
+
+	} else if ( side == 'r' ) {
+
+		if ( 		gamma.Radian() > gamma_eq.Radian()  && gamma.Radian() < gamma_opp.Radian() ) {
+			std::cout << "RIGHT - OUTWARDS" << std::endl;
+		} else if ( gamma.Radian() > gamma_opp.Radian() && gamma.Radian() < gamma_cc.Radian() ) {
+			std::cout << "RIGHT - CROSS_BEHIND" << std::endl;
+		} else if ( gamma.Radian() > gamma_cc.Radian()  && gamma.Radian() < gamma_eq.Radian() ) {
+			std::cout << "RIGHT - CROSS_FRONT" << std::endl;
+		}
+
+	}
 	// - - - - - -
 
 }
@@ -398,11 +388,12 @@ void Processor::process() {
 
     // - - - - - - print meaningful data
     // FIXME: debugging only
-//    std::cout << "location\t value: " << location_.getValue() << "\tmemberships: " << location_.fuzzify(location_.getValue()) << std::endl;
-//    std::cout << "direction\t value: " << direction_.getValue() << "\tmemberships: " << direction_.fuzzify(direction_.getValue()) << std::endl;
-//    std::cout << "output\t\t value: " << social_behavior_.getValue();
-//	std::string beh;
-//    double output = static_cast<double>(social_behavior_.getValue());
+    std::cout << "location\t value: " << location_.getValue() << "\tmemberships: " << location_.fuzzify(location_.getValue()) << std::endl;
+    std::cout << "direction\t value: " << direction_.getValue() << "\tmemberships: " << direction_.fuzzify(direction_.getValue()) << std::endl;
+    std::cout << "output\t\t value: " << social_behavior_.getValue() << "\tfuzzyOut: " << social_behavior_.fuzzyOutputValue();
+
+	std::string beh("UNKNOWN");
+    double output = static_cast<double>(social_behavior_.getValue());
 //	if ( output  < 1.0 ) {
 //		beh = "turn_left";
 //	} else if ( output < 2.0 ) {
@@ -416,13 +407,29 @@ void Processor::process() {
 //	} else if ( output < 6.0 ) {
 //		beh = "stop";
 //	} else if ( output < 7.0 ) {
-//		beh = "turn_right_deccelerate";
+//		beh = "turn_right_decelerate";
 //	} else if ( output < 8.0 ) {
 //		beh = "turn_right";
 //	} else if ( output < 9.0 ) {
 //		beh = "turn_right_accelerate";
 //	}
-//	std::cout << "\t" << beh << std::endl;
+
+	fl::scalar y_highest_temp = fl::nan;
+	fl::Term* term_highest_ptr = social_behavior_.highestMembership(social_behavior_.getValue(), &y_highest_temp);
+	if ( term_highest_ptr != nullptr ) {
+		beh = term_highest_ptr->getName();
+	}
+	std::cout << "\t" << beh << "\theight: " << static_cast<double>(y_highest_temp) << std::endl;
+
+
+	double decimal = output - std::floor(output);
+	// valid for intersection equal to 0.1
+	if ( decimal <= 0.1 || decimal >= 0.9 ) {
+		std::cout << "\tdecimal: " << decimal << std::endl;
+		long unsigned int cntr = 99999999;
+		while (cntr-- != 0) {}
+	}
+
     // - - - - - -
 
 }
@@ -432,18 +439,6 @@ void Processor::process() {
 std::vector<std::tuple<std::string, double> > Processor::getOutput() const {
 
 	std::vector<std::tuple<std::string, double> > results;
-
-	/*
-	social_behavior_.addTerm(new fl::Trapezoid(, 				0.0, 0.0, 1.0, 1.1));
-    social_behavior_.addTerm(new fl::Trapezoid(, 		0.9, 1.0, 2.0, 2.1));
-    social_behavior_.addTerm(new fl::Trapezoid(, 				1.9, 2.0, 3.0, 3.1));
-    social_behavior_.addTerm(new fl::Trapezoid(, 					2.9, 3.0, 4.0, 4.1));
-    social_behavior_.addTerm(new fl::Trapezoid(, 				3.9, 4.0, 5.0, 5.1));
-    social_behavior_.addTerm(new fl::Trapezoid(, 						4.9, 5.0, 6.0, 6.1));
-    social_behavior_.addTerm(new fl::Trapezoid(,	5.9, 6.0, 7.0, 7.1));
-    social_behavior_.addTerm(new fl::Trapezoid(, 				6.9, 7.0, 8.0, 8.1));
-    social_behavior_.addTerm(new fl::Trapezoid(, 	7.9, 8.0, 9.0, 9.0));
-	 */
 
 //	int units = social_behavior_.getValue() / (std::fabs(social_behavior_.getValue()));
 	// TODO: consider possibility of double membership
@@ -464,7 +459,7 @@ std::vector<std::tuple<std::string, double> > Processor::getOutput() const {
 	} else if ( output < 6.0 ) {
 		beh = "stop";
 	} else if ( output < 7.0 ) {
-		beh = "turn_right_deccelerate";
+		beh = "turn_right_decelerate";
 	} else if ( output < 8.0 ) {
 		beh = "turn_right";
 	} else if ( output < 9.0 ) {
@@ -472,7 +467,7 @@ std::vector<std::tuple<std::string, double> > Processor::getOutput() const {
 	}
 	std::tuple<std::string, double> tup;
 	std::get<0>(tup) = beh;
-	std::get<1>(tup) = 0;
+	std::get<1>(tup) = output;
 	results.push_back(tup);
 
 	return (results);
@@ -501,142 +496,6 @@ char Processor::decodeRelativeLocation(ignition::math::Angle eq, const ignition:
 	}
 
 }
-
-// ------------------------------------------------------------------- //
-
-//uint8_t Processor::configureTermLocationDependent(std::string name, const char &side, const ignition::math::Angle &gamma_start,
-//		const ignition::math::Angle &gamma_end) {
-//
-//
-//
-//}
-
-// ------------------------------------------------------------------- //
-
-//void Processor::configureTermLocationIndependent(const std::string &name, const ignition::math::Angle &gamma_center) {
-//
-//
-//
-//}
-
-// ------------------------------------------------------------------- //
-
-//std::tuple<double, double, double, double> Processor::calculateTrapezoid(const double &center) const {
-//std::string Processor::calculateTrapezoid(const double &center) const {
-//
-//
-//
-//}
-
-// ------------------------------------------------------------------- //
-
-//std::tuple<double, double, double, double> Processor::calculateTrapezoid(const double &start,
-//std::tuple<std::string, bool> Processor::calculateTrapezoid(const double &start,
-//		const double &end, bool comp_breakdown) const {
-//
-//
-//}
-
-// ------------------------------------------------------------------- //
-
-/*
-// old `extra` terms deleter
-bool Processor::rearrangeTerms(const std::string &name, const uint8_t &status_curr, uint8_t &status_global) {
-
-//	// check whether the current status is not equal to the global one;
-//	// if the condition is TRUE then some action must be performed
-//	if ( status_global != status_curr ) {
-//		// check whether the global status is different to `NONE`
-//		if ( status_global != PROCESSOR_EXTRA_TERM_NONE ) {
-//
-//			// SO: the `status_curr` indicates that:
-//			// some term has already been added as an `EXTRA` one so:
-//			//	o	(I)  the old extra term should be deleted because another one added (base term
-//			//			 of the `EXTRA` one changed)
-//			// 	o	(II) the old extra term should be deleted
-//
-//			// NOTE: in fact it is easy to predict that the index of the term
-//			// which should be deleted is 5 (there may be at most 7 terms (quantity,
-//			// not an index number) in the (I) case). The reason is that the new term
-//			// is always `pushed_back` to the Terms vector of the input variable.
-//			direction_.removeTerm(5);
-//
-//		} else {
-//
-//			// some term should be added
-//			// DO NOTHING, it has already been added in the `configureTermLocationDependent` method
-//
-//		}
-//
-//		return (true);
-//
-//	}
-//
-//	return (false);
-
-	return (false);
-
-}
-*/
-
-
-// ------------------------------------------------------------------- //
-
-/*
-// old `extra` terms deleter
-bool Processor::rearrangeTerms(const uint8_t &status_curr, uint8_t &status_global) {
-
-	// check whether the current status is not equal to the global one;
-	// if the condition is TRUE then some action must be performed
-	if ( status_global != status_curr ) {
-
-		// check the global status
-		if ( status_curr | PROCESSOR_EXTRA_TERM_NONE ) {
-
-			// all extra terms should be deleted
-			if ( direction_.hasTerm("outwards_extra") ) {
-
-			}
-			if ( direction_.hasTerm("cross_front_extra") ) {
-
-			}
-
-		} else {
-
-
-
-		}
-
-//		if ( status_curr | PROCESSOR_EXTRA_TERM_OUTWARDS ) {
-//
-//			if ( status_curr | PROCESSOR_EXTRA_TERM_OUTWARDS ) {
-//
-//			}
-//
-//		} else {
-//			// delete
-//		}
-//
-//		if ( status_curr | PROCESSOR_EXTRA_TERM_CROSS_FRONT ) {
-//
-//
-//
-//		}
-//
-//		if ( status_curr | PROCESSOR_EXTRA_TERM_CROSS_BEHIND ) {
-//
-//
-//
-//		}
-
-
-	}
-
-	return (false);
-
-}
-*/
-
 
 // ------------------------------------------------------------------- //
 
