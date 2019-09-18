@@ -392,10 +392,25 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 		// - - - - social conductor
 		if ( is_an_actor ) {
+
 			double fuzz_out = 100.0; // initially out of range
-			std::tie(std::ignore, fuzz_out) = fuzzy_processor_.getOutput().at(0); // FIXME
-			social_conductor_.apply(fuzz_out);
+			std::string region;
+
+			// TODO: make it more flexible (getOutput)? or get rid of single element vector
+			// in fact defuzzification always returns a single term with the highest
+			// membership so the vector may be omitted?
+			std::tie(region, fuzz_out) = fuzzy_processor_.getOutput().at(0); // FIXME
+
+//			// V1 - based on floating point output value
+//			social_conductor_.apply(fuzz_out);
+//			std::cout << "\n\n\tSocial conductor - " << owner_name_ << "\t" << social_conductor_.getSocialVector() << std::endl << std::endl;
+//			f_alpha_beta_social = social_conductor_.getSocialVector();
+
+			// V2 - based on verbose interpretation of the selected output term (region)
+			social_conductor_.apply(region);
 			std::cout << "\n\n\tSocial conductor - " << owner_name_ << "\t" << social_conductor_.getSocialVector() << std::endl << std::endl;
+			f_alpha_beta_social = social_conductor_.getSocialVector();
+
 			if ( social_conductor_.getSocialVector().Length() > 1e-06 ) {
 				int stopit = 0;
 				stopit++;
@@ -413,14 +428,19 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 		// TODO: add f_alpha_beta_social
 		// sum all forces
-		f_interaction_total += f_alpha_beta + f_alpha_beta_social;
+		f_interaction_total += f_alpha_beta; //  + f_alpha_beta_social;
+
+		// FIXME: f_alpha_beta_social is not multiplied by `interaction_force_factor_` at the moment
+		// TODO: make another parameter: `social_force_factor`
 
 
 	} /* for loop ends here (iterates over all world models) */
 
 	// TODO:
 	std::cout << "\n\t\tINTERNAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha << std::endl;
-	std::cout << "\t\tTOTAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total << std::endl;
+	std::cout << "\t\tINTERACTION: \t" << interaction_force_factor_ * f_alpha_beta << std::endl;
+	std::cout << "\t\tSOCIAL: \t" <<  f_alpha_beta_social << std::endl;
+	std::cout << "\t\tTOTAL: \t" << (fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total + f_alpha_beta_social) << std::endl;
 	std::cout << "**************************************************************************\n\n";
 
 	if ( print_info ) {
@@ -436,7 +456,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 	// this->calculateDesiredForceFactor(dist_to_closest_obstacle);
 	// inside the function lets normalize the factor according to the `desired` one
 
-	ignition::math::Vector3d f_total = fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total;
+	ignition::math::Vector3d f_total = fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total + f_alpha_beta_social;
 	f_total.Z(0.0);
 
 #ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
@@ -445,7 +465,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 	if ( print_info ) {
 		std::cout << "-----------------------\n";
-		std::cout << owner_name_ << " | SocialForce: " << f_total << "\tinternal: " << internal_force_factor_ * f_alpha << "\tinteraction: " << interaction_force_factor_ * f_interaction_total;
+		std::cout << owner_name_ << " | SocialForce: " << f_total << "\tinternal: " << internal_force_factor_ * f_alpha << "\tinteraction: " << interaction_force_factor_ * (f_interaction_total);
 	}
 //	std::cout << _owner_name_ << " | SocialForce: " << f_total << "\tinternal: " << desired_force_factor * f_alpha << "\tinteraction: " << interaction_force_factor * f_interaction_total;
 
@@ -951,7 +971,7 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 	// social conductor
 	social_conductor_.setDirection(alpha_dir_angle.Radian());
 	social_conductor_.setDistance(d_alpha_beta_length);
-	std::cout << "\t\tSocialConductorSetters | alpha_dir: " << alpha_dir_angle.Radian() << "\t\tdist: " << d_alpha_beta_length << std::endl;
+	std::cout << "\tSocialConductorSetters | alpha_dir: " << alpha_dir_angle.Radian() << "\t\tdist: " << d_alpha_beta_length << std::endl;
 	// --------------------------------------------------------
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
