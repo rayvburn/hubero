@@ -241,7 +241,8 @@ void Processor::init() {
     rule_block_.setEnabled(true);
     rule_block_.setConjunction(new fl::Minimum); 			// fuzzylite/fuzzylite/fl/norm/t
     rule_block_.setDisjunction(new fl::AlgebraicSum);		// fuzzylite/fuzzylite/fl/norm/s
-    rule_block_.setImplication(new fl::AlgebraicProduct);
+    // FIXME: AlgebraicProduct -> seems to choose not the highest membership term? IS THIS THE CAUSE?
+    rule_block_.setImplication(new fl::Minimum); 			// AlgebraicProduct);
     rule_block_.setActivation(new fl::General);				// https://fuzzylite.github.io/fuzzylite/df/d4b/classfl_1_1_activation.html
     /*
       	terminate called after throwing an instance of 'fl::Exception'
@@ -373,6 +374,9 @@ void Processor::updateRegions() {
 
 void Processor::process() {
 
+	// reset the output region name
+	output_term_name_ = "";
+
 	// update the location input variable
 	location_.setValue(fl::scalar(d_alpha_beta_angle_));
 
@@ -390,47 +394,34 @@ void Processor::process() {
     // FIXME: debugging only
     std::cout << "location\t value: " << location_.getValue() << "\tmemberships: " << location_.fuzzify(location_.getValue()) << std::endl;
     std::cout << "direction\t value: " << direction_.getValue() << "\tmemberships: " << direction_.fuzzify(direction_.getValue()) << std::endl;
-    std::cout << "output\t\t value: " << social_behavior_.getValue() << "\tfuzzyOut: " << social_behavior_.fuzzyOutputValue();
-
-	std::string beh("UNKNOWN");
-    double output = static_cast<double>(social_behavior_.getValue());
-//	if ( output  < 1.0 ) {
-//		beh = "turn_left";
-//	} else if ( output < 2.0 ) {
-//		beh = "turn_left_accelerate";
-//	} else if ( output < 3.0 ) {
-//		beh = "accelerate";
-//	} else if ( output < 4.0 ) {
-//		beh = "go_along";
-//	} else if ( output < 5.0 ) {
-//		beh = "decelerate";
-//	} else if ( output < 6.0 ) {
-//		beh = "stop";
-//	} else if ( output < 7.0 ) {
-//		beh = "turn_right_decelerate";
-//	} else if ( output < 8.0 ) {
-//		beh = "turn_right";
-//	} else if ( output < 9.0 ) {
-//		beh = "turn_right_accelerate";
-//	}
+    std::cout << "output\t\t value: " << social_behavior_.getValue() << std::endl;
+    std::cout << "\t\tfuzzyOut: " << social_behavior_.fuzzyOutputValue();
 
 	fl::scalar y_highest_temp = fl::nan;
 	fl::Term* term_highest_ptr = social_behavior_.highestMembership(social_behavior_.getValue(), &y_highest_temp);
+
+	// check whether proper term was found, if not - `nullptr` will be detected
 	if ( term_highest_ptr != nullptr ) {
-		beh = term_highest_ptr->getName();
-	}
-	std::cout << "\t" << beh << "\theight: " << static_cast<double>(y_highest_temp) << std::endl;
-
-
-	double decimal = output - std::floor(output);
-	// valid for intersection equal to 0.1
-	if ( decimal <= 0.1 || decimal >= 0.9 ) {
-		std::cout << "\tdecimal: " << decimal << std::endl;
-		long unsigned int cntr = 99999999;
-		while (cntr-- != 0) {}
+		output_term_name_ = term_highest_ptr->getName();
 	}
 
-    // - - - - - -
+	std::cout << "\n\t\tname: " << output_term_name_ << "\theight: " << y_highest_temp << std::endl;
+
+	// NOTE: fl::variable::fuzzyOutputValue() returns a list of available terms
+	// with a corresponding membership
+	// WHEREAS fl::variable fl::variable::fuzzify(fl::scalar) returns the
+	// same list but with NORMALIZED membership?
+	// the effect is as: 	fuzzyOutputValue()	-> 	0.222/turn_right_decelerate
+	//						fuzzify(fl::scalar)	-> 	1.000/turn_right_decelerate
+	// when only single term has non-zero membership.
+	// When multiple (2) terms have non-zero membership then results
+	// are as follow:
+	// fuzzyOutputValue()	-> 	0.239/turn_left_accelerate + 0.266/accelerate + 0.541/go_along
+	// fuzzify(fl::scalar)	-> 	0.000/turn_left_accelerate + 0.000/accelerate + 1.000/go_along
+
+	// FIXME: make it like the absolute function (decreasing on both side of the edge - 0.5)
+	double output = static_cast<double>(social_behavior_.getValue());
+	output_term_fitness_ = output - std::floor(output);
 
 }
 
@@ -438,8 +429,10 @@ void Processor::process() {
 
 std::vector<std::tuple<std::string, double> > Processor::getOutput() const {
 
+
 	std::vector<std::tuple<std::string, double> > results;
 
+	/*
 //	int units = social_behavior_.getValue() / (std::fabs(social_behavior_.getValue()));
 	// TODO: consider possibility of double membership
 
@@ -469,6 +462,13 @@ std::vector<std::tuple<std::string, double> > Processor::getOutput() const {
 	std::get<0>(tup) = beh;
 	std::get<1>(tup) = output;
 	results.push_back(tup);
+	*/
+
+	std::tuple<std::string, double> tup;
+	std::get<0>(tup) = output_term_name_;
+	std::get<1>(tup) = output_term_fitness_;
+	results.push_back(tup);
+	// FIXME:
 
 	return (results);
 

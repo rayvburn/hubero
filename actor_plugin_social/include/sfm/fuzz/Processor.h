@@ -119,9 +119,12 @@ private:
 
 	/* ----- Output variables ----- */
 	fl::OutputVariable social_behavior_;
+	std::string output_term_name_;
+	double output_term_fitness_;
 
 	/*  ----- Rule block ----- */
 	fl::RuleBlock rule_block_;
+
 
 //	/// \brief A distance between 2 objects; used to determine a level of condition
 // //	double d_alpha_beta_len_;
