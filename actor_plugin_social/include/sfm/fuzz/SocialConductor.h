@@ -27,8 +27,13 @@ public:
 	SocialConductor();
 
 	/// \brief Updates `actual` social force vector stored internally.
-	/// \param fuzz_output is an output of the defuzzification block
+	/// \param fuzz_output is an output (digital) of the defuzzification block
+	/// \note DEPRECATED
 	void apply(const double &fuzz_output);
+
+	/// \brief Updates `actual` social force vector stored internally.
+	/// \param term_name is an output (verbose) of the defuzzification block
+	void apply(const std::string &term_name);
 
 	/// \brief Returns the superposed social force vector.
 	/// \return Superposed social force vector
