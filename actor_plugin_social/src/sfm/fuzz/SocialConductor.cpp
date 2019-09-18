@@ -20,7 +20,7 @@ SocialConductor::SocialConductor(): SocialBehavioursDb(500.0) { }
 
 void SocialConductor::apply(const double &fuzz_output) {
 
-	// TODO: choose behaviour based on name
+	/* 1) Behaviour selection based on output value */
 
 	// check whether the fuzzy logic block output is in a valid range
 	if ( fuzz_output >  (static_cast<double>(FUZZ_BEH_TURN_LEFT) - 1.0) &&
@@ -83,6 +83,71 @@ void SocialConductor::apply(const double &fuzz_output) {
 		return;
 
 	}
+
+
+
+	superpose();
+
+}
+
+// ------------------------------------------------------------------- //
+
+void SocialConductor::apply(const std::string &term_name) {
+
+	/* 2) Behaviour selection based on the highest membership term name */
+
+	if ( term_name == "turn_left" ) {
+
+		// apply `turn left` behavior
+		sf_vector_.push_back(this->turnLeft());
+
+	} else if ( term_name == "turn_left_accelerate" ) {
+
+		// apply `turn left and accelerate` behavior
+		sf_vector_.push_back(this->turnLeftAccelerate());
+
+	} else if ( term_name == "accelerate" ) {
+
+		// apply `accelerate` behavior
+		sf_vector_.push_back(this->accelerate());
+
+	} else if ( term_name == "go_along" ) {
+
+		// apply `go along` behavior
+		sf_vector_.push_back(this->goAlong());
+
+	} else if ( term_name == "decelerate" ) {
+
+		// apply `decelerate` behavior
+		sf_vector_.push_back(this->decelerate());
+
+	} else if ( term_name == "stop" ) {
+
+		// apply `stop` behavior
+		sf_vector_.push_back(this->stop());
+
+	} else if ( term_name == "turn_right_decelerate" ) {
+
+		// apply `turn right and decelerate` behavior
+		sf_vector_.push_back(this->turnRightDecelerate());
+
+	} else if ( term_name == "turn_right" ) {
+
+		// apply `turn right` behavior
+		sf_vector_.push_back(this->turnRight());
+
+	} else if ( term_name == "turn_right_accelerate" ) {
+
+		// apply `turn right and accelerate` behavior
+		sf_vector_.push_back(this->turnRightAccelerate());
+
+	} else {
+
+		// prevents calling `superpose` when [input] is invalid
+		return;
+
+	}
+
 	superpose();
 
 }
