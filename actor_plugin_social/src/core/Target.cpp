@@ -65,22 +65,70 @@ bool Target::followObject(const std::string &object_name) {
 
 bool Target::setNewTarget(const ignition::math::Vector3d &position) {
 
+	// check validity of the position
 	if ( std::isinf(position.X()) ||  std::isnan(position.X()) ||
 		 std::isinf(position.Y()) ||  std::isnan(position.Y()) ) {
 		return (false);
 	}
-	target_ = position;
 
-	// TODO: update state
-	has_target_ = true;
+	// check reachability - threshold selected experimentally
+	// based on section 6. at `http://wiki.ros.org/costmap_2d`;
+	// NOTE: costmap must be accessible to check whether
+	// a certain cell is free (i.e. ROS must be running)
+	if ( global_planner_.getCost(position.X(), position.Y()) > 100 ) {
+		return (false);
+	}
 
-	// TODO: check whether global planner finds valid plan
+	// Check if `has_target_` flag is set. If no target is selected
+	// then try to generate a path plan for a given position (`position` input).
+	// If a valid plan could be generated, then save the point coordinates
+	// as a target and update class' internal state.
 
-	// TODO:
-	//target_checkpoints_.push(target_);
+	if ( !has_target_ ) {
 
-	// TODO: costmap must be accessible to check whether a certain cell is free
-//	global_planner_.
+		// try to generate global path plan
+		if ( generatePathPlan(position) ) {
+
+			// plan has been generated
+			target_ = position;
+			target_checkpoint_ = global_planner_.getWaypoint().Pos();
+
+			// Update checkpoint. After choosing a new target, the first checkpoint
+			// is equal (nearly) to the current position. This may generate a problem
+			// while actor is trying to align with target direction.
+			// updateCheckpoint() will set temporary target to some further position
+			// than the one actor is currently in.
+			updateCheckpoint();
+
+			// save event time
+			time_last_target_selection_ = world_ptr_->SimTime();
+
+			// update internal state
+			has_global_plan_ = true;
+			has_target_ = true;
+			return (true);
+
+		}
+		return (false);
+
+
+	} else {
+
+		// NOTE: the target is added to the queue without asking
+		// the global planner whether a valid plan could be generated;
+		// this action will be performed after the certain target
+		// will be the first in the queue
+
+		// add the target to the queue
+		target_queue_.push(position);
+
+		// FIXME: debug
+		size_t queue_size = target_queue_.size();
+		int a = 0;
+		a++;
+		a++;
+
+	}
 
 	return (true);
 
@@ -102,8 +150,6 @@ bool Target::setNewTarget(const std::string &object_name) {
 	/* Find the closest point that belongs to space taken by object
 	 * and try to artificially move that point to a closest free space
 	 * location */
-	// TODO: MUST CONSIDER COSTMAP HERE
-
 	bool is_valid = false;
 	gazebo::physics::ModelPtr model;
 	std::tie(is_valid, model) = isModelValid(object_name);
@@ -114,7 +160,7 @@ bool Target::setNewTarget(const std::string &object_name) {
 
 	if ( model->GetType() == actor::ACTOR_MODEL_TYPE_ID ) {
 		/* not allowable, actor is a dynamic model;
-		 * use follow object instead */
+		 * use `follow object` command instead */
 		return (false);
 	}
 
@@ -134,7 +180,7 @@ bool Target::setNewTarget(const std::string &object_name) {
 	 * in below `if` conditions) */
 	ignition::math::Vector3d pt_intersection;
 	bool does_intersect = false;
-	std::tie(does_intersect, std::ignore, pt_intersection) = model->BoundingBox().Intersect( line );
+	std::tie(does_intersect, std::ignore, pt_intersection) = model->BoundingBox().Intersect(line);
 
 	if ( !does_intersect ) {
 		// this should not happen, something went wrong
@@ -145,35 +191,47 @@ bool Target::setNewTarget(const std::string &object_name) {
 	 * the intersection point a little in proper direction */
 	double line_angle = std::atan2( line.Direction().Y(), line.Direction().X() );
 
-	// FIXME: consider inflation layer on the costmap
-	if ( line_angle >= 0.00 && line_angle <= IGN_PI_2 ) {
-
-		// I quarter
-		pt_intersection.X( pt_intersection.X() - 0.05 );
-		pt_intersection.Y( pt_intersection.Y() - 0.05 );
-
-	} else if ( line_angle > IGN_PI_2 && line_angle <= IGN_PI ) {
-
-		// II quarter
-		pt_intersection.X( pt_intersection.X() + 0.05 );
-		pt_intersection.Y( pt_intersection.Y() - 0.05 );
-
-	} else if ( line_angle < 0.00 && line_angle >= -IGN_PI_2 ) {
-
-		// IV quarter
-		pt_intersection.X( pt_intersection.X() - 0.05 );
-		pt_intersection.Y( pt_intersection.Y() + 0.05 );
-
-	} else if ( line_angle < -IGN_PI_2 && line_angle >= -IGN_PI ) {
-
-		// III quarter
-		pt_intersection.X( pt_intersection.X() + 0.05 );
-		pt_intersection.Y( pt_intersection.Y() + 0.05 );
-
+	// consider inflation layer on the costmap
+	if ( line_angle >= 0.00 && line_angle <= IGN_PI_2 ) {				// I quarter
+		pt_intersection = findReachableDirectionPoint(pt_intersection, 1);
+	} else if ( line_angle > IGN_PI_2 && line_angle <= IGN_PI ) {		// II quarter
+		pt_intersection = findReachableDirectionPoint(pt_intersection, 2);
+	} else if ( line_angle < 0.00 && line_angle >= -IGN_PI_2 ) {		// IV quarter
+		pt_intersection = findReachableDirectionPoint(pt_intersection, 4);
+	} else if ( line_angle < -IGN_PI_2 && line_angle >= -IGN_PI ) {		// III quarter
+		pt_intersection = findReachableDirectionPoint(pt_intersection, 3);
 	}
 
 	// return status according to `setNewTarget` operation success/failure
-	return (setNewTarget( ignition::math::Pose3d(pt_intersection, model->WorldPose().Rot()) ));
+	return (setNewTarget(ignition::math::Pose3d(pt_intersection, model->WorldPose().Rot())));
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Target::setNewTarget() {
+
+	if ( target_queue_.empty() ) {
+		return (false);
+	}
+	setNewTarget(target_queue_.front());
+	target_queue_.pop();
+	return (true);
+
+	/*
+	 *
+	// finally found a new target
+	target_ = new_target;
+	target_checkpoint_ = global_planner_.getWaypoint().Pos();
+
+	// update state
+	has_target_ = true;
+	has_global_plan_ = true;
+
+	// save event time
+	time_last_target_selection_ = info.simTime;
+	 *
+	 */
 
 }
 
@@ -267,6 +325,13 @@ bool Target::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 	// save event time
 	time_last_target_selection_ = info.simTime;
 
+	// Update checkpoint. After choosing a new target, the first checkpoint
+	// is equal (nearly) to the current position. This may generate a problem
+	// while actor is trying to align with target direction.
+	// updateCheckpoint() will set temporary target to some further position
+	// than the one actor is currently in.
+	updateCheckpoint();
+
 	// indicate success
 	return (true);
 
@@ -286,7 +351,7 @@ bool Target::generatePathPlan(const ignition::math::Vector3d &target_to_be) {
 
 		std::cout << "\n\n\n\n\n[generatePathPlan] Starting iteration number " << tries_num << std::endl;
 
-		// try to make plan
+		// try to make a plan
 		status = global_planner_.makePlan(pose_world_ptr_->Pos(), target_to_be);;
 
 		// check action status
@@ -438,6 +503,12 @@ bool Target::isTargetReached() const {
 
 // ------------------------------------------------------------------- //
 
+bool Target::isTargetQueueEmpty() const {
+	return (target_queue_.empty());
+}
+
+// ------------------------------------------------------------------- //
+
 bool Target::isCheckpointReached() const {
 
 	// as a threshold value of length choose half of the `target_tolerance`
@@ -581,6 +652,77 @@ std::tuple<bool, gazebo::physics::ModelPtr> Target::isModelValid(const std::stri
 		return ( std::make_tuple(false, nullptr) );
 	}
 	return ( std::make_tuple(true, model_p) );
+
+}
+
+// ------------------------------------------------------------------- //
+
+/// @note Must not be const because of call to GlobalPlan::getCost
+ignition::math::Vector3d Target::findReachableDirectionPoint(const ignition::math::Vector3d &pt_intersection,
+		const unsigned int &quarter) {
+
+//	ignition::math::Vector3d v(nan, nan, nan);
+	ignition::math::Vector3d v(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
+	ignition::math::Vector3d v_temp = pt_intersection;
+	const double DELTA = 0.05;
+	double x_delta = 0.0;
+	double y_delta = 0.0;
+
+//	// I quarter
+//	pt_intersection.X( pt_intersection.X() - 0.05 );
+//	pt_intersection.Y( pt_intersection.Y() - 0.05 );
+//
+//	// II quarter
+//	pt_intersection.X( pt_intersection.X() + 0.05 );
+//	pt_intersection.Y( pt_intersection.Y() - 0.05 );
+//
+//	// III quarter
+//	pt_intersection.X( pt_intersection.X() + 0.05 );
+//	pt_intersection.Y( pt_intersection.Y() + 0.05 );
+//
+//	// IV quarter
+//	pt_intersection.X( pt_intersection.X() - 0.05 );
+//	pt_intersection.Y( pt_intersection.Y() + 0.05 );
+
+	// determine deltas based on direction of the line (see SetNewTarget method)
+	switch (quarter) {
+
+	case(1):
+		x_delta = -DELTA;
+		y_delta = -DELTA;
+		break;
+	case(2):
+		x_delta = +DELTA;
+		y_delta = -DELTA;
+		break;
+	case(3):
+		x_delta = +DELTA;
+		y_delta = +DELTA;
+		break;
+	case(4):
+		x_delta = -DELTA;
+		y_delta = +DELTA;
+		break;
+
+	}
+
+	// perform `num_tries` checks moving away from the intersection point
+	unsigned int num_tries = 100;
+	while (num_tries--) {
+
+		// check points located further and further away
+		v_temp.X(v_temp.X() + x_delta);
+		v_temp.Y(v_temp.Y() + y_delta);
+
+		// if cost is small enough - accept the point and break the loop
+		if ( global_planner_.getCost(v_temp.X(), v_temp.Y()) < 100 ) {
+			v = pt_intersection;
+			break;
+		}
+
+	}
+
+	return (v);
 
 }
 
