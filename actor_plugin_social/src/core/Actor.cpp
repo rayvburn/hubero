@@ -303,6 +303,27 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 
 	}
 
+	// TODO: make target list a parameter in the .world file
+	if ( actor_ptr_->GetName() == "actor1" ) {
+
+		target_manager_.setNewTarget(ignition::math::Vector3d(+4.0, -4.0, 0.0));
+		target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -2.0, 0.0));
+		target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0));
+		target_manager_.setNewTarget(ignition::math::Vector3d(+3.0, +4.0, 0.0));
+		target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0));
+		target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -4.0, 0.0));
+
+	} else if ( actor_ptr_->GetName() == "actor2" ) {
+
+//		target_manager_.setNewTarget(ignition::math::Vector3d());
+//		target_manager_.setNewTarget(ignition::math::Vector3d());
+//		target_manager_.setNewTarget(ignition::math::Vector3d());
+//		target_manager_.setNewTarget(ignition::math::Vector3d());
+//		target_manager_.setNewTarget(ignition::math::Vector3d());
+//		target_manager_.setNewTarget(ignition::math::Vector3d());
+
+	}
+
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// initialize SFM with loaded parameters set
 	initSFM();
@@ -495,11 +516,52 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
+
+
 	// check whether a target exists
 	if ( !target_manager_.isTargetChosen() ) {
-		if ( !target_manager_.chooseNewTarget(info) ) {
-			return;
+
+		// **********
+		if ( actor_ptr_->GetName() == "actor1" ) {
+			int a = 0;
+			a++;
+			a++;
+			a++;
 		}
+		// **********
+
+		if ( !target_manager_.isTargetQueueEmpty() ) {
+
+			// **********
+			if ( actor_ptr_->GetName() == "actor1" ) {
+				int a = 0;
+				a++;
+				a++;
+				a++;
+			}
+			// **********
+
+			// pop a target from the queue
+			if ( !target_manager_.setNewTarget() ) {
+				return;
+			}
+
+			// after setting a new target, firstly let's rotate to its direction
+			fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
+
+		} else if ( target_manager_.chooseNewTarget(info) ) {
+
+			// a completely new target has been chosen;
+			// after setting new target, first let's rotate to its direction
+			fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
+
+		} else {
+
+			// queue empty or target could not has been chosen
+			return;
+
+		}
+
 	}
 
 	// check whether a target has plan generated
@@ -541,21 +603,12 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 
 		target_manager_.chooseNewTarget(info);
 
-		// Update checkpoint. After choosing a new target, the first checkpoint
-		// is equal (nearly) to the current position. This may generate a problem
-		// while actor is trying to align with target direction.
-		// updateCheckpoint() will set temporary target to some further position
-		// than the one actor is currently in.
-		target_manager_.updateCheckpoint();
-
 		// after setting new target, first let's rotate to its direction
 		fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
 
 	} else if ( target_manager_.isCheckpointReached() ) {
-
 		// take next checkpoint from vector (path)
 		target_manager_.updateCheckpoint();
-
 	}
 
 	// object info update
@@ -743,6 +796,14 @@ bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 
 double Actor::prepareForUpdate(const gazebo::common::UpdateInfo &info) {
 
+	// -------------------------
+	// 1) Checking whether ROS time and Gazebo time are equal;
+	// 2) Trying to pull out sim time from the world ptr (success)
+	double gaz_time = info.simTime.Double();
+	double gaz_world_time = world_ptr_->SimTime().Double();
+	double ros_time = ros::Time::now().sec;
+	// -------------------------
+
 	// copy pose
 	*pose_world_ptr_ = actor_ptr_->WorldPose();
 
@@ -801,24 +862,28 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	actor_ptr_->SetScriptTime( actor_ptr_->ScriptTime() + (dist_traveled * params_ptr_->getActorParams().animation_factor) );
 
 	// update time
-	time_last_update_ = info.simTime;
+	time_last_update_ = info.simTime; // FIXME: sim time can be pulled out directly from the `world_ptr_` instance
 
 	// check if there has been some obstacle put into world since last target selection
 	if ( !target_manager_.isTargetStillReachable(info) ) {
+
 		if ( target_manager_.chooseNewTarget(info) ) {
 			// after setting new target, first let's rotate to its direction
 			// state will be changed in the next iteration
 			fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
 		}
+
 	}
 
 	// check if actor is stuck
 	if ( target_manager_.isTargetNotReachedForTooLong(info) ) {
+
 		if ( target_manager_.chooseNewTarget(info) ) {
 			// after setting new target, first let's rotate to its direction
 			// state will be changed in the next iteration
 			fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
 		}
+
 	}
 
 	// check whether state was updated

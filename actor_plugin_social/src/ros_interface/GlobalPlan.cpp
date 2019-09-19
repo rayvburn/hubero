@@ -184,6 +184,7 @@ ignition::math::Pose3d GlobalPlan::getWaypoint() {
 
 // ------------------------------------------------------------------- //
 
+// cannot be const
 uint8_t GlobalPlan::getCost(const double &x_world, const double &y_world) {
 
 	actor_global_plan::GetCost cost;
