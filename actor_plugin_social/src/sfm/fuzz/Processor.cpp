@@ -351,44 +351,7 @@ void Processor::updateRegions() {
 	// FIXME: debugging only
 	ignition::math::Angle gamma(d_alpha_beta_angle_ - alpha_dir_ - beta_dir_);	gamma.Normalize();
 	std::cout << "gamma_eq: " << gamma_eq.Radian() << "\t\tgamma_opp: " << gamma_opp.Radian() << "\t\tgamma_cc: " << gamma_cc.Radian() << std::endl;
-	// FIXME: below info is quite misleading, can print erroneous data
-	// due to range overlap
-//	if ( side == 'l' ) {
-//
-//		if ( 		gamma.Radian() < gamma_eq.Radian()  && gamma.Radian() > gamma_opp.Radian() ) {
-//			std::cout << "LEFT - OUTWARDS" << std::endl;
-//		} else if ( gamma.Radian() < gamma_opp.Radian() && gamma.Radian() > gamma_cc.Radian() ) {
-//			std::cout << "LEFT - CROSS_BEHIND" << std::endl;
-//		} else if ( gamma.Radian() < gamma_cc.Radian()  && gamma.Radian() > gamma_eq.Radian() ) {
-//			std::cout << "LEFT - CROSS_FRONT" << std::endl;
-//		} else {
-//			double rad_gamma = gamma.Radian();
-//			double rad_gamma_eq = gamma_eq.Radian();
-//			double rad_gamma_opp = gamma_opp.Radian();
-//			double rad_gamma_cc = gamma_cc.Radian();
-//			int temp = 0;
-//			temp++;
-//		}
-//
-//	} else if ( side == 'r' ) {
-//
-//		if ( 		gamma.Radian() > gamma_eq.Radian()  && gamma.Radian() < gamma_opp.Radian() ) {
-//			std::cout << "RIGHT - OUTWARDS" << std::endl;
-//		} else if ( gamma.Radian() > gamma_opp.Radian() && gamma.Radian() < gamma_cc.Radian() ) {
-//			std::cout << "RIGHT - CROSS_BEHIND" << std::endl;
-//		} else if ( gamma.Radian() > gamma_cc.Radian()  && gamma.Radian() < gamma_eq.Radian() ) {
-//			std::cout << "RIGHT - CROSS_FRONT" << std::endl;
-//		} else {
-//			double rad_gamma = gamma.Radian();
-//			double rad_gamma_eq = gamma_eq.Radian();
-//			double rad_gamma_opp = gamma_opp.Radian();
-//			double rad_gamma_cc = gamma_cc.Radian();
-//			int temp = 0;
-//			temp++;
-//		}
-//
-//	}
-	// print only `side` instead
+	// print only `side`
 	if ( side == 'l' ) {
 		std::cout << "----LEFT" << std::endl;
 	} else if ( side == 'r' ) {
@@ -457,46 +420,13 @@ void Processor::process() {
 
 std::vector<std::tuple<std::string, double> > Processor::getOutput() const {
 
-
+	// TODO: is vector needed?
 	std::vector<std::tuple<std::string, double> > results;
-
-	/*
-//	int units = social_behavior_.getValue() / (std::fabs(social_behavior_.getValue()));
-	// TODO: consider possibility of double membership
-
-	std::string beh;
-
-	double output = static_cast<double>(social_behavior_.getValue());
-	if ( output  < 1.0 ) {
-		beh = "turn_left";
-	} else if ( output < 2.0 ) {
-		beh = "turn_left_accelerate";
-	} else if ( output < 3.0 ) {
-		beh = "accelerate";
-	} else if ( output < 4.0 ) {
-		beh = "go_along";
-	} else if ( output < 5.0 ) {
-		beh = "decelerate";
-	} else if ( output < 6.0 ) {
-		beh = "stop";
-	} else if ( output < 7.0 ) {
-		beh = "turn_right_decelerate";
-	} else if ( output < 8.0 ) {
-		beh = "turn_right";
-	} else if ( output < 9.0 ) {
-		beh = "turn_right_accelerate";
-	}
-	std::tuple<std::string, double> tup;
-	std::get<0>(tup) = beh;
-	std::get<1>(tup) = output;
-	results.push_back(tup);
-	*/
 
 	std::tuple<std::string, double> tup;
 	std::get<0>(tup) = output_term_name_;
 	std::get<1>(tup) = output_term_fitness_;
 	results.push_back(tup);
-	// FIXME:
 
 	return (results);
 
@@ -504,117 +434,15 @@ std::vector<std::tuple<std::string, double> > Processor::getOutput() const {
 
 // ------------------------------------------------------------------- //
 
-// pass by value
-char Processor::decodeRelativeLocation(ignition::math::Angle eq, const ignition::math::Angle opp,
-		ignition::math::Angle cc) const {
-
-	//
-	// FIXME: below calculations are not applicable for all cases;
-	// they work for the ones considered in manual calculations
-	// but it turned out that for many cases the result (`side`)
-	// is wrong.
-	// Instead of modifying calculations the SFM's `rel_loc` will be copied
-	// to this class (new setter method)
-	//
-	//
-
-	// shift values to the left so the `gamma_opp` angle is equal to -PI
-	ignition::math::Angle shift;
-	shift.Radian(-IGN_PI - opp.Radian());	shift.Normalize();
-
-	// --------------------------------
-	std::string name = SfmDebugGetCurrentActorName();
-	if ( name == "actor1" ) {
-		int abc = 0;
-		abc++;
-	} else if ( name == "actor2" ) {
-		int cba = 0;
-		cba++;
-	}
-	double eq_rad = eq.Radian();
-	double cc_rad = cc.Radian();
-	double opp_rad = opp.Radian();
-	double shift_rad = shift.Radian();
-	ignition::math::Angle opp2 = opp;
-	// --------------------------------
-
-	// calculate shifted values
-	eq += shift;	eq.Normalize();
-	cc += shift;	cc.Normalize();
-	opp2 += shift; 	opp2.Normalize(); // debug
-
-	// --------------------------------
-	double eq_shifted_rad = eq.Radian();
-	double cc_shifted_rad = cc.Radian();
-	double opp_shifted_rad = opp2.Radian();
-	// --------------------------------
-
-	// decode
-	if ( cc.Radian() >= eq.Radian() ) {
-		return ('l');
-	} else {
-		return ('r');
-	}
-
-}
-
-// ------------------------------------------------------------------- //
-
 char Processor::decodeRelativeLocation() const {
 
-	/*
-	// similar to a part of `SocialForceModel::computeObjectRelativeLocation`
-	ignition::math::Angle angle_relative;
-	angle_relative.Radian(d_alpha_beta_angle_ - alpha_dir_);
-	angle_relative.Normalize();
-
-	char side;
-
-//	if ( angle_relative.Radian() <= 0.0 ) {
-//		side = 'r'; // return('r');
-//	} else if ( angle_relative.Radian() > 0.0 ) {
-//		side = 'l'; // return('l');
-//	} else {
-//		return('x');
-//	}
-
-	if ( angle_relative.Radian() <= 0.0 ) {
-		side = 'r'; // return('r');
-	} else if ( angle_relative.Radian() > 0.0 ) {
-		side = 'l'; // return('l');
-	} else {
-		return('x');
-	}
-
-	std::string side_str;
-	if ( side == 'r' ) {
-		side_str = "RIGHT";
-	} else if ( side == 'l' ) {
-		side_str = "LEFT";
-	}
-	std::cout << "\t" << SfmDebugGetCurrentActorName() << " | " << side_str << "\trel: " << angle_relative.Radian() << "\td_ab: " << d_alpha_beta_angle_ << "\talpha_dir: " << alpha_dir_ << std::endl;
-
-	return (side);
-	*/
-
-	char side;
 	if ( rel_loc_ <= 0.0 ) {
-		side = 'r'; // return('r');
+		return('r'); 	// right side
 	} else if ( rel_loc_ > 0.0 ) {
-		side = 'l'; // return('l');
+		return('l');	// left side
 	} else {
 		return('x');
 	}
-
-	std::string side_str;
-	if ( side == 'r' ) {
-		side_str = "RIGHT";
-	} else if ( side == 'l' ) {
-		side_str = "LEFT";
-	}
-	std::cout << "\t" << SfmDebugGetCurrentActorName() << " | " << side_str << "\trel: " << rel_loc_ << "\td_ab: " << d_alpha_beta_angle_ << "\talpha_dir: " << alpha_dir_ << std::endl;
-
-	return (side);
 
 }
 

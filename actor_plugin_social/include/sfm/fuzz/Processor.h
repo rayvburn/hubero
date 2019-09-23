@@ -61,12 +61,7 @@ private:
 	///  with values proper to this application.
 	void init();
 
-	// DEPRECATED?
-//	bool rearrangeTerms(const std::string &name, const uint8_t &status_curr, uint8_t &status_global);
-//	bool rearrangeTerms(const uint8_t &status_curr, uint8_t &status_global);
-
 	/// \brief Determines location of the \beta element relative to \alpha direction of motion
-	char decodeRelativeLocation(ignition::math::Angle eq, const ignition::math::Angle opp, ignition::math::Angle cc) const; // FIXME: DEPRECATED
 	char decodeRelativeLocation() const;
 
 	/// \brief Updates trapezoidal regions of input variables.
@@ -85,14 +80,6 @@ private:
 
 	/// \brief Determines \beta 's direction of motion.
 	double beta_dir_;
-
-	/// \brief Acts as a status register, in the .cpp there are few masks defined
-	/// so every case possible can be recognized using just one 1-byte variable.
-//	uint8_t term_extra_status_;
-
-	/// \brief Array of indexes which `extra terms` are assigned to. Zero is not a valid number
-	/// here (`extra term` with 0 index actually does not exist).
-//	uint8_t term_extra_index_[3] = {0, 0, 0};
 
 	/* ----- fuzzylite-related ----- */
 
@@ -136,12 +123,6 @@ private:
 
 	/*  ----- Rule block ----- */
 	fl::RuleBlock rule_block_;
-
-
-//	/// \brief A distance between 2 objects; used to determine a level of condition
-// //	double d_alpha_beta_len_;
-//	fl::InputVariable d_alpha_beta_len_;
-
 
 };
 
