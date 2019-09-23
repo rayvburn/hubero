@@ -254,6 +254,7 @@ private:
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	/* General functions section (still geometry-related) */
 
+	// FIXME: return tuple description
 	/// \brief Helper function which calculates a relative
 	/// location of the investigated object based on actor's
 	/// facing direction (in this case it is equal to a movement
@@ -261,7 +262,7 @@ private:
 	/// \return A tuple of relative location of the object
 	/// and an angle between actor's movement and object's
 	/// location
-	std::tuple<RelativeLocation, double> computeObjectRelativeLocation(const ignition::math::Angle &actor_yaw,
+	std::tuple<RelativeLocation, double, double> computeObjectRelativeLocation(const ignition::math::Angle &actor_yaw,
 			const ignition::math::Vector3d &d_alpha_beta);
 
 	/// \brief Helper function which checks whether a given

@@ -841,7 +841,8 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 
 	RelativeLocation beta_rel_location = LOCATION_UNSPECIFIED;
 	double beta_angle_rel = 0.0;
-	std::tie(beta_rel_location, beta_angle_rel) = computeObjectRelativeLocation(actor_yaw, d_alpha_beta);
+	double d_alpha_beta_angle = 0.0;
+	std::tie(beta_rel_location, beta_angle_rel, d_alpha_beta_angle) = computeObjectRelativeLocation(actor_yaw, d_alpha_beta);
 
 	/* FOV factor is used to make interaction of objects
 	 * that are behind the actor weaker */
@@ -962,9 +963,10 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 
 	ignition::math::Angle beta_dir_angle(object_pose.Rot().Yaw() - IGN_PI_2);
 	alpha_dir_angle.Normalize();
-	fuzzy_processor_.setDirectionBeta(beta_dir_angle.Radian());		// 2nd input
 
+	fuzzy_processor_.setDirectionBeta(beta_dir_angle.Radian());		// 2nd input
 	fuzzy_processor_.setRelativeLocation(beta_angle_rel);			// 3rd input
+	fuzzy_processor_.setDistanceAngle(d_alpha_beta_angle);			// 4th input
 	// ----
 
 	// --------------------------------------------------------
@@ -1592,7 +1594,7 @@ ignition::math::Vector3d SocialForceModel::computePerpendicularToNormal(const ig
 
 // ------------------------------------------------------------------- //
 
-std::tuple<RelativeLocation, double> SocialForceModel::computeObjectRelativeLocation(const ignition::math::Angle &actor_yaw,
+std::tuple<RelativeLocation, double, double> SocialForceModel::computeObjectRelativeLocation(const ignition::math::Angle &actor_yaw,
 		const ignition::math::Vector3d &d_alpha_beta)
 {
 
@@ -1622,14 +1624,16 @@ std::tuple<RelativeLocation, double> SocialForceModel::computeObjectRelativeLoca
 	// corrected in terms of transforming to world's coordinate system
 	ignition::math::Angle actor_yaw_corrected(actor_yaw.Radian() - IGN_PI_2);
 	actor_yaw_corrected.Normalize(); // V4
-	angle_relative.Radian( angle_d_alpha_beta.Radian() - actor_yaw_corrected() );
+//	angle_relative.Radian( angle_d_alpha_beta.Radian() - actor_yaw_corrected() ); // () <- ???
+	angle_relative.Radian(angle_d_alpha_beta.Radian() - actor_yaw_corrected.Radian());
 	angle_relative.Normalize(); // V4
 
 	// angle_relative.Normalize(); // V1
 
 #ifdef DEBUG_GEOMETRY_2
 	if ( print_info ) {
-		std::cout << "\n GetBetaRelativeLocation() " << "ACTOR yaw: " << _actor_yaw.Radian() << "  ANGLE d_alpha_beta: " << angle_d_alpha_beta.Radian() << "  ANGLE sum: " << angle_relative.Radian();
+		// ?
+//		std::cout << "\n GetBetaRelativeLocation() " << "ACTOR yaw: " << _actor_yaw.Radian() << "  ANGLE d_alpha_beta: " << angle_d_alpha_beta.Radian() << "  ANGLE sum: " << angle_relative.Radian();
 	}
 	std::string txt_dbg;
 #endif
@@ -1675,8 +1679,10 @@ std::tuple<RelativeLocation, double> SocialForceModel::computeObjectRelativeLoca
 	}
 
 #ifdef DEBUG_GEOMETRY_2
+	print_info = true; // FIXME
 	if ( print_info ) {
-		std::cout << "  " << txt_dbg << std::endl;
+		// std::cout << "  " << txt_dbg << std::endl;
+		std::cout << "\t" << owner_name_ << " | " << txt_dbg << "\trel: " << angle_relative.Radian() << "\td_ab: " << angle_d_alpha_beta.Radian() << "\talpha_dir: " << actor_yaw_corrected.Radian() << std::endl;
 	}
 #endif
 
@@ -1711,10 +1717,10 @@ std::tuple<RelativeLocation, double> SocialForceModel::computeObjectRelativeLoca
 #ifdef DEBUG_OSCILLATIONS
 		std::cout << "\t:::::::::::::::::::::::::HIST REL ANG!:::::::::::::::::::::::::::::::::::::::::::\t";
 #endif
-		return ( std::make_tuple(map_models_rel_locations_[SfmDebugGetCurrentObjectName()], angle_relative.Radian()) );
+		return ( std::make_tuple(map_models_rel_locations_[SfmDebugGetCurrentObjectName()], angle_relative.Radian(), angle_d_alpha_beta.Radian()) );
 	}
 
-	return ( std::make_tuple(rel_loc, angle_relative.Radian()) );
+	return ( std::make_tuple(rel_loc, angle_relative.Radian(), angle_d_alpha_beta.Radian()) );
 
 }
 

@@ -27,7 +27,14 @@ public:
 
 	void setDirectionAlpha(const double &dir_alpha);
 	void setDirectionBeta(const double &dir_beta);
-	void setRelativeLocation(const double &beta_location_relative_to_alpha_dir_angle);
+
+	/// \brief Setter method for `d_alpha_beta` angle (see SFM doc for details).
+	/// `d_alpha_beta` angle is a direction of a vector connecting alpha and beta
+	/// center positions.
+	/// \param d_alpha_beta_angle is an angle described above
+	void setDistanceAngle(const double &d_alpha_beta_angle);
+
+	void setRelativeLocation(const double &rel_loc);
 
 	/// \brief Executes fuzzy calculations. The `process()` call must be preceded by `updateRegions()`
 	void process();
@@ -59,7 +66,8 @@ private:
 //	bool rearrangeTerms(const uint8_t &status_curr, uint8_t &status_global);
 
 	/// \brief Determines location of the \beta element relative to \alpha direction of motion
-	char decodeRelativeLocation(ignition::math::Angle eq, const ignition::math::Angle opp, ignition::math::Angle cc) const;
+	char decodeRelativeLocation(ignition::math::Angle eq, const ignition::math::Angle opp, ignition::math::Angle cc) const; // FIXME: DEPRECATED
+	char decodeRelativeLocation() const;
 
 	/// \brief Updates trapezoidal regions of input variables.
 	/// \note Must be preceded by `setters` of input variables.
@@ -67,6 +75,10 @@ private:
 
 	/// \brief Direction of the vector which connects \alpha 's position with \beta 's position.
 	double d_alpha_beta_angle_;
+
+	/// \brief Stores angle telling which \beta is located
+	/// in terms of \alpha 's direction of motion.
+	double rel_loc_;
 
 	/// \brief Determines \alpha 's direction of motion.
 	double alpha_dir_;
