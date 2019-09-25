@@ -297,6 +297,16 @@ private:
 	/// called dictionary here. Uses actor::core::Target static function as helper.
 	bool isModelNegligible(const std::string &model_name);
 
+	/// \brief Rotates a given angle by +270/-90 degrees
+	/// \param yaw_actor is the Yaw (rotation around the world Z axis) angle of the actor
+	/// \return New orientation
+	double convertActorToWorldOrientation(const double &yaw_actor) const;
+
+	/// \brief Computes vector direction expressed as an angle in world coordinate system.
+	/// \param v is a vector
+	/// \return Angle
+	double computeVectorDirection(const ignition::math::Vector3d &v) const;
+
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 	/// \brief A vector of poses of closest points

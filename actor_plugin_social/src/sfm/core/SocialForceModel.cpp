@@ -957,23 +957,21 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 	// ---- fuzzylite
 	// TODO: make a function taking ign angle, offset, calculating normalized value
 	// FIXME: assuming that each object is of `actor` type
-	ignition::math::Angle alpha_dir_angle(actor_pose.Rot().Yaw() - IGN_PI_2);
-	alpha_dir_angle.Normalize();
-	fuzzy_processor_.setDirectionAlpha(alpha_dir_angle.Radian());	// 1st input
 
-	ignition::math::Angle beta_dir_angle(object_pose.Rot().Yaw() - IGN_PI_2);
-	alpha_dir_angle.Normalize();
-
-	fuzzy_processor_.setDirectionBeta(beta_dir_angle.Radian());		// 2nd input
+	double alpha_dir_world = convertActorToWorldOrientation(actor_pose.Rot().Yaw());
+//	fuzzy_processor_.setDirectionAlpha(alpha_dir_angle.Radian());	// 1st input
+	fuzzy_processor_.setDirectionAlpha(alpha_dir_world);			// 1st input
+//	fuzzy_processor_.setDirectionBeta(beta_dir_angle.Radian());		// 2nd input
+	fuzzy_processor_.setDirectionBeta(convertActorToWorldOrientation(object_pose.Rot().Yaw())); // 2nd input
 	fuzzy_processor_.setRelativeLocation(beta_angle_rel);			// 3rd input
 	fuzzy_processor_.setDistanceAngle(d_alpha_beta_angle);			// 4th input
 	// ----
 
 	// --------------------------------------------------------
 	// social conductor
-	social_conductor_.setDirection(alpha_dir_angle.Radian());
+	social_conductor_.setDirection(alpha_dir_world);
 	social_conductor_.setDistance(d_alpha_beta_length);
-	std::cout << "\tSocialConductorSetters | alpha_dir: " << alpha_dir_angle.Radian() << "\t\tdist: " << d_alpha_beta_length << std::endl;
+	std::cout << "\tSocialConductorSetters | alpha_dir: " << alpha_dir_world << "\t\tdist: " << d_alpha_beta_length << std::endl;
 	// --------------------------------------------------------
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
@@ -1976,6 +1974,34 @@ bool SocialForceModel::isModelNegligible(const std::string &model_name) {
 		return (true);
 	}
 	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+double SocialForceModel::convertActorToWorldOrientation(const double &yaw_actor) const {
+
+	ignition::math::Angle yaw_world(yaw_actor - IGN_PI_2);
+	yaw_world.Normalize();
+
+	return (yaw_world.Radian());
+
+}
+
+// ------------------------------------------------------------------- //
+
+// in world coordinate system
+double SocialForceModel::computeVectorDirection(const ignition::math::Vector3d &v) const {
+
+	ignition::math::Angle angle_v;
+	ignition::math::Vector3d v_norm = v;
+	v_norm.Normalize();
+
+	// when normalized vector used with atan2 then division by euclidean distance not needed
+	angle_v.Radian(std::atan2(v_norm.Y(), v_norm.X()));
+	angle_v.Normalize();
+
+	return (angle_v.Radian());
 
 }
 
