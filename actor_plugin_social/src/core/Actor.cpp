@@ -308,25 +308,21 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	// TODO: make target list a parameter in the .world file
 	if ( actor_ptr_->GetName() == "actor1" ) {
 
-		std::cout << "\n\tactor1 QUEUE SETTING\t";
-		std::cout << "1: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(+4.0, -4.0, 0.0), true)) << "\t";
-		std::cout << "2: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -2.0, 0.0), true)) << "\t";
-		std::cout << "3: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true)) << "\t";
-		std::cout << "4: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(+3.0, +4.0, 0.0), true)) << "\t";
-		std::cout << "5: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true)) << "\t";
-		std::cout << "6: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -4.0, 0.0), true)) << "\t";
-		std::cout << "\n";
+		target_manager_.setNewTarget(ignition::math::Vector3d(+4.0, -4.0, 0.0), true);
+		target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -2.0, 0.0), true);
+		target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true);
+		target_manager_.setNewTarget(ignition::math::Vector3d(+3.0, +4.0, 0.0), true);
+		target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true);
+		target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -4.0, 0.0), true);
 
 	} else if ( actor_ptr_->GetName() == "actor2" ) {
 
-		std::cout << "\n\tactor2 QUEUE SETTING\t";
-		std::cout << "1: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -2.0, 0.0), true)) << "\t";
-		std::cout << "2: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true)) << "\t";
-		std::cout << "3: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(+3.0, +4.0, 0.0), true)) << "\t";
-		std::cout << "4: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true)) << "\t";
-		std::cout << "5: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -4.0, 0.0), true)) << "\t";
-		std::cout << "6: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(+4.0, -4.0, 0.0), true)) << "\t";
-		std::cout << "\n";
+		target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -2.0, 0.0), true);
+		target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true);
+		target_manager_.setNewTarget(ignition::math::Vector3d(+3.0, +4.0, 0.0), true);
+		target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true);
+		target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -4.0, 0.0), true);
+		target_manager_.setNewTarget(ignition::math::Vector3d(+4.0, -4.0, 0.0), true);
 
 	}
 
@@ -522,9 +518,6 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	// checking target queue
-	std::cout << "\t!!!!!!!!!!\t" << actor_ptr_->GetName() << "\t!!!!!!!!!!" << std::endl;
-
 	// check whether a target exists
 	if ( !target_manager_.isTargetChosen() ) {
 		if ( target_manager_.changeTarget() ) {
@@ -532,9 +525,6 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 			fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
 		}
 	}
-
-	// checking target queue
-	std::cout << "\t!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
 
 	// check whether a target has plan generated
 	if ( !target_manager_.isPlanGenerated() ) {
@@ -604,7 +594,8 @@ void Actor::stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info) {
 	double dt = prepareForUpdate(info);
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-
+	// TODO: update position of the tracked object every second
+	// TODO: generate global plan every few-seconds or when target reached
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	double dist_traveled = 0.007; // temp

@@ -77,22 +77,11 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 		return (false);
 	}
 
-	// helper variable useful when SetNewTarget is called before
-	// full costmap initialization, the target will be queued then
-	bool queued = false;
-
-//	std::cout << "\n\tsetNewTarget BEFORE isCostmapInitialized\n";
-//	// check if global planner is initialized
-//	if ( !global_planner_.isCostmapInitialized() ) { // hangs the program forever
-//		queued = true;
-//	}
-//	std::cout << "\tsetNewTarget AFTER isCostmapInitialized\n";
-
 	// check reachability - threshold selected experimentally
 	// based on section 6. at `http://wiki.ros.org/costmap_2d`;
 	// NOTE: costmap must be accessible to check whether
 	// a certain cell is free (i.e. ROS must be running)
-	if ( !queued && global_planner_.getCost(position.X(), position.Y()) > 100 ) {
+	if ( global_planner_.getCost(position.X(), position.Y()) > 100 ) {
 		return (false);
 	}
 
@@ -138,12 +127,6 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 
 		// add the target to the queue
 		target_queue_.push(position);
-
-		// FIXME: debug
-		size_t queue_size = target_queue_.size();
-		int a = 0;
-		a++;
-		a++;
 
 	}
 
@@ -231,20 +214,8 @@ bool Target::setNewTarget() {
 	if ( target_queue_.empty() ) {
 		return (false);
 	}
-
-	bool status = setNewTarget(target_queue_.front());
-
-	// FIXME: checking target queue
-	std::cout << "\t\n\n\nsetNewTarget() | status: " << status << "\n\tcurr_target: " << target_ << "\tqueue_size: " << target_queue_.size() << "\thas_target: " << has_target_ << "\thas_global_plan: " << has_global_plan_ << std::endl;
-	if ( target_queue_.size() < 5 && target_queue_.size() > 0 ) {
-		int a = 0;
-		a++;
-	}
-
-//	 pop the element from the queue only if setNewTarget returned TRUE
-//	if ( status ) {
+	setNewTarget(target_queue_.front());
 	target_queue_.pop();
-//	}
 
 	return (true);
 
@@ -459,13 +430,6 @@ bool Target::isPlanGenerated() const {
 }
 // ------------------------------------------------------------------- //
 bool Target::isTargetChosen() const {
-
-	// FIXME: checking target queue
-	std::cout << "\tcurr_target: " << target_ << "\tqueue_size: " << target_queue_.size() << "\thas_target: " << has_target_ << "\thas_global_plan: " << has_global_plan_ << std::endl;
-	if ( target_queue_.size() < 5 && target_queue_.size() > 0 ) {
-		int a = 0;
-		a++;
-	}
 	return (has_target_);
 }
 // ------------------------------------------------------------------- //
