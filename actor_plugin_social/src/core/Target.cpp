@@ -237,7 +237,7 @@ bool Target::setNewTarget() {
 
 // ------------------------------------------------------------------- //
 
-bool Target::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
+bool Target::chooseNewTarget() { // const gazebo::common::UpdateInfo &info
 
 	// FIXME: watch out for a situation in which actor's position is not in map bounds!
 	// THIS IN FACT SHOULD NOT EVEN HAPPEN after some errors will be eliminated
@@ -323,7 +323,7 @@ bool Target::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 	has_global_plan_ = true;
 
 	// save event time
-	time_last_target_selection_ = info.simTime;
+	time_last_target_selection_ = world_ptr_->SimTime(); // info.simTime;
 
 	// Update checkpoint. After choosing a new target, the first checkpoint
 	// is equal (nearly) to the current position. This may generate a problem
@@ -333,6 +333,35 @@ bool Target::chooseNewTarget(const gazebo::common::UpdateInfo &info) {
 	updateCheckpoint();
 
 	// indicate success
+	return (true);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Target::changeTarget() {
+
+	if ( !isTargetQueueEmpty() ) {
+
+		// pop a target from the queue
+		if ( !setNewTarget() ) {
+			return (false);
+		}
+
+		// after setting a new target, firstly let's rotate to its direction
+
+	} else if ( chooseNewTarget() ) {
+
+		// a completely new target has been chosen;
+		// after setting new target, first let's rotate to its direction
+
+	} else {
+
+		// queue empty or target could not has been chosen
+		return (false);
+
+	}
+
 	return (true);
 
 }
@@ -415,11 +444,23 @@ bool Target::isPlanGenerated() const {
 }
 // ------------------------------------------------------------------- //
 bool Target::isTargetChosen() const {
+
+	// checking target queue
+	std::cout << "\tcurr_target: " << target_ << "\tqueue_size: " << target_queue_.size() << "\thas_target: " << has_target_ << "\thas_global_plan: " << has_global_plan_ << std::endl;
+	if ( target_queue_.size() < 5 && target_queue_.size() > 0 ) {
+		int a = 0;
+		a++;
+	}
 	return (has_target_);
 }
 // ------------------------------------------------------------------- //
 
 bool Target::isTargetStillReachable(const gazebo::common::UpdateInfo &info) {
+
+	// firstly check whether some target is set
+	if ( !has_target_ ) {
+		return (true);
+	}
 
 	// TODO: generate global plan?
 	// check periodically, no need to do this in each iteration
@@ -461,6 +502,11 @@ bool Target::isTargetStillReachable(const gazebo::common::UpdateInfo &info) {
 
 bool Target::isTargetNotReachedForTooLong(const gazebo::common::UpdateInfo &info) const {
 
+	// firstly check whether some target is set
+	if ( !has_target_ ) {
+		return (false);
+	}
+
 	if ( (info.simTime - time_last_target_selection_).Double() > params_ptr_->getActorParams().target_reach_max_time ) {
 
 		std::cout << "isTargetNotReachedForTooLong()" << std::endl;
@@ -477,7 +523,12 @@ bool Target::isTargetNotReachedForTooLong(const gazebo::common::UpdateInfo &info
 
 // ------------------------------------------------------------------- //
 
-bool Target::isTargetReached() const {
+bool Target::isTargetReached() {
+
+	// firstly check whether some target is set
+	if ( !has_target_ ) {
+		return (true);
+	}
 
 	// calculate a distance to a target
 	double distance_to_target = (target_ - pose_world_ptr_->Pos()).Length();
@@ -496,7 +547,9 @@ bool Target::isTargetReached() const {
 		return (false);
 	}
 
-	// otherwise return true
+	// otherwise reset `has_target_` and return true
+	has_target_ = false;
+
 	return (true);
 
 }
@@ -511,6 +564,11 @@ bool Target::isTargetQueueEmpty() const {
 
 bool Target::isCheckpointReached() const {
 
+	// firstly check whether some target is set
+	if ( !has_target_ ) {
+		return (true);
+	}
+
 	// as a threshold value of length choose half of the `target_tolerance`
 	double dist_to_checkpoint = (pose_world_ptr_->Pos() - target_checkpoint_).Length();
 	if ( dist_to_checkpoint < (params_ptr_->getActorParams().target_tolerance) ) { // was multiplied by 0.5 but this forces a little too high accuracy to be met with SFM
@@ -524,6 +582,11 @@ bool Target::isCheckpointReached() const {
 
 // FIXME: this does not need to be called in each iteration (twice per second is enough)
 bool Target::isCheckpointAbandonable() const {
+
+	// firstly check whether some target is set
+	if ( !has_target_ ) {
+		return (false);
+	}
 
 	// NOTE: conversion to global coordinate system
 	ignition::math::Angle actor_glob_orient(pose_world_ptr_->Rot().Yaw() - IGN_PI_2);

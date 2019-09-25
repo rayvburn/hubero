@@ -62,7 +62,7 @@ public:
 	 * @param object_name
 	 * @return True if object is valid
 	 */
-	bool followObject(const std::string &object_name);
+	bool followObject(const std::string &object_name); // FIXME?
 
 	/**
 	 * @brief Method to set a new target for the actor
@@ -97,7 +97,15 @@ public:
      * @param info
      * @return True if found and saved, false otherwise
      */
-	bool chooseNewTarget(const gazebo::common::UpdateInfo &info); // const ignition::math::Pose3d &pose_current,
+	bool chooseNewTarget(); // const gazebo::common::UpdateInfo &info
+
+	/**
+	 * @brief Wrapper method for setNewTarget (from the queue) and chooseNewTarget.
+	 * Consists of some conditions and calls to one of the above methods. It may also
+	 * return false when some error occurs.
+	 * @return True if target has been changed (taken from the queue or the a new one found)
+	 */
+	bool changeTarget();
 
     /**
      * @brief
@@ -153,9 +161,10 @@ public:
 
     /**
      * @brief Calculates distance to current target
+     * @note Non-const because `has_target_` gets false`d when it turns out that target has been reached.
      * @return True if target is close enough. Threshold distance is a parameter value (`target_tolerance`).
      */
-    bool isTargetReached() const;
+    bool isTargetReached();
 
     /**
      * @brief Checks if the queue containing consecutive target locations is empty.
