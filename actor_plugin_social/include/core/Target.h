@@ -67,9 +67,12 @@ public:
 	/**
 	 * @brief Method to set a new target for the actor
 	 * @param target - static object's position
+	 * @param force_queue - whether to add the target straight to the queue (useful
+	 * for adding targets to the queue at the startup - when global planner's
+	 * costmap is not initialized yet)
 	 * @return True if [x,y] position is valid
 	 */
-	bool setNewTarget(const ignition::math::Vector3d &target);
+	bool setNewTarget(const ignition::math::Vector3d &target, bool force_queue = false);
 
 	/**
 	 * @brief Method to set a new target for the actor
@@ -97,7 +100,7 @@ public:
      * @param info
      * @return True if found and saved, false otherwise
      */
-	bool chooseNewTarget(); // const gazebo::common::UpdateInfo &info
+	bool chooseNewTarget();
 
 	/**
 	 * @brief Wrapper method for setNewTarget (from the queue) and chooseNewTarget.
@@ -150,14 +153,14 @@ public:
      * @param info - Gazebo Update info
      * @return
      */
-	bool isTargetStillReachable(const gazebo::common::UpdateInfo &info);
+	bool isTargetStillReachable();
 
     /**
      * @brief Checks if the target is not reached for a certain amount of time
      * @param info - Gazebo Update info
      * @return True is threshold time has elapsed
      */
-    bool isTargetNotReachedForTooLong(const gazebo::common::UpdateInfo &info) const;
+    bool isTargetNotReachedForTooLong() const;
 
     /**
      * @brief Calculates distance to current target

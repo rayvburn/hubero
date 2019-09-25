@@ -63,7 +63,13 @@ bool Target::followObject(const std::string &object_name) {
 
 // ------------------------------------------------------------------- //
 
-bool Target::setNewTarget(const ignition::math::Vector3d &position) {
+// `force_queue` false by default
+bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_queue) {
+
+	if ( force_queue ) {
+		// add the target to the queue
+		target_queue_.push(position);
+	}
 
 	// check validity of the position
 	if ( std::isinf(position.X()) ||  std::isnan(position.X()) ||
@@ -71,11 +77,22 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position) {
 		return (false);
 	}
 
+	// helper variable useful when SetNewTarget is called before
+	// full costmap initialization, the target will be queued then
+	bool queued = false;
+
+//	std::cout << "\n\tsetNewTarget BEFORE isCostmapInitialized\n";
+//	// check if global planner is initialized
+//	if ( !global_planner_.isCostmapInitialized() ) { // hangs the program forever
+//		queued = true;
+//	}
+//	std::cout << "\tsetNewTarget AFTER isCostmapInitialized\n";
+
 	// check reachability - threshold selected experimentally
 	// based on section 6. at `http://wiki.ros.org/costmap_2d`;
 	// NOTE: costmap must be accessible to check whether
 	// a certain cell is free (i.e. ROS must be running)
-	if ( global_planner_.getCost(position.X(), position.Y()) > 100 ) {
+	if ( !queued && global_planner_.getCost(position.X(), position.Y()) > 100 ) {
 		return (false);
 	}
 
@@ -214,30 +231,28 @@ bool Target::setNewTarget() {
 	if ( target_queue_.empty() ) {
 		return (false);
 	}
-	setNewTarget(target_queue_.front());
+
+	bool status = setNewTarget(target_queue_.front());
+
+	// FIXME: checking target queue
+	std::cout << "\t\n\n\nsetNewTarget() | status: " << status << "\n\tcurr_target: " << target_ << "\tqueue_size: " << target_queue_.size() << "\thas_target: " << has_target_ << "\thas_global_plan: " << has_global_plan_ << std::endl;
+	if ( target_queue_.size() < 5 && target_queue_.size() > 0 ) {
+		int a = 0;
+		a++;
+	}
+
+//	 pop the element from the queue only if setNewTarget returned TRUE
+//	if ( status ) {
 	target_queue_.pop();
+//	}
+
 	return (true);
-
-	/*
-	 *
-	// finally found a new target
-	target_ = new_target;
-	target_checkpoint_ = global_planner_.getWaypoint().Pos();
-
-	// update state
-	has_target_ = true;
-	has_global_plan_ = true;
-
-	// save event time
-	time_last_target_selection_ = info.simTime;
-	 *
-	 */
 
 }
 
 // ------------------------------------------------------------------- //
 
-bool Target::chooseNewTarget() { // const gazebo::common::UpdateInfo &info
+bool Target::chooseNewTarget() {
 
 	// FIXME: watch out for a situation in which actor's position is not in map bounds!
 	// THIS IN FACT SHOULD NOT EVEN HAPPEN after some errors will be eliminated
@@ -323,7 +338,7 @@ bool Target::chooseNewTarget() { // const gazebo::common::UpdateInfo &info
 	has_global_plan_ = true;
 
 	// save event time
-	time_last_target_selection_ = world_ptr_->SimTime(); // info.simTime;
+	time_last_target_selection_ = world_ptr_->SimTime();
 
 	// Update checkpoint. After choosing a new target, the first checkpoint
 	// is equal (nearly) to the current position. This may generate a problem
@@ -445,7 +460,7 @@ bool Target::isPlanGenerated() const {
 // ------------------------------------------------------------------- //
 bool Target::isTargetChosen() const {
 
-	// checking target queue
+	// FIXME: checking target queue
 	std::cout << "\tcurr_target: " << target_ << "\tqueue_size: " << target_queue_.size() << "\thas_target: " << has_target_ << "\thas_global_plan: " << has_global_plan_ << std::endl;
 	if ( target_queue_.size() < 5 && target_queue_.size() > 0 ) {
 		int a = 0;
@@ -455,7 +470,7 @@ bool Target::isTargetChosen() const {
 }
 // ------------------------------------------------------------------- //
 
-bool Target::isTargetStillReachable(const gazebo::common::UpdateInfo &info) {
+bool Target::isTargetStillReachable() {
 
 	// firstly check whether some target is set
 	if ( !has_target_ ) {
@@ -464,10 +479,10 @@ bool Target::isTargetStillReachable(const gazebo::common::UpdateInfo &info) {
 
 	// TODO: generate global plan?
 	// check periodically, no need to do this in each iteration
-	if ( (info.simTime - time_last_reachability_).Double() > params_ptr_->getActorParams().target_reachable_check_period ) {
+	if ( (world_ptr_->SimTime() - time_last_reachability_).Double() > params_ptr_->getActorParams().target_reachable_check_period ) {
 
 		// save event time
-		time_last_reachability_ = info.simTime;
+		time_last_reachability_ = world_ptr_->SimTime();
 
 		// iterate over all models
 		for (unsigned int i = 0; i < world_ptr_->ModelCount(); ++i) {
@@ -500,14 +515,14 @@ bool Target::isTargetStillReachable(const gazebo::common::UpdateInfo &info) {
 
 // ------------------------------------------------------------------- //
 
-bool Target::isTargetNotReachedForTooLong(const gazebo::common::UpdateInfo &info) const {
+bool Target::isTargetNotReachedForTooLong() const {
 
 	// firstly check whether some target is set
 	if ( !has_target_ ) {
 		return (false);
 	}
 
-	if ( (info.simTime - time_last_target_selection_).Double() > params_ptr_->getActorParams().target_reach_max_time ) {
+	if ( (world_ptr_->SimTime() - time_last_target_selection_).Double() > params_ptr_->getActorParams().target_reach_max_time ) {
 
 		std::cout << "isTargetNotReachedForTooLong()" << std::endl;
 //		std::cout << "\t" << actor_ptr_->GetName() << "\tDETECTED TARGET UNREACHABLE IN FINITE TIME!" << std::endl;

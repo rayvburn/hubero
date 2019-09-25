@@ -308,21 +308,25 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	// TODO: make target list a parameter in the .world file
 	if ( actor_ptr_->GetName() == "actor1" ) {
 
-		target_manager_.setNewTarget(ignition::math::Vector3d(+4.0, -4.0, 0.0));
-		target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -2.0, 0.0));
-		target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0));
-		target_manager_.setNewTarget(ignition::math::Vector3d(+3.0, +4.0, 0.0));
-		target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0));
-		target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -4.0, 0.0));
+		std::cout << "\n\tactor1 QUEUE SETTING\t";
+		std::cout << "1: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(+4.0, -4.0, 0.0), true)) << "\t";
+		std::cout << "2: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -2.0, 0.0), true)) << "\t";
+		std::cout << "3: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true)) << "\t";
+		std::cout << "4: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(+3.0, +4.0, 0.0), true)) << "\t";
+		std::cout << "5: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true)) << "\t";
+		std::cout << "6: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -4.0, 0.0), true)) << "\t";
+		std::cout << "\n";
 
 	} else if ( actor_ptr_->GetName() == "actor2" ) {
 
-		target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -2.0, 0.0));
-		target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0));
-		target_manager_.setNewTarget(ignition::math::Vector3d(+3.0, +4.0, 0.0));
-		target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0));
-		target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -4.0, 0.0));
-		target_manager_.setNewTarget(ignition::math::Vector3d(+4.0, -4.0, 0.0));
+		std::cout << "\n\tactor2 QUEUE SETTING\t";
+		std::cout << "1: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -2.0, 0.0), true)) << "\t";
+		std::cout << "2: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true)) << "\t";
+		std::cout << "3: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(+3.0, +4.0, 0.0), true)) << "\t";
+		std::cout << "4: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true)) << "\t";
+		std::cout << "5: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -4.0, 0.0), true)) << "\t";
+		std::cout << "6: " << static_cast<int>(target_manager_.setNewTarget(ignition::math::Vector3d(+4.0, -4.0, 0.0), true)) << "\t";
+		std::cout << "\n";
 
 	}
 
@@ -831,7 +835,7 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	time_last_update_ = info.simTime; // FIXME: sim time can be pulled out directly from the `world_ptr_` instance
 
 	// check if there has been some obstacle put into world since last target selection
-	if ( !target_manager_.isTargetStillReachable(info) ) {
+	if ( !target_manager_.isTargetStillReachable() ) {
 		if ( target_manager_.changeTarget() ) {
 			// after setting new target, first let's rotate to its direction
 			// state will be changed in the next iteration
@@ -840,7 +844,7 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	}
 
 	// check if actor is stuck
-	if ( target_manager_.isTargetNotReachedForTooLong(info) ) {
+	if ( target_manager_.isTargetNotReachedForTooLong() ) {
 		if ( target_manager_.changeTarget() ) {
 			// after setting new target, first let's rotate to its direction
 			// state will be changed in the next iteration
