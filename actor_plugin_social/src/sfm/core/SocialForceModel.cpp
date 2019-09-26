@@ -959,12 +959,10 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 	// FIXME: assuming that each object is of `actor` type
 
 	double alpha_dir_world = convertActorToWorldOrientation(actor_pose.Rot().Yaw());
-//	fuzzy_processor_.setDirectionAlpha(alpha_dir_angle.Radian());	// 1st input
-	fuzzy_processor_.setDirectionAlpha(alpha_dir_world);			// 1st input
-//	fuzzy_processor_.setDirectionBeta(beta_dir_angle.Radian());		// 2nd input
+	fuzzy_processor_.setDirectionAlpha(alpha_dir_world);										// 1st input
 	fuzzy_processor_.setDirectionBeta(convertActorToWorldOrientation(object_pose.Rot().Yaw())); // 2nd input
-	fuzzy_processor_.setRelativeLocation(beta_angle_rel);			// 3rd input
-	fuzzy_processor_.setDistanceAngle(d_alpha_beta_angle);			// 4th input
+	fuzzy_processor_.setRelativeLocation(beta_angle_rel);										// 3rd input
+	fuzzy_processor_.setDistanceAngle(d_alpha_beta_angle);										// 4th input
 	// ----
 
 	// --------------------------------------------------------
