@@ -169,10 +169,15 @@ private:
 
     /// \brief Function invoked at the start of each OnUpdate event
     /// \return: dt - time delta
-    double prepareForUpdate(const gazebo::common::UpdateInfo &info);
+    double prepareForUpdate();
 
     /// \brief Function invoked at the end of each OnUpdate event
-    void applyUpdate(const gazebo::common::UpdateInfo &info, const double &dist_traveled);
+    void applyUpdate(const double &dist_traveled);
+
+    /// \brief Performs few target_manager's condition checks to decide whether
+    /// a new target should be set or the current one should remain.
+    /// \return True if actor should still try to reach the current target
+    bool manageTarget();
 
     /// \brief Helper function to calculate the actor's velocity as it could not be set
     /// in WorldPtr - this is just a workaround for a Gazebo/ActorPlugin bug
@@ -190,12 +195,16 @@ private:
     /// \brief Helper function that converts a stance type to associated animation
     std::string convertStanceToAnimationName() const;
 
+    // TODO
+    void visualizePositionData();
+
+    // TODO
+    void visualizeSfmCalculations();
+
     /// \brief Helper function to create visualization_msgs::Marker(s)
     /// for a SFM's visualization
     /// \return True if MarkerArray is ready to be published
-    bool visualizeVectorField(const gazebo::common::UpdateInfo &info);
-
-    void visualizeSfmCalculations();
+    bool visualizeVectorField();
 
     /// \brief Pointer to the parent actor.
     gazebo::physics::ActorPtr actor_ptr_;
@@ -273,7 +282,10 @@ private:
 	sfm::vis::Text sfm_vis_text_;
 
     /// \brief Time of the last force field visualization publication
-	gazebo::common::Time time_last_vis_pub_;
+	gazebo::common::Time time_last_vis_grid_pub_;
+
+	/// \brief Time of the last force SFM-generated data publication
+	gazebo::common::Time time_last_vis_sfm_pub_;
 
     /// \brief Custom trajectory info
     gazebo::physics::TrajectoryInfoPtr trajectory_info_;

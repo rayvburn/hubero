@@ -57,11 +57,13 @@ void Actor::initRosInterface() {
 	params_ptr_->loadParameters(node_.getNodeHandlePtr());
 
 	/* initialize SFM visualization instances */
-	sfm_vis_arrow_.setColor(1.0f, 0.0f, 0.0f, 0.9f);
+	sfm_vis_arrow_.setParameters(1.0f, params_ptr_->getSfmParams().max_force);
 	sfm_vis_text_.setColor(0.9f, 0.9f, 0.9f, 0.95f);
+	sfm_vis_text_.setParameters(0.2f);
 	sfm_vis_line_list_.setColor(1.0f, 1.0f, 0.0f, 0.7f);
 
 	if ( params_ptr_->getSfmVisParams().publish_grid ) {
+		sfm_vis_grid_.setParameters(1.0f, params_ptr_->getSfmParams().max_force);
 		sfm_vis_grid_.setColor(0.2f, 1.0f, 0.0f, 0.7f);
 		/* make grid artificially bigger than a world's bounds;
 		 * it makes random targets to be located further from
@@ -484,7 +486,7 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 
 	// ---------------------------------------------
 
-	prepareForUpdate(info);
+	prepareForUpdate();
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
@@ -508,7 +510,7 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 
 	/* forced close-to-zero distance traveled to avoid actor oscillations;
 	 * of course 0.0 linear distance is traveled when pure rotation is performed */
-	applyUpdate(info, params_ptr_->getActorParams().animation_speed_rotation);
+	applyUpdate(params_ptr_->getActorParams().animation_speed_rotation);
 
 }
 
@@ -519,65 +521,22 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 	// ---------------------------------------------
 
 	// Social Force Model
-	double dt = prepareForUpdate(info);
+	double dt = prepareForUpdate();
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	// check whether a target exists
-	if ( !target_manager_.isTargetChosen() ) {
-		if ( target_manager_.changeTarget() ) {
-			// after setting a new target, firstly let's rotate to its direction
-			fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
-		}
-	}
-
-	// check whether a target has plan generated
-	if ( !target_manager_.isPlanGenerated() ) {
-		if ( !target_manager_.generatePathPlan(target_manager_.getTarget()) ) {
-			target_manager_.abandonTarget();
-		}
-	}
-
-	// check whether a current checkpoint is abandonable
-	if ( target_manager_.isCheckpointAbandonable() ) {
-		target_manager_.updateCheckpoint();
+	// check whether target is still available and state does not need to be changed
+	if ( !manageTarget() ) {
+		return;
 	}
 
 	sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_lin_,
-						  target_manager_.getCheckpoint(),
-						  common_info_, dt);
+						    target_manager_.getCheckpoint(),
+						    common_info_, dt);
 
-	ignition::math::Vector3d sf = sfm_.getForceCombined();
-
-//	if ( print_info ) {
-//		std::cout << "\t TOTAL force: " << sf << std::endl;
-//		std::cout << "\t lin_vels_vector: ";
-//		for ( int i = 0; i < actor_common_info.getLinearVelocitiesVector().size(); i++ ) {
-//			std::cout << "\t" << actor_common_info.getLinearVelocitiesVector()[i];
-//		}
-//		std::cout << std::endl;
-//		std::cout << "***********************  NEW_POSE_CALC  **************************" << std::endl;
-//	}
-
-	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_lin_, sf,
+	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_lin_,
+														  sfm_.getForceCombined(),
 														  target_manager_.getCheckpoint(), dt);
-
-//	if ( print_info ) {
-//		std::cout << "\t NEW pose: " << new_pose;
-//		std::cout << "\t\t distance to TARGET: " << (target - pose_actor.Pos()).Length() << std::endl;
-//		std::cout << std::endl << std::endl;
-//	}
-
-	// TODO: move this above `computeNewPose` and wrap into new function
-	if ( target_manager_.isTargetReached() ) {
-		if ( target_manager_.changeTarget() ) {
-			// after setting a new target, firstly let's rotate to its direction
-			fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
-		}
-	} else if ( target_manager_.isCheckpointReached() ) {
-		// take next checkpoint from vector (path)
-		target_manager_.updateCheckpoint();
-	}
 
 	// object info update
 	double dist_traveled = (new_pose.Pos() - actor_ptr_->WorldPose().Pos()).Length();
@@ -585,17 +544,11 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 	// update the local copy of the actor's pose
 	*pose_world_ptr_ = new_pose;
 
-	// publish social force vector and closest points lines
-	stream_.publishData(ActorMarkerType::ACTOR_MARKER_INTERNAL_VECTOR, sfm_vis_arrow_.create(ignition::math::Vector3d(new_pose.Pos().X(), new_pose.Pos().Y(), 0.0), sfm_.getForceInternal()) );
-	stream_.publishData(ActorMarkerType::ACTOR_MARKER_INTERACTION_VECTOR, sfm_vis_arrow_.create(ignition::math::Vector3d(new_pose.Pos().X(), new_pose.Pos().Y(), 0.2), sfm_.getForceInteraction()) );
-	stream_.publishData(ActorMarkerType::ACTOR_MARKER_SOCIAL_VECTOR, sfm_vis_arrow_.create(ignition::math::Vector3d(new_pose.Pos().X(), new_pose.Pos().Y(), 0.4), sfm_.getForceSocial()) );
-	stream_.publishData(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, sfm_vis_line_list_.createArray(sfm_.getClosestPointsVector()) );
-	stream_.publishData(ActorMarkerType::ACTOR_MARKER_COMBINED_VECTOR, sfm_vis_arrow_.create(ignition::math::Vector3d(new_pose.Pos().X(), new_pose.Pos().Y(), 0.6), sf) );
-	stream_.publishData(ActorMarkerTextType::ACTOR_MARKER_TEXT_BEH, sfm_vis_text_.create(new_pose.Pos(), sfm_.getBehaviourActive()) );
+	visualizeSfmCalculations();
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	applyUpdate(info, dist_traveled);
+	applyUpdate(dist_traveled);
 
 }
 
@@ -603,7 +556,7 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 
 void Actor::stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info) {
 
-	double dt = prepareForUpdate(info);
+	double dt = prepareForUpdate();
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 	// TODO: update position of the tracked object every second
@@ -611,7 +564,7 @@ void Actor::stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info) {
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	double dist_traveled = 0.007; // temp
-	applyUpdate(info, dist_traveled);
+	applyUpdate(dist_traveled);
 
 }
 
@@ -619,14 +572,14 @@ void Actor::stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info) {
 
 void Actor::stateHandlerTeleoperation (const gazebo::common::UpdateInfo &info) {
 
-	double dt = prepareForUpdate(info);
+	double dt = prepareForUpdate();
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	double dist_traveled = 0.007; // temp
-	applyUpdate(info, dist_traveled);
+	applyUpdate(dist_traveled);
 
 }
 
@@ -767,22 +720,14 @@ bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 
 // ------------------------------------------------------------------- //
 
-double Actor::prepareForUpdate(const gazebo::common::UpdateInfo &info) {
-
-	// -------------------------
-	// 1) Checking whether ROS time and Gazebo time are equal;
-	// 2) Trying to pull out sim time from the world ptr (success)
-	double gaz_time = info.simTime.Double();
-	double gaz_world_time = world_ptr_->SimTime().Double();
-	double ros_time = ros::Time::now().sec;
-	// -------------------------
+double Actor::prepareForUpdate() {
 
 	// copy pose
 	*pose_world_ptr_ = actor_ptr_->WorldPose();
 
 	updateStanceOrientation(*pose_world_ptr_); // FIXME
 
-	double dt = (info.simTime - time_last_update_).Double();
+	double dt = (world_ptr_->SimTime() - time_last_update_).Double();
 	calculateVelocity(dt);
 
 	common_info_.setLinearVel(velocity_lin_);
@@ -800,7 +745,7 @@ double Actor::prepareForUpdate(const gazebo::common::UpdateInfo &info) {
 
 // ------------------------------------------------------------------- //
 
-void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &dist_traveled) {
+void Actor::applyUpdate(const double &dist_traveled) {
 
   	// save last position to calculate velocity
 	pose_world_prev_ = actor_ptr_->WorldPose();
@@ -829,13 +774,11 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 	 *  (std::isnan(_dist_traveled)) ? (_dist_traveled = 0.0005) : (0);
 	 *
 	 */
-
-
 	// update script time to set proper animation speed
 	actor_ptr_->SetScriptTime( actor_ptr_->ScriptTime() + (dist_traveled * params_ptr_->getActorParams().animation_factor) );
 
 	// update time
-	time_last_update_ = info.simTime; // FIXME: sim time can be pulled out directly from the `world_ptr_` instance
+	time_last_update_ = world_ptr_->SimTime();
 
 	// check if there has been some obstacle put into world since last target selection
 	if ( !target_manager_.isTargetStillReachable() ) {
@@ -860,51 +803,53 @@ void Actor::applyUpdate(const gazebo::common::UpdateInfo &info, const double &di
 		updateTransitionFunctionPtr();
 	}
 
-	// TODO: vis freq as parameter
+	// this is useful whatever the state of the actor is
+	visualizePositionData();
 
-	// publish data for visualization
-	// proper bounding object to publish needs to be chosen
-	switch ( bounding_type_ ) {
-	case(ACTOR_BOUNDING_BOX):
-			stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_box_.getMarkerConversion());
-			break;
-	case(ACTOR_BOUNDING_CIRCLE):
-			stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_circle_.getMarkerConversion());
-			break;
-	case(ACTOR_BOUNDING_ELLIPSE):
-			stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_ellipse_.getMarkerConversion());
-			break;
+}
+
+// ------------------------------------------------------------------- //
+
+bool Actor::manageTarget() {
+
+	// check whether a target exists
+	if ( !target_manager_.isTargetChosen() ) {
+		if ( target_manager_.changeTarget() ) {
+			// after setting a new target, firstly let's rotate to its direction
+			fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
+			return (false);
+		}
 	}
 
-	stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_);
-	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getTarget()),
-																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
-	stream_.publishData(ActorTfType::ACTOR_TF_CHECKPOINT, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getCheckpoint()),
-																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
-	stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, target_manager_.getPath());
+	// check whether a target has plan generated
+	if ( !target_manager_.isPlanGenerated() ) {
+		if ( !target_manager_.generatePathPlan(target_manager_.getTarget()) ) {
+			target_manager_.abandonTarget();
+		}
+	}
 
-	// check if grid publication has been enabled in parameter file
-	if ( params_ptr_->getSfmVisParams().publish_grid ) {
+	// check whether a current checkpoint is abandonable
+	if ( target_manager_.isCheckpointAbandonable() ) {
+		target_manager_.updateCheckpoint();
+	}
 
-		/* visualize SFM grid if enough time elapsed from last
-		 * publication and there is some unit subscribing to a topic */
-		if ( visualizeVectorField(info) ) {
-			stream_.publishData( actor::ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID, sfm_vis_grid_.getMarkerArray() );
+	// check closeness to the target/checkpoint
+	if ( target_manager_.isTargetReached() ) {
+
+		if ( target_manager_.changeTarget() ) {
+			// after setting a new target, firstly let's rotate to its direction
+			fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
+			return (false);
 		}
 
+	} else if ( target_manager_.isCheckpointReached() ) {
+
+		// take next checkpoint from vector (path)
+		target_manager_.updateCheckpoint();
+
 	}
 
-
-	// ellipse
-//	std::cout << "\tBOUNDING ELLIPSE\n";
-//	std::cout << "\tActor's pos: " << pose_world_ptr_->Pos() << std::endl;
-//	std::cout << "\tEllipse's offset: " << bounding_ellipse_.getCenterOffset() << std::endl;
-//	std::cout << "\tEllipse's center: " << bounding_ellipse_.getCenter() << "\tEllipse's shifted center: " << bounding_ellipse_.getCenterShifted() << std::endl;
-//	std::cout << "\n\n";
-
-	// debug info
-//	print_info = false;
-//	Print_Set(false);
+	return (true);
 
 }
 
@@ -1086,17 +1031,91 @@ std::string Actor::convertStanceToAnimationName() const {
 
 }
 
+// ------------------------------------------------------------------- //
+
+void Actor::visualizePositionData() {
+
+	// TODO: vis freq as parameter
+
+	// publish data for visualization
+	// proper bounding object to publish needs to be chosen
+	switch ( bounding_type_ ) {
+	case(ACTOR_BOUNDING_BOX):
+			stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_box_.getMarkerConversion());
+			break;
+	case(ACTOR_BOUNDING_CIRCLE):
+			stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_circle_.getMarkerConversion());
+			break;
+	case(ACTOR_BOUNDING_ELLIPSE):
+			stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_ellipse_.getMarkerConversion());
+			break;
+	}
+
+	stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_);
+	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getTarget()),
+																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
+	stream_.publishData(ActorTfType::ACTOR_TF_CHECKPOINT, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getCheckpoint()),
+																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
+
+	// TODO: target_manager_.isNewPath()
+	stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, target_manager_.getPath());
+
+}
 
 // ------------------------------------------------------------------- //
 
-bool Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
+void Actor::visualizeSfmCalculations() {
+
+	// publish social force vector and closest points lines @ 30 Hz
+	if ( (world_ptr_->SimTime() - time_last_vis_sfm_pub_).Double() >= 0.033 ) {
+
+		// save last event time
+		time_last_vis_sfm_pub_ = world_ptr_->SimTime();
+
+		// combined vector - red
+		sfm_vis_arrow_.setColor(1.0f, 0.0f, 0.0f, 1.0f);
+		stream_.publishData(ActorMarkerType::ACTOR_MARKER_COMBINED_VECTOR, 			 sfm_vis_arrow_.create(ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.0), sfm_.getForceCombined()) );
+
+		// internal force vector - green
+		sfm_vis_arrow_.setColor(0.0f, 1.0f, 0.0f, 1.0f);
+		stream_.publishData(ActorMarkerType::ACTOR_MARKER_INTERNAL_VECTOR, 			 sfm_vis_arrow_.create(ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.2), sfm_.getForceInternal()) );
+
+		// interaction force vector - cyan
+		sfm_vis_arrow_.setColor(0.0f, 0.8f, 1.0f, 1.0f);
+		stream_.publishData(ActorMarkerType::ACTOR_MARKER_INTERACTION_VECTOR, 		 sfm_vis_arrow_.create(ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.4), sfm_.getForceInteraction()) );
+
+		// social force vector - orange
+		sfm_vis_arrow_.setColor(1.0f, 0.6f, 0.0f, 1.0f);
+		stream_.publishData(ActorMarkerType::ACTOR_MARKER_SOCIAL_VECTOR, 			 sfm_vis_arrow_.create(ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.6), sfm_.getForceSocial()) );
+
+		stream_.publishData(ActorMarkerTextType::ACTOR_MARKER_TEXT_BEH, 			 sfm_vis_text_.create( ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 1.0), sfm_.getBehaviourActive()) );
+		stream_.publishData(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, sfm_vis_line_list_.createArray(sfm_.getClosestPointsVector()) );
+
+	}
+
+	// check if grid publication has been enabled in parameter file
+	if ( params_ptr_->getSfmVisParams().publish_grid ) {
+
+		/* visualize SFM grid if enough time elapsed from last
+		 * publication and there is some unit subscribing to a topic */
+		if ( visualizeVectorField() ) {
+			stream_.publishData( actor::ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID, sfm_vis_grid_.getMarkerArray() );
+		}
+
+	}
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Actor::visualizeVectorField() {
 
 	// do not publish too often
-	if ( (info.simTime - time_last_vis_pub_).Double() > params_ptr_->getSfmVisParams().grid_pub_period ) {
+	if ( (world_ptr_->SimTime() - time_last_vis_grid_pub_).Double() > params_ptr_->getSfmVisParams().grid_pub_period ) {
 
 		/* update the sim time even when grid will not be published
 		 * to avoid calling getSubscribersNum() in each iteration */
-		time_last_vis_pub_ = info.simTime;
+		time_last_vis_grid_pub_ = world_ptr_->SimTime();
 
 		/* creating a grid with high resolution is pretty time-consuming
 		 * check if there is a subscriber and then calculate force vectors
@@ -1107,7 +1126,6 @@ bool Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
 		if ( stream_.getSubscribersNum(actor::ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID ) ) {
 
 			ignition::math::Pose3d pose;	// pose where `virtual` actor will be placed in
-			ignition::math::Vector3d sf;	// social force vector
 
 			// before a start reset a grid index
 			sfm_vis_grid_.resetGridIndex();
@@ -1122,11 +1140,10 @@ bool Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
 
 				// calculate social force for actor located in current pose
 				// hard-coded time delta
-//				sf = sfm_.computeSocialForce(world_ptr_, actor_ptr_->GetName(), pose, velocity_lin_, target_, common_info_, 0.001);
-				sf = sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), common_info_, 0.001);
+				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), common_info_, 0.001);
 
 				// pass a result to vector of grid forces
-				sfm_vis_grid_.addMarker( sfm_vis_grid_.create(pose.Pos(), sf) );
+				sfm_vis_grid_.addMarker( sfm_vis_grid_.create(pose.Pos(), sfm_.getForceCombined()) );
 
 			}
 			return (true);
@@ -1136,12 +1153,6 @@ bool Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
 	} /* if ( time_elapsed ) */
 
 	return (false);
-
-}
-
-// ------------------------------------------------------------------- //
-
-void Actor::visualizeSfmCalculations() {
 
 }
 
