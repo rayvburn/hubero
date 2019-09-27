@@ -492,16 +492,19 @@ void Processor::process() {
 //    test1++;
 
     fl::scalar y_hig;
-    if ( direction_.highestMembership(direction_.getValue(), &y_hig)->getName() == "cross_front" ) {
-		int cf = 0;
-		cf++;
-		cf++;
-		if ( !std::isnan(static_cast<double>(social_behavior_.getValue())) ) {
-    		// check if output is produced when cross front is detected
-    		int detected = 0;
-    		detected++;
-    		detected++;
-    	}
+    fl::Term* term_ptr_dbg = direction_.highestMembership(direction_.getValue(), &y_hig);
+    if ( term_ptr_dbg != NULL ) {
+    	if ( term_ptr_dbg->getName() == "cross_front" ) {
+			int cf = 0;
+			cf++;
+			cf++;
+			if ( !std::isnan(static_cast<double>(social_behavior_.getValue())) ) {
+				// check if output is produced when cross front is detected
+				int detected = 0;
+				detected++;
+				detected++;
+			}
+		}
     }
 
 }
