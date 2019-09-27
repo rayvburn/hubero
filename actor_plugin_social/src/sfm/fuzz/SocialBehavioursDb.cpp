@@ -259,7 +259,27 @@ ignition::math::Vector3d SocialBehavioursDb::stop() {
 	ignition::math::Vector3d force;
 
 	// TODO: resulting force vector is needed
-	// FIXME: no action at the moment
+	double dir_rot = findOrientation(dir_alpha_, 'o');
+	force = createDirVector(dir_rot);
+
+	double magnitude = 0.0;
+
+	// experimentally adjusted thresholds
+	if ( d_alpha_beta_length_ < 0.25 ) {
+		magnitude = 300.0;
+	} else if ( d_alpha_beta_length_ < 0.60 ) {
+		magnitude = 250.0;
+	} else if ( d_alpha_beta_length_ < 1.00 ) {
+		magnitude = 150.0;
+	} else if ( d_alpha_beta_length_ < 1.50 ) {
+		magnitude = 80.0;
+	} else if ( d_alpha_beta_length_ < 2.50 ) {
+		magnitude = 50.0;
+	} else {
+		magnitude = 20.0;
+	}
+
+	force = setVectorLength(force, magnitude);
 
 	return (force);
 
