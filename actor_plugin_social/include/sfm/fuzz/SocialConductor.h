@@ -39,6 +39,10 @@ public:
 	/// \return Superposed social force vector
 	ignition::math::Vector3d getSocialVector() const;
 
+	/// \brief Returns the last active behaviour ID
+	/// \return
+	uint8_t getBehaviourActive() const;
+
 	/// \brief Resets the resulting vector.
 	void reset();
 
@@ -54,6 +58,9 @@ private:
 	/// \brief Social force vector (the actual `social`;
 	/// after superposition procedure)
 	ignition::math::Vector3d sf_result_;
+
+	/// \brief Stores last active behaviour
+	uint8_t behaviour_active_;
 
 	/// \brief Calculates the superposed vector according to the summed one
 	/// considering truncation if its magnitude is too big.

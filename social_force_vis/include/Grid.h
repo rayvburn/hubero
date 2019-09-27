@@ -8,9 +8,8 @@
 #ifndef INCLUDE_GRID_H_
 #define INCLUDE_GRID_H_
 
-#include "Base.h"
-
-// C++ STL libraries
+#include <MarkerBase.h>
+#include <Arrow.h>
 #include <vector>
 
 // ROS libraries
@@ -24,7 +23,7 @@ namespace vis {
 /// visualization; generates a grid of points and calculates
 /// a social force in each of them (treats each position as
 /// if an actor would in fact be located there)
-class Grid : public Base {
+class Grid : public Arrow {
 
 public:
 

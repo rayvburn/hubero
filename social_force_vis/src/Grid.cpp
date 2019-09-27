@@ -12,7 +12,9 @@ namespace vis {
 
 // ------------------------------------------------------------------- //
 
-Grid::Grid(): grid_index_(0) { }
+Grid::Grid(): grid_index_(0) {
+	this->max_length_ = 1.0;
+}
 
 // ------------------------------------------------------------------- //
 
@@ -40,7 +42,7 @@ void Grid::createGrid(const float &x_start, const float &x_end, const float &y_s
 	}
 
 	// resolution becomes the arrow length
-	max_arrow_length_ = resolution;
+	this->max_length_ = resolution; // FIXME: used once as lh value
 
 	// according to resolution, create grid (measurement) points within selected bounds
 	for ( float x = x_start_temp; x <= x_end_temp; x += std::fabs(resolution) ) {

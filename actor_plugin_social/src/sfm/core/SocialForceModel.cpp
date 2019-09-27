@@ -41,8 +41,8 @@ SocialForceModel::SocialForceModel():
 	 * 		in cluttered world) */
 
 	fov_(2.00), speed_max_(1.50), person_mass_(1),
-	internal_force_factor_(100.0), // desired_force_factor(200.0),
-	interaction_force_factor_(3000.0), // interaction_force_factor(6000.0),
+	factor_force_internal_(100.0), // desired_force_factor(200.0),
+	factor_force_interaction_(3000.0), // interaction_force_factor(6000.0),
 	force_max_(2000.0), force_min_(300.0), // force_min(800.0)
 	inflation_type_(INFLATION_ELLIPSE),
 	interaction_static_type_(INTERACTION_ELLIPTICAL),
@@ -78,8 +78,8 @@ void SocialForceModel::init(std::shared_ptr<const actor::ros_interface::ParamLoa
 
 	params_ptr_ = params_ptr;
 
-	internal_force_factor_ = params_ptr_->getSfmParams().internal_force_factor;
-	interaction_force_factor_ = params_ptr_->getSfmParams().interaction_force_factor;
+	factor_force_internal_ = params_ptr_->getSfmParams().internal_force_factor;
+	factor_force_interaction_ = params_ptr_->getSfmParams().interaction_force_factor;
 	person_mass_ = static_cast<unsigned short int>(params_ptr_->getSfmParams().mass);
 	speed_max_ = params_ptr_->getSfmParams().max_speed;
 	fov_ = params_ptr_->getSfmParams().fov;
@@ -106,15 +106,13 @@ void SocialForceModel::init(std::shared_ptr<const actor::ros_interface::ParamLoa
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world_ptr,
+bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world_ptr,
 		const ignition::math::Pose3d &actor_pose, const ignition::math::Vector3d &actor_velocity,
 		const ignition::math::Vector3d &actor_target, const actor::core::CommonInfo &actor_info,
 		const double &dt)
 {
 
-	closest_points_.clear();
-	defuzz_.reset();
-	social_conductor_.reset();
+	reset();
 
 	( SfmGetPrintData() ) ? (print_info = true) : (0);
 
@@ -126,20 +124,15 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 
 	// compute internal acceleration
-	ignition::math::Vector3d f_alpha = computeInternalForce(actor_pose, actor_velocity, actor_target);
-
-	// allocate variables needed in loop
-	ignition::math::Vector3d f_interaction_total;
-	ignition::math::Vector3d f_alpha_beta;
-	ignition::math::Vector3d f_alpha_beta_social;
+	force_internal_ = computeInternalForce(actor_pose, actor_velocity, actor_target);
 
 #ifdef CALCULATE_INTERACTION
 
+	// added up to the `force_interaction_`
+	ignition::math::Vector3d f_alpha_beta;
+
 	// extra coefficient - Fuzzy logic affects internal force
 	double fuzzy_factor_f_alpha = 1.00;
-
-	// TODO: Minimal force, choose `force_min_` parameter value as default
-	float force_min_sf = force_min_;
 
 	// TODO: initialize with limit value
 	float dist_closest = 9999.0f;
@@ -331,8 +324,8 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		// just debugging
 		if ( f_alpha_beta.Length() > 1e-06 ) {
 
-			// TODO:
-			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * f_alpha_beta * interaction_force_factor_).Length() << "\tdist: " << distance_v.Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
+			// TODO: after force separation it will not be valid?
+//			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * force_interaction_ * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * force_interaction_ * interaction_force_factor_).Length() << "\tdist: " << distance_v.Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
 
 //			std::cout << "\t\t\tactor_pos: " << (actor_closest_to_model_pose).Pos() << "\tmodel_pos: " << model_closest_point_pose.Pos() << std::endl;
 //			std::cout << "\t\t\td_alpha_beta: " << distance_v << "\t\tlen: " << distance_v.Length() << "\tclosest_o_a diff: " << (model_closest_point_pose.Pos() - actor_closest_to_model_pose.Pos()) << "\tclosest_a_o diff: " << (actor_closest_to_model_pose.Pos() - model_closest_point_pose.Pos()) << std::endl;
@@ -409,7 +402,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 			// V2 - based on verbose interpretation of the selected output term (region)
 			social_conductor_.apply(region);
 			std::cout << "\n\n\tSocial conductor - " << owner_name_ << "\t" << social_conductor_.getSocialVector() << std::endl << std::endl;
-			f_alpha_beta_social = social_conductor_.getSocialVector();
+			force_social_ += social_conductor_.getSocialVector();
 
 			if ( social_conductor_.getSocialVector().Length() > 1e-06 ) {
 				int stopit = 0;
@@ -428,7 +421,7 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 		// TODO: add f_alpha_beta_social
 		// sum all forces
-		f_interaction_total += f_alpha_beta; //  + f_alpha_beta_social;
+		force_interaction_ += f_alpha_beta; //  + f_alpha_beta_social;
 
 		// FIXME: f_alpha_beta_social is not multiplied by `interaction_force_factor_` at the moment
 		// TODO: make another parameter: `social_force_factor`
@@ -436,53 +429,40 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 
 	} /* for loop ends here (iterates over all world models) */
 
-	// TODO:
-	std::cout << "\n\t\tINTERNAL: \t" << fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha << std::endl;
-	std::cout << "\t\tINTERACTION: \t" << interaction_force_factor_ * f_alpha_beta << std::endl;
-	std::cout << "\t\tSOCIAL: \t" <<  f_alpha_beta_social << std::endl;
-	std::cout << "\t\tTOTAL: \t" << (fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total + f_alpha_beta_social) << std::endl;
-	std::cout << "**************************************************************************\n\n";
+	// FIXME:
+	fuzzy_factor_f_alpha = 1.00;
+	factor_force_internal_ *= fuzzy_factor_f_alpha;
 
-	if ( print_info ) {
-		std::cout << ":::::::::::::::::::::::::::::::::::::::::::::::::::" << std::endl;
-	}
-#endif
+	factorInForceCoefficients();
 
-
-
-	/* TODO: set desired force factor according to the distance to the closest obstacle -
-	 * the closer actor gets, the smaller the coefficient should be - this is
-	 * the REAL SOCIAL feature of the model */
-	// this->calculateDesiredForceFactor(dist_to_closest_obstacle);
-	// inside the function lets normalize the factor according to the `desired` one
-
-	ignition::math::Vector3d f_total = fuzzy_factor_f_alpha * internal_force_factor_ * f_alpha + interaction_force_factor_ * f_interaction_total + f_alpha_beta_social;
-	f_total.Z(0.0);
-
-#ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
-	( SfmGetPrintData() ) ? (print_info = true) : (0);
-#endif
+#endif // end of `#ifdef CALCULATE_INTERACTION`
 
 	if ( print_info ) {
 		std::cout << "-----------------------\n";
-		std::cout << owner_name_ << " | SocialForce: " << f_total << "\tinternal: " << internal_force_factor_ * f_alpha << "\tinteraction: " << interaction_force_factor_ * (f_interaction_total);
+		std::cout << owner_name_ << " | SocialForce: " << force_combined_ << "\tinternal: " << force_internal_ << "\tinteraction: " << force_interaction_ << "\tsocial: " << force_social_;
 	}
-//	std::cout << _owner_name_ << " | SocialForce: " << f_total << "\tinternal: " << desired_force_factor * f_alpha << "\tinteraction: " << interaction_force_factor * f_interaction_total;
 
 #ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	( SfmGetPrintData() ) ? (print_info = false) : (0);
 #endif
 
 	// truncate the force value to max to prevent strange speedup of an actor
-	if ( f_total.Length() >= force_max_ ) {
+	double force_combined_magnitude_init = force_combined_.Length();
 
-		f_total = f_total.Normalize() * force_max_;
+	// TODO: wrap into function : applyNonLinearModifications(dist_closest)
+	if ( force_combined_magnitude_init >= force_max_ ) {
 
+		multiplyForces(force_max_ / force_combined_magnitude_init);
 		if ( print_info ) {
 			std::cout << "\tTRUNCATED";
 		}
 
-	} else if ( f_total.Length() <= force_min_ ) {
+	} else if ( force_combined_magnitude_init <= force_min_ ) {
+
+		/* TODO: set desired force factor according to the distance to the closest obstacle -
+		 * the closer actor gets, the smaller the coefficient should be - this is
+		 * the REAL SOCIAL feature of the model */
+		double force_min_factor_socialized = 1.00;
 
 		// NOTE: this algorithm in fact allows the total force to stay
 		// below the threshold value (force_min_).
@@ -493,11 +473,11 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 		// creates additional `inertia` when actor got into
 		// close-to-zero potential zone. The inertia pushes
 		// him to the place when potential is far away from 0.
-		force_min_sf = std::exp(0.75 * dist_closest);
-		(force_min_sf > 1.00) ? (force_min_sf = 1.00) : (0);
-		sf_values_.update(f_total);
-		f_total = sf_values_.getAverage().Normalize() * force_min_sf * force_min_;
-
+		force_min_factor_socialized = std::exp(0.75 * dist_closest);
+		(force_min_factor_socialized > 1.00) ? (force_min_factor_socialized = 1.00) : (0);
+		sf_values_.update(force_combined_);
+		// f_total = sf_values_.getAverage().Normalize() * force_min_sf * force_min_;
+		multiplyForces((force_min_factor_socialized * force_min_) / force_combined_magnitude_init);
 		if ( print_info ) {
 			std::cout << "\tEXTENDED";
 		}
@@ -518,14 +498,20 @@ ignition::math::Vector3d SocialForceModel::computeSocialForce(const gazebo::phys
 #endif
 
 	if ( print_info ) {
-		std::cout << "\n" << SfmDebugGetCurrentActorName() << " | finalValue: " << f_total << "\tlength: " << f_total.Length() << std::endl;
+		std::cout << "\n" << owner_name_ << " | finalValue: " << force_combined_ << "\tlength: " << force_combined_.Length() << std::endl;
 	}
 
 #ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	( SfmGetPrintData() ) ? (print_info = false) : (0);
 #endif
 
-	return (f_total);
+	std::cout << "\n\t\tINTERNAL: \t" << force_internal_ << std::endl;
+	std::cout << "\t\tINTERACTION: \t" << force_interaction_ << std::endl;
+	std::cout << "\t\tSOCIAL: \t" <<  force_social_ << std::endl;
+	std::cout << "\t\tTOTAL: \t" << force_combined_ << std::endl;
+	std::cout << "**************************************************************************\n\n";
+
+	return (true);
 
 }
 
@@ -680,6 +666,14 @@ ignition::math::Pose3d SocialForceModel::computeNewPose(const ignition::math::Po
 
 // ------------------------------------------------------------------- //
 
+ignition::math::Vector3d SocialForceModel::getForceInternal() const 	{ return (force_internal_);		}
+ignition::math::Vector3d SocialForceModel::getForceInteraction() const 	{ return (force_interaction_); 	}
+ignition::math::Vector3d SocialForceModel::getForceSocial() const 		{ return (force_social_); 		}
+ignition::math::Vector3d SocialForceModel::getForceCombined() const		{ return (force_combined_); 	}
+uint8_t SocialForceModel::getBehaviourActive() const { return (social_conductor_.getBehaviourActive()); }
+
+// ------------------------------------------------------------------- //
+
 std::vector<ignition::math::Pose3d> SocialForceModel::getClosestPointsVector() const {
 	return (closest_points_);
 }
@@ -754,7 +748,7 @@ ignition::math::Vector3d SocialForceModel::computeInternalForce(const ignition::
 		std::cout << "\tactor_pos: " << _actor_pose.Pos();
 		std::cout << "\ttarget: " << _actor_target << "   to_goal_direction: " << to_goal_direction;
 		std::cout << "\n\tactor_vel: " << _actor_vel << "\tideal_vel_vector: " << ideal_vel_vector;
-		std::cout << "\tf_alpha: " << f_alpha * internal_force_factor_;
+		std::cout << "\tf_alpha: " << f_alpha * factor_force_internal_;
 		std::cout << std::endl;
 		std::cout << std::endl;
 //	}
@@ -1002,7 +996,7 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 		}
 		std::cout << "\t\trel_location: " << location_str << std::endl;
 
-		std::cout << "\tf_alpha_beta: " << f_alpha_beta * interaction_force_factor_ << "\t\tvec len: " << interaction_force_factor_ * f_alpha_beta.Length() << std::endl;
+		std::cout << "\tf_alpha_beta: " << f_alpha_beta * factor_force_interaction_ << "\t\tvec len: " << factor_force_interaction_ * f_alpha_beta.Length() << std::endl;
 	#ifndef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	}
 	#endif
@@ -1115,7 +1109,7 @@ SocialForceModel::computeForceStaticObstacle(const ignition::math::Pose3d &actor
 		std::cout << "\td_alpha_i: " << d_alpha_i << " \tlen: " << d_alpha_i_len << std::endl;
 		std::cout << "\ty_alpha_i: " << y_alpha_i;
 		std::cout << "\tw_alpha_i: " << w_alpha_i << std::endl;
-		std::cout << "\tf_alpha_i: " << f_alpha_i * interaction_force_factor_ << std::endl;
+		std::cout << "\tf_alpha_i: " << f_alpha_i * factor_force_interaction_ << std::endl;
 //		std::cout << "\tactor_pos: " << actor_pose.Pos() << "\t\tobj_pos: " << object_pose.Pos() << std::endl;
 //		std::cout << "\tdiff__pos: " << (actor_pose.Pos() - object_pose.Pos()) << "\t\tlen: " << (actor_pose.Pos() - object_pose.Pos()).Length() << std::endl;
 	#ifndef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
@@ -2000,6 +1994,43 @@ double SocialForceModel::computeVectorDirection(const ignition::math::Vector3d &
 	angle_v.Normalize();
 
 	return (angle_v.Radian());
+
+}
+
+// ------------------------------------------------------------------- //
+
+void SocialForceModel::reset() {
+
+	closest_points_.clear();
+	defuzz_.reset();
+	social_conductor_.reset();
+
+	force_internal_ = ignition::math::Vector3d();
+	force_interaction_ = ignition::math::Vector3d();
+	force_social_ = ignition::math::Vector3d();
+	force_combined_ = ignition::math::Vector3d();
+
+}
+
+// ------------------------------------------------------------------- //
+
+void SocialForceModel::factorInForceCoefficients() {
+
+	force_internal_ 	*= factor_force_internal_;
+	force_interaction_ 	*= factor_force_interaction_;
+	force_social_ 		*= factor_force_social_;
+	force_combined_ 	 = force_internal_ + force_interaction_ + force_social_;
+
+}
+
+// ------------------------------------------------------------------- //
+
+void SocialForceModel::multiplyForces(const double &coefficient) {
+
+	force_internal_ 	*= coefficient;
+	force_interaction_ 	*= coefficient;
+	force_social_ 		*= coefficient;
+	force_combined_ 	 = force_internal_ + force_interaction_ + force_social_;
 
 }
 

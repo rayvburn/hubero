@@ -100,50 +100,60 @@ void SocialConductor::apply(const std::string &term_name) {
 
 		// apply `turn left` behavior
 		sf_vector_.push_back(this->turnLeft());
+		behaviour_active_ = FUZZ_BEH_TURN_LEFT;
 
 	} else if ( term_name == "turn_left_accelerate" ) {
 
 		// apply `turn left and accelerate` behavior
 		sf_vector_.push_back(this->turnLeftAccelerate());
+		behaviour_active_ = FUZZ_BEH_TURN_LEFT_ACCELERATE;
 
 	} else if ( term_name == "accelerate" ) {
 
 		// apply `accelerate` behavior
 		sf_vector_.push_back(this->accelerate());
+		behaviour_active_ = FUZZ_BEH_ACCELERATE;
 
 	} else if ( term_name == "go_along" ) {
 
 		// apply `go along` behavior
 		sf_vector_.push_back(this->goAlong());
+		behaviour_active_ = FUZZ_BEH_GO_ALONG;
 
 	} else if ( term_name == "decelerate" ) {
 
 		// apply `decelerate` behavior
 		sf_vector_.push_back(this->decelerate());
+		behaviour_active_ = FUZZ_BEH_DECELERATE;
 
 	} else if ( term_name == "stop" ) {
 
 		// apply `stop` behavior
 		sf_vector_.push_back(this->stop());
+		behaviour_active_ = FUZZ_BEH_STOP;
 
 	} else if ( term_name == "turn_right_decelerate" ) {
 
 		// apply `turn right and decelerate` behavior
 		sf_vector_.push_back(this->turnRightDecelerate());
+		behaviour_active_ = FUZZ_BEH_TURN_RIGHT_DECELERATE;
 
 	} else if ( term_name == "turn_right" ) {
 
 		// apply `turn right` behavior
 		sf_vector_.push_back(this->turnRight());
+		behaviour_active_ = FUZZ_BEH_TURN_RIGHT;
 
 	} else if ( term_name == "turn_right_accelerate" ) {
 
 		// apply `turn right and accelerate` behavior
 		sf_vector_.push_back(this->turnRightAccelerate());
+		behaviour_active_ = FUZZ_BEH_TURN_RIGHT_ACCELERATE;
 
 	} else {
 
 		// prevents calling `superpose` when [input] is invalid
+		behaviour_active_ = FUZZ_BEH_NONE;
 		return;
 
 	}
@@ -156,6 +166,12 @@ void SocialConductor::apply(const std::string &term_name) {
 
 ignition::math::Vector3d SocialConductor::getSocialVector() const {
 	return (sf_result_);
+}
+
+// ------------------------------------------------------------------- //
+
+uint8_t SocialConductor::getBehaviourActive() const {
+	return (behaviour_active_);
 }
 
 // ------------------------------------------------------------------- //

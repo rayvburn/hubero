@@ -29,8 +29,10 @@
 
 // Social Force Model
 #include "sfm/core/SocialForceModel.h"
-#include <Point.h>
+#include <Arrow.h>
 #include <Grid.h>
+#include <LineList.h>
+#include <Text.h> // FIXME: path
 #include "sfm/core/SFMDebug.h"
 
 // Inflation types for SFM
@@ -193,6 +195,8 @@ private:
     /// \return True if MarkerArray is ready to be published
     bool visualizeVectorField(const gazebo::common::UpdateInfo &info);
 
+    void visualizeSfmCalculations();
+
     /// \brief Pointer to the parent actor.
     gazebo::physics::ActorPtr actor_ptr_;
 
@@ -256,11 +260,17 @@ private:
     /// \brief Social Force Model interface object
     sfm::core::SocialForceModel sfm_;
 
-    /// \brief Social Force Model single points visualization
-	sfm::vis::Point sfm_vis_single_;
+    /// \brief Social Force Model arrows visualization
+	sfm::vis::Arrow sfm_vis_arrow_;
+
+	/// \brief Social Force Model arrows visualization
+	sfm::vis::LineList sfm_vis_line_list_;
 
     /// \brief Social Force Model grid visualization
 	sfm::vis::Grid sfm_vis_grid_;
+
+	/// \brief Actor active behaviour visualization based on SFM-generated data
+	sfm::vis::Text sfm_vis_text_;
 
     /// \brief Time of the last force field visualization publication
 	gazebo::common::Time time_last_vis_pub_;

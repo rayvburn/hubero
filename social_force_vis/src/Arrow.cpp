@@ -1,44 +1,27 @@
 /*
- * Base.cpp
+ * Arrow.cpp
  *
- *  Created on: Apr 16, 2019
+ *  Created on: Sep 27, 2019
  *      Author: rayvburn
  */
 
-#include <Base.h>
-
-#include <ignition/math/Angle.hh>
-#include <ignition/math/Quaternion.hh>
+#include <Arrow.h>
 
 namespace sfm {
 namespace vis {
 
-// ------------------------------------------------------------------- //
-
-Base::Base(): frame_("map"), max_arrow_length_(1.0f), sfm_max_force_(2000.0) { }
+Arrow::Arrow(): max_length_(1.0f), sfm_max_force_(2000.0) {}
 
 // ------------------------------------------------------------------- //
 
-void Base::init(const std::string &parent_frame) {
-	frame_ = parent_frame;
-}
-
-// ------------------------------------------------------------------- //
-
-void Base::setColorArrow(const float &r, const float &g, const float &b, const float &alpha) {
-	setColor(&color_arrow_, r, g, b, alpha);
-}
-
-// ------------------------------------------------------------------- //
-
-void Base::setArrowParameters(const float &length_meters, const float &sfm_max_force) {
-	max_arrow_length_ = length_meters;
+void Arrow::setParameters(const float &length_meters, const float &sfm_max_force) {
+	max_length_ = length_meters;
 	sfm_max_force_ = sfm_max_force;
 }
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker Base::createArrow(const ignition::math::Vector3d &pos, const ignition::math::Vector3d &vector) const {
+visualization_msgs::Marker Arrow::create(const ignition::math::Vector3d &pos, const ignition::math::Vector3d &vector) const {
 
 	visualization_msgs::Marker marker;
 
@@ -70,11 +53,11 @@ visualization_msgs::Marker Base::createArrow(const ignition::math::Vector3d &pos
 
 	// scale
 	// arrow's length is calculated based on max allowable force `in SFM class`
-	marker.scale.x = max_arrow_length_ * vector.Length() / sfm_max_force_;
+	marker.scale.x = max_length_ * vector.Length() / sfm_max_force_;
 	marker.scale.y = 0.1;
 	marker.scale.z = 0.1;
 
-	marker.color = color_arrow_;
+	marker.color = color_;
 
 	return (marker);
 
@@ -82,13 +65,9 @@ visualization_msgs::Marker Base::createArrow(const ignition::math::Vector3d &pos
 
 // ------------------------------------------------------------------- //
 
-void Base::setColor(std_msgs::ColorRGBA *color, const float &r, const float &g, const float &b, const float &alpha) {
-	color->a = alpha;	color->r = r;	color->g = g;	color->b = b;
+Arrow::~Arrow() {
+	// TODO Auto-generated destructor stub
 }
-
-// ------------------------------------------------------------------- //
-
-Base::~Base() { }
 
 // ------------------------------------------------------------------- //
 

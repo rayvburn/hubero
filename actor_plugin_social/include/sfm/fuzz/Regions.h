@@ -36,7 +36,8 @@ typedef enum {
 /// \brief Output behaviors enumerator.
 /// \note The enum value must be equal to the upper bound of the behavior range.
 typedef enum {
-	FUZZ_BEH_TURN_LEFT = 1,        //!< FUZZ_BEH_TURN_LEFT
+	FUZZ_BEH_NONE = 0,			   //!< FUZZ_BEH_NONE
+	FUZZ_BEH_TURN_LEFT,            //!< FUZZ_BEH_TURN_LEFT
 	FUZZ_BEH_TURN_LEFT_ACCELERATE, //!< FUZZ_BEH_TURN_LEFT_ACCELERATE
 	FUZZ_BEH_GO_ALONG,             //!< FUZZ_BEH_GO_ALONG
 	FUZZ_BEH_ACCELERATE,           //!< FUZZ_BEH_ACCELERATE

@@ -79,14 +79,17 @@ typedef enum {
 /// \brief Block of enums connected with actor::ros_interface::Stream class;
 /// according to type, a proper message type is published;
 /// due to the fact that all publishers are stored in std::vector container
-/// the number, which enum expands, must be UNIQUE (based on number the
+/// the number, which enum expands, must be UNIQUE (based on number the proper
 /// publisher will be chosen);
 /// this solution is marked as FIXME
 
 /// \brief A single visualization_msgs::Marker IDs
 typedef enum {
-	ACTOR_MARKER_BOUNDING = 0u,//!< ACTOR_MARKER_BOUNDING a marker around an actor
-	ACTOR_MARKER_SF_VECTOR,    //!< ACTOR_MARKER_SF_VECTOR single arrow indicating a social force
+	ACTOR_MARKER_BOUNDING = 0u,		//!< ACTOR_MARKER_BOUNDING a marker around an actor
+	ACTOR_MARKER_INTERNAL_VECTOR,   //!< ACTOR_MARKER_SF_VECTOR single arrow indicating a social force
+	ACTOR_MARKER_INTERACTION_VECTOR,//!< ACTOR_MARKER_INTERACTION_VECTOR
+	ACTOR_MARKER_SOCIAL_VECTOR,     //!< ACTOR_MARKER_SOCIAL_VECTOR
+	ACTOR_MARKER_COMBINED_VECTOR    //!< ACTOR_MARKER_COMBINED_VECTOR
 } ActorMarkerType;
 
 // -------------------------
@@ -108,10 +111,16 @@ typedef enum {
 
 // -------------------------
 
-/* TODO: Path */
 typedef enum {
 	ACTOR_NAV_PATH = 300u,
 } ActorNavMsgType;
+
+// -------------------------
+
+/// \brief View-oriented text
+typedef enum {
+	ACTOR_MARKER_TEXT_BEH = 400u,
+} ActorMarkerTextType;
 
 // -------------------------
 

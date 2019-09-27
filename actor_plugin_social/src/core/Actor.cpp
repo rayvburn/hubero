@@ -57,11 +57,12 @@ void Actor::initRosInterface() {
 	params_ptr_->loadParameters(node_.getNodeHandlePtr());
 
 	/* initialize SFM visualization instances */
-	sfm_vis_single_.setColorLine(1.0f, 1.0f, 0.0f, 0.7f);
-	sfm_vis_single_.setColorArrow(1.0f, 0.0f, 0.0f, 0.9f);
+	sfm_vis_arrow_.setColor(1.0f, 0.0f, 0.0f, 0.9f);
+	sfm_vis_text_.setColor(0.9f, 0.9f, 0.9f, 0.95f);
+	sfm_vis_line_list_.setColor(1.0f, 1.0f, 0.0f, 0.7f);
 
 	if ( params_ptr_->getSfmVisParams().publish_grid ) {
-		sfm_vis_grid_.setColorArrow(0.2f, 1.0f, 0.0f, 0.7f);
+		sfm_vis_grid_.setColor(0.2f, 1.0f, 0.0f, 0.7f);
 		/* make grid artificially bigger than a world's bounds;
 		 * it makes random targets to be located further from
 		 * walls */
@@ -76,8 +77,12 @@ void Actor::initRosInterface() {
 	 * as a separate one */
 	stream_.setNodeHandle(node_.getNodeHandlePtr());
 	stream_.setNamespace(actor_ptr_->GetName());
-	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_BOUNDING, "ellipse");
-	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_SF_VECTOR, "social_force");
+	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_BOUNDING, "bounding");
+	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_INTERNAL_VECTOR, "sfm_internal");
+	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_INTERACTION_VECTOR, "sfm_interaction");
+	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_SOCIAL_VECTOR, "sfm_social");
+	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_COMBINED_VECTOR, "sfm_combined");
+	stream_.initPublisher<ActorMarkerTextType, visualization_msgs::Marker>(ActorMarkerTextType::ACTOR_MARKER_TEXT_BEH, "behaviour");
 	stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, "closest_points");
 	stream_.initPublisher<ActorNavMsgType, nav_msgs::Path>(ActorNavMsgType::ACTOR_NAV_PATH, "path");
 
@@ -538,9 +543,11 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 		target_manager_.updateCheckpoint();
 	}
 
-	ignition::math::Vector3d sf = sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_lin_,
-														  target_manager_.getCheckpoint(),
-														  common_info_, dt);
+	sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_lin_,
+						  target_manager_.getCheckpoint(),
+						  common_info_, dt);
+
+	ignition::math::Vector3d sf = sfm_.getForceCombined();
 
 //	if ( print_info ) {
 //		std::cout << "\t TOTAL force: " << sf << std::endl;
@@ -561,6 +568,7 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 //		std::cout << std::endl << std::endl;
 //	}
 
+	// TODO: move this above `computeNewPose` and wrap into new function
 	if ( target_manager_.isTargetReached() ) {
 		if ( target_manager_.changeTarget() ) {
 			// after setting a new target, firstly let's rotate to its direction
@@ -578,8 +586,12 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 	*pose_world_ptr_ = new_pose;
 
 	// publish social force vector and closest points lines
-	stream_.publishData(ActorMarkerType::ACTOR_MARKER_SF_VECTOR, sfm_vis_single_.createArrow(new_pose.Pos(), sf) );
-	stream_.publishData(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, sfm_vis_single_.createLineListArray(sfm_.getClosestPointsVector()) );
+	stream_.publishData(ActorMarkerType::ACTOR_MARKER_INTERNAL_VECTOR, sfm_vis_arrow_.create(ignition::math::Vector3d(new_pose.Pos().X(), new_pose.Pos().Y(), 0.0), sfm_.getForceInternal()) );
+	stream_.publishData(ActorMarkerType::ACTOR_MARKER_INTERACTION_VECTOR, sfm_vis_arrow_.create(ignition::math::Vector3d(new_pose.Pos().X(), new_pose.Pos().Y(), 0.2), sfm_.getForceInteraction()) );
+	stream_.publishData(ActorMarkerType::ACTOR_MARKER_SOCIAL_VECTOR, sfm_vis_arrow_.create(ignition::math::Vector3d(new_pose.Pos().X(), new_pose.Pos().Y(), 0.4), sfm_.getForceSocial()) );
+	stream_.publishData(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, sfm_vis_line_list_.createArray(sfm_.getClosestPointsVector()) );
+	stream_.publishData(ActorMarkerType::ACTOR_MARKER_COMBINED_VECTOR, sfm_vis_arrow_.create(ignition::math::Vector3d(new_pose.Pos().X(), new_pose.Pos().Y(), 0.6), sf) );
+	stream_.publishData(ActorMarkerTextType::ACTOR_MARKER_TEXT_BEH, sfm_vis_text_.create(new_pose.Pos(), sfm_.getBehaviourActive()) );
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
@@ -1114,7 +1126,7 @@ bool Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
 				sf = sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), common_info_, 0.001);
 
 				// pass a result to vector of grid forces
-				sfm_vis_grid_.addMarker( sfm_vis_grid_.createArrow(pose.Pos(), sf) );
+				sfm_vis_grid_.addMarker( sfm_vis_grid_.create(pose.Pos(), sf) );
 
 			}
 			return (true);
@@ -1124,6 +1136,12 @@ bool Actor::visualizeVectorField(const gazebo::common::UpdateInfo &info) {
 	} /* if ( time_elapsed ) */
 
 	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Actor::visualizeSfmCalculations() {
 
 }
 
