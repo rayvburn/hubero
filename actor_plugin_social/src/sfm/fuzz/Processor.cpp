@@ -287,11 +287,7 @@ void Processor::init() {
      */
     std::cout << "\nfuzzylite's RULE BLOCK1: " << rule_block_.toString() << std::endl << std::endl;
     // location - `front_right`
-//    rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is cross_frontA or direction is cross_behindB) then behavior is turn_right_decelerate", 	&engine_)); // 1
-    //																											!!!!!!!!
-//    rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is cross_frontA or direction is equalA) then behavior is turn_right_decelerate", 	&engine_)); // 1a
     rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is cross_frontA or direction is cross_frontB  ) 	then behavior is turn_right_decelerate", 	&engine_)); // XX
-//    rule_block_.addRule(fl::Rule::parse("if location is front_right and direction is cross_front then behavior is turn_right_decelerate", 	&engine_)); // 1b
     rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is cross_behindA or direction is cross_behindB) 	then behavior is turn_left", 				&engine_)); // 2
     rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is equalA 		or direction is equalB		 ) 	then behavior is go_along", 				&engine_)); // 3
     rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is oppositeA 	or direction is oppositeB	 )	then behavior is turn_left", 				&engine_)); // 4
@@ -454,80 +450,6 @@ void Processor::process() {
 	// FIXME: make it like the absolute function (decreasing on both side of the edge - 0.5)
 	double output = static_cast<double>(social_behavior_.getValue());
 	output_term_fitness_ = output - std::floor(output);
-
-    // TODO: debug if location < 0 && direction < 0 cause output to be fl:nan
-	/* Checked - occurs
-    if ( location_.getValue() < 0.0 && direction_.getValue() < 0.0 && social_behavior_.getValue() != fl::nan ) {
-    	int found = 1;
-    	found++;
-    	found++;
-    }
-    */
-
-
-	/*
-	double location_val = static_cast<double>(location_.getValue());
-	double direction_val = static_cast<double>(direction_.getValue());
-	double social_beh_val = static_cast<double>(social_behavior_.getValue());
-
-	// 1st case debugging
-    if ( location_val >= 0.0 && direction_val < 0.0 && !std::isnan(social_beh_val) ) {
-    	int found = 1;
-    	found++;
-    	found++;
-    } else if ( location_val >= 0.0 && direction_val < 0.0 && std::isnan(social_beh_val) ) {
-    	int not_found = 1;
-    	not_found++;
-    	not_found++;
-    }
-
-    // 2nd case debugging
-    if ( location_val <= 0.0 && direction_val > 0.0 && !std::isnan(social_beh_val) ) {
-    	int found = 1;
-    	found++;
-    	found++;
-    } else if ( location_val <= 0.0 && direction_val > 0.0 && std::isnan(social_beh_val) ){
-    	int not_found = 1;
-    	not_found++;
-    	not_found++;
-    }
-    */
-
-
-    /********************************************************************************
-		Fuzzy logic processor - actor1
-	gamma_eq: 2.04008		gamma_opp: -1.10152		gamma_cc: -2.06164
-	----LEFT
-	location	 value: 0.960121	memberships: 0.000/back + 0.000/back_right + 0.000/front_right + 0.000/front + 1.000/front_left + 0.000/back_left + 0.000/back
-	direction	 value: -3.00205	memberships: 0.000/outwards + 0.000/outwards + 0.000/cross_front + 1.000/cross_front + 0.000/cross_behind + 0.000/cross_behind + 0.000/equal + 0.000/equal + 0.000/opposite + 0.000/opposite
-	output		 value: nan (!!!!!!!!!!!!!!!)
-			fuzzyOut: 0.000/turn_left + 0.000/turn_left_accelerate + 0.000/accelerate + 0.000/go_along + 0.000/decelerate + 0.000/stop + 0.000/turn_right_decelerate + 0.000/turn_right + 0.000/turn_right_accelerate
-			name: 	height: 0
-     */
-
-//    location_.setValue(fl::scalar(0.960121));
-//    direction_.setValue(fl::scalar(-3.00205));
-//    engine_.process();
-//    double social_beh_val2 = static_cast<double>(social_behavior_.getValue());
-//    int test1 = 0;
-//    test1++;
-
-    // debugging (led to finding that 2 terms of the same name cause problems)
-//    fl::scalar y_hig;
-//    fl::Term* term_ptr_dbg = direction_.highestMembership(direction_.getValue(), &y_hig);
-//    if ( term_ptr_dbg != nullptr ) {
-//    	if ( term_ptr_dbg->getName() == "cross_front" ) {
-//			int cf = 0;
-//			cf++;
-//			cf++;
-//			if ( !std::isnan(static_cast<double>(social_behavior_.getValue())) ) {
-//				// check if output is produced when cross front is detected
-//				int detected = 0;
-//				detected++;
-//				detected++;
-//			}
-//		}
-//    }
 
 }
 
