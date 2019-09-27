@@ -19,8 +19,13 @@ TrapezoidParted::TrapezoidParted(std::string name, double intersection_deg)
 	// create 2 trapezoid instances, rules will need both of them for deduction;
 	// both trapezoids are first initialized with NaNs so they will not be recognized
 	// as valid regions until become fully initialized
-	trapezoid_ptrs_.push_back(new fl::Trapezoid(name));
-	trapezoid_ptrs_.push_back(new fl::Trapezoid(name)); // .append("_wrap") // 2 terms of the same name are allowed
+	std::string name_modded1 = name;
+	std::string name_modded2 = name;
+	name_modded1.append("A");
+	name_modded2.append("B");
+	trapezoid_ptrs_.push_back(new fl::Trapezoid(name_modded1)); // .append("A")
+	trapezoid_ptrs_.push_back(new fl::Trapezoid(name_modded2)); // .append("B")
+	// 2 terms of the same name are allowed but such operation causes problems in recognition of output region
 }
 
 // ------------------------------------------------------------------- //
