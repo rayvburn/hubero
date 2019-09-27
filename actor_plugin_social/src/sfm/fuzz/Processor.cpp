@@ -129,14 +129,12 @@ void Processor::init() {
 	location_.setLockValueInRange(false);
 
 	// `location` regions
-//	location_.addTerm(new fl::Ramp("back", 				IGN_DTOR(-180.0), 	IGN_DTOR(-160.0)));
 	location_.addTerm(new fl::Triangle("back",			IGN_DTOR(-180.0), 	IGN_DTOR(-180.0),  	IGN_DTOR(-160.0)));
 	location_.addTerm(new fl::Trapezoid("back_right", 	IGN_DTOR(-180.0), 	IGN_DTOR(-150.0), 	IGN_DTOR(-120.0), 	IGN_DTOR(-90.0)));
 	location_.addTerm(new fl::Trapezoid("front_right", 	IGN_DTOR(-120.0), 	IGN_DTOR(-90.0), 	IGN_DTOR(-30.0), 	IGN_DTOR(0.0)));
 	location_.addTerm(new fl::Triangle("front", 		IGN_DTOR(-20.0), 	IGN_DTOR(0.0), 		IGN_DTOR(+20.0)));
 	location_.addTerm(new fl::Trapezoid("front_left", 	IGN_DTOR(0.0), 		IGN_DTOR(30.0), 	IGN_DTOR(90.0), 	IGN_DTOR(120.0)));
 	location_.addTerm(new fl::Trapezoid("back_left", 	IGN_DTOR(90.0),		IGN_DTOR(120.0), 	IGN_DTOR(150.0), 	IGN_DTOR(180.0)));
-//	location_.addTerm(new fl::Ramp("back", 				IGN_DTOR(+160.0), 	IGN_DTOR(+180.0)));
 	location_.addTerm(new fl::Triangle("back",			IGN_DTOR(+160.0), 	IGN_DTOR(+180.0),  	IGN_DTOR(+180.0)));
 	engine_.addInputVariable(&location_);
 
@@ -175,6 +173,21 @@ void Processor::init() {
 	// ---
 	engine_.addInputVariable(&direction_);
 
+	/* Initialize third input variable */
+	target_.setName("target");
+	target_.setDescription("");
+	target_.setEnabled(false); // TODO: enable if needed
+	target_.setRange(-IGN_PI, +IGN_PI);
+	target_.setLockValueInRange(false);
+
+	// `target` regions
+	target_.addTerm(new fl::Triangle("back",	IGN_DTOR(-180.0), 	IGN_DTOR(-180.0),  	IGN_DTOR(-160.0)));
+	target_.addTerm(new fl::Trapezoid("right", 	IGN_DTOR(-180.0), 	IGN_DTOR(-150.0), 	IGN_DTOR(-30.0), 	IGN_DTOR(0.0)));
+	target_.addTerm(new fl::Triangle("front", 	IGN_DTOR(-20.0), 	IGN_DTOR(0.0), 		IGN_DTOR(+20.0)));
+	target_.addTerm(new fl::Trapezoid("left", 	IGN_DTOR(0.0), 		IGN_DTOR(30.0), 	IGN_DTOR(150.0), 	IGN_DTOR(180.0)));
+	target_.addTerm(new fl::Triangle("back",	IGN_DTOR(+160.0), 	IGN_DTOR(+180.0),  	IGN_DTOR(+180.0)));
+	engine_.addInputVariable(&target_);
+
     /* Initialize output variable */
     social_behavior_.setName("behavior");
     social_behavior_.setDescription("");
@@ -182,42 +195,52 @@ void Processor::init() {
     social_behavior_.setRange(0.000, 9.000); // FIXME: change if any term changes
     social_behavior_.setLockValueInRange(false);
     social_behavior_.setAggregation(new fl::Maximum);
-    social_behavior_.setDefuzzifier(new fl::Centroid(100));
+    social_behavior_.setDefuzzifier(new fl::Centroid()); // prev resolution was 100
     social_behavior_.setDefaultValue(fl::nan);
     social_behavior_.setLockPreviousValue(false);
 
-//    social_behavior_.addTerm(new fl::Ramp("left", 1.000, 0.000));
-//    social_behavior_.addTerm(new fl::Ramp("right", 0.000, 1.000));
-
+    std::cout << "\t**********************************************\n";
+    std::cout << "\t\tSocialBehavior configuration\n";
+    // TODO: wrap into function
     // threshold values related to regions
     const double INTERSECTION = 0.1;
     double upper = static_cast<double>(FUZZ_BEH_TURN_LEFT);
     double lower = upper - 1.0;
     social_behavior_.addTerm(new fl::Trapezoid("turn_left", 				lower, 					lower, 	upper, 	upper + INTERSECTION));
+    std::cout << "\tturn_left: " << lower << " / " << upper << std::endl;
 
     upper = static_cast<double>(FUZZ_BEH_TURN_LEFT_ACCELERATE); lower = upper - 1.0;
     social_behavior_.addTerm(new fl::Trapezoid("turn_left_accelerate", 		lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
+    std::cout << "\tturn_left_accelerate: " << lower << " / " << upper << std::endl;
 
     upper = static_cast<double>(FUZZ_BEH_ACCELERATE); lower = upper - 1.0;
     social_behavior_.addTerm(new fl::Trapezoid("accelerate", 				lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
+    std::cout << "\taccelerate: " << lower << " / " << upper << std::endl;
 
     upper = static_cast<double>(FUZZ_BEH_GO_ALONG); lower = upper - 1.0;
     social_behavior_.addTerm(new fl::Trapezoid("go_along", 					lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
+    std::cout << "\tgo_along: " << lower << " / " << upper << std::endl;
 
     upper = static_cast<double>(FUZZ_BEH_DECELERATE); lower = upper - 1.0;
     social_behavior_.addTerm(new fl::Trapezoid("decelerate", 				lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
+    std::cout << "\tdecelerate: " << lower << " / " << upper << std::endl;
 
     upper = static_cast<double>(FUZZ_BEH_STOP); lower = upper - 1.0;
     social_behavior_.addTerm(new fl::Trapezoid("stop", 						lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
+    std::cout << "\tstop: " << lower << " / " << upper << std::endl;
 
     upper = static_cast<double>(FUZZ_BEH_TURN_RIGHT_DECELERATE); lower = upper - 1.0;
     social_behavior_.addTerm(new fl::Trapezoid("turn_right_decelerate",		lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
+    std::cout << "\tturn_right_decelerate: " << lower << " / " << upper << std::endl;
 
     upper = static_cast<double>(FUZZ_BEH_TURN_RIGHT); lower = upper - 1.0;
     social_behavior_.addTerm(new fl::Trapezoid("turn_right", 				lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
+    std::cout << "\tturn_right: " << lower << " / " << upper << std::endl;
 
     upper = static_cast<double>(FUZZ_BEH_TURN_RIGHT_ACCELERATE); lower = upper - 1.0;
     social_behavior_.addTerm(new fl::Trapezoid("turn_right_accelerate", 	lower - INTERSECTION,	lower, 	upper, 	upper));
+    std::cout << "\tturn_right_accelerate: " << lower << " / " << upper << std::endl;
+    std::cout << "\t**********************************************\n";
 
     engine_.addOutputVariable(&social_behavior_);
 
@@ -267,6 +290,7 @@ void Processor::init() {
     rule_block_.addRule(fl::Rule::parse("if location is back_right and direction is opposite then behavior is go_along", &engine_)); 					// 8
     rule_block_.addRule(fl::Rule::parse("if location is back_right and direction is outwards then behavior is go_along", &engine_)); 					// 10
     // location - `front_left`
+    rule_block_.addRule(fl::Rule::parse("if location is front_left and direction is cross_front then behavior is turn_right_decelerate", &engine_)); 	// EXTRA (added after few experiments although it may just strengthen another case)
     rule_block_.addRule(fl::Rule::parse("if location is front_left and direction is cross_behind then behavior is turn_right_accelerate", &engine_)); 	// 11
     rule_block_.addRule(fl::Rule::parse("if location is front_left and direction is equal then behavior is go_along", &engine_));						// 12
     rule_block_.addRule(fl::Rule::parse("if location is front_left and direction is opposite then behavior is turn_right", &engine_));					// 13
@@ -413,6 +437,72 @@ void Processor::process() {
 	// FIXME: make it like the absolute function (decreasing on both side of the edge - 0.5)
 	double output = static_cast<double>(social_behavior_.getValue());
 	output_term_fitness_ = output - std::floor(output);
+
+    // TODO: debug if location < 0 && direction < 0 cause output to be fl:nan
+	/* Checked - occurs
+    if ( location_.getValue() < 0.0 && direction_.getValue() < 0.0 && social_behavior_.getValue() != fl::nan ) {
+    	int found = 1;
+    	found++;
+    	found++;
+    }
+    */
+
+	double location_val = static_cast<double>(location_.getValue());
+	double direction_val = static_cast<double>(direction_.getValue());
+	double social_beh_val = static_cast<double>(social_behavior_.getValue());
+
+	// 1st case debugging
+    if ( location_val >= 0.0 && direction_val < 0.0 && !std::isnan(social_beh_val) ) {
+    	int found = 1;
+    	found++;
+    	found++;
+    } else if ( location_val >= 0.0 && direction_val < 0.0 && std::isnan(social_beh_val) ) {
+    	int not_found = 1;
+    	not_found++;
+    	not_found++;
+    }
+
+    // 2nd case debugging
+    if ( location_val <= 0.0 && direction_val > 0.0 && !std::isnan(social_beh_val) ) {
+    	int found = 1;
+    	found++;
+    	found++;
+    } else if ( location_val <= 0.0 && direction_val > 0.0 && std::isnan(social_beh_val) ){
+    	int not_found = 1;
+    	not_found++;
+    	not_found++;
+    }
+
+    /********************************************************************************
+		Fuzzy logic processor - actor1
+	gamma_eq: 2.04008		gamma_opp: -1.10152		gamma_cc: -2.06164
+	----LEFT
+	location	 value: 0.960121	memberships: 0.000/back + 0.000/back_right + 0.000/front_right + 0.000/front + 1.000/front_left + 0.000/back_left + 0.000/back
+	direction	 value: -3.00205	memberships: 0.000/outwards + 0.000/outwards + 0.000/cross_front + 1.000/cross_front + 0.000/cross_behind + 0.000/cross_behind + 0.000/equal + 0.000/equal + 0.000/opposite + 0.000/opposite
+	output		 value: nan (!!!!!!!!!!!!!!!)
+			fuzzyOut: 0.000/turn_left + 0.000/turn_left_accelerate + 0.000/accelerate + 0.000/go_along + 0.000/decelerate + 0.000/stop + 0.000/turn_right_decelerate + 0.000/turn_right + 0.000/turn_right_accelerate
+			name: 	height: 0
+     */
+
+//    location_.setValue(fl::scalar(0.960121));
+//    direction_.setValue(fl::scalar(-3.00205));
+//    engine_.process();
+//    double social_beh_val2 = static_cast<double>(social_behavior_.getValue());
+//    int test1 = 0;
+//    test1++;
+
+    fl::scalar y_hig;
+    if ( direction_.highestMembership(direction_.getValue(), &y_hig)->getName() == "cross_front" ) {
+		int cf = 0;
+		cf++;
+		cf++;
+		if ( !std::isnan(static_cast<double>(social_behavior_.getValue())) ) {
+    		// check if output is produced when cross front is detected
+    		int detected = 0;
+    		detected++;
+    		detected++;
+    	}
+    }
 
 }
 

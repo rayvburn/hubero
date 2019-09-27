@@ -18,6 +18,10 @@
 namespace sfm {
 namespace fuzz {
 
+///
+/// \note Remember to call all `setter` methods before calling `process`. Otherwise, the fuzzy
+/// calculations will surely utilize old values as inputs and a result will not be properly
+/// computed.
 class Processor {
 
 public:
@@ -35,6 +39,8 @@ public:
 	void setDistanceAngle(const double &d_alpha_beta_angle);
 
 	void setRelativeLocation(const double &rel_loc);
+
+	void setDirectionToTarget(const double &dir_target);
 
 	/// \brief Executes fuzzy calculations. The `process()` call must be preceded by `updateRegions()`
 	void process();
@@ -115,6 +121,10 @@ private:
 	/// \brief Trapezoidal term related to the case when `beta` object's
 	/// direction points in the opposite direction as the `alpha`'s
 	TrapezoidLocIndep trapezoid_opp_{"opposite", 10, 5};
+
+	/// \brief Expresses direction to the target position relative to \alpha 's
+	/// current direction of motion
+	fl::InputVariable target_;
 
 	/* ----- Output variables ----- */
 	fl::OutputVariable social_behavior_;
