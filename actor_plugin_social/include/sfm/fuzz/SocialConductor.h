@@ -41,7 +41,11 @@ public:
 
 	/// \brief Returns the last active behaviour ID
 	/// \return
-	uint8_t getBehaviourActive() const;
+	uint8_t getBehaviourActiveNum() const;
+
+	/// \brief Returns the last active behaviour expressed in verbal way
+	/// \return
+	std::string getBehaviourActive() const;
 
 	/// \brief Resets the resulting vector.
 	void reset();

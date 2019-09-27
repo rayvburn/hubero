@@ -170,8 +170,50 @@ ignition::math::Vector3d SocialConductor::getSocialVector() const {
 
 // ------------------------------------------------------------------- //
 
-uint8_t SocialConductor::getBehaviourActive() const {
+uint8_t SocialConductor::getBehaviourActiveNum() const {
 	return (behaviour_active_);
+}
+
+// ------------------------------------------------------------------- //
+
+std::string SocialConductor::getBehaviourActive() const {
+
+	switch (behaviour_active_) {
+	case(FUZZ_BEH_NONE):					// 0
+		return ("none");
+		break;
+	case(FUZZ_BEH_TURN_LEFT):				// 1
+		return ("turn_left");
+		break;
+	case(FUZZ_BEH_TURN_LEFT_ACCELERATE): 	// 2
+		return ("turn_left_accelerate");
+		break;
+	case(FUZZ_BEH_GO_ALONG):				// 3
+		return ("go_along");
+		break;
+	case(FUZZ_BEH_ACCELERATE):				// 4
+		return ("accelerate");
+		break;
+	case(FUZZ_BEH_TURN_RIGHT_ACCELERATE):	// 5
+		return ("turn_right_accelerate");
+		break;
+	case(FUZZ_BEH_TURN_RIGHT):				// 6
+		return ("turn_right");
+		break;
+	case(FUZZ_BEH_TURN_RIGHT_DECELERATE):	// 7
+		return ("turn_right_decelerate");
+		break;
+	case(FUZZ_BEH_STOP):					// 8
+		return ("stop");
+		break;
+	case(FUZZ_BEH_DECELERATE):				// 9
+		return ("decelerate");
+		break;
+	default:
+		return ("");
+		break;
+	}
+
 }
 
 // ------------------------------------------------------------------- //
@@ -199,6 +241,11 @@ void SocialConductor::superpose() {
 
 	// assign averaged vector to the resultative one
 	sf_result_ = avg;
+
+	// force `none` behaviour when resulting force is very small
+	if ( sf_result_.Length() < 1e-06 ) {
+		behaviour_active_ = FUZZ_BEH_NONE;
+	}
 
 }
 
