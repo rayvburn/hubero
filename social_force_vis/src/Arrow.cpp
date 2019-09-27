@@ -54,8 +54,8 @@ visualization_msgs::Marker Arrow::create(const ignition::math::Vector3d &pos, co
 	// scale
 	// arrow's length is calculated based on max allowable force `in SFM class`
 	marker.scale.x = max_length_ * vector.Length() / sfm_max_force_;
-	marker.scale.y = 0.1;
-	marker.scale.z = 0.1;
+	marker.scale.y = 0.05;
+	marker.scale.z = 0.05;
 
 	marker.color = color_;
 
