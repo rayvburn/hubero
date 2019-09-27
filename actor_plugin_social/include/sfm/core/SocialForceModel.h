@@ -168,7 +168,7 @@ public:
 	ignition::math::Vector3d getForceInteraction() const;
 	ignition::math::Vector3d getForceSocial() const;
 	ignition::math::Vector3d getForceCombined() const;
-	uint8_t getBehaviourActive() const;
+	std::string getBehaviourActive() const;
 
 	/// \brief Returns vector of poses of closest points between
 	/// actor and other objects; makes use out of bounding

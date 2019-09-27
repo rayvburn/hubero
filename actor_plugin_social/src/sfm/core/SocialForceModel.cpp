@@ -43,6 +43,7 @@ SocialForceModel::SocialForceModel():
 	fov_(2.00), speed_max_(1.50), person_mass_(1),
 	factor_force_internal_(100.0), // desired_force_factor(200.0),
 	factor_force_interaction_(3000.0), // interaction_force_factor(6000.0),
+	factor_force_social_(1.0),
 	force_max_(2000.0), force_min_(300.0), // force_min(800.0)
 	inflation_type_(INFLATION_ELLIPSE),
 	interaction_static_type_(INTERACTION_ELLIPTICAL),
@@ -80,6 +81,7 @@ void SocialForceModel::init(std::shared_ptr<const actor::ros_interface::ParamLoa
 
 	factor_force_internal_ = params_ptr_->getSfmParams().internal_force_factor;
 	factor_force_interaction_ = params_ptr_->getSfmParams().interaction_force_factor;
+	// TODO: factor_force_social_
 	person_mass_ = static_cast<unsigned short int>(params_ptr_->getSfmParams().mass);
 	speed_max_ = params_ptr_->getSfmParams().max_speed;
 	fov_ = params_ptr_->getSfmParams().fov;
@@ -670,13 +672,8 @@ ignition::math::Vector3d SocialForceModel::getForceInternal() const 	{ return (f
 ignition::math::Vector3d SocialForceModel::getForceInteraction() const 	{ return (force_interaction_); 	}
 ignition::math::Vector3d SocialForceModel::getForceSocial() const 		{ return (force_social_); 		}
 ignition::math::Vector3d SocialForceModel::getForceCombined() const		{ return (force_combined_); 	}
-uint8_t SocialForceModel::getBehaviourActive() const { return (social_conductor_.getBehaviourActive()); }
-
-// ------------------------------------------------------------------- //
-
-std::vector<ignition::math::Pose3d> SocialForceModel::getClosestPointsVector() const {
-	return (closest_points_);
-}
+std::string SocialForceModel::getBehaviourActive() const { return (social_conductor_.getBehaviourActive()); }
+std::vector<ignition::math::Pose3d> SocialForceModel::getClosestPointsVector() const { return (closest_points_); }
 
 // ------------------------------------------------------------------- //
 
