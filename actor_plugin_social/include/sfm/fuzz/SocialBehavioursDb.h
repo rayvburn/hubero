@@ -84,6 +84,13 @@ private:
 	/// \return result
 	double findOrientation(const double &dir, const char &side) const;
 
+	/// \brief Knowing the maximum allowable force, calculates the linear dependency between
+	/// d_alpha_beta_length and magnitude of the social vector. The line's equation is determined
+	/// by the `max` magnitude and `social force` operation range.
+	/// \param max is a maximum allowable magnitude of a vector
+	/// \return Vector length based on `max` and `d_alpha_beta_length`
+	double calculateVectorMagnitude(const double &max) const;
+
 };
 
 } /* namespace fuzz */

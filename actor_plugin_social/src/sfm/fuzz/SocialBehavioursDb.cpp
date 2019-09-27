@@ -45,22 +45,7 @@ ignition::math::Vector3d SocialBehavioursDb::turnLeft() {
 	double dir_rot = findOrientation(dir_alpha_, 'l');
 	force = createDirVector(dir_rot);
 
-	double magnitude = 0.0;
-
-	// experimentally adjusted thresholds
-	if ( d_alpha_beta_length_ < 0.25 ) {
-		magnitude = 300.0;
-	} else if ( d_alpha_beta_length_ < 0.60 ) {
-		magnitude = 250.0;
-	} else if ( d_alpha_beta_length_ < 1.00 ) {
-		magnitude = 150.0;
-	} else if ( d_alpha_beta_length_ < 1.50 ) {
-		magnitude = 80.0;
-	} else if ( d_alpha_beta_length_ < 2.50 ) {
-		magnitude = 50.0;
-	} else {
-		magnitude = 20.0;
-	}
+	double magnitude = calculateVectorMagnitude(500.0);
 
 	force = setVectorLength(force, magnitude);
 
@@ -78,27 +63,12 @@ ignition::math::Vector3d SocialBehavioursDb::turnLeftAccelerate() {
 	double dir_rot = findOrientation(dir_alpha_, 'l');
 	force = createDirVector(dir_rot);
 
-	double magnitude = 0.0;
-
-	// experimentally adjusted thresholds
-	if ( d_alpha_beta_length_ < 0.25 ) {
-		magnitude = 300.0;
-	} else if ( d_alpha_beta_length_ < 0.60 ) {
-		magnitude = 250.0;
-	} else if ( d_alpha_beta_length_ < 1.00 ) {
-		magnitude = 150.0;
-	} else if ( d_alpha_beta_length_ < 1.50 ) {
-		magnitude = 80.0;
-	} else if ( d_alpha_beta_length_ < 2.50 ) {
-		magnitude = 50.0;
-	} else {
-		magnitude = 20.0;
-	}
+	double magnitude = calculateVectorMagnitude(500.0);
 
 	force = setVectorLength(force, magnitude);
 
 	// acceleration section
-	magnitude *= 1.25;
+	magnitude *= 1.25;	// FIXME
 	force = extendVector(force, dir_alpha_, magnitude);
 
 	return (force);
@@ -121,22 +91,7 @@ ignition::math::Vector3d SocialBehavioursDb::accelerate() {
 	ignition::math::Vector3d force;
 
 	// acceleration section
-	double magnitude = 0.0;
-
-	// experimentally adjusted thresholds
-	if ( d_alpha_beta_length_ < 0.25 ) {
-		magnitude = 500.0;
-	} else if ( d_alpha_beta_length_ < 0.60 ) {
-		magnitude = 400.0;
-	} else if ( d_alpha_beta_length_ < 1.00 ) {
-		magnitude = 250.0;
-	} else if ( d_alpha_beta_length_ < 1.50 ) {
-		magnitude = 100.0;
-	} else if ( d_alpha_beta_length_ < 2.50 ) {
-		magnitude = 50.0;
-	} else {
-		magnitude = 20.0;
-	}
+	double magnitude = calculateVectorMagnitude(500.0);
 
 	force = createDirVector(dir_alpha_);
 	force = setVectorLength(force, magnitude);
@@ -155,22 +110,7 @@ ignition::math::Vector3d SocialBehavioursDb::turnRightAccelerate() {
 	double dir_rot = findOrientation(dir_alpha_, 'r');
 	force = createDirVector(dir_rot);
 
-	double magnitude = 0.0;
-
-	// experimentally adjusted thresholds
-	if ( d_alpha_beta_length_ < 0.25 ) {
-		magnitude = 300.0;
-	} else if ( d_alpha_beta_length_ < 0.60 ) {
-		magnitude = 250.0;
-	} else if ( d_alpha_beta_length_ < 1.00 ) {
-		magnitude = 150.0;
-	} else if ( d_alpha_beta_length_ < 1.50 ) {
-		magnitude = 80.0;
-	} else if ( d_alpha_beta_length_ < 2.50 ) {
-		magnitude = 50.0;
-	} else {
-		magnitude = 20.0;
-	}
+	double magnitude = calculateVectorMagnitude(500.0);
 
 	force = setVectorLength(force, magnitude);
 
@@ -191,22 +131,7 @@ ignition::math::Vector3d SocialBehavioursDb::turnRight() {
 	double dir_rot = findOrientation(dir_alpha_, 'r');
 	force = createDirVector(dir_rot);
 
-	double magnitude = 0.0;
-
-	// experimentally adjusted thresholds
-	if ( d_alpha_beta_length_ < 0.25 ) {
-		magnitude = 300.0;
-	} else if ( d_alpha_beta_length_ < 0.60 ) {
-		magnitude = 250.0;
-	} else if ( d_alpha_beta_length_ < 1.00 ) {
-		magnitude = 150.0;
-	} else if ( d_alpha_beta_length_ < 1.50 ) {
-		magnitude = 80.0;
-	} else if ( d_alpha_beta_length_ < 2.50 ) {
-		magnitude = 50.0;
-	} else {
-		magnitude = 20.0;
-	}
+	double magnitude = calculateVectorMagnitude(600.0);
 
 	force = setVectorLength(force, magnitude);
 
@@ -224,22 +149,7 @@ ignition::math::Vector3d SocialBehavioursDb::turnRightDecelerate() {
 	double dir_rot = findOrientation(dir_alpha_, 'r');
 	force = createDirVector(dir_rot);
 
-	double magnitude = 0.0;
-
-	// experimentally adjusted thresholds
-	if ( d_alpha_beta_length_ < 0.25 ) {
-		magnitude = 300.0;
-	} else if ( d_alpha_beta_length_ < 0.60 ) {
-		magnitude = 250.0;
-	} else if ( d_alpha_beta_length_ < 1.00 ) {
-		magnitude = 150.0;
-	} else if ( d_alpha_beta_length_ < 1.50 ) {
-		magnitude = 80.0;
-	} else if ( d_alpha_beta_length_ < 2.50 ) {
-		magnitude = 50.0;
-	} else {
-		magnitude = 20.0;
-	}
+	double magnitude = calculateVectorMagnitude(500.0);
 
 	force = setVectorLength(force, magnitude);
 
@@ -262,22 +172,7 @@ ignition::math::Vector3d SocialBehavioursDb::stop() {
 	double dir_rot = findOrientation(dir_alpha_, 'o');
 	force = createDirVector(dir_rot);
 
-	double magnitude = 0.0;
-
-	// experimentally adjusted thresholds
-	if ( d_alpha_beta_length_ < 0.25 ) {
-		magnitude = 300.0;
-	} else if ( d_alpha_beta_length_ < 0.60 ) {
-		magnitude = 250.0;
-	} else if ( d_alpha_beta_length_ < 1.00 ) {
-		magnitude = 150.0;
-	} else if ( d_alpha_beta_length_ < 1.50 ) {
-		magnitude = 80.0;
-	} else if ( d_alpha_beta_length_ < 2.50 ) {
-		magnitude = 50.0;
-	} else {
-		magnitude = 20.0;
-	}
+	double magnitude = calculateVectorMagnitude(500.0);
 
 	force = setVectorLength(force, magnitude);
 
@@ -292,22 +187,7 @@ ignition::math::Vector3d SocialBehavioursDb::decelerate() {
 	ignition::math::Vector3d force;
 
 	// acceleration section
-	double magnitude = 0.0;
-
-	// experimentally adjusted thresholds
-	if ( d_alpha_beta_length_ < 0.25 ) {
-		magnitude = 500.0;
-	} else if ( d_alpha_beta_length_ < 0.60 ) {
-		magnitude = 400.0;
-	} else if ( d_alpha_beta_length_ < 1.00 ) {
-		magnitude = 250.0;
-	} else if ( d_alpha_beta_length_ < 1.50 ) {
-		magnitude = 100.0;
-	} else if ( d_alpha_beta_length_ < 2.50 ) {
-		magnitude = 50.0;
-	} else {
-		magnitude = 20.0;
-	}
+	double magnitude = calculateVectorMagnitude(500.0);
 
 	double dir_opp = findOrientation(dir_alpha_, 'o');
 	force = createDirVector(dir_opp);
@@ -378,6 +258,24 @@ double SocialBehavioursDb::findOrientation(const double &dir, const char &side) 
 
 	dir_new.Normalize();
 	return (dir_new.Radian());
+
+}
+
+// ------------------------------------------------------------------- //
+
+double SocialBehavioursDb::calculateVectorMagnitude(const double &max) const {
+
+	const double X_SOCIAL_RANGE = 4.0; 					// in meters
+
+	// no social force vector is generated if obstacle is too far away
+	if ( d_alpha_beta_length_ > X_SOCIAL_RANGE ) {
+		return (0.0);
+	}
+
+	double a = -(max)/(X_SOCIAL_RANGE); 			// in fact (X_SOCIAL_RANGE_END - X_SOCIAL_RANGE_START) but the start is 0.0
+	double y = a * d_alpha_beta_length_ + max; 		// form of a line equation for readability,
+													// the independent variable is `d_alpha_beta_length_`
+	return (y);
 
 }
 
