@@ -448,52 +448,8 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	( SfmGetPrintData() ) ? (print_info = false) : (0);
 #endif
 
-	// truncate the force value to max to prevent strange speedup of an actor
-	double force_combined_magnitude_init = force_combined_.Length();
-
-	// TODO: wrap into function : applyNonLinearModifications(dist_closest)
-	if ( force_combined_magnitude_init >= force_max_ ) {
-
-		multiplyForces(force_max_ / force_combined_magnitude_init);
-		if ( print_info ) {
-			std::cout << "\tTRUNCATED";
-		}
-
-	} else if ( force_combined_magnitude_init <= force_min_ ) {
-
-		/* TODO: set desired force factor according to the distance to the closest obstacle -
-		 * the closer actor gets, the smaller the coefficient should be - this is
-		 * the REAL SOCIAL feature of the model */
-		double force_min_factor_socialized = 1.00;
-
-		// NOTE: this algorithm in fact allows the total force to stay
-		// below the threshold value (force_min_).
-		// Aim is to allow higher maneuverability
-		// when there is some obstacle nearby.
-		// Higher maneuverability is achieved because extension
-		// of the force vector to the force_min length
-		// creates additional `inertia` when actor got into
-		// close-to-zero potential zone. The inertia pushes
-		// him to the place when potential is far away from 0.
-		force_min_factor_socialized = std::exp(0.75 * dist_closest);
-		(force_min_factor_socialized > 1.00) ? (force_min_factor_socialized = 1.00) : (0);
-		sf_values_.update(force_combined_);
-		// f_total = sf_values_.getAverage().Normalize() * force_min_sf * force_min_;
-		multiplyForces((force_min_factor_socialized * force_min_) / force_combined_magnitude_init);
-		if ( print_info ) {
-			std::cout << "\tEXTENDED";
-		}
-
-	} else {
-
-		// force in allowable range
-
-		// clear social forces vector used for averaging
-		if ( !sf_values_.isEmpty() ) {
-			sf_values_.clear();
-		}
-
-	}
+	// extend or truncate force vectors if needed
+	applyNonlinearOperations(static_cast<double>(dist_closest), 50.0); // FIXME: hard-coded value for dynamic obstacles
 
 #ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	( SfmGetPrintData() ) ? (print_info = true) : (0);
@@ -737,6 +693,14 @@ ignition::math::Vector3d SocialForceModel::computeInternalForce(const ignition::
 	ignition::math::Vector3d f_alpha = person_mass_ * (1/relaxation_time_) * (ideal_vel_vector - actor_vel);
 	f_alpha.Z(0.0);
 
+	// FIXME: debugging large vector length ----------------
+	std::cout << "\t-  -  -  - internal force -  -  -  -  -  -  -  " << std::endl;
+	std::cout << "\ttarget: " << actor_target.X() << " " << actor_target.Y() << "\tposition: " << actor_pose.Pos().X() << " " << actor_pose.Pos().Y() << "\tto_goal_v: " << ideal_vel_vector.X() << " " << ideal_vel_vector.Y() << std::endl;
+	std::cout << "\tactor_vel: " << actor_vel.X() << " " << actor_vel.Y() << "\tideal_vel: " << ideal_vel_vector.X() << " " << ideal_vel_vector.Y() << "\tvec_diff: " << (ideal_vel_vector - actor_vel).X() << " " << (ideal_vel_vector - actor_vel).Y() << std::endl;
+	std::cout << "\ttotal: " << factor_force_internal_ * f_alpha.X() << " " << factor_force_internal_ * f_alpha.Y() << std::endl;
+	std::cout << std::endl;
+	// ----------------------------------------------
+
 #ifdef DEBUG_INTERNAL_ACC
 //	if ( print_info ) {
 		std::cout << std::endl;
@@ -910,6 +874,16 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 	// `fov_factor`: weaken the interaction force when beta is behind alpha
 	ignition::math::Vector3d n_alpha_scaled = n_alpha * An_ * std::exp(exp_normal) * fov_factor;
 	ignition::math::Vector3d p_alpha_scaled = p_alpha * Ap_ * std::exp(exp_perpendicular) * fov_factor;
+
+	// -----------------------------------------------------
+	// FIXME: debugging large vector length ----------------
+	std::cout << "\t-  -  -  - interaction force -  -  -  -  -  -  -  " << std::endl;
+	std::cout << "\tΘ_αß: " << theta_alpha_beta << "\tv_rel: " << v_rel << "\tdist: " << d_alpha_beta_length << std::endl;
+	std::cout << "\texpNORMAL: " << exp_normal << "\texpPERP: " << exp_perpendicular << "\tFOV_factor: " << fov_factor << std::endl;
+	std::cout << "\tNORMAL: " << factor_force_interaction_ * n_alpha_scaled.X() << " " << factor_force_interaction_ * n_alpha_scaled.Y() << "\tPERP: " << factor_force_interaction_ * p_alpha_scaled.X() << " " << factor_force_interaction_ * p_alpha_scaled.Y() << std::endl;
+	std::cout << "\ttotal: " << factor_force_interaction_ * (n_alpha_scaled + p_alpha_scaled).X() << " " << factor_force_interaction_ * (n_alpha_scaled + p_alpha_scaled).Y() << std::endl;
+	std::cout << std::endl;
+	// -----------------------------------------------------
 
 	// extra factor - applicable only for dynamic objects
 	if ( speed_beta > 1e-06 ) {
@@ -1093,6 +1067,17 @@ SocialForceModel::computeForceStaticObstacle(const ignition::math::Pose3d &actor
 	// FIXME: temp mass factor, make it a parameter
 	// setting too high produces noticeable accelerations around objects
 	f_alpha_i *= 61.25; // 35.0; // 30.0;
+
+	// -----------------------------------------------------
+	// FIXME: debugging large vector length ----------------
+	if ( factor_force_interaction_ * f_alpha_i.Length() > 5.0 ) {
+		std::cout << "\t-  -  -  - static obstacle force -  -  -  -  -  -  -  " << std::endl;
+		std::cout << "\t-  -  -  - " << SfmDebugGetCurrentObjectName() << "-  -  -  -  -  -  -  " << std::endl;
+		std::cout << "\td_alpha_i: " << d_alpha_i << "\td_alpha_i_len: " << d_alpha_i_len << "\ty_alpha_i: " << y_alpha_i << "\tw_alpha_i: " << w_alpha_i << std::endl;
+		std::cout << "\tf_alpha_i: " << factor_force_interaction_*f_alpha_i.X() << " " << factor_force_interaction_*f_alpha_i.Y() << std::endl;
+		std::cout << std::endl;
+	}
+	// -----------------------------------------------------
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
 	if ( SfmGetPrintData() ) {
@@ -2017,6 +2002,134 @@ void SocialForceModel::factorInForceCoefficients() {
 	force_interaction_ 	*= factor_force_interaction_;
 	force_social_ 		*= factor_force_social_;
 	force_combined_ 	 = force_internal_ + force_interaction_ + force_social_;
+
+}
+
+// ------------------------------------------------------------------- //
+
+void SocialForceModel::applyNonlinearOperations(const double &dist_closest_static, const double &dist_closest_dynamic) {
+
+	// FIXME: choose a closest distance to an obstacle
+	double dist_closest = std::min(dist_closest_static, dist_closest_dynamic);
+
+	// truncate the force value to max to prevent strange speedup of an actor
+	double force_combined_magnitude_init = force_combined_.Length();
+
+	// TODO: wrap into function : applyNonLinearModifications(dist_closest)
+	if ( force_combined_magnitude_init >= force_max_ ) {
+
+		multiplyForces(force_max_ / force_combined_magnitude_init);
+		if ( print_info ) {
+			std::cout << "\tTRUNCATED, factor: " << (force_max_ / force_combined_magnitude_init);
+		}
+
+	} else if ( force_combined_magnitude_init <= force_min_ ) {
+
+		// TODO: set desired force factor according to the distance to the closest obstacle -
+		// the closer actor gets, the smaller the coefficient should be - this is
+		// the REAL SOCIAL feature of the model */
+		double force_min_factor_socialized = 1.00;
+
+		// ------------------------------------------------------------------------------
+		// V1
+		// NOTE: this algorithm in fact allows the total force to stay
+		// below the threshold value (force_min_).
+		// Aim is to allow higher maneuverability
+		// when there is some obstacle nearby.
+		// Higher maneuverability is achieved because extension
+		// of the force vector to the force_min length
+		// creates additional `inertia` when actor got into
+		// close-to-zero potential zone. The inertia pushes
+		// him to the place when potential is far away from 0.
+//		force_min_factor_socialized = std::exp(0.75 * dist_closest);
+//		(force_min_factor_socialized > 1.00) ? (force_min_factor_socialized = 1.00) : (0);
+//		sf_values_.update(force_combined_);
+//		// f_total = sf_values_.getAverage().Normalize() * force_min_sf * force_min_;
+//		multiplyForces((force_min_factor_socialized * force_min_) / force_combined_magnitude_init);
+//		if ( print_info ) {
+//			std::cout << "\tEXTENDED, factor: " << (force_min_factor_socialized * force_min_) / force_combined_magnitude_init;
+//		}
+
+		/* NOTE: the above algorithm causes total force's components
+		 * to increase length dramatically to compensate too small
+		 * resulting force */
+
+		// ------------------------------------------------------------------------------
+		// V2 - bad
+		// FIXME: Let's extend the social force vector - in most cases
+		// it will be the best way to recover from being stuck.
+		// Actor usually gets stuck in close proximity to other person.
+//		force_min_factor_socialized = std::exp(0.75 * (dist_closest - 1.50));
+//		(force_min_factor_socialized > 1.00) ? (force_min_factor_socialized = 1.00) : (0);
+//		double extension_len = std::fabs(force_combined_magnitude_init - (force_min_factor_socialized * force_min_));
+//		force_social_ += (0.5 * extension_len * force_social_.Normalized());
+//		force_interaction_ += (0.5 * extension_len * force_interaction_.Normalized());
+//		sf_values_.update(force_internal_ + force_interaction_ + force_social_);
+//
+//		// make sure the average is a non-zero vector
+//		ignition::math::Vector3d avg = sf_values_.getAverage();
+//		if ( avg.Length() > 1e-06 ) {
+//			force_combined_ = avg;
+//		}
+
+		// ------------------------------------------------------------------------------
+		// V3 - bad
+		// determines how much the internal force can be extended according to proximity
+		// to the closest obstacle
+//		dist_closest = 1.0; // it's better to use the shortest distance from a dynamic object here
+//		double factor_force_internal_dynamic = std::exp(0.5 * dist_closest) - 1;
+//		(force_min_factor_socialized > 1.00) ? (force_min_factor_socialized = 1.00) : (0);
+//
+//		// applies for interaction force and social force (equal division of the extension vector)
+//		double factor_force_dynamic = (1.0 - factor_force_internal_dynamic) / 2.0;
+//
+//		// how much the combined vector should be extended
+//		double extension_len = std::fabs(force_combined_magnitude_init - force_min_);
+//
+//		force_internal_ 	+= factor_force_internal_dynamic * extension_len * force_internal_.Normalized();
+//		force_interaction_ 	+= factor_force_dynamic 		 * extension_len * force_interaction_.Normalized();
+//		force_social_ 		+= factor_force_dynamic 		 * extension_len * force_social_.Normalized();
+//		sf_values_.update(force_internal_ + force_interaction_ + force_social_);
+//
+//		// make sure the average is a non-zero vector
+//		ignition::math::Vector3d avg = sf_values_.getAverage();
+//		if ( avg.Length() > 1e-06 ) {
+//			force_combined_ = avg;
+//		}
+
+		// ------------------------------------------------------------------------------
+		// V4
+		// IDEA: let's maintain actor's direction of motion determined by combined force
+		//
+		// the exp function to slow down actors when there is another just behind
+		// rather does not have a great impact on resulting behaviour
+
+		// how much the combined vector should be extended
+		double extension_len = std::fabs(force_combined_magnitude_init - force_min_);
+
+		// create an extension vector
+		ignition::math::Vector3d extension = extension_len * force_combined_.Normalized();
+
+		// add the resulting vector to `force_interaction_`
+		force_interaction_ += extension;
+		sf_values_.update(force_internal_ + force_interaction_ + force_social_);
+
+		// make sure the average is a non-zero vector
+		ignition::math::Vector3d avg = sf_values_.getAverage();
+		if ( avg.Length() > 1e-06 ) {
+			force_combined_ = avg;
+		}
+
+	} else {
+
+		// force in allowable range
+
+		// clear social forces vector used for averaging
+		if ( !sf_values_.isEmpty() ) {
+			sf_values_.clear();
+		}
+
+	}
 
 }
 

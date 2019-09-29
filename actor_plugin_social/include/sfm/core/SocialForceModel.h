@@ -317,8 +317,12 @@ private:
 	void reset();
 	void factorInForceCoefficients(); 	// calculates combined force
 
+	// extends/truncates forces vectors if needed (force too big/too small)
+	void applyNonlinearOperations(const double &dist_closest_static, const double &dist_closest_dynamic);
+
 	// useful for non-linear modifications
 	void multiplyForces(const double &coefficient);				// truncates/extends all forces and calculates the combined one
+
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 	/// \brief A vector of poses of closest points
