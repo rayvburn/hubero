@@ -567,6 +567,16 @@ bool Target::isCheckpointAbandonable() const {
 		return (false);
 	}
 
+	// non-const method if uncommented
+//	// make some time gap between evaluations
+//	if ( (world_ptr_->SimTime() - time_last_abandonability_).Double() >= 1.0 ) {
+//		// force the current checkpoint to stay active
+//		return (false);
+//	}
+//
+//	// update time stamp
+//	time_last_abandonability_ = world_ptr_->SimTime();
+
 	// NOTE: conversion to global coordinate system
 	ignition::math::Angle actor_glob_orient(pose_world_ptr_->Rot().Yaw() - IGN_PI_2);
 	actor_glob_orient.Normalize();

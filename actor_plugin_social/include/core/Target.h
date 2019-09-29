@@ -268,6 +268,9 @@ private:
     /// @brief Time of the last reachability test.
 	gazebo::common::Time time_last_reachability_;
 
+//	/// @brief Time of the last checkpoint `abandonability` test.
+//	gazebo::common::Time time_last_abandonability_;
+
     /// @brief Global plan provider class;
     /// New global plan can be requested via this object
     actor::ros_interface::GlobalPlan global_planner_;
