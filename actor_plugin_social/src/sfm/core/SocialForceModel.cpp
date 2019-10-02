@@ -1986,7 +1986,10 @@ void SocialForceModel::applyNonlinearOperations(const double &dist_closest_stati
 
 		// add the resulting vector to `force_interaction_`
 		force_interaction_ += extension;
-		sf_values_.update(force_internal_ + force_interaction_ + force_social_);
+
+		// sum up
+		force_combined_ = force_internal_ + force_interaction_ + force_social_;
+		sf_values_.update(force_combined_);
 
 		// make sure the average is a non-zero vector
 		ignition::math::Vector3d avg = sf_values_.getAverage();
