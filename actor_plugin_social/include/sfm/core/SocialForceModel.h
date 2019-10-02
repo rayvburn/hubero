@@ -314,14 +314,34 @@ private:
 	/// \return Angle
 	double computeVectorDirection(const ignition::math::Vector3d &v) const;
 
+	/// \brief Resets class' internal state - mainly forces but resets internal classes too
 	void reset();
-	void factorInForceCoefficients(); 	// calculates combined force
 
-	// extends/truncates forces vectors if needed (force too big/too small)
+	/// \brief Multiplies force components by a factor parameters
+	/// and computes the combined force vector (summation).
+	/// \note See \ref multiplyForces
+	void factorInForceCoefficients();
+
+	/// \brief Extends/truncates forces vectors if needed (i.e. combined force's
+	/// magnitude too big / too small)
+	/// \param dist_closest_static: distance to the closest static obstacle available
+	/// \param dist_closest_dynamic: distance to the closest dynamic obstacle available
 	void applyNonlinearOperations(const double &dist_closest_static, const double &dist_closest_dynamic);
 
-	// useful for non-linear modifications
-	void multiplyForces(const double &coefficient);				// truncates/extends all forces and calculates the combined one
+	/// \brief Multiplies all force components (i.e. internal, interaction and social)
+	/// by a given coefficient and updates the total force (`force_combined_`)
+	/// according to a sum of components.
+	/// \param coefficient: factor
+	/// \note Truncates/extends all forces and calculates the combined one
+	/// \note Non-linear operation
+	void multiplyForces(const double &coefficient);
+
+	/// \brief Updates the given distance variable (`dist_compare`)
+	/// if a newly calculated distance (`dist`) is smaller.
+	/// \param dist_compare: the smallest distance to an object so far
+	/// \param dist: distance to the currently investigated object
+	/// \return True if `dist_compare` variable has been updated
+	bool updateClosestObstacleDistance(double &dist_compare, const double &dist) const;
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

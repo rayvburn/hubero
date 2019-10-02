@@ -114,16 +114,11 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		const double &dt)
 {
 
+	// reset internal state at the start of computations
 	reset();
 
-	( SfmGetPrintData() ) ? (print_info = true) : (0);
-
-//	if ( owner_name_ == "actor1" && SfmGetPrintData()) {
-//		debugEllipseSet(true);
-//	} else {
-//		debugEllipseSet(false);
-//	}
-
+	// RosService-driven?
+	(SfmGetPrintData()) ? (print_info = true) : (0);
 
 	// compute internal acceleration
 	force_internal_ = computeInternalForce(actor_pose, actor_velocity, actor_target);
@@ -133,16 +128,10 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	// added up to the `force_interaction_`
 	ignition::math::Vector3d f_alpha_beta;
 
-	// extra coefficient - Fuzzy logic affects internal force
-	double fuzzy_factor_f_alpha = 1.00;
-
-	// TODO: initialize with limit value
-	float dist_closest = 9999.0f;
-
 	/* model_vel contains model's velocity (world's object or actor) - for the actor this is set differently
 	 * it was impossible to set actor's linear velocity by setting it by the model's class method */
 	ignition::math::Vector3d model_vel;
-	actor::inflation::Box model_box;
+	actor::inflation::Box model_box;		// FIXME: base class, virtual functions + derivation (to eliminate 2 unnecessary instances)
 	actor::inflation::Circle model_circle;
 	actor::inflation::Ellipse model_ellipse;
 
@@ -156,7 +145,12 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	ignition::math::Vector3d distance_v;
 	double distance = 0.0;
 
+	// store distance to the closest static obstacle
+	double dist_closest_static  = std::numeric_limits<double>::max();
+	// store distance to the closest dynamic obstacle
+	double dist_closest_dynamic = std::numeric_limits<double>::max();
 
+	// ============================================================================
 	// iterate over all world's objects
 	for ( unsigned int i = 0; i < world_ptr->ModelCount(); i++ ) {
 
@@ -168,11 +162,11 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 			continue;
 		}
 
-		//////////////////////////////////////////////////////////////////////////////////////////////////////
-		// catch especially table1 - debugging ///////////////////////////////////////////////////////////////
-		SfmDebugSetCurrentObjectName(model_ptr->GetName()); ////////////////////////////////////////////////////
-		SfmDebugSetCurrentActorName(owner_name_); //////////////////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////
+		/// catch model name - debugging /////////////////////////////////////////
+		SfmDebugSetCurrentObjectName(model_ptr->GetName()); //////////////////////
+		SfmDebugSetCurrentActorName(owner_name_); ////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////
 
 		// decode information if the current model is of `Actor` type
 		if ( (is_an_actor = actor_decoder_.isActor(model_ptr->GetType())) ) {
@@ -205,22 +199,17 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		ignition::math::Pose3d actor_closest_to_model_pose = actor_pose;
 		ignition::math::Pose3d model_closest_point_pose = model_ptr->WorldPose();
 
-//		std::cout << "START DEBUGGING\n\t" << SfmDebugGetCurrentActorName() << "\t\t" << SfmDebugGetCurrentObjectName() << std::endl;
-//		std::cout << "\tinitial actor_pose: " << _actor_pose << "\tmodel_pose: " << model_ptr->WorldPose() << std::endl;
-
 		// calculate closest points
 		switch(inflation_type_) {
 
 		case(INFLATION_BOX_OTHER_OBJECTS):
 
-//				std::cout << "\tINFLATION - BOX - OTHER OBJECTS" << std::endl;
 				actor_closest_to_model_pose = actor_pose;
 				model_closest_point_pose.Pos() = inflator_.findModelsClosestPoints(actor_pose, model_ptr->WorldPose(), model_box);
 				break;
 
 		case(INFLATION_BOX_ALL_OBJECTS):
 
-//				std::cout << "\tINFLATION - BOX - ALL OBJECTS" << std::endl;
 				std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
 						inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingBox(),
 															 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
@@ -229,12 +218,10 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		case(INFLATION_CIRCLE):
 
 				if ( is_an_actor ) {
-//					std::cout << "\tINFLATION - CIRCLE - actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
 							inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingCircle(),
 																 model_ptr->WorldPose(), model_circle, model_ptr->GetName() );
 				} else {
-//					std::cout << "\tINFLATION - CIRCLE - non-actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
 							inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingCircle(),
 																 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
@@ -244,12 +231,10 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		case(INFLATION_ELLIPSE):
 
 				if ( is_an_actor ) {
-//					std::cout << "\tINFLATION - ELLIPSE - actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
 							inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingEllipse(),
 																 model_ptr->WorldPose(), model_ellipse, model_ptr->GetName() );
 				} else {
-//					std::cout << "\tINFLATION - ELLIPSE - non actor" << std::endl;
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
 							inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingEllipse(),
 																 model_ptr->WorldPose(), model_box, model_ptr->GetName() );
@@ -259,34 +244,10 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 
 		default:
 
-				// no inflation
-//				std::cout << "\tINFLATION - DEFAULT" << std::endl;
-//				leave centers as `closest` (already done above the `switch`)
-//				actor_closest_to_model_pose = actor_pose;
-//				model_closest_point_pose = model_ptr->WorldPose();
+				// no inflation, `closest points` are objects centers (done above)
 				break;
 
 		}
-
-//		std::cout << "\tFINAL actor_pose: " << actor_closest_to_model_pose << "\tmodel_pose: " << model_closest_point_pose << std::endl;
-
-		// debug txt
-//		if ( print_info ) { std::cout << "actor_center: " << actor_pose.Pos() << "\tobstacle_closest_pt: " << model_closest_point_pose.Pos() << "\tdist: " << (model_closest_point_pose.Pos()-actor_pose.Pos()).Length() << std::endl; }
-
-
-		/* closest points ellipse debugging */
-//		if ( owner_name_ == "actor1" ) {
-//			std::cout << "CLOSEST POINTS ELLIPSE DEBUGGING\tactor: " << owner_name_ << "\tmodel: " << model_ptr->GetName() << "\n";
-//			std::cout << "\tactor_center: " << actor_pose << "\tactor_closest: " << actor_closest_to_model_pose << std::endl;
-//			std::cout << "\tactor ellipse's center: " << actor_info.getBoundingEllipse().getCenter() << "\tactor ellipse's SHIFTED center: " << actor_info.getBoundingEllipse().getCenterShifted() << std::endl;
-//			std::cout << "\tmodel_center: " << model_ptr->WorldPose() << "\tmodel_closest: " << model_closest_point_pose << std::endl;
-//			if ( is_an_actor ) {
-//				std::cout << "\tmodel_ellipse's center: " << model_ellipse.getCenter() << "\tmodel_ellipse's SHIFTED center: " << model_ellipse.getCenterShifted() << std::endl;
-//			} else {
-//				std::cout << "\tmodel_box'es center: " << model_box.getCenter() << std::endl;
-//			}
-//			std::cout << "\n\n";
-//		}
 
 		// based on a parameter and an object type - calculate a force from a static object properly
 		if ( is_an_actor || interaction_static_type_ == INTERACTION_REPULSIVE_EVASIVE ) {
@@ -313,128 +274,40 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 			closest_points_.push_back(actor_closest_to_model_pose);
 		}
 
-//		std::cout << "\n\n\n" << std::endl;
-
-		// ============================================================================
-
-#ifdef DEBUG_OSCILLATIONS
-		if ( _owner_name_ == "actor1" && model_ptr->GetName() == "table1" ) {
-			std::cout << "\tactor1-table1 interaction vector: " << f_alpha_beta.X() << "\t" << f_alpha_beta.Y() << std::endl;
-		}
-#endif
-
-		// just debugging
-		if ( f_alpha_beta.Length() > 1e-06 ) {
-
-			// TODO: after force separation it will not be valid?
-//			std::cout << "\t\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * force_interaction_ * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * force_interaction_ * interaction_force_factor_).Length() << "\tdist: " << distance_v.Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
-
-//			std::cout << "\t\t\tactor_pos: " << (actor_closest_to_model_pose).Pos() << "\tmodel_pos: " << model_closest_point_pose.Pos() << std::endl;
-//			std::cout << "\t\t\td_alpha_beta: " << distance_v << "\t\tlen: " << distance_v.Length() << "\tclosest_o_a diff: " << (model_closest_point_pose.Pos() - actor_closest_to_model_pose.Pos()) << "\tclosest_a_o diff: " << (actor_closest_to_model_pose.Pos() - model_closest_point_pose.Pos()) << std::endl;
-
-		}
-
-		/* Check if some condition is met based on parameters previously passed to Fuzzifier */
-		// owner name condition for easier debugging / owner_name_ == "actor1" &&
-		/*
-		if ( fuzz_.isApplicable() ) {
-
-			static int fuzz_ctr = 0;
-			bool modded = false;
-
-			defuzz_.setInternalForce(f_alpha);
-			defuzz_.setFuzzState(fuzz_.getFuzzyState());
-			f_alpha_beta_social = defuzz_.defuzzifySocialForce();
-//			ignition::math::Vector3d test = defuzz_.defuzzifySocialForce();
-			fuzz_.resetParameters(); // must be reset before each new world model investigation
-
-			// just debugging
-			if ( f_alpha_beta_social.Length() > 1e-06 ) {
-				modded = true;
-				std::cout << "\tFUZZed\t" << model_ptr->GetName() << ": \t" << fuzzy_factor_f_alpha * (f_alpha_beta + f_alpha_beta_social) * interaction_force_factor_ << "\tlen: " << (fuzzy_factor_f_alpha * (f_alpha_beta + f_alpha_beta_social) * interaction_force_factor_).Length() << "\tdist: " << distance_v.Length() << "\tmodel_type: " << model_ptr->GetType() << std::endl;
-			}
-			if ( fuzz_ctr++ >= 50 && modded ) {
-				fuzz_ctr = 0;
-			}
-
-//			if ( SfmDebugGetCurrentActorName() == "actor1" && fuzz_lvl != sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_UNKNOWN ) {
-//				std::string level_txt, condition_txt;
-//				if ( soc_cond == sfm::fuzz::SocialCondition::SFM_CONDITION_DYNAMIC_OBJECT_RIGHT ) { condition_txt = "SFM_CONDITION_DYNAMIC_OBJECT_RIGHT"; } else if ( soc_cond == sfm::fuzz::SocialCondition::SFM_CONDITION_FORCE_DRIVES_INTO_OBSTACLE ) { condition_txt = "SFM_CONDITION_FORCE_DRIVES_INTO_OBSTACLE"; } else if ( soc_cond == sfm::fuzz::SocialCondition::SFM_CONDITION_DYNAMIC_OBJECT_RIGHT_MOVES_PERPENDICULAR ) { condition_txt = "SFM_CONDITION_DYNAMIC_OBJECT_RIGHT_MOVES_PERPENDICULAR"; } else { condition_txt = "SFM_CONDITION_UNKNOWN"; };
-//				if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_EXTREME ) { level_txt = "FUZZY_LEVEL_EXTREME"; } else if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_HIGH ) { level_txt = "FUZZY_LEVEL_HIGH"; } else if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_MEDIUM ) { level_txt = "FUZZY_LEVEL_MEDIUM"; } else if ( fuzz_lvl == sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_LOW ) { level_txt = "FUZZY_LEVEL_LOW"; } else { level_txt = "FUZZY_LEVEL_UNKNOWN"; };
-//				std::cout << SfmDebugGetCurrentActorName() << "\t" << SfmDebugGetCurrentObjectName() << "\t" << condition_txt << "\t" << level_txt << std::endl;
-//				std::cout << "\tfuzzy_factor_BEF: " << fuzzy_factor_f_alpha << "\tf_alpha_beta BEF: " << f_alpha_beta << std::endl;
-//			}
-//
-//			std::tie(fuzzy_factor_f_alpha, f_alpha_beta) = defuzz_.defuzzifyObjectRight(fuzzy_factor_f_alpha, f_alpha_beta);
-//
-//			if ( SfmDebugGetCurrentActorName() == "actor1" && fuzz_lvl != sfm::fuzz::FuzzyLevel::FUZZY_LEVEL_UNKNOWN ) {
-//				std::cout << "\tfuzzy_factor_AFTER: " << fuzzy_factor_f_alpha << "\tf_alpha_beta AFTER: " << f_alpha_beta << std::endl;
-//				std::cout << std::endl;
-//				std::cout << std::endl;
-//			}
-
-		}
-		 */
-
-		// - - - - fuzzylite
-
+		// - - - - fuzzylite & social conductor
 		if ( is_an_actor ) {
+
 			std::cout << "\n\n\tFuzzy logic processor - " << owner_name_ << "\n";
 			fuzzy_processor_.process();
 			std::cout << "" << std::endl << std::endl;
-		}
-		// - - - -
 
-		// - - - - social conductor
-		if ( is_an_actor ) {
-
-			double fuzz_out = 100.0; // initially out of range
+			// store a term with the highest membership
 			std::string region;
 
 			// TODO: make it more flexible (getOutput)? or get rid of single element vector
 			// in fact defuzzification always returns a single term with the highest
 			// membership so the vector may be omitted?
-			std::tie(region, fuzz_out) = fuzzy_processor_.getOutput().at(0); // FIXME
+			std::tie(region, std::ignore) = fuzzy_processor_.getOutput().at(0); // FIXME
 
-//			// V1 - based on floating point output value
-//			social_conductor_.apply(fuzz_out);
-//			std::cout << "\n\n\tSocial conductor - " << owner_name_ << "\t" << social_conductor_.getSocialVector() << std::endl << std::endl;
-//			f_alpha_beta_social = social_conductor_.getSocialVector();
-
-			// V2 - based on verbose interpretation of the selected output term (region)
+			// verbose interpretation of the selected output term (region)
 			social_conductor_.apply(region);
 			std::cout << "\n\n\tSocial conductor - " << owner_name_ << "\t" << social_conductor_.getSocialVector() << std::endl << std::endl;
 			force_social_ += social_conductor_.getSocialVector();
 
-			if ( social_conductor_.getSocialVector().Length() > 1e-06 ) {
-				int stopit = 0;
-				stopit++;
-			}
-
 		}
 		// - - - -
 
-
+		// FIXME: `is_an_actor` is confusing, robot etc. must be considered too
 		// save distance to the closest obstacle (if smaller than the one considered closest so far)
-		// note: non-linear modifications
-		if ( distance < dist_closest ) {
-			dist_closest = distance;
-		}
+		updateClosestObstacleDistance((is_an_actor ? dist_closest_dynamic : dist_closest_static), distance);
 
-		// TODO: add f_alpha_beta_social
 		// sum all forces
-		force_interaction_ += f_alpha_beta; //  + f_alpha_beta_social;
-
-		// FIXME: f_alpha_beta_social is not multiplied by `interaction_force_factor_` at the moment
-		// TODO: make another parameter: `social_force_factor`
-
+		force_interaction_ += f_alpha_beta;
 
 	} /* for loop ends here (iterates over all world models) */
+	// ============================================================================
 
-	// FIXME:
-	fuzzy_factor_f_alpha = 1.00;
-	factor_force_internal_ *= fuzzy_factor_f_alpha;
-
+	// multiply force vector components by parameter values
 	factorInForceCoefficients();
 
 #endif // end of `#ifdef CALCULATE_INTERACTION`
@@ -449,7 +322,7 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 #endif
 
 	// extend or truncate force vectors if needed
-	applyNonlinearOperations(static_cast<double>(dist_closest), 50.0); // FIXME: hard-coded value for dynamic obstacles
+	applyNonlinearOperations(dist_closest_static, dist_closest_dynamic);
 
 #ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	( SfmGetPrintData() ) ? (print_info = true) : (0);
@@ -466,7 +339,7 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	std::cout << "\n\t\tINTERNAL: \t" << force_internal_ << std::endl;
 	std::cout << "\t\tINTERACTION: \t" << force_interaction_ << std::endl;
 	std::cout << "\t\tSOCIAL: \t" <<  force_social_ << std::endl;
-	std::cout << "\t\tTOTAL: \t" << force_combined_ << std::endl;
+	std::cout << "\t\tTOTAL: \t\t" << force_combined_ << std::endl;
 	std::cout << "**************************************************************************\n\n";
 
 	return (true);
@@ -2015,7 +1888,7 @@ void SocialForceModel::applyNonlinearOperations(const double &dist_closest_stati
 	// truncate the force value to max to prevent strange speedup of an actor
 	double force_combined_magnitude_init = force_combined_.Length();
 
-	// TODO: wrap into function : applyNonLinearModifications(dist_closest)
+	// evaluate force magnitude
 	if ( force_combined_magnitude_init >= force_max_ ) {
 
 		multiplyForces(force_max_ / force_combined_magnitude_init);
@@ -2101,8 +1974,9 @@ void SocialForceModel::applyNonlinearOperations(const double &dist_closest_stati
 		// V4
 		// IDEA: let's maintain actor's direction of motion determined by combined force
 		//
-		// the exp function to slow down actors when there is another just behind
-		// rather does not have a great impact on resulting behaviour
+		// the exp function to slow down actors when there is another person just behind
+		// the one currently considered;
+		// likely does not have a great impact on resulting behaviour
 
 		// how much the combined vector should be extended
 		double extension_len = std::fabs(force_combined_magnitude_init - force_min_);
@@ -2141,6 +2015,19 @@ void SocialForceModel::multiplyForces(const double &coefficient) {
 	force_interaction_ 	*= coefficient;
 	force_social_ 		*= coefficient;
 	force_combined_ 	 = force_internal_ + force_interaction_ + force_social_;
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool SocialForceModel::updateClosestObstacleDistance(double &dist_compare, const double &dist) const {
+
+	// note: non-linear modifications
+	if ( dist < dist_compare ) {
+		dist_compare = dist;
+		return (true);
+	}
+	return (false);
 
 }
 
