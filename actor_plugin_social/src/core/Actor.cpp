@@ -640,7 +640,7 @@ bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 	to_target_direction.Normalize();
 
 	// transform actor orientation to world coordinate system
-	ignition::math::Angle yaw_actor_w( pose_world_ptr_->Rot().Yaw() - (IGN_PI/2) );
+	ignition::math::Angle yaw_actor_w(pose_world_ptr_->Rot().Yaw() - IGN_PI_2);
 	yaw_actor_w.Normalize();
 
 	// compute angle difference
@@ -649,7 +649,7 @@ bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 
 	// helper variable to determine the sign of the angular velocity that needs
 	// to be applied to align with target direction
-	uint8_t sign = +1;
+	int8_t sign = +1;
 
 	// check the sign of the `yaw_diff` - the movement should be performed
 	// in the SAME direction as the `yaw_diff` angle (shorter angular path)
@@ -674,13 +674,14 @@ bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 
 	// ----------------------------------------------------------------
 //	std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-//	std::cout << "\t\talignToTargetDirection()" << std::endl;
+//	std::cout << "\t\talignToTargetDirection(): " << actor_ptr_->GetName() << std::endl;
 //	std::cout << "\tisTargetChosen: " << target_manager_.isTargetChosen() << "\tisTargetReached: " << target_manager_.isTargetReached() << std::endl;
 //	std::cout << "\tcheckpoint: " << target_manager_.getCheckpoint() << "\ttarget: " << target_manager_.getTarget() << std::endl;
 //	std::cout << "\tpos_actor: " << pose_world_ptr_->Pos() << std::endl;
 //	std::cout << "\tto_target_vector: " << to_target_vector << "\t\tto_target_direction: " << to_target_direction.Radian() << std::endl;
 //	std::cout << "\tyaw_actor_w: " << yaw_actor_w.Radian() << std::endl;
 //	std::cout << "\tyaw_diff: " << yaw_diff.Radian() << std::endl;
+//	std::cout << "\tsign: " << (sign < 0 ? "negative" : "positive") << " | numeric: " << static_cast<int>(sign) << std::endl;
 	// ----------------------------------------------------------------
 
 	// apply the change
