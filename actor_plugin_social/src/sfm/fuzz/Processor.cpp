@@ -288,7 +288,9 @@ void Processor::init() {
     std::cout << "\nfuzzylite's RULE BLOCK1: " << rule_block_.toString() << std::endl << std::endl;
     // location - `front_right`
     //																																	 previously: stop - doesnt work well
-    rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is cross_frontA 	or direction is cross_frontB ) 	then behavior is turn_right_decelerate", 	&engine_)); // 1
+    //																																	 `turn_right_decelerate` - causes sticking and going in the same direction
+    //																																	 `turn_right_accelerate`
+    rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is cross_frontA 	or direction is cross_frontB ) 	then behavior is turn_right_accelerate", 	&engine_)); // 1
     rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is cross_behindA or direction is cross_behindB) 	then behavior is turn_left", 				&engine_)); // 2
     rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is equalA 		or direction is equalB		 ) 	then behavior is go_along", 				&engine_)); // 3
     rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is oppositeA 	or direction is oppositeB	 )	then behavior is turn_left", 				&engine_)); // 4
@@ -300,8 +302,10 @@ void Processor::init() {
     rule_block_.addRule(fl::Rule::parse("if location is back_right  and (direction is oppositeA 	or direction is oppositeB	 ) 	then behavior is go_along", 				&engine_)); // 8
     rule_block_.addRule(fl::Rule::parse("if location is back_right  and (direction is outwardsA 	or direction is outwardsB	 ) 	then behavior is go_along", 				&engine_)); // 10
     // location - `front_left`																														 turn_left
-    rule_block_.addRule(fl::Rule::parse("if location is front_left  and (direction is cross_frontA 	or direction is cross_frontB ) 	then behavior is turn_right_decelerate", 	&engine_)); // EXTRA (added after few experiments although it may just strengthen another case)
-    rule_block_.addRule(fl::Rule::parse("if location is front_left  and (direction is cross_behindA or direction is cross_behindB) 	then behavior is turn_right_accelerate", 	&engine_)); // 11
+    //																																				 turn_right_decelerate
+    rule_block_.addRule(fl::Rule::parse("if location is front_left  and (direction is cross_frontA 	or direction is cross_frontB ) 	then behavior is turn_right", 	&engine_)); // EXTRA (added after few experiments although it may just strengthen another case)
+    //																																				 // try acc
+    rule_block_.addRule(fl::Rule::parse("if location is front_left  and (direction is cross_behindA or direction is cross_behindB) 	then behavior is go_along", 	&engine_)); // 11 // V1 (after front changes): turn_right_accelerate
     rule_block_.addRule(fl::Rule::parse("if location is front_left  and (direction is equalA 		or direction is equalB		 ) 	then behavior is go_along", 				&engine_)); // 12
     rule_block_.addRule(fl::Rule::parse("if location is front_left  and (direction is oppositeA 	or direction is oppositeB	 ) 	then behavior is turn_right", 				&engine_)); // 13
     rule_block_.addRule(fl::Rule::parse("if location is front_left  and (direction is outwardsA 	or direction is outwardsB	 ) 	then behavior is turn_right_decelerate", 	&engine_)); // 14
@@ -309,8 +313,9 @@ void Processor::init() {
     rule_block_.addRule(fl::Rule::parse("if location is back_left   and (direction is equalA 		or direction is equalB		 ) 	then behavior is go_along", 				&engine_)); // 15
     rule_block_.addRule(fl::Rule::parse("if location is back_left   and (direction is oppositeA 	or direction is oppositeB	 ) 	then behavior is go_along", 				&engine_)); // 16
     // location - `front`
-    rule_block_.addRule(fl::Rule::parse("if location is front 	    and (direction is outwardsA 	or direction is outwardsB	 ) 	then behavior is stop", 					&engine_)); // 17
-    rule_block_.addRule(fl::Rule::parse("if location is front 	    and (direction is cross_frontA 	or direction is cross_frontB ) 	then behavior is stop", 					&engine_)); // 17b
+    rule_block_.addRule(fl::Rule::parse("if location is front 	    and (direction is outwardsA 	or direction is outwardsB	 ) 	then behavior is accelerate", 					&engine_)); // 17	// V1: stop
+    //																																				 V2: 'turn_right_decelerate'
+    rule_block_.addRule(fl::Rule::parse("if location is front 	    and (direction is cross_frontA 	or direction is cross_frontB ) 	then behavior is turn_right", 					&engine_)); // 17b	// V1: stop
     rule_block_.addRule(fl::Rule::parse("if location is front 	    and (direction is equalA 		or direction is equalB		 ) 	then behavior is decelerate", 				&engine_)); // 18
     rule_block_.addRule(fl::Rule::parse("if location is front 	    and (direction is oppositeA 	or direction is oppositeB	 ) 	then behavior is turn_right", 				&engine_)); // 19
     // location - `back`

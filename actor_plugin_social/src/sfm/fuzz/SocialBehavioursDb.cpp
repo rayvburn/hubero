@@ -115,7 +115,7 @@ ignition::math::Vector3d SocialBehavioursDb::turnRightAccelerate() {
 	force = setVectorLength(force, magnitude);
 
 	// acceleration section
-	magnitude *= 1.25;
+	//magnitude *= 1.25;
 	force = extendVector(force, dir_alpha_, magnitude);
 
 	return (force);
@@ -131,7 +131,7 @@ ignition::math::Vector3d SocialBehavioursDb::turnRight() {
 	double dir_rot = findOrientation(dir_alpha_, 'r');
 	force = createDirVector(dir_rot);
 
-	double magnitude = calculateVectorMagnitude(600.0);
+	double magnitude = calculateVectorMagnitude(800.0); // 600.0
 
 	force = setVectorLength(force, magnitude);
 

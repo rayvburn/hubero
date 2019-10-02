@@ -587,7 +587,11 @@ bool Target::isCheckpointAbandonable() const {
 	ignition::math::Angle angle_diff = actor_glob_orient - actor_checkpoint_ang;
 	angle_diff.Normalize();
 
-	if ( std::fabs(angle_diff.Radian()) > IGN_DTOR(70) && std::fabs(angle_diff.Radian()) <= IGN_DTOR(90) ) {
+	// lower threshold may have a great impact on actor behaviour while in crowd:
+	// sometimes faster abandonment of the target can produce smoother transitions
+	// when 2 actors going in the opposite directions;
+	// V1: lower threshold = 70 degrees
+	if ( std::fabs(angle_diff.Radian()) > IGN_DTOR(45) && std::fabs(angle_diff.Radian()) <= IGN_DTOR(90) ) {
 		return (true);
 	}
 	return (false);
