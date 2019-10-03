@@ -591,7 +591,8 @@ bool Target::isCheckpointAbandonable() const {
 	// sometimes faster abandonment of the target can produce smoother transitions
 	// when 2 actors going in the opposite directions;
 	// V1: lower threshold = 70 degrees
-	if ( std::fabs(angle_diff.Radian()) > IGN_DTOR(45) && std::fabs(angle_diff.Radian()) <= IGN_DTOR(90) ) {
+	// V2: lower threshold = 45 degrees (usually abandoned all checkpoints in a certain position)
+	if ( std::fabs(angle_diff.Radian()) > IGN_DTOR(60) && std::fabs(angle_diff.Radian()) <= IGN_DTOR(90) ) {
 		return (true);
 	}
 	return (false);

@@ -116,11 +116,11 @@ private:
 
 	/// \brief Trapezoidal term related to the case when `beta` object's
 	/// direction points in the same direction as the `alpha`'s
-	TrapezoidLocIndep trapezoid_eq_{"equal", 10, 5};
+	TrapezoidLocIndep trapezoid_eq_{"equal", 10, 20};
 
 	/// \brief Trapezoidal term related to the case when `beta` object's
 	/// direction points in the opposite direction as the `alpha`'s
-	TrapezoidLocIndep trapezoid_opp_{"opposite", 10, 5};
+	TrapezoidLocIndep trapezoid_opp_{"opposite", 10, 20};
 
 	/// \brief Expresses direction to the target position relative to \alpha 's
 	/// current direction of motion

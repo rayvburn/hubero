@@ -274,6 +274,12 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 			closest_points_.push_back(actor_closest_to_model_pose);
 		}
 
+		// truncate
+		const double FORCE_INTERACTION_MAX = 1200; // 900.0; (intersection occurs)
+		if ( is_an_actor && f_alpha_beta.Length() * factor_force_interaction_ > FORCE_INTERACTION_MAX ) {
+			f_alpha_beta = f_alpha_beta.Normalized() * (FORCE_INTERACTION_MAX/(f_alpha_beta.Length() * factor_force_interaction_));
+		}
+
 		// - - - - fuzzylite & social conductor
 		if ( is_an_actor ) {
 
@@ -741,12 +747,20 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 
 	/* For details see `Social force equation` in the articles listed in .h file */
 	ignition::math::Vector3d p_alpha = computePerpendicularToNormal(n_alpha, beta_rel_location); 	// actor's perpendicular (based on velocity vector)
-	double exp_normal = ( (-Bn_ * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn_ * d_alpha_beta_length;
-	double exp_perpendicular = ( (-Bp_ * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp_ * d_alpha_beta_length;
+	// original
+//	double exp_normal = ( (-Bn_ * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn_ * d_alpha_beta_length;
+//	double exp_perpendicular = ( (-Bp_ * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp_ * d_alpha_beta_length;
+	// modded
+	double exp_normal = ( (-Bn_ * theta_alpha_beta * theta_alpha_beta) / (2.0 * v_rel) ) - 0.5 * Cn_ * d_alpha_beta_length;
+	double exp_perpendicular = ( (-0.1 * Bp_ * std::fabs(theta_alpha_beta) ) / v_rel ) - 0.5 * Cp_ * d_alpha_beta_length;
 
 	// `fov_factor`: weaken the interaction force when beta is behind alpha
-	ignition::math::Vector3d n_alpha_scaled = n_alpha * An_ * std::exp(exp_normal) * fov_factor;
-	ignition::math::Vector3d p_alpha_scaled = p_alpha * Ap_ * std::exp(exp_perpendicular) * fov_factor;
+	// original
+//	ignition::math::Vector3d n_alpha_scaled = n_alpha * An_ * std::exp(exp_normal) * fov_factor;
+//	ignition::math::Vector3d p_alpha_scaled = p_alpha * Ap_ * std::exp(exp_perpendicular) * fov_factor;
+	// modded
+	ignition::math::Vector3d n_alpha_scaled = n_alpha * (-4.0) * An_ * std::exp(exp_normal) * fov_factor;
+	ignition::math::Vector3d p_alpha_scaled = p_alpha * (+2.0) * Ap_ * std::exp(exp_perpendicular) * fov_factor;
 
 	// -----------------------------------------------------
 	// FIXME: debugging large vector length ----------------
@@ -939,7 +953,7 @@ SocialForceModel::computeForceStaticObstacle(const ignition::math::Pose3d &actor
 
 	// FIXME: temp mass factor, make it a parameter
 	// setting too high produces noticeable accelerations around objects
-	f_alpha_i *= 61.25; // 35.0; // 30.0;
+	f_alpha_i *= 50.00; // 40.00 - 61.25; <- no noticeable difference
 
 	// -----------------------------------------------------
 	// FIXME: debugging large vector length ----------------

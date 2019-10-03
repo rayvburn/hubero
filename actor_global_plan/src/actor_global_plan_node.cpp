@@ -267,7 +267,7 @@ static void SetInflationRadius(ros::NodeHandle &nh, const std::string &srv_ns) {
 		size_x = static_cast<double>( sublist["x_half"] );
 		size_y = static_cast<double>( sublist["y_half"] );
 		size = std::max(size_x, size_y);
-		inflation = size * (std::sqrt(2));
+		inflation = 2.15f * size * (std::sqrt(2));
 		break;
 
 	/* ACTOR_BOUNDING_CIRCLE */
@@ -277,7 +277,7 @@ static void SetInflationRadius(ros::NodeHandle &nh, const std::string &srv_ns) {
 			ROS_ERROR("BoundingCircle's size could not be found");
 			return;
 		}
-		inflation = size;
+		inflation = 2.15f * size;
 		break;
 
 	/* ACTOR_BOUNDING_ELLIPSE */
@@ -292,7 +292,7 @@ static void SetInflationRadius(ros::NodeHandle &nh, const std::string &srv_ns) {
 		size_x = static_cast<double>( sublist["semi_major"] );
 		size_y = static_cast<double>( sublist["semi_minor"] );
 		size = std::max(size_x, size_y);
-		inflation = size;
+		inflation = 2.15f * size;
 		break;
 
 	/* ACTOR_NO_BOUNDING */
