@@ -13,12 +13,13 @@ namespace actor {
 namespace core {
 
 // ------------------------------------------------------------------- //
-Target::Target(): has_target_(false), has_global_plan_(false) { }
+Target::Target(): has_target_(false), has_global_plan_(false), is_following_(false), followed_model_ptr_(nullptr) { }
 // ------------------------------------------------------------------- //
 
 Target::Target(gazebo::physics::WorldPtr world_ptr, std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr,
 			   std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr)
-					: has_target_(false), has_global_plan_(false) {
+					: has_target_(false), has_global_plan_(false),
+					  is_following_(false), followed_model_ptr_(nullptr) {
 
 	world_ptr_ = world_ptr;
 	pose_world_ptr_ = pose_world_ptr;
@@ -33,6 +34,7 @@ Target::Target(const Target &obj) {
 	// copy ctor
 	has_target_ = obj.has_target_;
 	has_global_plan_ = obj.has_global_plan_;
+	is_following_ = obj.is_following_;
 
 	pose_world_ptr_ = obj.pose_world_ptr_;
 	params_ptr_ = obj.params_ptr_;
@@ -50,14 +52,104 @@ void Target::initializeGlobalPlan(std::shared_ptr<ros::NodeHandle> nh_ptr, const
 
 bool Target::followObject(const std::string &object_name) {
 
+	// temp model ptr in case of a situation when 1 object is already followed
+	// but tracked object name change has been commanded. This prevents the `old object` deletion.
+	gazebo::physics::ModelPtr model_temp = nullptr;
 	bool is_valid = false;
-	std::tie(is_valid, std::ignore) = isModelValid(object_name);
+
+	// evaluate validity of an object
+	std::tie(is_valid, model_temp) = isModelValid(object_name);
 
 	if ( !is_valid ) {
 		return (false);
 	}
 
+	bool ok = false;
+	ignition::math::Vector3d pt_intersection; // dynamic obstacles will not be marked in the costmap
+	ignition::math::Vector3d line_dir;
+
+	std::tie(ok, pt_intersection, std::ignore) = findBoxPoint(model_temp);
+	if ( !ok ) {
+		return (false);
+	}
+
+	// generate path plan and possibly update the internal state
+	if ( tryToApplyTarget(pt_intersection) ) {
+		// assign new model to the tracked object pointer
+		followed_model_ptr_ = model_temp;
+		is_following_ = true;
+		return (true);
+	}
+
+	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Target::isFollowing() const {
+	return (is_following_);
+}
+
+// ------------------------------------------------------------------- //
+
+bool Target::updateFollowedTarget() {
+
+	// periodically update the tracked object's position
+	if ( (world_ptr_->SimTime() - time_last_follow_plan_).Double() >= 2.0 ) {
+
+		// update event time
+		time_last_follow_plan_ = world_ptr_->SimTime();
+
+		// check model's pointer validity
+		if ( followed_model_ptr_ == nullptr ) {
+			is_following_ = false;
+			has_target_ = false;
+			has_global_plan_ = false;
+			return (false);
+		}
+
+		// try to find line-box intersection point
+		bool found = false;
+		ignition::math::Vector3d pt_target;
+		std::tie(found, pt_target, std::ignore) = findBoxPoint(followed_model_ptr_);
+
+		// generate path plan
+		if ( found ) {
+			if ( tryToApplyTarget(pt_target) ) {
+				return (true);
+			}
+		}
+		return (false);
+
+//		// the method call comes from the followObject (`follow_object` mode
+//		// has just been activated)
+//		if ( target_known ) {
+//		}
+
+	}
+
+	// no action necessary at the moment
 	return (true);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Target::stopFollowing() {
+
+	// clear followed model pointer and `is_following` flag
+	followed_model_ptr_ = nullptr;
+	if ( is_following_ ) {
+
+		// reset internal state
+		is_following_ = false;
+		has_target_ = false;
+		has_global_plan_ = false;
+		return (true);
+
+	}
+	return (false);
 
 }
 
@@ -92,31 +184,7 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 
 	if ( !has_target_ ) {
 
-		// try to generate global path plan
-		if ( generatePathPlan(position) ) {
-
-			// plan has been generated
-			target_ = position;
-			target_checkpoint_ = global_planner_.getWaypoint().Pos();
-
-			// Update checkpoint. After choosing a new target, the first checkpoint
-			// is equal (nearly) to the current position. This may generate a problem
-			// while actor is trying to align with target direction.
-			// updateCheckpoint() will set temporary target to some further position
-			// than the one actor is currently in.
-			updateCheckpoint();
-
-			// save event time
-			time_last_target_selection_ = world_ptr_->SimTime();
-
-			// update internal state
-			has_global_plan_ = true;
-			has_target_ = true;
-			return (true);
-
-		}
-		return (false);
-
+		return (tryToApplyTarget(position));
 
 	} else {
 
@@ -158,49 +226,15 @@ bool Target::setNewTarget(const std::string &object_name) {
 		return (false);
 	}
 
+	// bounding box problems (actor only)
 	if ( model->GetType() == actor::ACTOR_MODEL_TYPE_ID ) {
 		/* not allowable, actor is a dynamic model;
 		 * use `follow object` command instead */
 		return (false);
 	}
 
-	/* let's find the line from the current actor's pose to the closest
-	 * point of an object's bounding box; shift the point to the free
-	 * space direction a little and set it as a new target;
-	 * this way a rise of an `unreachable target` flag won't occur,
-	 * because target is located in a free space) */
-
-	ignition::math::Line3d line;
-	line.Set( pose_world_ptr_->Pos(), model->WorldPose().Pos() ); // line_angle expressed from the actor to an object
-	/* NOTE:
-	 * line.Set( model->WorldPose().Pos(), pose_world_.Pos() );
-	 * with commented version line_angle is expressed from object to actor,
-	 * but for some reason Box always return pt of intersection equal
-	 * to BoundingBox'es center (also, all 0.05 signs have to be inverted
-	 * in below `if` conditions) */
+	// temp
 	ignition::math::Vector3d pt_intersection;
-	bool does_intersect = false;
-	std::tie(does_intersect, std::ignore, pt_intersection) = model->BoundingBox().Intersect(line);
-
-	if ( !does_intersect ) {
-		// this should not happen, something went wrong
-		return (false);
-	}
-
-	/* check the line's direction and based on the angle shift
-	 * the intersection point a little in proper direction */
-	double line_angle = std::atan2( line.Direction().Y(), line.Direction().X() );
-
-	// consider inflation layer on the costmap
-	if ( line_angle >= 0.00 && line_angle <= IGN_PI_2 ) {				// I quarter
-		pt_intersection = findReachableDirectionPoint(pt_intersection, 1);
-	} else if ( line_angle > IGN_PI_2 && line_angle <= IGN_PI ) {		// II quarter
-		pt_intersection = findReachableDirectionPoint(pt_intersection, 2);
-	} else if ( line_angle < 0.00 && line_angle >= -IGN_PI_2 ) {		// IV quarter
-		pt_intersection = findReachableDirectionPoint(pt_intersection, 4);
-	} else if ( line_angle < -IGN_PI_2 && line_angle >= -IGN_PI ) {		// III quarter
-		pt_intersection = findReachableDirectionPoint(pt_intersection, 3);
-	}
 
 	// return status according to `setNewTarget` operation success/failure
 	return (setNewTarget(ignition::math::Pose3d(pt_intersection, model->WorldPose().Rot())));
@@ -325,9 +359,17 @@ bool Target::chooseNewTarget() {
 
 // ------------------------------------------------------------------- //
 
+// FIXME: update target?
 bool Target::changeTarget() {
 
-	if ( !isTargetQueueEmpty() ) {
+	// object tracking mode has priority over typical static target accomplishment
+	if ( isFollowing() ) {
+
+		if ( !updateFollowedTarget() ) { // FIXME: public?
+			return (false);
+		}
+
+	} else if ( !isTargetQueueEmpty() ) {
 
 		// pop a target from the queue
 		if ( !setNewTarget() ) {
@@ -718,6 +760,7 @@ std::tuple<bool, gazebo::physics::ModelPtr> Target::isModelValid(const std::stri
 ignition::math::Vector3d Target::findReachableDirectionPoint(const ignition::math::Vector3d &pt_intersection,
 		const unsigned int &quarter) {
 
+	/*
 //	ignition::math::Vector3d v(nan, nan, nan);
 	ignition::math::Vector3d v(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
 	ignition::math::Vector3d v_temp = pt_intersection;
@@ -780,6 +823,141 @@ ignition::math::Vector3d Target::findReachableDirectionPoint(const ignition::mat
 	}
 
 	return (v);
+	*/
+
+	return (ignition::math::Vector3d());
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Target::tryToApplyTarget(const ignition::math::Vector3d &pt) {
+
+	// try to generate global path plan
+	if ( generatePathPlan(pt) ) {
+
+		// plan has been generated
+		target_ = pt;
+		target_checkpoint_ = global_planner_.getWaypoint().Pos();
+
+		// Update checkpoint. After choosing a new target, the first checkpoint
+		// is equal (nearly) to the current position. This may generate a problem
+		// while actor is trying to align with target direction.
+		// updateCheckpoint() will set temporary target to some further position
+		// than the one actor is currently in.
+		updateCheckpoint();
+
+		// save event time
+		time_last_target_selection_ = world_ptr_->SimTime();
+
+		// update internal state
+		has_global_plan_ = true;
+		has_target_ = true;
+		return (true);
+
+	}
+	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+// non-const due to `getCost` call
+std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::findBoxPoint(const gazebo::physics::ModelPtr model_ptr) {
+
+	// evaluate if bounding box is valid
+	if ( model_ptr->BoundingBox().Size().Length() == 0.0 ||
+		 std::isinf(model_ptr->BoundingBox().Size().Length()) ||
+		 std::isnan(model_ptr->BoundingBox().Size().Length()) )
+	{
+		return (std::make_tuple(false, ignition::math::Vector3d(), ignition::math::Vector3d()));
+	}
+
+	// ========================================================================
+//	/* check the line's direction and based on the angle shift
+//	 * the intersection point a little in proper direction */
+//	double line_angle = std::atan2(line.Direction().Y(), line.Direction().X());
+
+	// ========================================================================
+//	// evaluate bigger increase of the coordinate
+//	if ( line.Direction().X() >= line.Direction().Y() ) {
+//		// line's direction value is bigger (or equal) along the X axis
+//	} else {
+//		// line's direction value is bigger (or equal) along the Y axis
+//	}
+
+	// ========================================================================
+	// ========================================================================
+	// ========================================================================
+
+	/* let's find the line from the current actor's pose to the closest
+	 * point of an object's bounding box; shift the point to the free
+	 * space direction a little and set it as a new target;
+	 * this way a rise of an `unreachable target` flag won't occur,
+	 * because target is located in a free space) */
+	ignition::math::Line3d line;
+
+	// Bounding-Box'es Intersect method output store (tuple)
+	ignition::math::Vector3d pt_intersection;
+	bool does_intersect = false;
+
+	// costmap's cell may be problematic (possible collision) - let's try to reach
+	// the model from the opposite side (along the calculated line)
+	ignition::math::Vector3d pt_helper;
+
+	// perform computations 2 times
+	for ( size_t i = 0; i < 2; i++ ) {
+
+		if ( i == 0 ) {
+
+			// line_angle expressed from the actor to an object
+			line.Set( pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.0,
+					  model_ptr->WorldPose().Pos().X(), model_ptr->WorldPose().Pos().Y(), 0.0 );
+
+		} else if ( i == 1 ) {
+
+			// create a helper point which probably help finding
+			// another point of intersection (reachable from the other side);
+			//
+			// NOTE: `pt_intersection` is now (i==1) equal to the edge point
+			// of the bounding box that is closest to the actor's center
+			// (or is nearly the closest, no optimization here)
+			pt_helper.X(pt_intersection.X() + 30.0 * line.Direction().X());
+			pt_helper.X(pt_intersection.Y() + 30.0 * line.Direction().Y());
+
+			// update line points, maintain line direction!
+			line.Set(model_ptr->WorldPose().Pos().X(), model_ptr->WorldPose().Pos().Y(), 0.0,
+					 pt_helper.X(), pt_helper.Y(), 0.0);
+
+		}
+
+		/* NOTE:
+		 * line.Set( model->WorldPose().Pos(), pose_world_.Pos() );
+		 * with commented version line_angle is expressed from object to actor,
+		 * but for some reason Box always return pt of intersection equal
+		 * to BoundingBox'es center (also, all 0.05 signs have to be inverted
+		 * in below `if` conditions) */
+
+		// evaluate intersection point (line and bounding box)
+		std::tie(does_intersect, std::ignore, pt_intersection) = model_ptr->BoundingBox().Intersect(line);
+
+		if ( !does_intersect ) {
+			// this should not happen, something went wrong
+			return (std::make_tuple(false, ignition::math::Vector3d(), ignition::math::Vector3d()));
+			break;
+		}
+
+		// verify whether the point is reachable in terms of costmap
+		if ( global_planner_.getCost(pt_intersection.X(), pt_intersection.Y()) < 100 ) {
+			return (std::make_tuple(true, pt_intersection, line.Direction()));
+			break;
+		}
+
+	} /* for loop end */
+
+	// both intersections were found but the cost is too big - return
+	// point of the last intersection and direction of the line
+	return (std::make_tuple(false, pt_intersection, line.Direction()));
 
 }
 
