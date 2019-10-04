@@ -54,13 +54,19 @@ bool Target::followObject(const std::string &object_name) {
 
 	// temp model ptr in case of a situation when 1 object is already followed
 	// but tracked object name change has been commanded. This prevents the `old object` deletion.
-	gazebo::physics::ModelPtr model_temp = nullptr;
+	gazebo::physics::ModelPtr model_ptr_temp = nullptr;
 	bool is_valid = false;
 
 	// evaluate validity of an object
-	std::tie(is_valid, model_temp) = isModelValid(object_name);
-
+	std::tie(is_valid, model_ptr_temp) = isModelValid(object_name);
 	if ( !is_valid ) {
+		return (false);
+	}
+
+	// check distance between actor and an object (to-be-tracked)
+	ignition::math::Vector3d dist = pose_world_ptr_->Pos() - model_ptr_temp->WorldPose().Pos();
+	if ( dist.Length() <= params_ptr_->getActorParams().target_tolerance ) {
+		std::cout << "Target::followObject - followed object is too close to actor to be tracked" << std::endl;
 		return (false);
 	}
 
@@ -68,7 +74,7 @@ bool Target::followObject(const std::string &object_name) {
 	ignition::math::Vector3d pt_intersection; // dynamic obstacles will not be marked in the costmap
 	ignition::math::Vector3d line_dir;
 
-	std::tie(ok, pt_intersection, std::ignore) = findBoxPoint(model_temp);
+	std::tie(ok, pt_intersection, std::ignore) = findBoxPoint(model_ptr_temp);
 	if ( !ok ) {
 		return (false);
 	}
@@ -76,7 +82,7 @@ bool Target::followObject(const std::string &object_name) {
 	// generate path plan and possibly update the internal state
 	if ( tryToApplyTarget(pt_intersection) ) {
 		// assign new model to the tracked object pointer
-		followed_model_ptr_ = model_temp;
+		followed_model_ptr_ = model_ptr_temp;
 		is_following_ = true;
 		return (true);
 	}
@@ -109,6 +115,14 @@ bool Target::updateFollowedTarget() {
 			return (false);
 		}
 
+		// check distance to the model
+		ignition::math::Vector3d dist = pose_world_ptr_->Pos() - followed_model_ptr_->WorldPose().Pos();
+		if ( dist.Length() <= params_ptr_->getActorParams().target_tolerance ) {
+			// return true as tracking proceeds well - the tracked
+			// object has just stopped or moves very slowly
+			return (true);
+		}
+
 		// try to find line-box intersection point
 		bool found = false;
 		ignition::math::Vector3d pt_target;
@@ -121,11 +135,6 @@ bool Target::updateFollowedTarget() {
 			}
 		}
 		return (false);
-
-//		// the method call comes from the followObject (`follow_object` mode
-//		// has just been activated)
-//		if ( target_known ) {
-//		}
 
 	}
 
@@ -359,17 +368,10 @@ bool Target::chooseNewTarget() {
 
 // ------------------------------------------------------------------- //
 
-// FIXME: update target?
+// FIXME: name - update target?
 bool Target::changeTarget() {
 
-	// object tracking mode has priority over typical static target accomplishment
-	if ( isFollowing() ) {
-
-		if ( !updateFollowedTarget() ) { // FIXME: public?
-			return (false);
-		}
-
-	} else if ( !isTargetQueueEmpty() ) {
+	if ( !isTargetQueueEmpty() ) {
 
 		// pop a target from the queue
 		if ( !setNewTarget() ) {

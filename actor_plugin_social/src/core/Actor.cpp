@@ -500,6 +500,7 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 		std::cout << "\n\n\t\t\tALIGNED\n\n";
 #endif
 		fsm_.setState(actor::ACTOR_STATE_MOVE_AROUND); // restore previous?
+//		fsm_.restorePreviousState();
 	}
 
 	// update the local copy of the actor's pose (orientation only)
@@ -559,8 +560,15 @@ void Actor::stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info) {
 	double dt = prepareForUpdate();
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	// TODO: update position of the tracked object every second
-	// TODO: generate global plan every few-seconds or when target reached
+	// update position of the tracked object and generate global plan every few seconds
+	if ( target_manager_.isFollowing() ) {
+		if ( !target_manager_.updateFollowedTarget() ) {
+			target_manager_.stopFollowing();
+			fsm_.setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
+		}
+	}
+
+	// NOTE: will not move at the moment
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	double dist_traveled = 0.007; // temp
