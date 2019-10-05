@@ -128,6 +128,9 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	// added up to the `force_interaction_`
 	ignition::math::Vector3d f_alpha_beta;
 
+	// whether obstacle is moving or not (different computation method selected)
+	bool is_dynamic;
+
 	/* model_vel contains model's velocity (world's object or actor) - for the actor this is set differently
 	 * it was impossible to set actor's linear velocity by setting it by the model's class method */
 	ignition::math::Vector3d model_vel;
@@ -195,6 +198,8 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 
 		// ============================================================================
 
+		is_dynamic = isDynamicObstacle(model_vel);
+
 		// model_closest i.e. closest to an actor or the actor's bounding
 		ignition::math::Pose3d actor_closest_to_model_pose = actor_pose;
 		ignition::math::Pose3d model_closest_point_pose = model_ptr->WorldPose();
@@ -250,7 +255,7 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		}
 
 		// based on a parameter and an object type - calculate a force from a static object properly
-		if ( is_an_actor || interaction_static_type_ == INTERACTION_REPULSIVE_EVASIVE ) {
+		if ( is_an_actor || is_dynamic || interaction_static_type_ == INTERACTION_REPULSIVE_EVASIVE ) {
 
 			// calculate interaction force
 			std::tie(f_alpha_beta, distance_v, distance) = computeInteractionForce(	actor_closest_to_model_pose, actor_velocity,
@@ -281,9 +286,9 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		}
 
 		// - - - - fuzzylite & social conductor
-		if ( is_an_actor ) {
+		if ( is_an_actor || is_dynamic ) {
 
-			std::cout << "\n\n\tFuzzy logic processor - " << owner_name_ << "\n";
+			std::cout << "\n\n\tFuzzy logic processor - " << owner_name_ << "\tobstacle: " << model_ptr->GetName() << "\n";
 			fuzzy_processor_.process();
 			std::cout << "" << std::endl << std::endl;
 
@@ -1832,6 +1837,17 @@ bool SocialForceModel::isModelNegligible(const std::string &model_name) {
 	if ( actor::core::Target::isModelNegligible(model_name, params_ptr_->getSfmDictionary().ignored_models_) ||
 		 model_name == owner_name_ ) {
 		// do not save data for objects that should be ignored and for itself
+		return (true);
+	}
+	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool SocialForceModel::isDynamicObstacle(const ignition::math::Vector3d &vel) const {
+
+	if (vel.Length() > 1e-06) {
 		return (true);
 	}
 	return (false);

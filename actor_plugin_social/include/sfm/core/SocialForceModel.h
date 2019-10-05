@@ -304,6 +304,9 @@ private:
 	/// called dictionary here. Uses actor::core::Target static function as helper.
 	bool isModelNegligible(const std::string &model_name);
 
+	/// \brief Evaluates whether an obstacle is dynamic or static
+	bool isDynamicObstacle(const ignition::math::Vector3d &vel) const;
+
 	/// \brief Rotates a given angle by +270/-90 degrees
 	/// \param yaw_actor is the Yaw (rotation around the world Z axis) angle of the actor
 	/// \return New orientation

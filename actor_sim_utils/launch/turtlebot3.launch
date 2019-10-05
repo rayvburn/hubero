@@ -1,0 +1,78 @@
+<launch>
+
+  <env name="TURTLEBOT3_MODEL" value="burger" />                      <!-- default robot type -->
+
+  <arg name="world"           default="living_room_vid_friendly"/>    <!-- cafe_example -->
+  <arg name="gdb"             default="false"/>                       <!-- TRUE requires gazebo plugin to be started separately -->
+  <arg name="mode"            default="navigation"/>                  <!-- turtlebot's working mode -->
+  <arg name="slam_method"     default="gmapping"/>
+
+  <!-- NOTE: only one of below args can be `true` -->
+  <arg name="rviz_actor"      default="false"/>                       <!-- always active -->
+  <arg name="rviz_slam"       default="false"/>                       <!-- active only when `mode` is set to `slam` -->
+  <arg name="rviz_navigation" default="false"/>                       <!-- active only when `mode` is set to `navigation` -->
+  <arg name="rviz_nav_actor"  default="false"/>                       <!-- active only when `mode` is set to `navigation` -->
+  
+
+  <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="x_pos" default="0.0"/>
+  <arg name="y_pos" default="0.0"/>
+  <arg name="z_pos" default="0.0"/>
+
+
+  <!-- world containing people -->
+  <include file="$(find actor_sim_utils)/launch/example_full.launch"> 
+      <arg name="world" value="$(arg world)"/>
+      <arg name="rviz" default="$(arg rviz_actor)"/>
+      <arg name="gdb" default="$(arg gdb)"/>
+  </include>
+
+
+  <!-- robot spawn -->
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro" />
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_urdf"  args="-urdf -model turtlebot3_$(arg model) -x $(arg x_pos) -y $(arg y_pos) -z $(arg z_pos) -param robot_description" />
+
+
+  <!-- NOTE: using default `turtlebot3_slam.launch` along with the rViz configuration (SLAM-oriented) -->
+  <group if="$(eval arg('mode') == 'slam')">
+      <!-- SLAM: Gmapping, Cartographer, Hector, Karto, Frontier_exploration, RTAB-Map -->
+      <include file="$(find turtlebot3_slam)/launch/turtlebot3_slam.launch">
+          <arg name="model" value="$(arg model)"/>
+          <arg name="slam_methods" value="$(arg slam_method)"/>
+          <arg name="open_rviz" value="$(arg rviz_slam)"/>
+      </include>
+  </group>
+
+
+  <!-- NOTE: not using whole default `turtlebot3_navigation.launch` to maintain actor-oriented 
+       rViz configuration and suppress map_server's spawn -->
+  <group if="$(eval arg('mode') == 'navigation')">
+      <!-- Turtlebot3 -->
+      <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
+          <arg name="model" value="$(arg model)" />
+      </include>
+      <!-- AMCL -->
+      <include file="$(find turtlebot3_navigation)/launch/amcl.launch"/>
+      <!-- move_base -->
+      <include file="$(find turtlebot3_navigation)/launch/move_base.launch">
+          <arg name="model" value="$(arg model)" />
+          <arg name="move_forward_only" value="false"/>
+      </include>
+      <!-- rviz -->
+      <group if="$(arg rviz_navigation)"> 
+          <node pkg="rviz" type="rviz" name="rviz" required="true"
+                args="-d $(find turtlebot3_navigation)/rviz/turtlebot3_navigation.rviz"/>
+      </group>
+      <group if="$(arg rviz_nav_actor)"> 
+          <node pkg="rviz" type="rviz" name="rviz" required="true"
+                args="-d $(find actor_sim_utils)/rviz/actor_groups_map_costmap_ext_vis_turtle_nav.rviz"/>
+      </group>
+  </group>
+
+
+  <!-- robot control (remote) -->
+  <node name="rqt_robot_steering" pkg="rqt_robot_steering" type="rqt_robot_steering" />
+
+
+</launch>
+

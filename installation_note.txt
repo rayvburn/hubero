@@ -30,5 +30,5 @@ cd fuzzylite/
 ## directory one level up relative to `fl` folder which contains header files
 `include_directories($ENV{HOME}/libraries/fuzzylite/fuzzylite)`
 
-
-
+## to run Turtlebot3 example the package below needs to be in the workspace (clone it)
+https://github.com/rayvburn/turtlebot3
