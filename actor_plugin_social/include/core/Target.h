@@ -74,6 +74,13 @@ public:
 	bool isFollowing() const;
 
 	/**
+	 * @brief Evaluates whether object tracking mode is active and if followed object
+	 * has been reached (i.e. is close enough, within a `target_tolerance` parameter).
+	 * @return False if object tracking mode is not active
+	 */
+	bool isFollowedObjectReached() const;
+
+	/**
 	 * @brief Tries to find `the closest` edge of the tracked object's bounding box,
 	 * evaluates whether a global plan reaching that point can be found.
 	 * @return True if object tracking is still possible, false if path to the object
@@ -189,7 +196,8 @@ public:
     bool isTargetNotReachedForTooLong() const;
 
     /**
-     * @brief Calculates distance to current target
+     * @brief Calculates a distance to the current target and evaluates if whole global path
+     * has been traveled (i.e. the last checkpoint has been reached)
      * @note Non-const because `has_target_` gets false`d when it turns out that target has been reached.
      * @return True if target is close enough. Threshold distance is a parameter value (`target_tolerance`).
      */
@@ -339,6 +347,10 @@ private:
 
 	/// @brief Flag indicating that actor's current state is object tracking (following)
 	bool is_following_;
+
+	/// @brief Flag indicating that actor is close enough to the tracked object
+	/// so it can be stopped until the model move away.
+	bool is_followed_object_reached_;
 
     /// \@brief Pointer to the currently followed object
     gazebo::physics::ModelPtr followed_model_ptr_;

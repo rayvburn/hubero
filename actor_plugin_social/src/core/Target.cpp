@@ -13,13 +13,14 @@ namespace actor {
 namespace core {
 
 // ------------------------------------------------------------------- //
-Target::Target(): has_target_(false), has_global_plan_(false), is_following_(false), followed_model_ptr_(nullptr) { }
+Target::Target(): has_target_(false), has_global_plan_(false), is_following_(false),
+		is_followed_object_reached_(false), followed_model_ptr_(nullptr) { }
 // ------------------------------------------------------------------- //
 
 Target::Target(gazebo::physics::WorldPtr world_ptr, std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr,
 			   std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr)
 					: has_target_(false), has_global_plan_(false),
-					  is_following_(false), followed_model_ptr_(nullptr) {
+					  is_following_(false), is_followed_object_reached_(false), followed_model_ptr_(nullptr) {
 
 	world_ptr_ = world_ptr;
 	pose_world_ptr_ = pose_world_ptr;
@@ -35,6 +36,7 @@ Target::Target(const Target &obj) {
 	has_target_ = obj.has_target_;
 	has_global_plan_ = obj.has_global_plan_;
 	is_following_ = obj.is_following_;
+	is_followed_object_reached_ = obj.is_followed_object_reached_;
 
 	pose_world_ptr_ = obj.pose_world_ptr_;
 	params_ptr_ = obj.params_ptr_;
@@ -99,30 +101,53 @@ bool Target::isFollowing() const {
 
 // ------------------------------------------------------------------- //
 
+bool Target::isFollowedObjectReached() const {
+	if ( isFollowing() ) {
+		return (is_followed_object_reached_);
+	}
+	return (false);
+}
+
+// ------------------------------------------------------------------- //
+
 bool Target::updateFollowedTarget() {
 
 	// check model's pointer validity (this is an operation which does not consume
 	// much resources so can be performed in each iteration (opposite to a global path generation))
 	if ( followed_model_ptr_ == nullptr ) {
 		is_following_ = false;
+		is_followed_object_reached_ = false;
 		has_target_ = false;
 		has_global_plan_ = false;
 		return (false);
 	}
 
-	// periodically update the tracked object's position
+	// V1: periodically update the tracked object's position
 	if ( (world_ptr_->SimTime() - time_last_follow_plan_).Double() >= 2.0 ) {
+
+	// V2: periodically update the tracked object's position if it does move
+//	if ( (world_ptr_->SimTime() - time_last_follow_plan_).Double() >= 2.0 &&
+//		 (target_ - followed_model_ptr_->WorldPose().Pos()).Length() > (0.1 * params_ptr_->getActorParams().target_tolerance)) {
 
 		// update event time
 		time_last_follow_plan_ = world_ptr_->SimTime();
 
-		// check distance to the model
-		ignition::math::Vector3d dist = pose_world_ptr_->Pos() - followed_model_ptr_->WorldPose().Pos();
-		if ( dist.Length() <= params_ptr_->getActorParams().target_tolerance ) {
-			// return true as tracking proceeds well - the tracked
-			// object has just stopped or moves very slowly
-			return (true);
-		}
+		// DEPRECATED - isTargetReached does that
+//		// check distance to the model
+//		ignition::math::Vector3d dist = pose_world_ptr_->Pos() - followed_model_ptr_->WorldPose().Pos();
+//		if ( dist.Length() <= params_ptr_->getActorParams().target_tolerance ) {
+//			// return true as tracking proceeds well - the tracked
+//			// object has just stopped or moves very slowly
+//			return (true);
+//		}
+
+		// do not generate a new global plan if object is not moving;
+		// NOTE: for some reason static Turtlebot's velocity is:
+		// [0.003461 0.000151 -0.00718]
+		// FIXME: debugging with static bot
+//		if ( followed_model_ptr_->WorldLinearVel().Length() <= 0.01 ) {
+//			return (true);
+//		}
 
 		// try to find line-box intersection point
 		bool found = false;
@@ -154,6 +179,7 @@ bool Target::stopFollowing() {
 
 		// reset internal state
 		is_following_ = false;
+		is_followed_object_reached_ = false;
 		has_target_ = false;
 		has_global_plan_ = false;
 		return (true);
@@ -589,10 +615,34 @@ bool Target::isTargetReached() {
 	// calculate a distance to a target
 	double distance_to_target = (target_ - pose_world_ptr_->Pos()).Length();
 
+	/* NOTE: there is a problem related to the oscillations of the animation position
+	 * while an actor is standing and not moving. This issue is negligible
+	 * when actor is operating in `target reachment` mode. But if `object tracking`
+	 * is active an issue described below occurs.
+	 * Once in `object tracking` mode, `distance_to_target` may be below the given
+	 * threshold (object stopped or sth). The actor's animation immediately changes -
+	 * from `walk` to `stand`.
+	 * While `stand` is active, the position oscillates and may exceed
+	 * the threshold distance (`target_tolerance`) which makes detection of
+	 * renewed object's motion impossible (`is_followed_object_reached_` set
+	 * to false despite of the fact that neither the actor nor the object
+	 * moved explicitly.
+	 * Let's artificially increase the target tolerance in object tracking mode.
+	 */
+	double track_factor = 1.0;
+	if ( is_following_ && is_followed_object_reached_ ) { // although these 2 flags coexist, they are put together just in case
+		// is_followed_object_reached_ is true so the target has been reached
+		// and actor likely stands in front of it waiting until it moves somewhere
+		track_factor = 1.1;
+	}
+
 	// choose a new target position if the actor has reached its current target
 	/* the smaller tolerance the bigger probability that actor will
 	 * step into some obstacle */
-	if ( distance_to_target > params_ptr_->getActorParams().target_tolerance ) {
+	if ( distance_to_target > (track_factor * params_ptr_->getActorParams().target_tolerance) ) {
+		if ( is_following_ ) {
+			is_followed_object_reached_ = false;
+		}
 		return (false);
 	}
 
@@ -600,11 +650,20 @@ bool Target::isTargetReached() {
 	// that path goes near the wall which has to be skipped over to reach
 	// the actual goal)
 	if ( !global_planner_.isTargetReached() ) {
+		if ( is_following_ ) {
+			is_followed_object_reached_ = false;
+		}
 		return (false);
 	}
 
-	// otherwise reset `has_target_` and return true
-	has_target_ = false;
+	// the target location is reached, check `is_following` flag to decide what to do next
+	if ( is_following_ ) {
+		// do not abandon the target if following some object
+		is_followed_object_reached_ = true;
+	} else {
+		// otherwise reset `has_target_` and return true
+		has_target_ = false;
+	}
 
 	return (true);
 

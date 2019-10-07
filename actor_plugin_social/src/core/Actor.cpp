@@ -400,6 +400,7 @@ bool Actor::followObject(const std::string &object_name, const bool &stop_after_
 	// TODO: stop_after_arrival?
 	if ( target_manager_.followObject(object_name) ) {
 		ignored_models_.push_back(object_name);
+		setStance(ActorStance::ACTOR_STANCE_WALK);
 		setState(ActorState::ACTOR_STATE_FOLLOW_OBJECT);
 		return (true);
 	}
@@ -501,8 +502,19 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 #ifndef SILENT_
 		std::cout << "\n\n\t\t\tALIGNED\n\n";
 #endif
-		fsm_.setState(actor::ACTOR_STATE_MOVE_AROUND); // restore previous?
-//		fsm_.restorePreviousState();
+		// change FSM state if aligned
+		if ( fsm_.getStatePrevious() != ACTOR_STATE_ALIGN_TARGET ) {
+			// restore previous only if the previous one is not the current one,
+			// otherwise actor will be stuck
+			std::cout << "state prev: " << fsm_.getStatePrevious() << std::endl;
+//			fsm_.restorePreviousState();
+			setState(fsm_.getStatePrevious());
+		} else {
+			// select experimentally
+//			fsm_.setState(actor::ACTOR_STATE_MOVE_AROUND);
+			setState(actor::ACTOR_STATE_MOVE_AROUND);
+		}
+
 	}
 
 	// update the local copy of the actor's pose (orientation only)
@@ -892,8 +904,7 @@ bool Actor::manageTargetMovingAround() {
 	// evaluate whether a new target has been defined
 	if ( new_target ) {
 		// after selection of a new target, firstly let's rotate to its direction
-		fsm_.setState(actor::ACTOR_STATE_ALIGN_TARGET);
-		updateTransitionFunctionPtr(); // FIXME: this solution...
+		setState(actor::ACTOR_STATE_ALIGN_TARGET);
 		return (false);
 	}
 
@@ -913,7 +924,15 @@ bool Actor::manageTargetTracking() {
 
 	// helper flag
 	bool stop_tracking = false;
-	bool reached = false;
+
+	// flags helping in evaluation whether the tracked object started moving away again
+	bool target_dir_alignment = false;	// whether to change the state to `ALIGN_WITH_TARGET_DIR`
+	bool object_prev_reached = false; 	// by default the tracked object moves away
+	if ( target_manager_.isFollowedObjectReached() ) {
+		// let's save the previous status before performing any further
+		// evaluations (for example `isTargetReached()`)
+		object_prev_reached = true; // tracked object has been stopped so far
+	}
 
 	// try to update a global path leading the actor towards the dynamic object;
 	// this also checks whether an object to follow is selected
@@ -926,16 +945,43 @@ bool Actor::manageTargetTracking() {
 	}
 
 	// check closeness to the target/checkpoint
+	std::cout << "\n" << actor_ptr_->GetName() << "\n" << std::endl;
 	if ( target_manager_.isTargetReached() ) {
 		// actor is close enough to the tracked object (it may not be moving for some time);
 		// return FALSE but do not call stopFollowing and do not change the state,
 		// just do not try to go further at the moment
 		// FIXME: return (false);
-		reached = true;
-	} else if ( target_manager_.isCheckpointReached() ) {
+		// REACHED turns `true` here
+		//
+		// detect change of the `is_followed_object_reached_`
+		// flag (i.e. tracked object started moving again)
+//		if ( !target_manager_.isFollowedObjectReached() && object_prev_reached ) {
+//			target_dir_alignment = true;
+//		}
+	} /* else if ( target_manager_.isCheckpointReached() ) {
+		// take next checkpoint from vector (path)
+		target_manager_.updateCheckpoint();
+	} else if ( !target_manager_.isTargetReached() ) {
+		// detect change of the `is_followed_object_reached_`
+		// flag (i.e. tracked object started moving again)
+		if ( object_prev_reached ) {
+			target_dir_alignment = true;
+		}
+	} */
+	else {
+		// detect change of the `is_followed_object_reached_`
+		// flag (i.e. tracked object started moving again)
+		if ( object_prev_reached ) {
+			target_dir_alignment = true;
+		}
+	}
+
+	if ( target_manager_.isCheckpointReached() ) {
 		// take next checkpoint from vector (path)
 		target_manager_.updateCheckpoint();
 	}
+
+
 
 	// check whether a current checkpoint is abandonable (angle-related)
 	if ( target_manager_.isCheckpointAbandonable() ) {
@@ -952,19 +998,26 @@ bool Actor::manageTargetTracking() {
 	if ( stop_tracking ) {
 		target_manager_.stopFollowing();
 		ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
-		fsm_.setState(ActorState::ACTOR_STATE_MOVE_AROUND);
-		updateTransitionFunctionPtr(); // FIXME: this solution...
+		setState(ActorState::ACTOR_STATE_MOVE_AROUND);
 		return (false);
 	}
 
 	// dynamic target has been reached, do not change the state, just change stance
-	if ( reached ) {
+	if ( target_manager_.isFollowedObjectReached() ) {
 		// make actor stop;
 		// when tracked object will start moving again, then stance will be changed
 		setStance(ActorStance::ACTOR_STANCE_STAND);
 		// update the pose (stance only) because the update event will be broken (stopped)
 		updateStanceOrientation(*pose_world_ptr_);
-		applyUpdate(0.007);
+		applyUpdate(0.001);
+		return (false);
+	}
+
+	// target previously was reached but started moving again - let's align
+	// with direction to its center
+	if ( target_dir_alignment ) {
+		setStance(ActorStance::ACTOR_STANCE_WALK);
+		setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
 		return (false);
 	}
 
