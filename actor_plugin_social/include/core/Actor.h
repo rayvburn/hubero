@@ -177,7 +177,12 @@ private:
     /// \brief Performs few target_manager's condition checks to decide whether
     /// a new target should be set or the current one should remain.
     /// \return True if actor should still try to reach the current target
-    bool manageTarget();
+    bool manageTargetMovingAround();
+
+    /// \brief Performs few target_manager's condition checks to decide whether
+    /// an actor should stay in the object tracking mode.
+    /// \return True if actor should still try to follow the currently selected object
+    bool manageTargetTracking();
 
     /// \brief Helper function to calculate the actor's velocity as it could not be set
     /// in WorldPtr - this is just a workaround for a Gazebo/ActorPlugin bug
@@ -263,7 +268,7 @@ private:
     /// \brief Object that should be followed by actor
     std::string object_to_follow_;
 
-    /// \brief List of models to ignore. Used by SFM
+    /// \brief Dynamic list of models to ignore. Used by SFM
     std::vector<std::string> ignored_models_;
 
     /// \brief Social Force Model interface object

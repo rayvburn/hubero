@@ -101,19 +101,20 @@ bool Target::isFollowing() const {
 
 bool Target::updateFollowedTarget() {
 
+	// check model's pointer validity (this is an operation which does not consume
+	// much resources so can be performed in each iteration (opposite to a global path generation))
+	if ( followed_model_ptr_ == nullptr ) {
+		is_following_ = false;
+		has_target_ = false;
+		has_global_plan_ = false;
+		return (false);
+	}
+
 	// periodically update the tracked object's position
 	if ( (world_ptr_->SimTime() - time_last_follow_plan_).Double() >= 2.0 ) {
 
 		// update event time
 		time_last_follow_plan_ = world_ptr_->SimTime();
-
-		// check model's pointer validity
-		if ( followed_model_ptr_ == nullptr ) {
-			is_following_ = false;
-			has_target_ = false;
-			has_global_plan_ = false;
-			return (false);
-		}
 
 		// check distance to the model
 		ignition::math::Vector3d dist = pose_world_ptr_->Pos() - followed_model_ptr_->WorldPose().Pos();
@@ -492,26 +493,53 @@ bool Target::isTargetStillReachable() {
 		// save event time
 		time_last_reachability_ = world_ptr_->SimTime();
 
-		// iterate over all models
-		for (unsigned int i = 0; i < world_ptr_->ModelCount(); ++i) {
+		if ( !is_following_ ) {
 
-			// FIXME: cafe is a specific model that represents whole world
-			if ( world_ptr_->ModelByIndex(i)->GetName() == "cafe" ) {
-				continue;
-			}
+			// non-following handler (simple target reaching operation)
+			//
+			// iterate over all models
+			for (unsigned int i = 0; i < world_ptr_->ModelCount(); ++i) {
 
-			// check if model's bounding box contains target point
-			if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), target_) ) {
+				// FIXME: cafe is a specific model that represents whole world
+				if ( world_ptr_->ModelByIndex(i)->GetName() == "cafe" ) {
+					continue;
+				}
 
-				std::cout << "isTargetStillReachable()" << std::endl;
-//				std::cout << "\t" << actor_ptr_->GetName() << "\tDETECTED TARGET UNREACHABLE!" << std::endl;
-				std::cout << "\ttarget: " << target_ << "\tmodel containing: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
-				std::cout << std::endl;
-				std::cout << std::endl;
-				std::cout << std::endl;
+				// check if model's bounding box contains target point
+				if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), target_) ) {
+
+					std::cout << "isTargetStillReachable()" << std::endl;
+//					std::cout << "\t" << actor_ptr_->GetName() << "\tDETECTED TARGET UNREACHABLE!" << std::endl;
+					std::cout << "\ttarget: " << target_ << "\tmodel containing: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
+					std::cout << std::endl;
+					std::cout << std::endl;
+					std::cout << std::endl;
+					return (false);
+
+				} /* doesContain */
+
+			} /* for */
+
+		} else {
+
+			// object tracking handler
+			//
+			if ( followed_model_ptr_ == nullptr ) {
 				return (false);
-
 			}
+
+			// iterate over all models, try to find the same model in the database
+			for (unsigned int i = 0; i < world_ptr_->ModelCount(); ++i) {
+
+				if ( world_ptr_->ModelByIndex(i) == followed_model_ptr_ ) {
+					return (true);
+					break;
+				} /* if (pointer matches) */
+
+			} /* for */
+
+			// model of given name was not found (loop was not `broken`)
+			return (false);
 
 		}
 
@@ -527,6 +555,11 @@ bool Target::isTargetNotReachedForTooLong() const {
 
 	// firstly check whether some target is set
 	if ( !has_target_ ) {
+		return (false);
+	}
+
+	// object tracking does not have a time limit
+	if ( is_following_ ) {
 		return (false);
 	}
 
