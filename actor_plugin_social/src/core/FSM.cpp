@@ -80,6 +80,12 @@ actor::ActorState FSM::getState() const {
 
 // ------------------------------------------------------------------- //
 
+actor::ActorState FSM::getStatePrevious() const {
+	return (state_prev_);
+}
+
+// ------------------------------------------------------------------- //
+
 /// check if state with given name has already been added
 std::tuple<bool, unsigned int> FSM::isStateValid(const actor::ActorState &new_state) {
 

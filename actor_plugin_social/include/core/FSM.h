@@ -48,6 +48,9 @@ public:
 	/// \brief Returns a current state of an FSM
 	actor::ActorState getState() const;
 
+	/// \brief Returns a previous state of an FSM
+	actor::ActorState getStatePrevious() const;
+
 	/// \brief Default destructor
 	virtual ~FSM();
 
