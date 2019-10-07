@@ -10,6 +10,7 @@
 #include <tgmath.h>			// fabs()
 #include <math.h>			// exp()
 #include <core/Target.h>	// isModelNegligible static function
+#include <algorithm>    	// std::find
 
 // ----------------------------------------
 
@@ -111,7 +112,7 @@ void SocialForceModel::init(std::shared_ptr<const actor::ros_interface::ParamLoa
 bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world_ptr,
 		const ignition::math::Pose3d &actor_pose, const ignition::math::Vector3d &actor_velocity,
 		const ignition::math::Vector3d &actor_target, const actor::core::CommonInfo &actor_info,
-		const double &dt)
+		const double &dt, const std::vector<std::string> &ignored_models_v)
 {
 
 	// reset internal state at the start of computations
@@ -160,8 +161,13 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		// save new model's pointer
 		model_ptr = world_ptr->ModelByIndex(i);
 
-		// check whether social force calculation is necessary
+		// check whether social force calculation is necessary (list given by system parameters)
 		if ( isModelNegligible(model_ptr->GetName()) ) {
+			continue;
+		}
+
+		// check model name's presence in the dynamic list of negligible objects
+		if ( isModelNegligible(model_ptr->GetName(), ignored_models_v) ) {
 			continue;
 		}
 
@@ -1832,13 +1838,33 @@ ignition::math::Angle SocialForceModel::computeYawMovementDirection(const igniti
 
 // ------------------------------------------------------------------- //
 
-bool SocialForceModel::isModelNegligible(const std::string &model_name) {
+bool SocialForceModel::isModelNegligible(const std::string &model_name) const {
 
 	if ( actor::core::Target::isModelNegligible(model_name, params_ptr_->getSfmDictionary().ignored_models_) ||
 		 model_name == owner_name_ ) {
 		// do not save data for objects that should be ignored and for itself
 		return (true);
 	}
+	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool SocialForceModel::isModelNegligible(const std::string &model_name,
+		const std::vector<std::string> ignored_models_v) const {
+
+	if ( ignored_models_v.size() == 0 ) {
+		return (false);
+	}
+
+	std::vector<std::string>::const_iterator it;
+	it = std::find(ignored_models_v.begin(), ignored_models_v.end(), model_name);
+	if ( it != ignored_models_v.end() ) {
+		// found
+		return (true);
+	}
+	// not found on the ignored models list -> non-ignorable = non-negligible
 	return (false);
 
 }

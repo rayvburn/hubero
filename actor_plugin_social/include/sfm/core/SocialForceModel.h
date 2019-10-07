@@ -155,7 +155,8 @@ public:
 	/// into consideration
 	bool computeSocialForce(const gazebo::physics::WorldPtr &world_ptr,
 			const ignition::math::Pose3d &actor_pose, const ignition::math::Vector3d &actor_velocity,
-			const ignition::math::Vector3d &actor_target, const actor::core::CommonInfo &actor_info, const double &dt);
+			const ignition::math::Vector3d &actor_target, const actor::core::CommonInfo &actor_info,
+			const double &dt, const std::vector<std::string> &ignored_models_v);
 
 	/// \brief Function which computes a new pose
 	/// for an actor based on current one and the calculated
@@ -302,7 +303,11 @@ private:
 
 	/// \brief Checks whether a given object is listed in the `ignored models` set of objects
 	/// called dictionary here. Uses actor::core::Target static function as helper.
-	bool isModelNegligible(const std::string &model_name);
+	bool isModelNegligible(const std::string &model_name) const;
+
+	/// \brief Checks whether a given object is listed in the `ignored models_v`
+	/// dynamic set of objects.
+	bool isModelNegligible(const std::string &model_name, const std::vector<std::string> ignored_models_v) const;
 
 	/// \brief Evaluates whether an obstacle is dynamic or static
 	bool isDynamicObstacle(const ignition::math::Vector3d &vel) const;
