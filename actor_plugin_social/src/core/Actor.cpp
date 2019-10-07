@@ -401,7 +401,13 @@ bool Actor::followObject(const std::string &object_name, const bool &stop_after_
 	if ( target_manager_.followObject(object_name) ) {
 		ignored_models_.push_back(object_name);
 		setStance(ActorStance::ACTOR_STANCE_WALK);
+		// NOTE: to make actor face the target first,
+		// there must be an order of calls as below:
 		setState(ActorState::ACTOR_STATE_FOLLOW_OBJECT);
+		setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
+		// this forces FSM to back to follow object state after
+		// successful alignment (previous state is equal to
+		// `follow_object` after alignment)
 		return (true);
 	}
 	return (false);
@@ -506,12 +512,9 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 		if ( fsm_.getStatePrevious() != ACTOR_STATE_ALIGN_TARGET ) {
 			// restore previous only if the previous one is not the current one,
 			// otherwise actor will be stuck
-			std::cout << "state prev: " << fsm_.getStatePrevious() << std::endl;
-//			fsm_.restorePreviousState();
 			setState(fsm_.getStatePrevious());
 		} else {
 			// select experimentally
-//			fsm_.setState(actor::ACTOR_STATE_MOVE_AROUND);
 			setState(actor::ACTOR_STATE_MOVE_AROUND);
 		}
 
@@ -918,7 +921,6 @@ bool Actor::manageTargetTracking() {
 
 	// check if call is executed for a proper mode
 	if ( !target_manager_.isFollowing() ) {
-		// FIXME: this should not happen
 		return (false);
 	}
 
@@ -941,47 +943,22 @@ bool Actor::manageTargetTracking() {
 		// from the simulation or global plan cannot be found)
 		// TODO: change internal state? try again few times (internally)?
 		stop_tracking = true;
-		// FIXME: return (false);
 	}
 
 	// check closeness to the target/checkpoint
 	std::cout << "\n" << actor_ptr_->GetName() << "\n" << std::endl;
 	if ( target_manager_.isTargetReached() ) {
 		// actor is close enough to the tracked object (it may not be moving for some time);
-		// return FALSE but do not call stopFollowing and do not change the state,
+		// do not call stopFollowing etc and do not change the state,
 		// just do not try to go further at the moment
-		// FIXME: return (false);
-		// REACHED turns `true` here
-		//
-		// detect change of the `is_followed_object_reached_`
+	} else if ( object_prev_reached ) {
+		// detects change of the `is_followed_object_reached_`
 		// flag (i.e. tracked object started moving again)
-//		if ( !target_manager_.isFollowedObjectReached() && object_prev_reached ) {
-//			target_dir_alignment = true;
-//		}
-	} /* else if ( target_manager_.isCheckpointReached() ) {
-		// take next checkpoint from vector (path)
-		target_manager_.updateCheckpoint();
-	} else if ( !target_manager_.isTargetReached() ) {
-		// detect change of the `is_followed_object_reached_`
-		// flag (i.e. tracked object started moving again)
-		if ( object_prev_reached ) {
-			target_dir_alignment = true;
-		}
-	} */
-	else {
-		// detect change of the `is_followed_object_reached_`
-		// flag (i.e. tracked object started moving again)
-		if ( object_prev_reached ) {
-			target_dir_alignment = true;
-		}
-	}
-
-	if ( target_manager_.isCheckpointReached() ) {
+		target_dir_alignment = true;
+	} else if ( target_manager_.isCheckpointReached() ) {
 		// take next checkpoint from vector (path)
 		target_manager_.updateCheckpoint();
 	}
-
-
 
 	// check whether a current checkpoint is abandonable (angle-related)
 	if ( target_manager_.isCheckpointAbandonable() ) {
@@ -990,7 +967,6 @@ bool Actor::manageTargetTracking() {
 
 	// check if the tracked object still exists in the world since last target selection
 	if ( !target_manager_.isTargetStillReachable() ) {
-		// FIXME: return (false);
 		stop_tracking = true;
 	}
 
@@ -1134,7 +1110,7 @@ void Actor::updateTransitionFunctionPtr() {
 	case(ACTOR_STATE_FOLLOW_OBJECT):
 			std::cout << "State: \tfollowObject" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerFollowObject; 	// &this->Actor::stateHandlerFollowObject;
-			setStance(ACTOR_STANCE_SITTING);
+			setStance(ACTOR_STANCE_WALK);
 			break;
 	case(ACTOR_STATE_TELEOPERATION):
 			std::cout << "State: \tteleoperation" << std::endl;

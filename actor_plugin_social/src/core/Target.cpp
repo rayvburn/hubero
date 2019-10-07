@@ -123,11 +123,15 @@ bool Target::updateFollowedTarget() {
 	}
 
 	// V1: periodically update the tracked object's position
-	if ( (world_ptr_->SimTime() - time_last_follow_plan_).Double() >= 2.0 ) {
+	//if ( (world_ptr_->SimTime() - time_last_follow_plan_).Double() >= 2.0 ) {
 
 	// V2: periodically update the tracked object's position if it does move
-//	if ( (world_ptr_->SimTime() - time_last_follow_plan_).Double() >= 2.0 &&
-//		 (target_ - followed_model_ptr_->WorldPose().Pos()).Length() > (0.1 * params_ptr_->getActorParams().target_tolerance)) {
+	if ( (world_ptr_->SimTime() - time_last_follow_plan_).Double() >= 2.0 &&
+		 (target_ - followed_model_ptr_->WorldPose().Pos()).Length() > (0.25 * params_ptr_->getActorParams().target_tolerance)) {
+
+		// debugging model oscillations:
+		// FIXME: about 0.22 m for a completely static object? is that normal? ODE?
+		//std::cout << "oscillation range: " << (target_ - followed_model_ptr_->WorldPose().Pos()).Length() << std::endl;
 
 		// update event time
 		time_last_follow_plan_ = world_ptr_->SimTime();
@@ -633,7 +637,7 @@ bool Target::isTargetReached() {
 	if ( is_following_ && is_followed_object_reached_ ) { // although these 2 flags coexist, they are put together just in case
 		// is_followed_object_reached_ is true so the target has been reached
 		// and actor likely stands in front of it waiting until it moves somewhere
-		track_factor = 1.1;
+		track_factor = 1.05;
 	}
 
 	// choose a new target position if the actor has reached its current target
