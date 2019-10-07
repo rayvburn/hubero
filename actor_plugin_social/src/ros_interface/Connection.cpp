@@ -149,8 +149,9 @@ bool Connection::srvSetStanceCallback(actor_sim_srv::SetStance::Request &req, ac
 bool Connection::srvFollowObjectCallback(actor_sim_srv::FollowObject::Request &req, actor_sim_srv::FollowObject::Response &resp) {
 
 	std::cout << "\nsrvFollowObjectCallback()" << "\t" << namespace_ << "\n" << std::endl;
-	// TODO
+
 	// take ownership of the Actor shared_ptr
+	resp.flag = actor_ptr_.lock()->followObject(req.object_name, req.stop_after_finish);
 
 	return (true);
 
