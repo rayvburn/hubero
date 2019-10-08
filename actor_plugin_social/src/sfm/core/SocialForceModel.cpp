@@ -19,6 +19,10 @@ static bool print_info = false;
 #include "sfm/core/SFMDebug.h"
 #include "BoundingEllipseDebug.h"
 
+// #define SFM_DEBUG_LARGE_VECTOR_LENGTH
+// #define SFM_FUZZY_PROC_INDICATORS
+// #define SFM_PRINT_FORCE_RESULTS
+
 // ----------------------------------------
 
 
@@ -294,9 +298,13 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		// - - - - fuzzylite & social conductor
 		if ( is_an_actor || is_dynamic ) {
 
+			#ifdef SFM_FUZZY_PROC_INDICATORS
 			std::cout << "\n\n\tFuzzy logic processor - " << owner_name_ << "\tobstacle: " << model_ptr->GetName() << "\n";
+			#endif
 			fuzzy_processor_.process();
+			#ifdef SFM_FUZZY_PROC_INDICATORS
 			std::cout << "" << std::endl << std::endl;
+			#endif
 
 			// store a term with the highest membership
 			std::string region;
@@ -308,7 +316,9 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 
 			// verbose interpretation of the selected output term (region)
 			social_conductor_.apply(region);
+			#ifdef SFM_FUZZY_PROC_INDICATORS
 			std::cout << "\n\n\tSocial conductor - " << owner_name_ << "\t" << social_conductor_.getSocialVector() << std::endl << std::endl;
+			#endif
 			force_social_ += social_conductor_.getSocialVector();
 
 		}
@@ -329,10 +339,12 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 
 #endif // end of `#ifdef CALCULATE_INTERACTION`
 
+#ifdef SFM_PRINT_FORCE_RESULTS
 	if ( print_info ) {
 		std::cout << "-----------------------\n";
 		std::cout << owner_name_ << " | SocialForce: " << force_combined_ << "\tinternal: " << force_internal_ << "\tinteraction: " << force_interaction_ << "\tsocial: " << force_social_;
 	}
+#endif
 
 #ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	( SfmGetPrintData() ) ? (print_info = false) : (0);
@@ -345,19 +357,23 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	( SfmGetPrintData() ) ? (print_info = true) : (0);
 #endif
 
+#ifdef SFM_PRINT_FORCE_RESULTS
 	if ( print_info ) {
 		std::cout << "\n" << owner_name_ << " | finalValue: " << force_combined_ << "\tlength: " << force_combined_.Length() << std::endl;
 	}
+#endif
 
 #ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	( SfmGetPrintData() ) ? (print_info = false) : (0);
 #endif
 
+#ifdef SFM_PRINT_FORCE_RESULTS
 	std::cout << "\n\t\tINTERNAL: \t" << force_internal_ << std::endl;
 	std::cout << "\t\tINTERACTION: \t" << force_interaction_ << std::endl;
 	std::cout << "\t\tSOCIAL: \t" <<  force_social_ << std::endl;
 	std::cout << "\t\tTOTAL: \t\t" << force_combined_ << std::endl;
 	std::cout << "**************************************************************************\n\n";
+#endif
 
 	return (true);
 
@@ -584,11 +600,13 @@ ignition::math::Vector3d SocialForceModel::computeInternalForce(const ignition::
 	f_alpha.Z(0.0);
 
 	// FIXME: debugging large vector length ----------------
+#ifdef SFM_DEBUG_LARGE_VECTOR_LENGTH
 	std::cout << "\t-  -  -  - internal force -  -  -  -  -  -  -  " << std::endl;
 	std::cout << "\ttarget: " << actor_target.X() << " " << actor_target.Y() << "\tposition: " << actor_pose.Pos().X() << " " << actor_pose.Pos().Y() << "\tto_goal_v: " << ideal_vel_vector.X() << " " << ideal_vel_vector.Y() << std::endl;
 	std::cout << "\tactor_vel: " << actor_vel.X() << " " << actor_vel.Y() << "\tideal_vel: " << ideal_vel_vector.X() << " " << ideal_vel_vector.Y() << "\tvec_diff: " << (ideal_vel_vector - actor_vel).X() << " " << (ideal_vel_vector - actor_vel).Y() << std::endl;
 	std::cout << "\ttotal: " << factor_force_internal_ * f_alpha.X() << " " << factor_force_internal_ * f_alpha.Y() << std::endl;
 	std::cout << std::endl;
+#endif
 	// ----------------------------------------------
 
 #ifdef DEBUG_INTERNAL_ACC
@@ -775,12 +793,14 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 
 	// -----------------------------------------------------
 	// FIXME: debugging large vector length ----------------
+#ifdef SFM_DEBUG_LARGE_VECTOR_LENGTH
 	std::cout << "\t-  -  -  - interaction force -  -  -  -  -  -  -  " << std::endl;
 	std::cout << "\tΘ_αß: " << theta_alpha_beta << "\tv_rel: " << v_rel << "\tdist: " << d_alpha_beta_length << std::endl;
 	std::cout << "\texpNORMAL: " << exp_normal << "\texpPERP: " << exp_perpendicular << "\tFOV_factor: " << fov_factor << std::endl;
 	std::cout << "\tNORMAL: " << factor_force_interaction_ * n_alpha_scaled.X() << " " << factor_force_interaction_ * n_alpha_scaled.Y() << "\tPERP: " << factor_force_interaction_ * p_alpha_scaled.X() << " " << factor_force_interaction_ * p_alpha_scaled.Y() << std::endl;
 	std::cout << "\ttotal: " << factor_force_interaction_ * (n_alpha_scaled + p_alpha_scaled).X() << " " << factor_force_interaction_ * (n_alpha_scaled + p_alpha_scaled).Y() << std::endl;
 	std::cout << std::endl;
+#endif
 	// -----------------------------------------------------
 
 	// extra factor - applicable only for dynamic objects
@@ -832,7 +852,7 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 	// social conductor
 	social_conductor_.setDirection(alpha_dir_world);
 	social_conductor_.setDistance(d_alpha_beta_length);
-	std::cout << "\tSocialConductorSetters | alpha_dir: " << alpha_dir_world << "\t\tdist: " << d_alpha_beta_length << std::endl;
+//	std::cout << "\tSocialConductorSetters | alpha_dir: " << alpha_dir_world << "\t\tdist: " << d_alpha_beta_length << std::endl;
 	// --------------------------------------------------------
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
@@ -968,6 +988,7 @@ SocialForceModel::computeForceStaticObstacle(const ignition::math::Pose3d &actor
 
 	// -----------------------------------------------------
 	// FIXME: debugging large vector length ----------------
+#ifdef SFM_DEBUG_LARGE_VECTOR_LENGTH
 	if ( factor_force_interaction_ * f_alpha_i.Length() > 5.0 ) {
 		std::cout << "\t-  -  -  - static obstacle force -  -  -  -  -  -  -  " << std::endl;
 		std::cout << "\t-  -  -  - " << SfmDebugGetCurrentObjectName() << "-  -  -  -  -  -  -  " << std::endl;
@@ -975,6 +996,7 @@ SocialForceModel::computeForceStaticObstacle(const ignition::math::Pose3d &actor
 		std::cout << "\tf_alpha_i: " << factor_force_interaction_*f_alpha_i.X() << " " << factor_force_interaction_*f_alpha_i.Y() << std::endl;
 		std::cout << std::endl;
 	}
+#endif
 	// -----------------------------------------------------
 
 #ifdef DEBUG_FORCE_EACH_OBJECT

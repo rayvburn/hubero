@@ -19,6 +19,8 @@ namespace fuzz {
 //#define PROCESSOR_EXTRA_TERM_CROSS_FRONT 	(0x04)
 //#define PROCESSOR_EXTRA_TERM_CROSS_BEHIND 	(0x08)
 
+// #define PROCESSOR_PRINT_DEBUG_INFO
+
 Processor::Processor():
 //		  term_extra_status_(PROCESSOR_EXTRA_TERM_NONE),
 		  d_alpha_beta_angle_(0.0),
@@ -389,6 +391,7 @@ void Processor::updateRegions() {
 	// calculate the gamma angle for the current alpha-beta configuration
 	// FIXME: debugging only
 	ignition::math::Angle gamma(d_alpha_beta_angle_ - alpha_dir_ - beta_dir_);	gamma.Normalize();
+#ifdef PROCESSOR_PRINT_DEBUG_INFO
 	std::cout << "gamma_eq: " << gamma_eq.Radian() << "\t\tgamma_opp: " << gamma_opp.Radian() << "\t\tgamma_cc: " << gamma_cc.Radian() << std::endl;
 	// print only `side`
 	if ( side == 'l' ) {
@@ -396,6 +399,7 @@ void Processor::updateRegions() {
 	} else if ( side == 'r' ) {
 		std::cout << "----RIGHT" << std::endl;
 	}
+#endif
 	// - - - - - -
 
 }
@@ -421,25 +425,26 @@ void Processor::process() {
     engine_.process();
 
     // - - - - - - print meaningful data
+
+    #ifdef PROCESSOR_PRINT_DEBUG_INFO
     // FIXME: debugging only
     std::cout << "location\t value: " << location_.getValue() << "\tmemberships: " << location_.fuzzify(location_.getValue()) << std::endl;
     std::cout << "direction\t value: " << direction_.getValue() << "\tmemberships: " << direction_.fuzzify(direction_.getValue()) << std::endl;
     std::cout << "output\t\t value: " << social_behavior_.getValue() << std::endl;
     std::cout << "\t\tfuzzyOut: " << social_behavior_.fuzzyOutputValue();
+#endif
 
 	fl::scalar y_highest_temp = fl::nan;
 	fl::Term* term_highest_ptr = social_behavior_.highestMembership(social_behavior_.getValue(), &y_highest_temp);
 
 	// check whether proper term was found, if not - `nullptr` will be detected
-	if ( term_highest_ptr == nullptr ) {
-		int abc = 0;
-		abc++;
-		abc++;
-	} else {
+	if ( term_highest_ptr != nullptr ) {
 		output_term_name_ = term_highest_ptr->getName();
 	}
 
+#ifdef PROCESSOR_PRINT_DEBUG_INFO
 	std::cout << "\n\t\tname: " << output_term_name_ << "\theight: " << y_highest_temp << std::endl;
+#endif
 
 	// NOTE: fl::variable::fuzzyOutputValue() returns a list of available terms
 	// with a corresponding membership
@@ -453,9 +458,11 @@ void Processor::process() {
 	// fuzzyOutputValue()	-> 	0.239/turn_left_accelerate + 0.266/accelerate + 0.541/go_along
 	// fuzzify(fl::scalar)	-> 	0.000/turn_left_accelerate + 0.000/accelerate + 1.000/go_along
 
+#ifdef PROCESSOR_PRINT_DEBUG_INFO
 	// FIXME: make it like the absolute function (decreasing on both side of the edge - 0.5)
 	double output = static_cast<double>(social_behavior_.getValue());
 	output_term_fitness_ = output - std::floor(output);
+#endif
 
 }
 
