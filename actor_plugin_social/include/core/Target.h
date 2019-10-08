@@ -300,6 +300,11 @@ private:
 	 */
 	ignition::math::Vector3d findReachableDirectionPoint(const ignition::math::Vector3d &pt_intersection, const unsigned int &quarter);
 
+	/**
+	 * @brief Resets all time stamps, their value will be set up to the current time.
+	 */
+	void resetTimestamps();
+
     /// @brief Current target location
     ignition::math::Vector3d target_;
 

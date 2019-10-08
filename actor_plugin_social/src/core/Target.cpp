@@ -273,11 +273,37 @@ bool Target::setNewTarget(const std::string &object_name) {
 		return (false);
 	}
 
-	// temp
-	ignition::math::Vector3d pt_intersection;
+	// try to find line-box intersection point
+	ignition::math::Vector3d pt_target;
+	ignition::math::Vector3d dir;
+	std::tie(std::ignore, pt_target, dir) = findBoxPoint(model); // `found` will be false for sure - object's edge (cost > 250)
 
-	// return status according to `setNewTarget` operation success/failure
-	return (setNewTarget(ignition::math::Pose3d(pt_intersection, model->WorldPose().Rot())));
+	// try to find a safe point near the target object whose
+	// cost (according to the global planner is small enough)
+	int tries_num = 10; // along with 0.5 factor below - maximum move-away from the intersection point is 5 m
+	while (tries_num--) {
+
+		// dbg
+		double pt_target_x = pt_target.X();
+		double pt_target_y = pt_target.Y();
+		int cost = global_planner_.getCost(pt_target.X(), pt_target.Y());
+
+//		if ( global_planner_.getCost(pt_target.X(), pt_target.Y()) > 100 ) {
+		if ( cost > 100 ) {
+			// move the point a little further according to line direction;
+			// move in the opposite direction (towards actor going from
+			// the obstacle)
+			pt_target.X(pt_target.X() - 0.5 * dir.X());
+			pt_target.Y(pt_target.Y() - 0.5 * dir.Y());
+			continue;
+		}
+
+		return (setNewTarget(pt_target));
+
+	}
+
+	// a point with a low cost was not found
+	return (false);
 
 }
 
@@ -946,7 +972,7 @@ bool Target::tryToApplyTarget(const ignition::math::Vector3d &pt) {
 		updateCheckpoint();
 
 		// save event time
-		time_last_target_selection_ = world_ptr_->SimTime();
+		resetTimestamps(); // does -> | time_last_target_selection_ = world_ptr_->SimTime(); | and even more
 
 		// update internal state
 		has_global_plan_ = true;
@@ -1008,6 +1034,12 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 
 		if ( i == 0 ) {
 
+			// dbg
+			double ln_x1 = pose_world_ptr_->Pos().X();
+			double ln_y1 = pose_world_ptr_->Pos().Y();
+			double ln_x2 = model_ptr->WorldPose().Pos().X();
+			double ln_y2 = model_ptr->WorldPose().Pos().Y();
+
 			// line_angle expressed from the actor to an object
 			line.Set( pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.0,
 					  model_ptr->WorldPose().Pos().X(), model_ptr->WorldPose().Pos().Y(), 0.0 );
@@ -1021,11 +1053,23 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 			// of the bounding box that is closest to the actor's center
 			// (or is nearly the closest, no optimization here)
 			pt_helper.X(pt_intersection.X() + 30.0 * line.Direction().X());
-			pt_helper.X(pt_intersection.Y() + 30.0 * line.Direction().Y());
+			pt_helper.Y(pt_intersection.Y() + 30.0 * line.Direction().Y());
+
+			// dbg
+			double ln_x1 = model_ptr->WorldPose().Pos().X();
+			double ln_y1 = model_ptr->WorldPose().Pos().Y();
+			double ln_x2 = pt_helper.X();
+			double ln_y2 = pt_helper.Y();
 
 			// update line points, maintain line direction!
 			line.Set(model_ptr->WorldPose().Pos().X(), model_ptr->WorldPose().Pos().Y(), 0.0,
 					 pt_helper.X(), pt_helper.Y(), 0.0);
+
+			// dbg
+			double line_dir_x = line.Direction().X();
+			double line_dir_y = line.Direction().Y();
+			int abc = 0;
+			abc++;
 
 		}
 
@@ -1039,11 +1083,20 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 		// evaluate intersection point (line and bounding box)
 		std::tie(does_intersect, std::ignore, pt_intersection) = model_ptr->BoundingBox().Intersect(line);
 
+		// dbg
+		double pt_inter_x = pt_intersection.X();
+		double pt_inter_y = pt_intersection.Y();
+
 		if ( !does_intersect ) {
 			// this should not happen, something went wrong
 			return (std::make_tuple(false, ignition::math::Vector3d(), ignition::math::Vector3d()));
 			break;
 		}
+
+		// dbg
+		int cost = global_planner_.getCost(pt_intersection.X(), pt_intersection.Y());
+		double line_dir_x = line.Direction().X();
+		double line_dir_y = line.Direction().Y();
 
 		// verify whether the point is reachable in terms of costmap
 		if ( global_planner_.getCost(pt_intersection.X(), pt_intersection.Y()) < 100 ) {
@@ -1056,6 +1109,17 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 	// both intersections were found but the cost is too big - return
 	// point of the last intersection and direction of the line
 	return (std::make_tuple(false, pt_intersection, line.Direction()));
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Target::resetTimestamps() {
+
+	time_last_target_selection_ = world_ptr_->SimTime();
+	time_last_reachability_ = world_ptr_->SimTime();
+//	time_last_abandonability_ = world_ptr_->SimTime();
+	time_last_follow_plan_ = world_ptr_->SimTime();
 
 }
 
