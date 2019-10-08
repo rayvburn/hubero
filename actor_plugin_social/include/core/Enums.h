@@ -24,6 +24,8 @@ typedef enum {
 	ACTOR_STATE_ALIGN_TARGET = 0,//!< ACTOR_STATE_ALIGN_TARGET rotation to make actor face the target
 	ACTOR_STATE_STUCK,           //!< ACTOR_STATE_STUCK
 	ACTOR_STATE_MOVE_AROUND,     //!< ACTOR_STATE_MOVE_AROUND periodically choose a random goal and try to reach it
+	ACTOR_STATE_TARGET_REACHING, //!< ACTOR_STATE_TARGET_REACHING: state is started via SetNewTargetCall (see actor::core::Actor class); after reaching a given (single) target actor stops and waits for next command
+	ACTOR_STATE_LIE_DOWN,		 //!< ACTOR_STATE_LIE_DOWN
 	ACTOR_STATE_STOP_AND_STARE,  //!< ACTOR_STATE_STOP_AND_STARE
 	ACTOR_STATE_FOLLOW_OBJECT,   //!< ACTOR_STATE_FOLLOW_OBJECT
 	ACTOR_STATE_TELEOPERATION    //!< ACTOR_STATE_TELEOPERATION

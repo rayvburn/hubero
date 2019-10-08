@@ -150,6 +150,7 @@ public:
     /// \brief Handlers for each state
     void stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info);
     void stateHandlerMoveAround		(const gazebo::common::UpdateInfo &info);
+    void stateHandlerStopAndStare	(const gazebo::common::UpdateInfo &info);
     void stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info);
     void stateHandlerTeleoperation 	(const gazebo::common::UpdateInfo &info);
 

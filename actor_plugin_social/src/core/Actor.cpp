@@ -213,6 +213,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	// add states for FSM
 	fsm_.addState(ACTOR_STATE_ALIGN_TARGET);
 	fsm_.addState(ACTOR_STATE_MOVE_AROUND);
+	fsm_.addState(ACTOR_STATE_STOP_AND_STARE);
 	fsm_.addState(ACTOR_STATE_FOLLOW_OBJECT);
 	fsm_.addState(ACTOR_STATE_TELEOPERATION);
 
@@ -395,6 +396,22 @@ void Actor::readSDFParameters(const sdf::ElementPtr sdf) {
 
 // ------------------------------------------------------------------- //
 
+bool Actor::setNewTarget(const ignition::math::Pose3d &pose) {
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Actor::setNewTarget(const std::string &object_name) {
+
+	if ( fsm_.getState() != ACTOR_STATE_ALIGN_TARGET ) {
+
+	}
+
+}
+
+// ------------------------------------------------------------------- //
+
 bool Actor::followObject(const std::string &object_name, const bool &stop_after_arrival) {
 
 	// TODO: stop_after_arrival?
@@ -572,6 +589,24 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 
 // ------------------------------------------------------------------- //
 
+void Actor::stateHandlerStopAndStare	(const gazebo::common::UpdateInfo &info) {
+
+	double dt = prepareForUpdate();
+
+	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	// stopped, does nothing
+	// blank handler
+
+	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	double dist_traveled = 0.007;
+	applyUpdate(dist_traveled);
+
+}
+
+// ------------------------------------------------------------------- //
+
 void Actor::stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info) {
 
 	double dt = prepareForUpdate();
@@ -609,12 +644,14 @@ void Actor::stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info) {
 void Actor::stateHandlerTeleoperation (const gazebo::common::UpdateInfo &info) {
 
 	double dt = prepareForUpdate();
-	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-
-
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	double dist_traveled = 0.007; // temp
+
+	// TODO?
+
+	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	double dist_traveled = 0.007; // TODO
 	applyUpdate(dist_traveled);
 
 }
@@ -622,11 +659,9 @@ void Actor::stateHandlerTeleoperation (const gazebo::common::UpdateInfo &info) {
 // ------------------------------------------------------------------- //
 
 
-// private section
-
 
 // ------------------------------------------------------------------- //
-
+// private section
 // ------------------------------------------------------------------- //
 
 void Actor::updateStanceOrientation(ignition::math::Pose3d &pose) {
@@ -974,7 +1009,7 @@ bool Actor::manageTargetTracking() {
 	if ( stop_tracking ) {
 		target_manager_.stopFollowing();
 		ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
-		setState(ActorState::ACTOR_STATE_MOVE_AROUND);
+		setState(ActorState::ACTOR_STATE_STOP_AND_STARE); // setState(ActorState::ACTOR_STATE_MOVE_AROUND);
 		return (false);
 	}
 
@@ -1105,6 +1140,8 @@ void Actor::updateTransitionFunctionPtr() {
 			break;
 	case(ACTOR_STATE_STOP_AND_STARE):
 			std::cout << "State: \tstopAndStare" << std::endl;
+			trans_function_ptr = &actor::core::Actor::stateHandlerStopAndStare;
+			setStance(ACTOR_STANCE_STAND);
 			// empty
 			break;
 	case(ACTOR_STATE_FOLLOW_OBJECT):
