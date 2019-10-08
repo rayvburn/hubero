@@ -203,24 +203,8 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 
 	if ( force_queue ) {
 
-		// dbg
-		std::cout << "\tBEFORE q size: " << target_queue_.size() << std::endl;
-		std::vector<ignition::math::Vector3d> target_bckp_v;
-		size_t init_size = target_queue_.size();
-		for ( size_t i = 0; i < init_size; i++ ) {
-			target_bckp_v.push_back(target_queue_.front());
-			std::cout << i << "\t" << target_queue_.front() << std::endl;
-			target_queue_.pop();
-		}
-		// restore
-		for ( size_t i = 0; i < target_bckp_v.size(); i++ ) {
-			target_queue_.push(target_bckp_v.at(i));
-		}
-
 		// add the target to the queue
 		target_queue_.push(position);
-
-		std::cout << "\tAFTER q size: " << target_queue_.size() << std::endl;
 		return (true);
 
 	}
@@ -446,22 +430,6 @@ bool Target::chooseNewTarget() {
 bool Target::changeTarget() {
 
 	if ( !isTargetQueueEmpty() ) {
-
-		// dbg
-		std::cout << "\tBEFORE q size: " << target_queue_.size() << std::endl;
-		std::vector<ignition::math::Vector3d> target_bckp_v;
-		size_t init_size = target_queue_.size();
-		for ( size_t i = 0; i < init_size; i++ ) {
-			target_bckp_v.push_back(target_queue_.front());
-			std::cout << i << "\t" << target_queue_.front() << std::endl;
-			target_queue_.pop();
-		}
-		// restore
-		for ( size_t i = 0; i < target_bckp_v.size(); i++ ) {
-			target_queue_.push(target_bckp_v.at(i));
-		}
-
-		std::cout << "\tINTO q size: " << target_queue_.size() << std::endl;
 
 		// pop a target from the queue
 		if ( !setNewTarget() ) {
