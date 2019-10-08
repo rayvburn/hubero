@@ -13,13 +13,13 @@ namespace actor {
 namespace core {
 
 // ------------------------------------------------------------------- //
-Target::Target(): has_target_(false), has_global_plan_(false), is_following_(false),
+Target::Target(): has_target_(false), has_global_plan_(false), has_new_path_(true), is_following_(false),
 		is_followed_object_reached_(false), followed_model_ptr_(nullptr) { }
 // ------------------------------------------------------------------- //
 
 Target::Target(gazebo::physics::WorldPtr world_ptr, std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr,
 			   std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr)
-					: has_target_(false), has_global_plan_(false),
+					: has_target_(false), has_global_plan_(false), has_new_path_(false),
 					  is_following_(false), is_followed_object_reached_(false), followed_model_ptr_(nullptr) {
 
 	world_ptr_ = world_ptr;
@@ -35,6 +35,7 @@ Target::Target(const Target &obj) {
 	// copy ctor
 	has_target_ = obj.has_target_;
 	has_global_plan_ = obj.has_global_plan_;
+	has_new_path_ = obj.has_new_path_;
 	is_following_ = obj.is_following_;
 	is_followed_object_reached_ = obj.is_followed_object_reached_;
 
@@ -119,6 +120,7 @@ bool Target::updateFollowedTarget() {
 		is_followed_object_reached_ = false;
 		has_target_ = false;
 		has_global_plan_ = false;
+		has_new_path_ = false;
 		return (false);
 	}
 
@@ -186,6 +188,7 @@ bool Target::stopFollowing() {
 		is_followed_object_reached_ = false;
 		has_target_ = false;
 		has_global_plan_ = false;
+		has_new_path_ = false;
 		return (true);
 
 	}
@@ -199,8 +202,27 @@ bool Target::stopFollowing() {
 bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_queue) {
 
 	if ( force_queue ) {
+
+		// dbg
+		std::cout << "\tBEFORE q size: " << target_queue_.size() << std::endl;
+		std::vector<ignition::math::Vector3d> target_bckp_v;
+		size_t init_size = target_queue_.size();
+		for ( size_t i = 0; i < init_size; i++ ) {
+			target_bckp_v.push_back(target_queue_.front());
+			std::cout << i << "\t" << target_queue_.front() << std::endl;
+			target_queue_.pop();
+		}
+		// restore
+		for ( size_t i = 0; i < target_bckp_v.size(); i++ ) {
+			target_queue_.push(target_bckp_v.at(i));
+		}
+
 		// add the target to the queue
 		target_queue_.push(position);
+
+		std::cout << "\tAFTER q size: " << target_queue_.size() << std::endl;
+		return (true);
+
 	}
 
 	// check validity of the position
@@ -283,13 +305,7 @@ bool Target::setNewTarget(const std::string &object_name) {
 	int tries_num = 10; // along with 0.5 factor below - maximum move-away from the intersection point is 5 m
 	while (tries_num--) {
 
-		// dbg
-		double pt_target_x = pt_target.X();
-		double pt_target_y = pt_target.Y();
-		int cost = global_planner_.getCost(pt_target.X(), pt_target.Y());
-
-//		if ( global_planner_.getCost(pt_target.X(), pt_target.Y()) > 100 ) {
-		if ( cost > 100 ) {
+		if ( global_planner_.getCost(pt_target.X(), pt_target.Y()) > 100 ) {
 			// move the point a little further according to line direction;
 			// move in the opposite direction (towards actor going from
 			// the obstacle)
@@ -407,6 +423,7 @@ bool Target::chooseNewTarget() {
 	// update state
 	has_target_ = true;
 	has_global_plan_ = true;
+	has_new_path_ = true;
 
 	// save event time
 	time_last_target_selection_ = world_ptr_->SimTime();
@@ -429,6 +446,22 @@ bool Target::chooseNewTarget() {
 bool Target::changeTarget() {
 
 	if ( !isTargetQueueEmpty() ) {
+
+		// dbg
+		std::cout << "\tBEFORE q size: " << target_queue_.size() << std::endl;
+		std::vector<ignition::math::Vector3d> target_bckp_v;
+		size_t init_size = target_queue_.size();
+		for ( size_t i = 0; i < init_size; i++ ) {
+			target_bckp_v.push_back(target_queue_.front());
+			std::cout << i << "\t" << target_queue_.front() << std::endl;
+			target_queue_.pop();
+		}
+		// restore
+		for ( size_t i = 0; i < target_bckp_v.size(); i++ ) {
+			target_queue_.push(target_bckp_v.at(i));
+		}
+
+		std::cout << "\tINTO q size: " << target_queue_.size() << std::endl;
 
 		// pop a target from the queue
 		if ( !setNewTarget() ) {
@@ -477,6 +510,7 @@ bool Target::generatePathPlan(const ignition::math::Vector3d &target_to_be) {
 			std::cout << "\n\n\n[generatePathPlan] Global planning successfull\n\n\n" << std::endl;
 
 			has_global_plan_ = true;
+			has_new_path_ = true;
 			return (true);
 			break;
 
@@ -513,6 +547,7 @@ bool Target::generatePathPlan(const ignition::math::Vector3d &target_to_be) {
 void Target::abandonTarget() {
 	has_target_ = false;
 	has_global_plan_ = false;
+	has_new_path_ = false;
 }
 
 // ------------------------------------------------------------------- //
@@ -766,6 +801,14 @@ bool Target::isCheckpointAbandonable() const {
 }
 
 // ------------------------------------------------------------------- //
+
+bool Target::isPathNew() {
+	bool temp = has_new_path_;
+	has_new_path_ = false;
+	return (temp);
+}
+
+// ------------------------------------------------------------------- //
 ignition::math::Vector3d Target::getTarget() const {
 	return (target_);
 }
@@ -845,10 +888,29 @@ bool Target::doesBoundingBoxContainPoint(const ignition::math::Box &bb, const ig
 	// check if model's bounding box is valid (not 0-length - for actors it is - || NaN || inf)
 	if ( !std::isnan(bb.Max().Length()) && !std::isinf(bb.Max().Length()) && (bb.Max().Length() > 1e-06) ) {
 
-		// check if model's bounding box contains target point
-		if ( bb.Contains(pt) ) {
+		// - - - - - - - - - - - - - - - - - - - - - - - - - - -
+		// V1
+//		// check if model's bounding box contains target point
+//		if ( bb.Contains(pt) ) {
+//			return (true);
+//		}
+		// - - - - - - - - - - - - - - - - - - - - - - - - - - -
+		// V2
+		// try to inflate the BB and then check if it does contain;
+		// let the inflation size be a `target_tolerance` parameter
+		// multiplied by 0.5 -> NOT exactly, static fcn so param cannot
+		// be read explicitly, 0.5 * DEFAULT VALUE of the parameter
+		ignition::math::Box bb_inf = bb;
+		bb_inf.Max().X(bb_inf.Max().X() + 0.3125);
+		bb_inf.Max().Y(bb_inf.Max().Y() + 0.3125);
+
+		bb_inf.Min().X(bb_inf.Min().X() - 0.3125);
+		bb_inf.Min().Y(bb_inf.Min().Y() - 0.3125);
+
+		if ( bb_inf.Contains(pt) ) {
 			return (true);
 		}
+		// - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 	}
 	return (false);
@@ -976,6 +1038,7 @@ bool Target::tryToApplyTarget(const ignition::math::Vector3d &pt) {
 
 		// update internal state
 		has_global_plan_ = true;
+		has_new_path_ = true;
 		has_target_ = true;
 		return (true);
 
@@ -998,21 +1061,6 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 	}
 
 	// ========================================================================
-//	/* check the line's direction and based on the angle shift
-//	 * the intersection point a little in proper direction */
-//	double line_angle = std::atan2(line.Direction().Y(), line.Direction().X());
-
-	// ========================================================================
-//	// evaluate bigger increase of the coordinate
-//	if ( line.Direction().X() >= line.Direction().Y() ) {
-//		// line's direction value is bigger (or equal) along the X axis
-//	} else {
-//		// line's direction value is bigger (or equal) along the Y axis
-//	}
-
-	// ========================================================================
-	// ========================================================================
-	// ========================================================================
 
 	/* let's find the line from the current actor's pose to the closest
 	 * point of an object's bounding box; shift the point to the free
@@ -1034,12 +1082,6 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 
 		if ( i == 0 ) {
 
-			// dbg
-			double ln_x1 = pose_world_ptr_->Pos().X();
-			double ln_y1 = pose_world_ptr_->Pos().Y();
-			double ln_x2 = model_ptr->WorldPose().Pos().X();
-			double ln_y2 = model_ptr->WorldPose().Pos().Y();
-
 			// line_angle expressed from the actor to an object
 			line.Set( pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.0,
 					  model_ptr->WorldPose().Pos().X(), model_ptr->WorldPose().Pos().Y(), 0.0 );
@@ -1055,21 +1097,9 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 			pt_helper.X(pt_intersection.X() + 30.0 * line.Direction().X());
 			pt_helper.Y(pt_intersection.Y() + 30.0 * line.Direction().Y());
 
-			// dbg
-			double ln_x1 = model_ptr->WorldPose().Pos().X();
-			double ln_y1 = model_ptr->WorldPose().Pos().Y();
-			double ln_x2 = pt_helper.X();
-			double ln_y2 = pt_helper.Y();
-
 			// update line points, maintain line direction!
 			line.Set(model_ptr->WorldPose().Pos().X(), model_ptr->WorldPose().Pos().Y(), 0.0,
 					 pt_helper.X(), pt_helper.Y(), 0.0);
-
-			// dbg
-			double line_dir_x = line.Direction().X();
-			double line_dir_y = line.Direction().Y();
-			int abc = 0;
-			abc++;
 
 		}
 
@@ -1083,20 +1113,11 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 		// evaluate intersection point (line and bounding box)
 		std::tie(does_intersect, std::ignore, pt_intersection) = model_ptr->BoundingBox().Intersect(line);
 
-		// dbg
-		double pt_inter_x = pt_intersection.X();
-		double pt_inter_y = pt_intersection.Y();
-
 		if ( !does_intersect ) {
 			// this should not happen, something went wrong
 			return (std::make_tuple(false, ignition::math::Vector3d(), ignition::math::Vector3d()));
 			break;
 		}
-
-		// dbg
-		int cost = global_planner_.getCost(pt_intersection.X(), pt_intersection.Y());
-		double line_dir_x = line.Direction().X();
-		double line_dir_y = line.Direction().Y();
 
 		// verify whether the point is reachable in terms of costmap
 		if ( global_planner_.getCost(pt_intersection.X(), pt_intersection.Y()) < 100 ) {

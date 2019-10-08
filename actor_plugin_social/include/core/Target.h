@@ -223,6 +223,13 @@ public:
     bool isCheckpointAbandonable() const;
 
     /**
+     * @brief Reads and clears `has_new_path_` flag.
+     * @return True if path has been generated since last `isPathNew` call
+     * @note Non-const due to flag clearance
+     */
+    bool isPathNew();
+
+    /**
      * @brief Returns current checkpoint
      * @return Checkpoint
      */
@@ -336,6 +343,9 @@ private:
     /// @brief Flag indicating that actor has a global plan for the current
     /// target generated. This flag is set `false` in target setter methods.
 	bool has_global_plan_; // when target is chosen, this flag will be set `false`
+
+	/// @brief Flag indicating that a new global path has just been generated.
+	bool has_new_path_;
 
 	/// @brief Shared pointer to `pose_world` object from actor::core::Actor class.
 	/// This is set in constructor.
