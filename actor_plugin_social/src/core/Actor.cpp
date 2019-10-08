@@ -397,46 +397,6 @@ void Actor::readSDFParameters(const sdf::ElementPtr sdf) {
 
 // ------------------------------------------------------------------- //
 
-//bool Actor::setNewTarget(const ignition::math::Pose3d &pose) {
-//
-//}
-
-// ------------------------------------------------------------------- //
-
-//bool Actor::setNewTarget(const std::string &object_name) {
-//
-//	target_manager_.setNewTarget(object_name);
-//
-//	// make a backup of a current target/target queue (it will be restored
-//	// after reachment of the given goal (having priority))
-//	std::vector<ignition::math::Vector3d> targets_v;
-//
-//	// queue size is not known
-//	while ( target_manager_.isTargetChosen() ) {
-//		targets_v.push_back(target_manager_.getTarget());
-//		target_manager_.abandonTarget();
-//	}
-//
-//	// try to set a new target (desired one)
-//	bool status = target_manager_.setNewTarget(object_name);
-//
-//	// restore old targets (put them straight into the queue)
-//	for ( size_t i = 0; i < targets_v.size(); i++ ) {
-//		target_manager_.setNewTarget(targets_v.at(i), true);
-//	}
-//
-//	// if new-desired target is achievable then change the state (align firstly)
-//	if ( status ) {
-//		setState(ActorState::ACTOR_STATE_TARGET_REACHING); // will be restored
-//		setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
-//	}
-//
-//	return (status);
-//
-//}
-
-// ------------------------------------------------------------------- //
-
 bool Actor::followObject(const std::string &object_name, const bool &stop_after_arrival) {
 
 	// TODO: stop_after_arrival?
@@ -944,21 +904,25 @@ bool Actor::manageTargetMovingAround() {
 	// reachability test 1:
 	// check if there has been some obstacle put into world since last target selection
 	if ( !target_manager_.isTargetStillReachable() ) {
-		if ( target_manager_.changeTarget() ) {
+		target_manager_.abandonTarget();
+		// try a few times
+		while ( !target_manager_.changeTarget() ); // {
 			// after setting new target, first let's rotate to its direction
 			// state will be changed in the next iteration
 			new_target = true;
-		}
+		//}
 	}
 
 	// reachability test 2:
 	// check if actor is stuck
 	if ( target_manager_.isTargetNotReachedForTooLong() ) {
-		if ( target_manager_.changeTarget() ) {
+		target_manager_.abandonTarget();
+		// try a few times
+		while ( target_manager_.changeTarget() ); // {
 			// after setting new target, first let's rotate to its direction
 			// state will be changed in the next iteration
 			new_target = true;
-		}
+		//}
 	}
 
 	// evaluate whether a new target has been defined
@@ -1029,6 +993,7 @@ bool Actor::manageTargetTracking() {
 
 	// change FSM state if needed
 	if ( stop_tracking ) {
+		target_manager_.abandonTarget(); // TODO: is needed?
 		target_manager_.stopFollowing();
 		ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
 		setState(ActorState::ACTOR_STATE_STOP_AND_STARE); // setState(ActorState::ACTOR_STATE_MOVE_AROUND);
@@ -1330,30 +1295,38 @@ std::string Actor::convertStanceToAnimationName() const {
 
 void Actor::visualizePositionData() {
 
-	// TODO: vis freq as parameter
+	// TODO: add a parameter?: tf_publish_freq
+	if ( (world_ptr_->SimTime() - time_last_tf_pub_).Double() >= 0.033 ) {
 
-	// publish data for visualization
-	// proper bounding object to publish needs to be chosen
-	switch ( bounding_type_ ) {
-	case(ACTOR_BOUNDING_BOX):
-			stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_box_.getMarkerConversion());
-			break;
-	case(ACTOR_BOUNDING_CIRCLE):
-			stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_circle_.getMarkerConversion());
-			break;
-	case(ACTOR_BOUNDING_ELLIPSE):
-			stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_ellipse_.getMarkerConversion());
-			break;
+		// update time stamp
+		time_last_tf_pub_ = world_ptr_->SimTime();
+
+		// publish data for visualization
+		// proper bounding object to publish needs to be chosen
+		switch ( bounding_type_ ) {
+		case(ACTOR_BOUNDING_BOX):
+				stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_box_.getMarkerConversion());
+				break;
+		case(ACTOR_BOUNDING_CIRCLE):
+				stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_circle_.getMarkerConversion());
+				break;
+		case(ACTOR_BOUNDING_ELLIPSE):
+				stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_ellipse_.getMarkerConversion());
+				break;
+		}
+
+		stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_);
+		stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getTarget()),
+																				 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
+		stream_.publishData(ActorTfType::ACTOR_TF_CHECKPOINT, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getCheckpoint()),
+																				 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
+
 	}
 
-	stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_);
-	stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getTarget()),
-																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
-	stream_.publishData(ActorTfType::ACTOR_TF_CHECKPOINT, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getCheckpoint()),
-																			 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
-
-	// TODO: target_manager_.isNewPath()
-	stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, target_manager_.getPath());
+	// publish path if a new one has just been generated
+	if ( target_manager_.isPathNew() ) {
+		stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, target_manager_.getPath());
+	}
 
 }
 

@@ -121,13 +121,7 @@ public:
 	/// \brief Search for actor-related fields in the .world file to load parameters
 	void readSDFParameters(const sdf::ElementPtr sdf);
 
-//	/// \brief Method to set new target for actor - static objet's pose
-//	/// \return True if [x,y] position is valid
-//	bool setNewTarget(const ignition::math::Pose3d &pose);
-//
-//	/// \brief Method to set new target for actor - object's name
-//	/// \return True if object is valid
-//	bool setNewTarget(const std::string &object_name);
+	/* SCROLL DOWN for a `setNewTarget()` template */
 
 	/// \brief Method to set new target for actor - object's name
 	/// \return True if object is valid
@@ -214,10 +208,12 @@ private:
     /// \brief Helper function that converts a stance type to associated animation
     std::string convertStanceToAnimationName() const;
 
-    // TODO
+    /// \brief Publishes position data as ROS TF messages.
     void visualizePositionData();
 
-    // TODO
+    /// \brief Social Force Model calculations visualization. Updates
+    /// markers showing for example lengths of force vectors.
+    /// Publishes visualization markers as ROS messages.
     void visualizeSfmCalculations();
 
     /// \brief Helper function to create visualization_msgs::Marker(s)
@@ -303,8 +299,11 @@ private:
     /// \brief Time of the last force field visualization publication
 	gazebo::common::Time time_last_vis_grid_pub_;
 
-	/// \brief Time of the last force SFM-generated data publication
+	/// \brief Time of the last SFM-generated data publication
 	gazebo::common::Time time_last_vis_sfm_pub_;
+
+	/// \brief Time of the last TransformFrames message publication
+	gazebo::common::Time time_last_tf_pub_;
 
     /// \brief Custom trajectory info
     gazebo::physics::TrajectoryInfoPtr trajectory_info_;
