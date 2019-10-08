@@ -213,6 +213,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	// add states for FSM
 	fsm_.addState(ACTOR_STATE_ALIGN_TARGET);
 	fsm_.addState(ACTOR_STATE_MOVE_AROUND);
+	fsm_.addState(ACTOR_STATE_TARGET_REACHING);
 	fsm_.addState(ACTOR_STATE_STOP_AND_STARE);
 	fsm_.addState(ACTOR_STATE_FOLLOW_OBJECT);
 	fsm_.addState(ACTOR_STATE_TELEOPERATION);
@@ -396,19 +397,43 @@ void Actor::readSDFParameters(const sdf::ElementPtr sdf) {
 
 // ------------------------------------------------------------------- //
 
-bool Actor::setNewTarget(const ignition::math::Pose3d &pose) {
-
-}
+//bool Actor::setNewTarget(const ignition::math::Pose3d &pose) {
+//
+//}
 
 // ------------------------------------------------------------------- //
 
-bool Actor::setNewTarget(const std::string &object_name) {
-
-	if ( fsm_.getState() != ACTOR_STATE_ALIGN_TARGET ) {
-
-	}
-
-}
+//bool Actor::setNewTarget(const std::string &object_name) {
+//
+//	target_manager_.setNewTarget(object_name);
+//
+//	// make a backup of a current target/target queue (it will be restored
+//	// after reachment of the given goal (having priority))
+//	std::vector<ignition::math::Vector3d> targets_v;
+//
+//	// queue size is not known
+//	while ( target_manager_.isTargetChosen() ) {
+//		targets_v.push_back(target_manager_.getTarget());
+//		target_manager_.abandonTarget();
+//	}
+//
+//	// try to set a new target (desired one)
+//	bool status = target_manager_.setNewTarget(object_name);
+//
+//	// restore old targets (put them straight into the queue)
+//	for ( size_t i = 0; i < targets_v.size(); i++ ) {
+//		target_manager_.setNewTarget(targets_v.at(i), true);
+//	}
+//
+//	// if new-desired target is achievable then change the state (align firstly)
+//	if ( status ) {
+//		setState(ActorState::ACTOR_STATE_TARGET_REACHING); // will be restored
+//		setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
+//	}
+//
+//	return (status);
+//
+//}
 
 // ------------------------------------------------------------------- //
 
@@ -565,20 +590,28 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 		return;
 	}
 
-	sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_lin_,
-						    target_manager_.getCheckpoint(),
-						    common_info_, dt, ignored_models_);
+	double dist_traveled = move(dt);
+	visualizeSfmCalculations();
 
-	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_lin_,
-														  sfm_.getForceCombined(),
-														  target_manager_.getCheckpoint(), dt);
+	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	// object info update
-	double dist_traveled = (new_pose.Pos() - actor_ptr_->WorldPose().Pos()).Length();
+	applyUpdate(dist_traveled);
 
-	// update the local copy of the actor's pose
-	*pose_world_ptr_ = new_pose;
+}
 
+// ------------------------------------------------------------------- //
+
+void Actor::stateHandlerTargetReaching (const gazebo::common::UpdateInfo &info) {
+
+	double dt = prepareForUpdate();
+
+	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	if ( !manageTargetSingleReachment() ) {
+		return;
+	}
+
+	double dist_traveled = move(dt);
 	visualizeSfmCalculations();
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -600,7 +633,7 @@ void Actor::stateHandlerStopAndStare	(const gazebo::common::UpdateInfo &info) {
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	double dist_traveled = 0.007;
+	double dist_traveled = 0.001;
 	applyUpdate(dist_traveled);
 
 }
@@ -617,20 +650,7 @@ void Actor::stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info) {
 		return;
 	}
 
-	sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_lin_,
-							target_manager_.getCheckpoint(),
-							common_info_, dt, ignored_models_);
-
-	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_lin_,
-														  sfm_.getForceCombined(),
-														  target_manager_.getCheckpoint(), dt);
-
-	// object info update
-	double dist_traveled = (new_pose.Pos() - actor_ptr_->WorldPose().Pos()).Length();
-
-	// update the local copy of the actor's pose
-	*pose_world_ptr_ = new_pose;
-
+	double dist_traveled = move(dt);
 	visualizeSfmCalculations();
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -853,6 +873,8 @@ void Actor::applyUpdate(const double &dist_traveled) {
 	time_last_update_ = world_ptr_->SimTime();
 
 	// check whether state was updated
+	// NOTE: this usually makes updateTransitionFunctionPtr
+	// called second time after manual invocation `setState`
 	if ( fsm_.didStateChange() ) {
 		updateTransitionFunctionPtr();
 	}
@@ -1038,6 +1060,89 @@ bool Actor::manageTargetTracking() {
 
 // ------------------------------------------------------------------- //
 
+bool Actor::manageTargetSingleReachment() {
+
+	// check if call is executed for a proper mode
+	if ( target_manager_.isFollowing() ) {
+		return (false);
+	}
+
+	// helper flag
+	bool abandon = false;
+
+	// check whether a target exists
+	if ( !target_manager_.isTargetChosen() ) {
+		//return (false);
+		abandon = true;
+	}
+
+	// check whether a target has plan generated
+	if ( !target_manager_.isPlanGenerated() ) {
+		if ( !target_manager_.generatePathPlan(target_manager_.getTarget()) ) {
+			abandon = true;
+		}
+	}
+
+	// check whether a current checkpoint is abandonable
+	if ( target_manager_.isCheckpointAbandonable() ) {
+		target_manager_.updateCheckpoint();
+	}
+
+	// check closeness to the target/checkpoint
+	if ( target_manager_.isTargetReached() ) {
+		abandon = true;
+	} else if ( target_manager_.isCheckpointReached() ) {
+		// take next checkpoint from vector (path)
+		target_manager_.updateCheckpoint();
+	}
+
+	// reachability test 1:
+	// check if there has been some obstacle put into world since last target selection
+	if ( !target_manager_.isTargetStillReachable() ) {
+		abandon = true;
+	}
+
+	// reachability test 2:
+	// check if actor is stuck
+	if ( target_manager_.isTargetNotReachedForTooLong() ) {
+		abandon = true;
+	}
+
+	// do abandon the current target? either reached or non-reachable anymore
+	if ( abandon ) {
+		target_manager_.abandonTarget();
+		setState(actor::ACTOR_STATE_STOP_AND_STARE);
+		return (false);
+	}
+
+	return (true);
+
+}
+
+// ------------------------------------------------------------------- //
+
+double Actor::move(const double &dt) {
+
+	sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_lin_,
+						    target_manager_.getCheckpoint(),
+						    common_info_, dt, ignored_models_);
+
+	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_lin_,
+														  sfm_.getForceCombined(),
+														  target_manager_.getCheckpoint(), dt);
+
+	// object info update
+	double dist_traveled = (new_pose.Pos() - actor_ptr_->WorldPose().Pos()).Length();
+
+	// update the local copy of the actor's pose
+	*pose_world_ptr_ = new_pose;
+
+	return (dist_traveled);
+
+}
+
+// ------------------------------------------------------------------- //
+
 void Actor::updateBounding(const ignition::math::Pose3d &pose) {
 
 	/* update the bounding box/circle/ellipse of the actor
@@ -1136,6 +1241,11 @@ void Actor::updateTransitionFunctionPtr() {
 	case(ACTOR_STATE_MOVE_AROUND):
 			std::cout << "State: \tmoveAround" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerMoveAround; 		// &this->Actor::stateHandlerMoveAround;
+			setStance(ACTOR_STANCE_WALK);
+			break;
+	case(ACTOR_STATE_TARGET_REACHING):
+			std::cout << "State: \ttargetReaching" << std::endl;
+			trans_function_ptr = &actor::core::Actor::stateHandlerTargetReaching;
 			setStance(ACTOR_STANCE_WALK);
 			break;
 	case(ACTOR_STATE_STOP_AND_STARE):

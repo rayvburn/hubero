@@ -121,13 +121,13 @@ public:
 	/// \brief Search for actor-related fields in the .world file to load parameters
 	void readSDFParameters(const sdf::ElementPtr sdf);
 
-	/// \brief Method to set new target for actor - static objet's pose
-	/// \return True if [x,y] position is valid
-	bool setNewTarget(const ignition::math::Pose3d &pose);
-
-	/// \brief Method to set new target for actor - object's name
-	/// \return True if object is valid
-	bool setNewTarget(const std::string &object_name);
+//	/// \brief Method to set new target for actor - static objet's pose
+//	/// \return True if [x,y] position is valid
+//	bool setNewTarget(const ignition::math::Pose3d &pose);
+//
+//	/// \brief Method to set new target for actor - object's name
+//	/// \return True if object is valid
+//	bool setNewTarget(const std::string &object_name);
 
 	/// \brief Method to set new target for actor - object's name
 	/// \return True if object is valid
@@ -148,8 +148,10 @@ public:
 	void executeTransitionFunction(const gazebo::common::UpdateInfo &info);
 
     /// \brief Handlers for each state
+    /// TODO: get rid of these UpdateInfos
     void stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info);
     void stateHandlerMoveAround		(const gazebo::common::UpdateInfo &info);
+    void stateHandlerTargetReaching (const gazebo::common::UpdateInfo &info);
     void stateHandlerStopAndStare	(const gazebo::common::UpdateInfo &info);
     void stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info);
     void stateHandlerTeleoperation 	(const gazebo::common::UpdateInfo &info);
@@ -184,6 +186,17 @@ private:
     /// an actor should stay in the object tracking mode.
     /// \return True if actor should still try to follow the currently selected object
     bool manageTargetTracking();
+
+    /// \brief Performs few target_manager's condition checks to decide whether
+	/// a current target is still reachable or the actor's FSM should change its
+	/// state to `stop and stare`.
+    bool manageTargetSingleReachment();
+
+    /// \brief Calculates social force and new pose (based on SF). Computes
+    /// traveled distance and updates world pose.
+    /// \param dt: delta of time since last update event (in seconds)
+    /// \return Traveled distance in meters
+    double move(const double &dt);
 
     /// \brief Helper function to calculate the actor's velocity as it could not be set
     /// in WorldPtr - this is just a workaround for a Gazebo/ActorPlugin bug
@@ -320,6 +333,45 @@ private:
     /// calling ROS global_planner server asking for a global
     /// plan to be generated to a newly chosen target.
     Target target_manager_;
+
+public:
+
+    /// \brief Template method for setting a new target for actor (single reachment
+    /// mode is supported only).
+    /// \note The target is a place within costmap bounds or a name of an object.
+    /// \param target: name of a target or its pose
+    /// \return True if [x,y] position is valid and request accepted
+	template <typename T>
+	bool setNewTarget(const T &target) {
+
+		// make a backup of a current target/target queue (it will be restored
+		// after reachment of the given goal (having priority))
+		std::vector<ignition::math::Vector3d> targets_v;
+
+		// queue size is not known
+		while ( target_manager_.isTargetChosen() ) {
+			targets_v.push_back(target_manager_.getTarget());
+			target_manager_.abandonTarget();
+			target_manager_.setNewTarget(); // pull out a target from the queue
+		}
+
+		// try to set a new target (desired one)
+		bool status = target_manager_.setNewTarget(target);
+
+		// restore old targets (put them straight into the queue)
+		for ( size_t i = 0; i < targets_v.size(); i++ ) {
+			target_manager_.setNewTarget(targets_v.at(i), true);
+		}
+
+		// if new-desired target is achievable then change the state (align firstly)
+		if ( status ) {
+			setState(ActorState::ACTOR_STATE_TARGET_REACHING); // will be restored
+			setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
+		}
+
+		return (status);
+
+	}
 
 };
 
