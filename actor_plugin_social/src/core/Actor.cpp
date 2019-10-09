@@ -692,7 +692,7 @@ void Actor::stateHandlerLieDown		(const gazebo::common::UpdateInfo &info) {
 		lie_down_.setPoseBeforeLying(*pose_world_ptr_);
 
 		// update the local copy of the actor's pose
-		*pose_world_ptr_ = lie_down_.getPoseCenter(); // TODO: may need some tweaks
+		*pose_world_ptr_ = lie_down_.getPoseLying(); // TODO: may need some tweaks
 //		pose_world_prev_ = *pose_world_ptr_;
 
 		std::cout << "stateHandlerLieDown, pos2: " << pose_world_ptr_->Pos() << std::endl;

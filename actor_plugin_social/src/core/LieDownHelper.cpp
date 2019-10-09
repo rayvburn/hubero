@@ -11,31 +11,49 @@
 namespace actor {
 namespace core {
 
-LieDownHelper::LieDownHelper(): rotation_(0.0), pose_init_height_(0.0), pose_lie_height_(0.0),
+// ------------------------------------------------------------------- //
+
+LieDownHelper::LieDownHelper(): rotation_(0.0), pose_lie_height_(0.0),
 		is_lying_(false), do_finish_(false) {}
 
-void LieDownHelper::setNormalHeight(const double &height) {
-	pose_init_height_ = height;
-}
+// ------------------------------------------------------------------- //
+
 void LieDownHelper::setLyingHeight(const double &height) {
 	pose_lie_height_ = height;
 }
+
+// ------------------------------------------------------------------- //
+
 void LieDownHelper::setLyingPose(const ignition::math::Pose3d &pose_center) {
 	pose_center_ = pose_center;
 }
+
+// ------------------------------------------------------------------- //
+
 void LieDownHelper::setRotation(const double &rot) {
 	rotation_ = rot;
 }
+
+// ------------------------------------------------------------------- //
+
 void LieDownHelper::setPoseBeforeLying(const ignition::math::Pose3d &pose) {
 	pose_lie_start_ = pose;
 }
+
+// ------------------------------------------------------------------- //
+
 void LieDownHelper::setLying(const bool &lied_down) {
 	is_lying_ = lied_down;
 	do_finish_ = false; // either started lying or whole lying procedure stopped
 }
+
+// ------------------------------------------------------------------- //
+
 void LieDownHelper::stopLying() {
 	do_finish_ = true;
 }
+
+// ------------------------------------------------------------------- //
 
 ignition::math::Pose3d LieDownHelper::computePoseFinishedLying() const {
 
@@ -56,19 +74,27 @@ ignition::math::Pose3d LieDownHelper::computePoseFinishedLying() const {
 
 }
 
+// ------------------------------------------------------------------- //
+
 bool LieDownHelper::isLyingDown() const {
 	return (is_lying_);
 }
-double LieDownHelper::getNormalHeight() const {
-	return (pose_init_height_);
-}
+
+// ------------------------------------------------------------------- //
+
 double LieDownHelper::getLyingHeight() const {
 	return (pose_lie_height_);
 }
+
+// ------------------------------------------------------------------- //
+
 ignition::math::Pose3d LieDownHelper::getPoseBeforeLying() const {
 	return (pose_lie_start_);
 }
-ignition::math::Pose3d LieDownHelper::getPoseCenter() const {
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Pose3d LieDownHelper::getPoseLying() const {
 
 	// NOTE: object's yaw affect the final lying orientation
 	ignition::math::Angle yaw_fake(pose_center_.Rot().Yaw());
@@ -88,11 +114,18 @@ ignition::math::Pose3d LieDownHelper::getPoseCenter() const {
 	return (pose_center_shifted);
 
 }
+
+// ------------------------------------------------------------------- //
+
 bool LieDownHelper::doStopLying() const {
 	return (do_finish_);
 }
 
+// ------------------------------------------------------------------- //
+
 LieDownHelper::~LieDownHelper() {}
+
+// ------------------------------------------------------------------- //
 
 } /* namespace core */
 } /* namespace actor */
