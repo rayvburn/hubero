@@ -164,6 +164,9 @@ public:
 	ignition::math::Pose3d computeNewPose(const ignition::math::Pose3d &actor_pose, const ignition::math::Vector3d &actor_vel,
 			const ignition::math::Vector3d &social_force, const ignition::math::Vector3d &target, const double &dt);
 
+	/// \brief Resets class' internal state - mainly forces but resets internal classes too
+	void reset();
+
 	// TODO: doc
 	ignition::math::Vector3d getForceInternal() const;
 	ignition::math::Vector3d getForceInteraction() const;
@@ -321,9 +324,6 @@ private:
 	/// \param v is a vector
 	/// \return Angle
 	double computeVectorDirection(const ignition::math::Vector3d &v) const;
-
-	/// \brief Resets class' internal state - mainly forces but resets internal classes too
-	void reset();
 
 	/// \brief Multiplies force components by a factor parameters
 	/// and computes the combined force vector (summation).

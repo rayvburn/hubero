@@ -39,11 +39,17 @@ visualization_msgs::MarkerArray LineList::createArray(const std::vector<ignition
 	 * temporarily a blank lines will be left - FIXME issue */
 
 	/* check if a maximum line ID is bigger than a poses' size */
-	if ( line_id_max_ > (poses.size() - 1) ) {
+	if ( (line_id_max_ > (poses.size() - 1)) || (line_id_max_ > 0 && poses.size() == 0) ) {
+
+		// NOTE: if poses.size() == 0 then the 1st condition is not fulfilled -
+		// thus a second condition added to get rid of old marker instances
 
 		/* copy the size value, as after entering the for loop
 		 * the size of a vector will be increased */
-		size_t lines_size_backup = poses.size() - 1;
+		size_t lines_size_backup = 0;
+		if ( poses.size() > 0 ) {
+			lines_size_backup = poses.size() - 1;
+		}
 
 		/* if true, then fill the marker array with blank markers (action DELETE);
 		 * start `for` loop with poses.size() index because (size() - 1) objects

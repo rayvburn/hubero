@@ -649,6 +649,7 @@ void Actor::stateHandlerTargetReaching (const gazebo::common::UpdateInfo &info) 
 	if ( !manageTargetSingleReachment() ) {
 		target_manager_.abandonTarget();
 		setState(actor::ACTOR_STATE_STOP_AND_STARE);
+		sfm_.reset(); // clear SFM markers
 		return;
 	}
 
@@ -669,7 +670,7 @@ void Actor::stateHandlerLieDown		(const gazebo::common::UpdateInfo &info) {
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	double dist_traveled = 0.001; // default (determines speed of animaion)
+	double dist_traveled = 0.001; // default (determines speed of animation)
 
 	// move until a calculated position is reached
 	if ( target_manager_.isTargetChosen() ) {
@@ -694,6 +695,7 @@ void Actor::stateHandlerLieDown		(const gazebo::common::UpdateInfo &info) {
 		lie_down_.setPoseBeforeLying(*pose_world_ptr_); // will be restored
 		*pose_world_ptr_ = lie_down_.getPoseLying();	// move to the desired point
 
+		sfm_.reset();	// clear SFM markers
 		// now, wait for interruption
 
 	} else if ( lie_down_.doStopLying() ){
@@ -704,11 +706,15 @@ void Actor::stateHandlerLieDown		(const gazebo::common::UpdateInfo &info) {
 		// process stop lying call
 		*pose_world_ptr_ = lie_down_.computePoseFinishedLying();
 		pose_world_prev_ = *pose_world_ptr_;
+
+		// no need to reset SFM here
 		setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
 
 	} else {
 
 		// LieDown - idle
+		visualizeSfmCalculations();
+		std::cout << "LIE DOWN IDLE" << std::endl;
 
 	}
 
@@ -729,6 +735,7 @@ void Actor::stateHandlerStopAndStare	(const gazebo::common::UpdateInfo &info) {
 
 	// stopped, does nothing
 	// blank handler
+	visualizeSfmCalculations();
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
@@ -1136,6 +1143,7 @@ bool Actor::manageTargetTracking() {
 		target_manager_.stopFollowing();
 		ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
 		setState(ActorState::ACTOR_STATE_STOP_AND_STARE); // setState(ActorState::ACTOR_STATE_MOVE_AROUND);
+		sfm_.reset(); // clear SFM markers
 		return (false);
 	}
 
