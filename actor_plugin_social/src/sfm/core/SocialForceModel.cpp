@@ -601,6 +601,14 @@ ignition::math::Vector3d SocialForceModel::computeInternalForce(const ignition::
 	ignition::math::Vector3d f_alpha = person_mass_ * (1/relaxation_time_) * (ideal_vel_vector - actor_vel);
 	f_alpha.Z(0.0);
 
+	// internal force truncation (causes `overdrive` in close presence of
+	// another actor)
+	if ( f_alpha.Length() > 1500.0 ) {
+		std::cout << "\tINTERNAL FORCE TRUNCATED from: " << f_alpha.Length() << "\tto: 1500.0" << std::endl;
+		f_alpha = f_alpha.Normalized() * 1500.0;
+		std::cout << "\tSFM" << std::endl;
+	}
+
 	// FIXME: debugging large vector length ----------------
 #ifdef SFM_DEBUG_LARGE_VECTOR_LENGTH
 	std::cout << "\t-  -  -  - internal force -  -  -  -  -  -  -  " << std::endl;
