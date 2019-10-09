@@ -31,6 +31,9 @@
 #include <actor_sim_srv/SetGoalName.h>
 #include <actor_sim_srv/SetStance.h>
 #include <actor_sim_srv/GetVelocity.h>
+#include <actor_sim_srv/LieDown.h>
+#include <actor_sim_srv/LieDownName.h>
+#include <std_srvs/Trigger.h> // stopLying
 
 // service for switching on/off SFM's debugging info
 #include <std_srvs/SetBool.h>
@@ -87,6 +90,9 @@ private:
 	bool srvFollowObjectCallback	(actor_sim_srv::FollowObject::Request 	&req, 	actor_sim_srv::FollowObject::Response 	&resp);
 	bool srvStopFollowingCallback	(actor_sim_srv::StopFollowing::Request 	&req, 	actor_sim_srv::StopFollowing::Response 	&resp);
 	bool srvGetVelocityCallback		(actor_sim_srv::GetVelocity::Request 	&req,	actor_sim_srv::GetVelocity::Response 	&resp);
+	bool srvLieDownCallback			(actor_sim_srv::LieDown::Request		&req,	actor_sim_srv::LieDown::Response 		&resp);
+	bool srvLieDownNameCallback		(actor_sim_srv::LieDownName::Request	&req,	actor_sim_srv::LieDownName::Response 	&resp);
+	bool srvLieDownStopCallback		(std_srvs::Trigger::Request				&req,	std_srvs::Trigger::Response 			&resp);
 
 	/// \brief Switcher of a debug info printing
 	bool srvSetDebugSFMCallback		(std_srvs::SetBool::Request				&req,	std_srvs::SetBool::Response 			&resp);
@@ -126,6 +132,9 @@ private:
 	ros::ServiceServer srv_follow_object_;
 	ros::ServiceServer srv_stop_following_;
 	ros::ServiceServer srv_get_velocity_;
+	ros::ServiceServer srv_lie_down_;
+	ros::ServiceServer srv_lie_down_name_;
+	ros::ServiceServer srv_lie_down_stop_;
 
 	/// \brief Only for debugging purposes
 	ros::ServiceServer srv_switch_debug_sfm_;

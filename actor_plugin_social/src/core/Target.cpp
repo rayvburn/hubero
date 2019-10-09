@@ -311,12 +311,18 @@ bool Target::setNewTarget(const std::string &object_name) {
 
 bool Target::setNewTarget() {
 
+	std::cout << "abandonTarget(void)" << "\tqueue size: " << target_queue_.size() << std::endl;
 	if ( target_queue_.empty() ) {
 		return (false);
 	}
+	std::cout << "\t1)queue size (MUST BE NOT EMPTY): " << target_queue_.size() << std::endl;
 	setNewTarget(target_queue_.front());
-	target_queue_.pop();
-
+	std::cout << "\t2)queue size (MUST BE NOT EMPTY): " << target_queue_.size() << std::endl;
+	// multithreading? TODO: mutex?
+	if ( !target_queue_.empty() ) {
+		target_queue_.pop();
+	}
+	std::cout << "\t3)queue size: " << target_queue_.size() << std::endl;
 	return (true);
 
 }
@@ -894,7 +900,7 @@ Target::~Target() {
 
 
 // ------------------------------------------------------------------- //
-// private
+// public
 std::tuple<bool, gazebo::physics::ModelPtr> Target::isModelValid(const std::string &object_name) {
 
 	// Gazebo::Physics::World - ModelByName() says:

@@ -127,6 +127,8 @@ public:
 	 */
 	bool setNewTarget();
 
+	/* See `setNewTargetPriority()` template method at the bottom of the file */
+
     /**
      * @brief Tries to find some new (random) target location that is far enough from the current one
      * and is reachable in terms of global plan
@@ -265,19 +267,20 @@ public:
 	static bool doesBoundingBoxContainPoint(const ignition::math::Box &bb, const ignition::math::Vector3d &pt);
 
 	/**
+	 * @brief Helper function that checks if model of a given name exists in the world
+	 * @param object_name
+	 * @return A tuple of bool and ModelPtr, bool set to true if model is valid and ModelPtr is set accordingly.
+	 * If bool is false, then ModelPtr is NULL
+	 * @note Cannot be static (world_ptr_); utilized by Actor (see @ref lieDown)
+	 */
+	std::tuple<bool, gazebo::physics::ModelPtr> isModelValid(const std::string &object_name);
+
+	/**
 	 * @brief Destructor
 	 */
 	virtual ~Target();
 
 private:
-
-	/**
-	 * @brief Helper function that checks if model of a given name exists in the world
-	 * @param object_name
-	 * @return A tuple of bool and ModelPtr, bool set to true if model is valid and ModelPtr is set accordingly.
-	 * If bool is false, then ModelPtr is NULL
-	 */
-	std::tuple<bool, gazebo::physics::ModelPtr> isModelValid(const std::string &object_name);
 
 	/**
 	 * @brief Tries to generate global path plan. If successful - updates internal state,
@@ -372,6 +375,57 @@ private:
 
     /// @brief Time of the last generation of a global plan for object tracking mode.
 	gazebo::common::Time time_last_follow_plan_;
+
+public:
+
+	/**
+	 * @brief Updates the current target even if the target queue
+	 * is not empty.
+	 * @param target:
+	 * @note The target is a place within costmap bounds or a name of an object.
+	 * @param queue_backup: if TRUE (default) the previous queue elements
+	 * will be pushed back to the container (this operation needs to clear
+	 * the whole queue).
+	 * @return True if operation successful
+	 */
+	template <typename T>
+	bool setNewTargetPriority(const T &target, const bool &queue_backup = true) {
+
+		// make a backup of a current target/target queue (it will be restored
+		// after reachment of the given goal (having priority))
+		std::vector<ignition::math::Vector3d> targets_v;
+
+		// abandon the current target
+		if ( isTargetChosen() ) {
+			abandonTarget();
+		}
+
+		// while -> queue size is not known;
+		// set and immediately abandon all targets stored
+		// in the queue
+		while ( !isTargetQueueEmpty() ) {
+			if ( queue_backup ) {
+				targets_v.push_back(getTarget());
+			}
+			setNewTarget(); 	// pull out a target from the queue
+			abandonTarget();	// abandon it
+		}
+
+		// try to set a new target (desired one)
+		bool status = setNewTarget(target);
+
+		// whether to restore old queue elements
+		if ( queue_backup ) { 	// although there are no elements in the `targets_v`
+								// vector - let's omit that section if no backup needed
+			// restore old targets (put them straight into the queue)
+			for ( size_t i = 0; i < targets_v.size(); i++ ) {
+				setNewTarget(targets_v.at(i), true);
+			}
+		}
+
+		return (status);
+
+	}
 
 };
 

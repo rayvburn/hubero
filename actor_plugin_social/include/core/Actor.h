@@ -27,6 +27,9 @@
 #include "ros_interface/ParamLoader.h"
 #include "ros_interface/GlobalPlan.h"
 
+// State Helpers
+#include "core/LieDownHelper.h"
+
 // Social Force Model
 #include "sfm/core/SocialForceModel.h"
 #include <Arrow.h>
@@ -127,6 +130,11 @@ public:
 	/// \return True if object is valid
 	bool followObject(const std::string &object_name, const bool &stop_after_arrival); 	// TODO: stop_after_arrival handling
 
+	// TODO:
+	bool lieDown(const std::string &object_name, const double &height, const double &rotation);
+	bool lieDown(const double &x_pos, const double &y_pos, const double &z_pos, const double &rotation);
+	bool lieDownStop();
+
 	/// \brief Get velocity vector (linear x, linear y and angular `yaw`)
 	std::array<double, 3> getVelocity() const;
 
@@ -146,6 +154,8 @@ public:
     void stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info);
     void stateHandlerMoveAround		(const gazebo::common::UpdateInfo &info);
     void stateHandlerTargetReaching (const gazebo::common::UpdateInfo &info);
+    void stateHandlerLieDown		(const gazebo::common::UpdateInfo &info);
+//	void stateHandlerFinishLieDown  (const gazebo::common::UpdateInfo &info); // TEMP
     void stateHandlerStopAndStare	(const gazebo::common::UpdateInfo &info);
     void stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info);
     void stateHandlerTeleoperation 	(const gazebo::common::UpdateInfo &info);
@@ -191,6 +201,9 @@ private:
     /// \param dt: delta of time since last update event (in seconds)
     /// \return Traveled distance in meters
     double move(const double &dt);
+
+    // TODO:
+    void finishLieDownMode();
 
     /// \brief Helper function to calculate the actor's velocity as it could not be set
     /// in WorldPtr - this is just a workaround for a Gazebo/ActorPlugin bug
@@ -333,6 +346,9 @@ private:
     /// plan to be generated to a newly chosen target.
     Target target_manager_;
 
+    /// \brief Helper class to handle LIE_DOWN state
+    LieDownHelper lie_down_;
+
 public:
 
     /// \brief Template method for setting a new target for actor (single reachment
@@ -343,29 +359,13 @@ public:
 	template <typename T>
 	bool setNewTarget(const T &target) {
 
-		// make a backup of a current target/target queue (it will be restored
-		// after reachment of the given goal (having priority))
-		std::vector<ignition::math::Vector3d> targets_v;
-
-		// queue size is not known
-		while ( target_manager_.isTargetChosen() ) {
-			targets_v.push_back(target_manager_.getTarget());
-			target_manager_.abandonTarget();
-			target_manager_.setNewTarget(); // pull out a target from the queue
-		}
-
-		// try to set a new target (desired one)
-		bool status = target_manager_.setNewTarget(target);
-
-		// restore old targets (put them straight into the queue)
-		for ( size_t i = 0; i < targets_v.size(); i++ ) {
-			target_manager_.setNewTarget(targets_v.at(i), true);
-		}
+		bool status = target_manager_.setNewTargetPriority(target, true);
 
 		// if new-desired target is achievable then change the state (align firstly)
 		if ( status ) {
 			setState(ActorState::ACTOR_STATE_TARGET_REACHING); // will be restored
 			setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
+			setStance(ActorStance::ACTOR_STANCE_WALK);
 		}
 
 		return (status);

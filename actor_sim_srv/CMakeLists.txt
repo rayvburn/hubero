@@ -64,6 +64,8 @@ add_service_files(
   SetInteractionType.srv
   SetStance.srv
   StopFollowing.srv
+  LieDown.srv
+  LieDownName.srv
 )
 
 ## Generate actions in the 'action' folder

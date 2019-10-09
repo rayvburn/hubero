@@ -214,6 +214,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	fsm_.addState(ACTOR_STATE_ALIGN_TARGET);
 	fsm_.addState(ACTOR_STATE_MOVE_AROUND);
 	fsm_.addState(ACTOR_STATE_TARGET_REACHING);
+	fsm_.addState(ACTOR_STATE_LIE_DOWN);
 	fsm_.addState(ACTOR_STATE_STOP_AND_STARE);
 	fsm_.addState(ACTOR_STATE_FOLLOW_OBJECT);
 	fsm_.addState(ACTOR_STATE_TELEOPERATION);
@@ -402,7 +403,6 @@ bool Actor::followObject(const std::string &object_name, const bool &stop_after_
 	// TODO: stop_after_arrival?
 	if ( target_manager_.followObject(object_name) ) {
 		ignored_models_.push_back(object_name);
-		setStance(ActorStance::ACTOR_STANCE_WALK);
 		// NOTE: to make actor face the target first,
 		// there must be an order of calls as below:
 		setState(ActorState::ACTOR_STATE_FOLLOW_OBJECT);
@@ -410,9 +410,88 @@ bool Actor::followObject(const std::string &object_name, const bool &stop_after_
 		// this forces FSM to back to follow object state after
 		// successful alignment (previous state is equal to
 		// `follow_object` after alignment)
+		//
+		// setStance after setState because setState updates default
+		// stance for a given state
+		setStance(ActorStance::ACTOR_STANCE_WALK);
 		return (true);
 	}
 	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Actor::lieDown(const std::string &object_name, const double &height, const double &rotation) {
+
+	lie_down_.setLying(false);
+	lie_down_.setNormalHeight(pose_world_ptr_->Pos().Z());
+	lie_down_.setLyingHeight(height);
+	lie_down_.setRotation(rotation);
+
+	// `isModelValid` - in fact this operation is executed 2 times..
+	bool valid = false;
+	gazebo::physics::ModelPtr model_p = nullptr;
+	std::tie(valid, model_p) = target_manager_.isModelValid(object_name);
+	if ( !valid ) {
+		return (false);
+	}
+	lie_down_.setLyingPose(model_p->WorldPose());
+
+	std::cout << "Actor::lieDown BEFORE target: " << target_manager_.getTarget() << std::endl;
+
+	// NOTE: clears the current queue - hard-coded (`false` below)
+	bool status = target_manager_.setNewTargetPriority(object_name, false);
+
+	std::cout << "Actor::lieDown AFTER1 target: " << target_manager_.getTarget() << std::endl;
+
+	// if new-desired target is achievable then change the state (align firstly)
+	if ( status ) {
+		setState(ActorState::ACTOR_STATE_LIE_DOWN); // will be restored by FSM
+		setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
+		setStance(ActorStance::ACTOR_STANCE_WALK);
+	}
+
+	return (status);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Actor::lieDown(const double &x_pos, const double &y_pos, const double &z_pos, const double &rotation) {
+
+	lie_down_.setLying(false);
+	lie_down_.setNormalHeight(pose_world_ptr_->Pos().Z());
+	lie_down_.setLyingHeight(z_pos);
+	lie_down_.setRotation(rotation);
+	lie_down_.setLyingPose(ignition::math::Pose3d(x_pos, y_pos, z_pos,
+												  IGN_PI_2, 0.0, 0.0)); // orientation: hard-coded STAND/WALK configuration
+
+	std::cout << "Actor::lieDown BEFORE target: " << target_manager_.getTarget() << std::endl;
+
+	// NOTE: clears the current queue - hard-coded (`false` below)
+	bool status = target_manager_.setNewTargetPriority(ignition::math::Vector3d(x_pos, y_pos, 0.0), false);
+
+	std::cout << "Actor::lieDown AFTER1 target: " << target_manager_.getTarget() << std::endl;
+
+	// if new-desired target is achievable then change the state (align firstly)
+	if ( status ) {
+		setState(ActorState::ACTOR_STATE_LIE_DOWN); // will be restored by FSM
+		setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
+		setStance(ActorStance::ACTOR_STANCE_WALK);
+	}
+
+	return (status);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Actor::lieDownStop() {
+
+	lie_down_.stopLying();
+	// no need to reset internal state (configuration variables: poses etc)
+	return (true);
 
 }
 
@@ -568,11 +647,76 @@ void Actor::stateHandlerTargetReaching (const gazebo::common::UpdateInfo &info) 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 	if ( !manageTargetSingleReachment() ) {
+		target_manager_.abandonTarget();
+		setState(actor::ACTOR_STATE_STOP_AND_STARE);
 		return;
 	}
 
 	double dist_traveled = move(dt);
 	visualizeSfmCalculations();
+
+	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	applyUpdate(dist_traveled);
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Actor::stateHandlerLieDown		(const gazebo::common::UpdateInfo &info) {
+
+	double dt = prepareForUpdate();
+
+	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	double dist_traveled = 0.001; // default (determines speed of animaion)
+
+	// move until a calculated position is reached
+	if ( target_manager_.isTargetChosen() ) {
+
+		if ( !manageTargetSingleReachment() ) {
+			// executes only once
+			target_manager_.abandonTarget();
+		}
+		dist_traveled = move(dt);
+		visualizeSfmCalculations();
+
+	} else if ( !lie_down_.isLyingDown() ) {
+
+		// actor arrived to the target point;
+		// let's lie down
+		setStance(ActorStance::ACTOR_STANCE_LIE);
+
+		std::cout << "stateHandlerLieDown, pos1: " << pose_world_ptr_->Pos() << std::endl;
+
+		lie_down_.setPoseBeforeLying(*pose_world_ptr_);
+
+		// update the local copy of the actor's pose
+		*pose_world_ptr_ = lie_down_.getPoseCenter(); // TODO: may need some tweaks
+//		pose_world_prev_ = *pose_world_ptr_;
+
+		std::cout << "stateHandlerLieDown, pos2: " << pose_world_ptr_->Pos() << std::endl;
+
+		// update state's internal configuration
+		lie_down_.setLying(true);
+
+		// now, wait for interruption
+		// TODO: reset LyingFlag
+
+	} else if ( lie_down_.doStopLying() ){
+
+		// process stop lying call
+		*pose_world_ptr_ = lie_down_.computePoseFinishedLying();
+		pose_world_prev_ = *pose_world_ptr_;
+//		setStance(ActorStance::ACTOR_STANCE_WALK);
+		setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
+
+	} else {
+
+		std::cout << "stateHandlerLieDown, posIDLE: " << pose_world_ptr_->Pos() << std::endl;
+
+	}
+
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
@@ -1075,8 +1219,8 @@ bool Actor::manageTargetSingleReachment() {
 
 	// do abandon the current target? either reached or non-reachable anymore
 	if ( abandon ) {
-		target_manager_.abandonTarget();
-		setState(actor::ACTOR_STATE_STOP_AND_STARE);
+//		target_manager_.abandonTarget();
+//		setState(actor::ACTOR_STATE_STOP_AND_STARE);
 		return (false);
 	}
 
@@ -1211,6 +1355,11 @@ void Actor::updateTransitionFunctionPtr() {
 	case(ACTOR_STATE_TARGET_REACHING):
 			std::cout << "State: \ttargetReaching" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerTargetReaching;
+			setStance(ACTOR_STANCE_WALK);
+			break;
+	case(ACTOR_STATE_LIE_DOWN):
+			std::cout << "State: \tlieDown" << std::endl;
+			trans_function_ptr = &actor::core::Actor::stateHandlerLieDown;
 			setStance(ACTOR_STANCE_WALK);
 			break;
 	case(ACTOR_STATE_STOP_AND_STARE):

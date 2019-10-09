@@ -64,6 +64,9 @@ void Connection::initServices() {
 	srv_follow_object_ 	= nh_ptr_->advertiseService(namespace_ + "/follow_object", 	&Connection::srvFollowObjectCallback, this);
 	srv_stop_following_ = nh_ptr_->advertiseService(namespace_ + "/stop_following", &Connection::srvStopFollowingCallback, this);
 	srv_get_velocity_ 	= nh_ptr_->advertiseService(namespace_ + "/get_velocity", 	&Connection::srvGetVelocityCallback, this);
+	srv_lie_down_ 		= nh_ptr_->advertiseService(namespace_ + "/lie_down", 		&Connection::srvLieDownCallback, this);
+	srv_lie_down_name_	= nh_ptr_->advertiseService(namespace_ + "/lie_down_name",	&Connection::srvLieDownNameCallback, this);
+	srv_lie_down_stop_	= nh_ptr_->advertiseService(namespace_ + "/lie_down_stop",	&Connection::srvLieDownStopCallback, this);
 
 	srv_switch_debug_sfm_= nh_ptr_->advertiseService(namespace_ + "/debug_sfm", 	&Connection::srvSetDebugSFMCallback, this);
 
@@ -181,6 +184,39 @@ bool Connection::srvGetVelocityCallback(actor_sim_srv::GetVelocity::Request &req
 	resp.y = velocity.at(1);
 	resp.yaw = velocity.at(2);
 
+	return (true);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Connection::srvLieDownCallback(actor_sim_srv::LieDown::Request &req, actor_sim_srv::LieDown::Response &resp) {
+
+	std::cout << "\nsrvLieDownCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	// take ownership of the Actor shared_ptr
+	resp.flag = actor_ptr_.lock()->lieDown(req.x_pos, req.y_pos, req.z_pos, req.rotation);
+	return (true);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Connection::srvLieDownNameCallback(actor_sim_srv::LieDownName::Request	&req, actor_sim_srv::LieDownName::Response &resp) {
+
+	std::cout << "\nsrvLieDownNameCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	// take ownership of the Actor shared_ptr
+	resp.flag = actor_ptr_.lock()->lieDown(req.object_name, req.lying_height, req.rotation);
+	return (true);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Connection::srvLieDownStopCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp) {
+
+	std::cout << "\nsrvLieDownStopCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	// take ownership of the Actor shared_ptr
+	resp.success = actor_ptr_.lock()->lieDownStop();
 	return (true);
 
 }
