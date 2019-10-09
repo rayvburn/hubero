@@ -26,9 +26,9 @@ public:
 	/// \brief Default constructor
 	SocialConductor();
 
+	/// \note DEPRECATED, use \ref apply instead
 	/// \brief Updates `actual` social force vector stored internally.
 	/// \param fuzz_output is an output (digital) of the defuzzification block
-	/// \note DEPRECATED
 	void apply(const double &fuzz_output);
 
 	/// \brief Updates `actual` social force vector stored internally.
@@ -39,6 +39,7 @@ public:
 	/// \return Superposed social force vector
 	ignition::math::Vector3d getSocialVector() const;
 
+	/// \note DEPRECATED
 	/// \brief Returns the last active behaviour ID
 	/// \return
 	uint8_t getBehaviourActiveNum() const;
@@ -63,12 +64,21 @@ private:
 	/// after superposition procedure)
 	ignition::math::Vector3d sf_result_;
 
+	/// \note DEPRECATED
 	/// \brief Stores last active behaviour
 	uint8_t behaviour_active_;
+
+	/// \brief Stores active behaviour list as a string (each activated
+	/// behaviour is placed in a new line).
+	std::string behaviour_active_str_;
 
 	/// \brief Calculates the superposed vector according to the summed one
 	/// considering truncation if its magnitude is too big.
 	void superpose();
+
+	/// \brief Updates `behaviour_active_str_` according to its length
+	/// and given behaviour name (method argument)
+	void updateActiveBehaviour(const std::string &beh_name);
 
 };
 

@@ -84,8 +84,6 @@ void SocialConductor::apply(const double &fuzz_output) {
 
 	}
 
-
-
 	superpose();
 
 }
@@ -101,59 +99,70 @@ void SocialConductor::apply(const std::string &term_name) {
 		// apply `turn left` behavior
 		sf_vector_.push_back(this->turnLeft());
 		behaviour_active_ = FUZZ_BEH_TURN_LEFT;
+		updateActiveBehaviour("turn_left"); // create a list of activated behaviours
 
 	} else if ( term_name == "turn_left_accelerate" ) {
 
 		// apply `turn left and accelerate` behavior
 		sf_vector_.push_back(this->turnLeftAccelerate());
 		behaviour_active_ = FUZZ_BEH_TURN_LEFT_ACCELERATE;
+		updateActiveBehaviour("turn_left_accelerate");
 
 	} else if ( term_name == "accelerate" ) {
 
 		// apply `accelerate` behavior
 		sf_vector_.push_back(this->accelerate());
 		behaviour_active_ = FUZZ_BEH_ACCELERATE;
+		updateActiveBehaviour("accelerate");
 
 	} else if ( term_name == "go_along" ) {
 
 		// apply `go along` behavior
 		sf_vector_.push_back(this->goAlong());
 		behaviour_active_ = FUZZ_BEH_GO_ALONG;
+		updateActiveBehaviour("go_along");
 
 	} else if ( term_name == "decelerate" ) {
 
 		// apply `decelerate` behavior
 		sf_vector_.push_back(this->decelerate());
 		behaviour_active_ = FUZZ_BEH_DECELERATE;
+		updateActiveBehaviour("decelerate");
 
 	} else if ( term_name == "stop" ) {
 
 		// apply `stop` behavior
 		sf_vector_.push_back(this->stop());
 		behaviour_active_ = FUZZ_BEH_STOP;
+		updateActiveBehaviour("stop");
 
 	} else if ( term_name == "turn_right_decelerate" ) {
 
 		// apply `turn right and decelerate` behavior
 		sf_vector_.push_back(this->turnRightDecelerate());
 		behaviour_active_ = FUZZ_BEH_TURN_RIGHT_DECELERATE;
+		updateActiveBehaviour("turn_right_decelerate");
 
 	} else if ( term_name == "turn_right" ) {
 
 		// apply `turn right` behavior
 		sf_vector_.push_back(this->turnRight());
 		behaviour_active_ = FUZZ_BEH_TURN_RIGHT;
+		updateActiveBehaviour("turn_right");
 
 	} else if ( term_name == "turn_right_accelerate" ) {
 
 		// apply `turn right and accelerate` behavior
 		sf_vector_.push_back(this->turnRightAccelerate());
 		behaviour_active_ = FUZZ_BEH_TURN_RIGHT_ACCELERATE;
+		updateActiveBehaviour("turn_right_accelerate");
 
 	} else {
 
 		// prevents calling `superpose` when [input] is invalid
 		behaviour_active_ = FUZZ_BEH_NONE;
+		// do not update the string to prevent having `none`
+		// among valid behaviours
 		return;
 
 	}
@@ -178,41 +187,12 @@ uint8_t SocialConductor::getBehaviourActiveNum() const {
 
 std::string SocialConductor::getBehaviourActive() const {
 
-	switch (behaviour_active_) {
-	case(FUZZ_BEH_NONE):					// 0
+	// NOTE: rViz goes mad when tries to publish
+	// an empty string (application crashes)
+	if ( behaviour_active_str_.empty() ) {
 		return ("none");
-		break;
-	case(FUZZ_BEH_TURN_LEFT):				// 1
-		return ("turn_left");
-		break;
-	case(FUZZ_BEH_TURN_LEFT_ACCELERATE): 	// 2
-		return ("turn_left_accelerate");
-		break;
-	case(FUZZ_BEH_GO_ALONG):				// 3
-		return ("go_along");
-		break;
-	case(FUZZ_BEH_ACCELERATE):				// 4
-		return ("accelerate");
-		break;
-	case(FUZZ_BEH_TURN_RIGHT_ACCELERATE):	// 5
-		return ("turn_right_accelerate");
-		break;
-	case(FUZZ_BEH_TURN_RIGHT):				// 6
-		return ("turn_right");
-		break;
-	case(FUZZ_BEH_TURN_RIGHT_DECELERATE):	// 7
-		return ("turn_right_decelerate");
-		break;
-	case(FUZZ_BEH_STOP):					// 8
-		return ("stop");
-		break;
-	case(FUZZ_BEH_DECELERATE):				// 9
-		return ("decelerate");
-		break;
-	default:
-		return ("");
-		break;
 	}
+	return (behaviour_active_str_);
 
 }
 
@@ -221,6 +201,8 @@ std::string SocialConductor::getBehaviourActive() const {
 void SocialConductor::reset() {
 	sf_vector_.clear();
 	sf_result_ = ignition::math::Vector3d();
+	behaviour_active_ = 0;
+	behaviour_active_str_.clear();
 }
 
 // ------------------------------------------------------------------- //
@@ -231,20 +213,43 @@ SocialConductor::~SocialConductor() { }
 
 void SocialConductor::superpose() {
 
+	// save a max length of a component to know
+	// if there are few meaningful (i.e. non-zero length-ed)
+	// elements in the vector but apparently their sum
+	// is near-zero;
+	// used to determine which behaviours are actually activated
+	double max_len = 0.0;
+
 	// TODO: add crowd support - actual superposition
 	// NOW: average value of vectors
 	ignition::math::Vector3d avg;
 	for ( size_t i = 0; i < sf_vector_.size(); i++ ) {
 		avg += sf_vector_.at(i);
+		double len = sf_vector_.at(i).Length();
+		if ( len > max_len ) { max_len = len; }
 	}
 	avg /= sf_vector_.size();
 
 	// assign averaged vector to the resultative one
 	sf_result_ = avg;
 
-	// force `none` behaviour when resulting force is very small
-	if ( sf_result_.Length() < 1e-06 ) {
+	// force `none` behaviour when `max len` is very small
+	if ( max_len < 1e-03 ) {
 		behaviour_active_ = FUZZ_BEH_NONE;
+		behaviour_active_str_.clear();
+	}
+
+}
+
+// ------------------------------------------------------------------- //
+
+void SocialConductor::updateActiveBehaviour(const std::string &beh_name) {
+
+	if ( behaviour_active_str_.empty() ) {
+		behaviour_active_str_ = beh_name;
+	} else {
+		behaviour_active_str_.append("\n");
+		behaviour_active_str_.append(beh_name);
 	}
 
 }
