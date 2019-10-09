@@ -1055,8 +1055,8 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 		if ( i == 0 ) {
 
 			// line_angle expressed from the actor to an object
-			line.Set( pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.0,
-					  model_ptr->WorldPose().Pos().X(), model_ptr->WorldPose().Pos().Y(), 0.0 );
+			line.Set(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.0,
+					 model_ptr->BoundingBox().Center().X(), model_ptr->BoundingBox().Center().Y(), model_ptr->BoundingBox().Center().Z());
 
 		} else if ( i == 1 ) {
 
@@ -1070,7 +1070,7 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 			pt_helper.Y(pt_intersection.Y() + 30.0 * line.Direction().Y());
 
 			// update line points, maintain line direction!
-			line.Set(model_ptr->WorldPose().Pos().X(), model_ptr->WorldPose().Pos().Y(), 0.0,
+			line.Set(model_ptr->BoundingBox().Center().X(), model_ptr->BoundingBox().Center().Y(), model_ptr->BoundingBox().Center().Z(),
 					 pt_helper.X(), pt_helper.Y(), 0.0);
 
 		}
@@ -1084,9 +1084,13 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 
 		// evaluate intersection point (line and bounding box)
 		std::tie(does_intersect, std::ignore, pt_intersection) = model_ptr->BoundingBox().Intersect(line);
+		pt_intersection.Z(0.0);
 
 		if ( !does_intersect ) {
-			// this should not happen, something went wrong
+			// this should not happen, something went wrong;
+			// it is noticeable that sometimes even though a model
+			// is valid and line's direction seems to be ok,
+			// `does_intersect` stays FALSE and pt_intersection is (0,0,0)
 			return (std::make_tuple(false, ignition::math::Vector3d(), ignition::math::Vector3d()));
 			break;
 		}
@@ -1094,6 +1098,11 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 		// verify whether the point is reachable in terms of costmap
 		if ( global_planner_.getCost(pt_intersection.X(), pt_intersection.Y()) < 100 ) {
 			return (std::make_tuple(true, pt_intersection, line.Direction()));
+			break;
+		} else {
+			// intersection point has been found and even though cost is big,
+			// let's send intersection point and the line's direction to the caller
+			return (std::make_tuple(false, pt_intersection, line.Direction()));
 			break;
 		}
 
