@@ -424,6 +424,11 @@ bool Actor::followObject(const std::string &object_name, const bool &stop_after_
 
 bool Actor::lieDown(const std::string &object_name, const double &height, const double &rotation) {
 
+	if ( lie_down_.isLyingDown() ) {
+		std::cout << "Actor::lieDown - stop lying first, actor can't grovel" << std::endl;
+		return (false);
+	}
+
 	lie_down_.setLying(false);
 	lie_down_.setLyingHeight(height);
 	lie_down_.setRotation(rotation);
@@ -454,6 +459,11 @@ bool Actor::lieDown(const std::string &object_name, const double &height, const 
 // ------------------------------------------------------------------- //
 
 bool Actor::lieDown(const double &x_pos, const double &y_pos, const double &z_pos, const double &rotation) {
+
+	if ( lie_down_.isLyingDown() ) {
+		std::cout << "Actor::lieDown - stop lying first, actor can't grovel" << std::endl;
+		return (false);
+	}
 
 	lie_down_.setLying(false);
 	lie_down_.setLyingHeight(z_pos);
@@ -687,6 +697,9 @@ void Actor::stateHandlerLieDown		(const gazebo::common::UpdateInfo &info) {
 		// now, wait for interruption
 
 	} else if ( lie_down_.doStopLying() ){
+
+		// reset internal state
+		lie_down_.setLying(false);
 
 		// process stop lying call
 		*pose_world_ptr_ = lie_down_.computePoseFinishedLying();
