@@ -425,7 +425,6 @@ bool Actor::followObject(const std::string &object_name, const bool &stop_after_
 bool Actor::lieDown(const std::string &object_name, const double &height, const double &rotation) {
 
 	lie_down_.setLying(false);
-	lie_down_.setNormalHeight(pose_world_ptr_->Pos().Z());
 	lie_down_.setLyingHeight(height);
 	lie_down_.setRotation(rotation);
 
@@ -438,12 +437,8 @@ bool Actor::lieDown(const std::string &object_name, const double &height, const 
 	}
 	lie_down_.setLyingPose(model_p->WorldPose());
 
-	std::cout << "Actor::lieDown BEFORE target: " << target_manager_.getTarget() << std::endl;
-
 	// NOTE: clears the current queue - hard-coded (`false` below)
 	bool status = target_manager_.setNewTargetPriority(object_name, false);
-
-	std::cout << "Actor::lieDown AFTER1 target: " << target_manager_.getTarget() << std::endl;
 
 	// if new-desired target is achievable then change the state (align firstly)
 	if ( status ) {
@@ -461,18 +456,13 @@ bool Actor::lieDown(const std::string &object_name, const double &height, const 
 bool Actor::lieDown(const double &x_pos, const double &y_pos, const double &z_pos, const double &rotation) {
 
 	lie_down_.setLying(false);
-	lie_down_.setNormalHeight(pose_world_ptr_->Pos().Z());
 	lie_down_.setLyingHeight(z_pos);
 	lie_down_.setRotation(rotation);
 	lie_down_.setLyingPose(ignition::math::Pose3d(x_pos, y_pos, z_pos,
 												  IGN_PI_2, 0.0, 0.0)); // orientation: hard-coded STAND/WALK configuration
 
-	std::cout << "Actor::lieDown BEFORE target: " << target_manager_.getTarget() << std::endl;
-
 	// NOTE: clears the current queue - hard-coded (`false` below)
 	bool status = target_manager_.setNewTargetPriority(ignition::math::Vector3d(x_pos, y_pos, 0.0), false);
-
-	std::cout << "Actor::lieDown AFTER1 target: " << target_manager_.getTarget() << std::endl;
 
 	// if new-desired target is achievable then change the state (align firstly)
 	if ( status ) {
@@ -687,33 +677,25 @@ void Actor::stateHandlerLieDown		(const gazebo::common::UpdateInfo &info) {
 		// let's lie down
 		setStance(ActorStance::ACTOR_STANCE_LIE);
 
-		std::cout << "stateHandlerLieDown, pos1: " << pose_world_ptr_->Pos() << std::endl;
-
-		lie_down_.setPoseBeforeLying(*pose_world_ptr_);
-
-		// update the local copy of the actor's pose
-		*pose_world_ptr_ = lie_down_.getPoseLying(); // TODO: may need some tweaks
-//		pose_world_prev_ = *pose_world_ptr_;
-
-		std::cout << "stateHandlerLieDown, pos2: " << pose_world_ptr_->Pos() << std::endl;
-
 		// update state's internal configuration
 		lie_down_.setLying(true);
 
+		// save configuration
+		lie_down_.setPoseBeforeLying(*pose_world_ptr_); // will be restored
+		*pose_world_ptr_ = lie_down_.getPoseLying();	// move to the desired point
+
 		// now, wait for interruption
-		// TODO: reset LyingFlag
 
 	} else if ( lie_down_.doStopLying() ){
 
 		// process stop lying call
 		*pose_world_ptr_ = lie_down_.computePoseFinishedLying();
 		pose_world_prev_ = *pose_world_ptr_;
-//		setStance(ActorStance::ACTOR_STANCE_WALK);
 		setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
 
 	} else {
 
-		std::cout << "stateHandlerLieDown, posIDLE: " << pose_world_ptr_->Pos() << std::endl;
+		// LieDown - idle
 
 	}
 

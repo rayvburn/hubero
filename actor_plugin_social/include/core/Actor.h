@@ -130,9 +130,29 @@ public:
 	/// \return True if object is valid
 	bool followObject(const std::string &object_name, const bool &stop_after_arrival); 	// TODO: stop_after_arrival handling
 
-	// TODO:
+	/**
+	 * @brief Processes command related to the FSM's state switch to `LieDown`.
+	 * @note Target point determined via object name.
+	 * @param object_name: object on which actor should lie down
+	 * @param height: height above the ground while lying
+	 * @param rotation: additional rotation applied to the actor while lying
+	 * @return True if operation successful
+	 */
 	bool lieDown(const std::string &object_name, const double &height, const double &rotation);
+	/**
+	 * @brief Processes command related to the FSM's state switch to `LieDown`.
+	 * @note Target point determined via world coordinates
+	 * @param x_pos
+	 * @param y_pos
+	 * @param z_pos: height above the ground while lying
+	 * @param rotation: additional rotation applied to the actor while lying
+	 * @return True if operation successful
+	 */
 	bool lieDown(const double &x_pos, const double &y_pos, const double &z_pos, const double &rotation);
+	/**
+	 * @brief Processes `LieDown` state finish command.
+	 * @return
+	 */
 	bool lieDownStop();
 
 	/// \brief Get velocity vector (linear x, linear y and angular `yaw`)
@@ -155,7 +175,6 @@ public:
     void stateHandlerMoveAround		(const gazebo::common::UpdateInfo &info);
     void stateHandlerTargetReaching (const gazebo::common::UpdateInfo &info);
     void stateHandlerLieDown		(const gazebo::common::UpdateInfo &info);
-//	void stateHandlerFinishLieDown  (const gazebo::common::UpdateInfo &info); // TEMP
     void stateHandlerStopAndStare	(const gazebo::common::UpdateInfo &info);
     void stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info);
     void stateHandlerTeleoperation 	(const gazebo::common::UpdateInfo &info);
@@ -201,9 +220,6 @@ private:
     /// \param dt: delta of time since last update event (in seconds)
     /// \return Traveled distance in meters
     double move(const double &dt);
-
-    // TODO:
-    void finishLieDownMode();
 
     /// \brief Helper function to calculate the actor's velocity as it could not be set
     /// in WorldPtr - this is just a workaround for a Gazebo/ActorPlugin bug

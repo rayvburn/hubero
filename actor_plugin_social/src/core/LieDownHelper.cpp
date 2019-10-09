@@ -58,7 +58,7 @@ void LieDownHelper::stopLying() {
 ignition::math::Pose3d LieDownHelper::computePoseFinishedLying() const {
 
 	ignition::math::Angle yaw_new = pose_lie_start_.Rot().Yaw();
-	yaw_new += ignition::math::Angle::HalfPi;
+	yaw_new += ignition::math::Angle::Pi;
 	yaw_new.Normalize();
 
 	ignition::math::Pose3d new_pose = pose_lie_start_;
