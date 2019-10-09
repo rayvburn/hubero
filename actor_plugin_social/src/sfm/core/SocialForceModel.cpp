@@ -290,8 +290,10 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		}
 
 		// truncate
-		const double FORCE_INTERACTION_MAX = 1200; // 900.0; (intersection occurs)
-		if ( is_an_actor && f_alpha_beta.Length() * factor_force_interaction_ > FORCE_INTERACTION_MAX ) {
+		const double FORCE_INTERACTION_MAX = 1200; 	// 900.0; (intersection occurs)
+		if ( (is_an_actor || is_dynamic) && 		// applies to dynamic objects
+			 (f_alpha_beta.Length() * factor_force_interaction_ > FORCE_INTERACTION_MAX) )
+		{
 			f_alpha_beta = f_alpha_beta.Normalized() * (FORCE_INTERACTION_MAX/(f_alpha_beta.Length() * factor_force_interaction_));
 		}
 
