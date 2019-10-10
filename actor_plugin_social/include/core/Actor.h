@@ -127,32 +127,32 @@ public:
 	/* SCROLL DOWN for a `setNewTarget()` template */
 
 	/// \brief Method to set new target for actor - object's name
+	/// \note Object tracking will not run properly when a static
+	/// obstacle (the one marked on the actor global costmap) is selected
+	/// (whose name is given by `object_name`). Choose a dynamic obstacle
+	/// or put an extra object in a free map cell and move it if wish to debug.
 	/// \return True if object is valid
 	bool followObject(const std::string &object_name, const bool &stop_after_arrival); 	// TODO: stop_after_arrival handling
 
-	/**
-	 * @brief Processes command related to the FSM's state switch to `LieDown`.
-	 * @note Target point determined via object name.
-	 * @param object_name: object on which actor should lie down
-	 * @param height: height above the ground while lying
-	 * @param rotation: additional rotation applied to the actor while lying
-	 * @return True if operation successful
-	 */
+	/// \brief Processes command related to the FSM's state switch to `LieDown`.
+	/// \note Target point determined via object name.
+	/// \param object_name: object on which actor should lie down
+	/// \param height: height above the ground while lying
+	/// \param rotation: additional rotation applied to the actor while lying
+	/// \return True if operation successful
 	bool lieDown(const std::string &object_name, const double &height, const double &rotation);
-	/**
-	 * @brief Processes command related to the FSM's state switch to `LieDown`.
-	 * @note Target point determined via world coordinates
-	 * @param x_pos
-	 * @param y_pos
-	 * @param z_pos: height above the ground while lying
-	 * @param rotation: additional rotation applied to the actor while lying
-	 * @return True if operation successful
-	 */
+
+	/// \brief Processes command related to the FSM's state switch to `LieDown`.
+	/// \note Target point determined via world coordinates
+	/// \param x_pos
+	/// \param y_pos
+	/// \param z_pos: height above the ground while lying
+	/// \param rotation: additional rotation applied to the actor while lying
+	/// \return True if operation successful
 	bool lieDown(const double &x_pos, const double &y_pos, const double &z_pos, const double &rotation);
-	/**
-	 * @brief Processes `LieDown` state finish command.
-	 * @return
-	 */
+
+	/// \brief Processes `LieDown` state finish command.
+	/// \return
 	bool lieDownStop();
 
 	/// \brief Get velocity vector (linear x, linear y and angular `yaw`)

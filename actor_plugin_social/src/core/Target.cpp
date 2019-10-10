@@ -77,6 +77,9 @@ bool Target::followObject(const std::string &object_name) {
 	ignition::math::Vector3d pt_intersection; // dynamic obstacles will not be marked in the costmap
 	ignition::math::Vector3d line_dir;
 
+	// will not allow following objects from the areas
+	// with high cost (in terms of costmap) or just static
+	// obstacles that are already marked on the actor costmap
 	std::tie(ok, pt_intersection, std::ignore) = findBoxPoint(model_ptr_temp);
 	if ( !ok ) {
 		return (false);
@@ -1055,7 +1058,7 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 		if ( i == 0 ) {
 
 			// line_angle expressed from the actor to an object
-			line.Set(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.0,
+			line.Set(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), model_ptr->BoundingBox().Center().Z(),
 					 model_ptr->BoundingBox().Center().X(), model_ptr->BoundingBox().Center().Y(), model_ptr->BoundingBox().Center().Z());
 
 		} else if ( i == 1 ) {
@@ -1071,7 +1074,7 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 
 			// update line points, maintain line direction!
 			line.Set(model_ptr->BoundingBox().Center().X(), model_ptr->BoundingBox().Center().Y(), model_ptr->BoundingBox().Center().Z(),
-					 pt_helper.X(), pt_helper.Y(), 0.0);
+					 pt_helper.X(), pt_helper.Y(), model_ptr->BoundingBox().Center().Z());
 
 		}
 
