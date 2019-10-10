@@ -5992,18 +5992,18 @@
          starting location. Modify the <target> elements of each actor to
          change their destination. The <target_weight> can be used to
          tune the vector field used by the ActorPlugin to control the Actor. -->
-
+    <!-- -->
     <actor name="actor1">
-      <pose>1.20 20.5 1.00 0 0 3.14</pose>
+      <pose>-5.00 -5.50 1.00 0 0 3.14</pose>
       <skin>
-        <!-- <filename>walk.dae</filename>  -->
         <filename>walk.dae</filename>
         <scale>1.0</scale>
       </skin>
-
+      
       <!--  Animations could be added within animation tag
             The ones available by default are listed in
             /usr/share/gazebo-8/media/models -->
+      <!-- -->
       <animation name="walk">
         <filename>walk.dae</filename>
         <scale>1.000000</scale>
@@ -6061,18 +6061,20 @@
 
       <plugin name="actor1_plugin" filename="libactor_plugin_social.so">
         <target>-4.5 11.5 1.00</target>
-        <animation_factor>5.1</animation_factor>
+        <animation_factor>5.1</animation_factor> 
         <!-- Usage: Modify the set of models that the vector field should
              ignore when moving the actor -->
+        <!-- -->
         <ignore_obstacles>
           <model>cafe</model>
           <model>ground_plane</model>
         </ignore_obstacles>
       </plugin>
     </actor>
-
+    
+    <!-- -->
     <actor name="actor2">
-      <pose>20.25 18.25 1.00 0 0 3.14</pose>
+      <pose>4 -6 1.00 0 0 3.14</pose>
       <skin>
         <filename>walk.dae</filename>
         <scale>1.0</scale>
@@ -6141,9 +6143,10 @@
         </ignore_obstacles>
       </plugin>
     </actor>
+    
 
     <actor name="actor3">
-      <pose>-0.6 5.15 1.00 0 0 -1.57</pose>
+      <pose>5 18.5 1.00 0 0 -1.57</pose>
       <skin>
         <filename>walk.dae</filename>
         <scale>1.0</scale>
@@ -6216,7 +6219,7 @@
 
 
     <actor name="actor4">
-      <pose>-5.5 -6.5 1.00 0 0 0</pose>
+      <pose>19.5 5 1.00 0 0 0</pose>
       <skin>
         <filename>walk.dae</filename>
         <scale>1.0</scale>
@@ -6286,7 +6289,7 @@
         </ignore_obstacles>
       </plugin>
     </actor>  
-
+    
     <!-- ============================================================== -->
 
     <!-- plugin whose executable is called to create a map in .pgm format -->

@@ -9572,6 +9572,160 @@
       </camera>
     </gui>
 
+
+
+
+
+    <actor name="actor1">
+      <pose>2 4 1.00 0 0 0</pose>
+      <skin>
+        <filename>walk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+
+      <animation name="walk">
+        <filename>walk.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand">
+        <filename>stand.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sit_down">
+        <filename>sit_down.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sitting">
+        <filename>sitting.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="run">
+        <filename>run.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_a">
+        <filename>talk_a.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_b">
+        <filename>talk_b.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <plugin name="actor1_plugin" filename="libactor_plugin_social.so">
+        <target>
+          <point>-5.5 +0.75 0.0</point>
+          <point>+1.5 -4.75 0.0</point>
+        </target>
+        <animation_factor>5.1</animation_factor>
+        <ignore_obstacles>
+          <model>cafe</model>
+          <model>ground_plane</model>
+        </ignore_obstacles>
+      </plugin>
+    </actor>  
+
+
+    <!--
+    <actor name="actor2">
+      <pose>4.5 -0.8 1.00 0 0 0</pose>
+      <skin>
+        <filename>walk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+
+
+      <animation name="walk">
+        <filename>walk.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand">
+        <filename>stand.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sit_down">
+        <filename>sit_down.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="sitting">
+        <filename>sitting.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="stand_up">
+        <filename>stand_up.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="run">
+        <filename>run.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_a">
+        <filename>talk_a.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>      
+
+      <animation name="talk_b">
+        <filename>talk_b.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+
+      <plugin name="actor2_plugin" filename="libactor_plugin_social.so">
+        <animation_factor>5.1</animation_factor>
+        <ignore_obstacles>
+          <model>cafe</model>
+          <model>ground_plane</model>
+        </ignore_obstacles>
+      </plugin>
+    </actor>
+    -->
+
+
     <!-- plugin whose executable is called to create a map in .pgm format -->
     <plugin filename="libcollision_map_creator.so" name="collision_map_creator"/>
         
