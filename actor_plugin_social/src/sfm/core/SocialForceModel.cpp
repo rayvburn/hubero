@@ -19,9 +19,9 @@ static bool print_info = false;
 #include "sfm/core/SFMDebug.h"
 #include "BoundingEllipseDebug.h"
 
-// #define SFM_DEBUG_LARGE_VECTOR_LENGTH
+#define SFM_DEBUG_LARGE_VECTOR_LENGTH
 // #define SFM_FUZZY_PROC_INDICATORS
-// #define SFM_PRINT_FORCE_RESULTS
+#define SFM_PRINT_FORCE_RESULTS
 
 // ----------------------------------------
 
@@ -208,6 +208,7 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 
 		// ============================================================================
 
+		// check if the obstacle is static or dynamic (force calculation differs)
 		is_dynamic = isDynamicObstacle(model_vel);
 
 		// model_closest i.e. closest to an actor or the actor's bounding
@@ -265,7 +266,7 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		}
 
 		// based on a parameter and an object type - calculate a force from a static object properly
-		if ( is_an_actor || is_dynamic || interaction_static_type_ == INTERACTION_REPULSIVE_EVASIVE ) {
+		if ( is_dynamic || interaction_static_type_ == INTERACTION_REPULSIVE_EVASIVE ) {
 
 			// calculate interaction force
 			std::tie(f_alpha_beta, distance_v, distance) = computeInteractionForce(	actor_closest_to_model_pose, actor_velocity,
@@ -603,9 +604,9 @@ ignition::math::Vector3d SocialForceModel::computeInternalForce(const ignition::
 
 	// internal force truncation (causes `overdrive` in close presence of
 	// another actor)
-	if ( f_alpha.Length() > 1500.0 ) {
-		std::cout << "\tINTERNAL FORCE TRUNCATED from: " << f_alpha.Length() << "\tto: 1500.0" << std::endl;
-		f_alpha = f_alpha.Normalized() * 1500.0;
+	if ( f_alpha.Length() > 1100.0 ) {
+		std::cout << "\tINTERNAL FORCE TRUNCATED from: " << f_alpha.Length() << "\tto: 1100.0" << std::endl;
+		f_alpha = f_alpha.Normalized() * 1100.0;
 		std::cout << "\tSFM" << std::endl;
 	}
 
@@ -804,7 +805,8 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 	// -----------------------------------------------------
 	// FIXME: debugging large vector length ----------------
 #ifdef SFM_DEBUG_LARGE_VECTOR_LENGTH
-	std::cout << "\t-  -  -  - interaction force -  -  -  -  -  -  -  " << std::endl;
+	std::cout << "\t-  -  -  - interaction force -  -  -  -  -  -  -  " << owner_name_ << std::endl;
+	std::cout << "\t" << owner_name_ << " yaw: " << actor_yaw.Radian() << "\t" << SfmDebugGetCurrentObjectName() << " yaw: " << object_yaw.Radian() << std::endl;
 	std::cout << "\tΘ_αß: " << theta_alpha_beta << "\tv_rel: " << v_rel << "\tdist: " << d_alpha_beta_length << std::endl;
 	std::cout << "\texpNORMAL: " << exp_normal << "\texpPERP: " << exp_perpendicular << "\tFOV_factor: " << fov_factor << std::endl;
 	std::cout << "\tNORMAL: " << factor_force_interaction_ * n_alpha_scaled.X() << " " << factor_force_interaction_ * n_alpha_scaled.Y() << "\tPERP: " << factor_force_interaction_ * p_alpha_scaled.X() << " " << factor_force_interaction_ * p_alpha_scaled.Y() << std::endl;
