@@ -291,7 +291,8 @@ static void SetInflationRadius(ros::NodeHandle &nh, const std::string &srv_ns) {
 		sublist = list[0]; // only 1 element expected
 		size_x = static_cast<double>( sublist["semi_major"] );
 		size_y = static_cast<double>( sublist["semi_minor"] );
-		size = std::max(size_x, size_y);
+		size = std::min(size_x, size_y);	// broader workspace
+		// size = std::max(size_x, size_y); // problematic for costmap - really narrow workspace
 		inflation = 2.15f * size;
 		break;
 
