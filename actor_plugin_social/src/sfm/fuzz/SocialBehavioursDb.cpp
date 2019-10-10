@@ -13,17 +13,24 @@ namespace fuzz {
 
 // ------------------------------------------------------------------- //
 
-SocialBehavioursDb::SocialBehavioursDb(const double &social_force_strength)
-	: social_force_strength_(social_force_strength), d_alpha_beta_length_(0.0), dir_alpha_(0.0)
-{ }
+SocialBehavioursDb::SocialBehavioursDb()
+	: d_alpha_beta_length_(0.0), dir_alpha_(0.0)
+{}
 
 // ------------------------------------------------------------------- //
 
+SocialBehavioursDb::~SocialBehavioursDb() { }
+
+// ------------------------------------------------------------------- //
+// ------------------------------------------------------------------- //
+// -------PROTECTED-MEMBERS-SECTION----------------------------------- //
+// ------------------------------------------------------------------- //
+// ------------------------------------------------------------------- //
 void SocialBehavioursDb::setDistance(const double &d_alpha_beta) {
 	d_alpha_beta_length_ = d_alpha_beta;
 }
 
-// ------------------------------------------------------------------- //
+ // ------------------------------------------------------------------- //
 
 void SocialBehavioursDb::setDirection(const double &dir) {
 	dir_alpha_ = dir;
@@ -31,13 +38,12 @@ void SocialBehavioursDb::setDirection(const double &dir) {
 
 // ------------------------------------------------------------------- //
 
-SocialBehavioursDb::~SocialBehavioursDb() { }
+void SocialBehavioursDb::setForce(const ignition::math::Vector3d &force) {
+	force_ = force;
+}
 
 // ------------------------------------------------------------------- //
 
-// ------------------------------------------------------------------- //
-// -------PROTECTED-MEMBERS-SECTION----------------------------------- //
-// ------------------------------------------------------------------- //
 ignition::math::Vector3d SocialBehavioursDb::turnLeft() {
 
 	ignition::math::Vector3d force;

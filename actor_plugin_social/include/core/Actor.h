@@ -55,6 +55,11 @@
 #include <ignition/math/Vector3.hh>
 #include <ignition/math/Pose3.hh>
 
+// Processor - checking fuzzylite behavior
+// TODO: change folder
+#include <sfm/fuzz/Processor.h>
+#include <sfm/fuzz/SocialConductor.h>
+
 // ROS interface
 //#include "ActorROSInterface.h" // FIXME: old
 
@@ -361,6 +366,9 @@ private:
 
     /// \brief Helper class to handle LIE_DOWN state
     LieDownHelper lie_down_;
+
+    sfm::fuzz::Processor fuzzy_processor_;
+    sfm::fuzz::SocialConductor social_conductor_;
 
 public:
 

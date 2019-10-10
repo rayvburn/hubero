@@ -21,11 +21,7 @@ namespace fuzz {
 
 // #define PROCESSOR_PRINT_DEBUG_INFO
 
-Processor::Processor():
-//		  term_extra_status_(PROCESSOR_EXTRA_TERM_NONE),
-		  d_alpha_beta_angle_(0.0),
-		  alpha_dir_(0.0)
-{
+Processor::Processor(): alpha_dir_(0.0) {
 	// FIXME: move init() to ctor()
 	init();
 }
@@ -175,21 +171,6 @@ void Processor::init() {
 	// ---
 	engine_.addInputVariable(&direction_);
 
-	/* Initialize third input variable */
-	target_.setName("target");
-	target_.setDescription("");
-	target_.setEnabled(false); // TODO: enable if needed
-	target_.setRange(-IGN_PI, +IGN_PI);
-	target_.setLockValueInRange(false);
-
-	// `target` regions
-	target_.addTerm(new fl::Triangle("back",	IGN_DTOR(-180.0), 	IGN_DTOR(-180.0),  	IGN_DTOR(-160.0)));
-	target_.addTerm(new fl::Trapezoid("right", 	IGN_DTOR(-180.0), 	IGN_DTOR(-150.0), 	IGN_DTOR(-30.0), 	IGN_DTOR(0.0)));
-	target_.addTerm(new fl::Triangle("front", 	IGN_DTOR(-20.0), 	IGN_DTOR(0.0), 		IGN_DTOR(+20.0)));
-	target_.addTerm(new fl::Trapezoid("left", 	IGN_DTOR(0.0), 		IGN_DTOR(30.0), 	IGN_DTOR(150.0), 	IGN_DTOR(180.0)));
-	target_.addTerm(new fl::Triangle("back",	IGN_DTOR(+160.0), 	IGN_DTOR(+180.0),  	IGN_DTOR(+180.0)));
-	engine_.addInputVariable(&target_);
-
     /* Initialize output variable */
     social_behavior_.setName("behavior");
     social_behavior_.setDescription("");
@@ -336,39 +317,122 @@ void Processor::init() {
 
 // ------------------------------------------------------------------- //
 
-void Processor::setDirectionBeta(const double &dir_beta) {
-	beta_dir_ = dir_beta;
+bool Processor::load(const double &dir_alpha, const std::vector<double> &dir_beta_v,
+					 const std::vector<double> &rel_loc_v, const std::vector<double> &dist_angle_v)
+{
+
+	// clear output vector
+	output_v_.clear();
+
+	// the same length is a MUST
+	if ( (dir_beta_v.size() == rel_loc_v.size()) && (rel_loc_v.size() == dist_angle_v.size()) ) {
+		alpha_dir_ = dir_alpha;
+		beta_dir_ = dir_beta_v;
+		rel_loc_ = rel_loc_v;
+		d_alpha_beta_angle_ = dist_angle_v;
+		return (true);
+	}
+
+	// reset just in case
+	alpha_dir_ = 0.0;
+	beta_dir_.clear();
+	rel_loc_.clear();
+	d_alpha_beta_angle_.clear();
+
+	return (false);
+
 }
 
 // ------------------------------------------------------------------- //
 
-void Processor::setDirectionAlpha(const double &dir_alpha) {
-	alpha_dir_ = dir_alpha;
+void Processor::process() {
+
+	// iterate over all vector elements (all vectors have the same size);
+	// beta_dir's size is an arbitrarily chosen count reference here
+	for ( size_t i = 0; i < beta_dir_.size(); i++ ) {
+
+		// reset the output region name
+		std::string term_name = "";
+
+		// update the location input variable
+		location_.setValue(fl::scalar(rel_loc_.at(i)));
+
+		// update `direction_` regions according to value previously set
+		updateRegions(alpha_dir_, beta_dir_.at(i), d_alpha_beta_angle_.at(i), rel_loc_.at(i));
+
+		// calculate the gamma angle for the current alpha-beta configuration
+		ignition::math::Angle gamma(d_alpha_beta_angle_.at(i) - alpha_dir_ - beta_dir_.at(i));
+		gamma.Normalize();
+		direction_.setValue(fl::scalar(gamma.Radian()));
+
+		// execute fuzzy calculations
+		engine_.process();
+
+		// - - - - - - print meaningful data
+
+		#ifdef PROCESSOR_PRINT_DEBUG_INFO
+		// FIXME: debugging only
+		std::cout << "location\t value: " << location_.getValue() << "\tmemberships: " << location_.fuzzify(location_.getValue()) << std::endl;
+		std::cout << "direction\t value: " << direction_.getValue() << "\tmemberships: " << direction_.fuzzify(direction_.getValue()) << std::endl;
+		std::cout << "output\t\t value: " << social_behavior_.getValue() << std::endl;
+		std::cout << "\t\tfuzzyOut: " << social_behavior_.fuzzyOutputValue();
+		#endif
+
+		fl::scalar y_highest_temp = fl::nan;
+		fl::Term* term_highest_ptr = social_behavior_.highestMembership(social_behavior_.getValue(), &y_highest_temp);
+
+		// check whether proper term was found, if not - `nullptr` will be detected
+		if ( term_highest_ptr != nullptr ) {
+			term_name = term_highest_ptr->getName();
+		}
+
+		#ifdef PROCESSOR_PRINT_DEBUG_INFO
+		std::cout << "\n\t\tname: " << output_term_name_ << "\theight: " << y_highest_temp << std::endl;
+		#endif
+
+		// NOTE: fl::variable::fuzzyOutputValue() returns a list of available terms
+		// with a corresponding membership
+		// WHEREAS fl::variable fl::variable::fuzzify(fl::scalar) returns the
+		// same list but with NORMALIZED membership?
+		// the effect is as: 	fuzzyOutputValue()	-> 	0.222/turn_right_decelerate
+		//						fuzzify(fl::scalar)	-> 	1.000/turn_right_decelerate
+		// when only single term has non-zero membership.
+		// When multiple (2) terms have non-zero membership then results
+		// are as follow:
+		// fuzzyOutputValue()	-> 	0.239/turn_left_accelerate + 0.266/accelerate + 0.541/go_along
+		// fuzzify(fl::scalar)	-> 	0.000/turn_left_accelerate + 0.000/accelerate + 1.000/go_along
+
+		// FIXME: make it like the absolute function (decreasing on both side of the edge - 0.5)
+		double fitness = static_cast<double>(social_behavior_.getValue());
+		fitness = fitness - std::floor(fitness);
+
+		output_v_.push_back(std::make_tuple(term_name, fitness));
+
+	}
+
 }
 
 // ------------------------------------------------------------------- //
 
-void Processor::setDistanceAngle(const double &d_alpha_beta_angle) {
-	d_alpha_beta_angle_ = d_alpha_beta_angle;
+std::vector<std::tuple<std::string, double> > Processor::getOutput() const {
+	return (output_v_);
 }
 
 // ------------------------------------------------------------------- //
 
-void Processor::setRelativeLocation(const double &rel_loc) {
-	rel_loc_ = rel_loc;
-}
+Processor::~Processor() {}
 
 // ------------------------------------------------------------------- //
 
-void Processor::updateRegions() {
+void Processor::updateRegions(const double &alpha_dir, const double &beta_dir, const double &d_alpha_beta_angle, const double &rel_loc) {
 
 	// calculate threshold angle values, normalize
-	ignition::math::Angle gamma_eq(d_alpha_beta_angle_ - 2 * alpha_dir_); 	gamma_eq.Normalize();
+	ignition::math::Angle gamma_eq(d_alpha_beta_angle - 2 * alpha_dir); 	gamma_eq.Normalize();
 	ignition::math::Angle gamma_opp(gamma_eq.Radian() - IGN_PI); 			gamma_opp.Normalize();
-	ignition::math::Angle gamma_cc(IGN_PI - alpha_dir_);					gamma_cc.Normalize();
+	ignition::math::Angle gamma_cc(IGN_PI - alpha_dir);					gamma_cc.Normalize();
 
 	// compute relative location (`side`)
-	char side = decodeRelativeLocation(); // decodeRelativeLocation(gamma_eq, gamma_opp, gamma_cc);
+	char side = decodeRelativeLocation(rel_loc); // decodeRelativeLocation(gamma_eq, gamma_opp, gamma_cc);
 
 //	// trapezoid's specific points (vertices), see `fuzzylite` doc for details:
 //	// https://fuzzylite.github.io/fuzzylite/d0/d26/classfl_1_1_trapezoid.html
@@ -390,7 +454,8 @@ void Processor::updateRegions() {
 	// - - - - - - print meaningful data
 	// calculate the gamma angle for the current alpha-beta configuration
 	// FIXME: debugging only
-	ignition::math::Angle gamma(d_alpha_beta_angle_ - alpha_dir_ - beta_dir_);	gamma.Normalize();
+	ignition::math::Angle gamma(d_alpha_beta_angle - alpha_dir - beta_dir);	gamma.Normalize();
+
 #ifdef PROCESSOR_PRINT_DEBUG_INFO
 	std::cout << "gamma_eq: " << gamma_eq.Radian() << "\t\tgamma_opp: " << gamma_opp.Radian() << "\t\tgamma_cc: " << gamma_cc.Radian() << std::endl;
 	// print only `side`
@@ -406,99 +471,17 @@ void Processor::updateRegions() {
 
 // ------------------------------------------------------------------- //
 
-void Processor::process() {
+char Processor::decodeRelativeLocation(const double &rel_loc) const {
 
-	// reset the output region name
-	output_term_name_ = "";
-
-	// update the location input variable
-	location_.setValue(fl::scalar(rel_loc_)); // fl::scalar(d_alpha_beta_angle_));
-
-	// update `direction_` regions according to value previously set
-	updateRegions();
-
-	// calculate the gamma angle for the current alpha-beta configuration
-	ignition::math::Angle gamma(d_alpha_beta_angle_ - alpha_dir_ - beta_dir_);	gamma.Normalize();
-    direction_.setValue(fl::scalar(gamma.Radian()));
-
-    // execute fuzzy calculations
-    engine_.process();
-
-    // - - - - - - print meaningful data
-
-    #ifdef PROCESSOR_PRINT_DEBUG_INFO
-    // FIXME: debugging only
-    std::cout << "location\t value: " << location_.getValue() << "\tmemberships: " << location_.fuzzify(location_.getValue()) << std::endl;
-    std::cout << "direction\t value: " << direction_.getValue() << "\tmemberships: " << direction_.fuzzify(direction_.getValue()) << std::endl;
-    std::cout << "output\t\t value: " << social_behavior_.getValue() << std::endl;
-    std::cout << "\t\tfuzzyOut: " << social_behavior_.fuzzyOutputValue();
-#endif
-
-	fl::scalar y_highest_temp = fl::nan;
-	fl::Term* term_highest_ptr = social_behavior_.highestMembership(social_behavior_.getValue(), &y_highest_temp);
-
-	// check whether proper term was found, if not - `nullptr` will be detected
-	if ( term_highest_ptr != nullptr ) {
-		output_term_name_ = term_highest_ptr->getName();
-	}
-
-#ifdef PROCESSOR_PRINT_DEBUG_INFO
-	std::cout << "\n\t\tname: " << output_term_name_ << "\theight: " << y_highest_temp << std::endl;
-#endif
-
-	// NOTE: fl::variable::fuzzyOutputValue() returns a list of available terms
-	// with a corresponding membership
-	// WHEREAS fl::variable fl::variable::fuzzify(fl::scalar) returns the
-	// same list but with NORMALIZED membership?
-	// the effect is as: 	fuzzyOutputValue()	-> 	0.222/turn_right_decelerate
-	//						fuzzify(fl::scalar)	-> 	1.000/turn_right_decelerate
-	// when only single term has non-zero membership.
-	// When multiple (2) terms have non-zero membership then results
-	// are as follow:
-	// fuzzyOutputValue()	-> 	0.239/turn_left_accelerate + 0.266/accelerate + 0.541/go_along
-	// fuzzify(fl::scalar)	-> 	0.000/turn_left_accelerate + 0.000/accelerate + 1.000/go_along
-
-#ifdef PROCESSOR_PRINT_DEBUG_INFO
-	// FIXME: make it like the absolute function (decreasing on both side of the edge - 0.5)
-	double output = static_cast<double>(social_behavior_.getValue());
-	output_term_fitness_ = output - std::floor(output);
-#endif
-
-}
-
-// ------------------------------------------------------------------- //
-
-std::vector<std::tuple<std::string, double> > Processor::getOutput() const {
-
-	// TODO: is vector needed?
-	std::vector<std::tuple<std::string, double> > results;
-
-	std::tuple<std::string, double> tup;
-	std::get<0>(tup) = output_term_name_;
-	std::get<1>(tup) = output_term_fitness_;
-	results.push_back(tup);
-
-	return (results);
-
-}
-
-// ------------------------------------------------------------------- //
-
-char Processor::decodeRelativeLocation() const {
-
-	if ( rel_loc_ <= 0.0 ) {
+	if ( rel_loc <= 0.0 ) {
 		return('r'); 	// right side
-	} else if ( rel_loc_ > 0.0 ) {
+	} else if ( rel_loc > 0.0 ) {
 		return('l');	// left side
 	} else {
 		return('x');
 	}
 
 }
-
-// ------------------------------------------------------------------- //
-
-Processor::~Processor() {}
 
 // ------------------------------------------------------------------- //
 

@@ -18,19 +18,8 @@ class SocialBehavioursDb {
 public:
 
 	/// \brief Parametrized constructor
-	/// \param social_force_strength is a maximum length of the social force vector
-	SocialBehavioursDb(const double &social_force_strength);
-
-	/// \brief Updates the distance between the currently investigated
-	/// person and the other dynamic object (another person or a robot).
-	/// \param d_alpha_beta expresses distance between alpha and currently
-	/// investigated object
-	void setDistance(const double &d_alpha_beta);
-
-	/// \brief Direction of motion of the alpha object (currently investigated)
-	/// \param dir is a direction expressed in world's Z axis rotation (to match
-	/// the world's X axis with the alpha's direction)
-	void setDirection(const double &dir);
+//	/// \param social_force_strength is a maximum length of the social force vector
+	SocialBehavioursDb(); // const double &social_force_strength
 
 	/// \brief Destructor
 	virtual ~SocialBehavioursDb();
@@ -47,16 +36,33 @@ protected:
 	ignition::math::Vector3d stop();
 	ignition::math::Vector3d decelerate();
 
-private:
+	/// \brief Updates the distance between the currently investigated
+	/// person and the other dynamic object (another person or a robot).
+	/// \param d_alpha_beta expresses distance between alpha and currently
+	/// investigated object
+	void setDistance(const double &d_alpha_beta);
 
-	/// \brief Determines maximum length of the single social vector.
-	double social_force_strength_;
+	/// \brief Direction of motion of the alpha object (currently investigated)
+	/// \param dir is a direction expressed in world's Z axis rotation (to match
+	/// the world's X axis with the alpha's direction)
+	void setDirection(const double &dir);
+
+	void setForce(const ignition::math::Vector3d &force);
+
+protected:
+
+//	/// \brief Determines maximum length of the single social vector.
+//	double social_force_strength_;
+
+	ignition::math::Vector3d force_;
 
 	/// \brief Distance between alpha and currently investigated object
 	double d_alpha_beta_length_;
 
 	/// \brief Direction of motion of the alpha object
 	double dir_alpha_;
+
+private:
 
 	/// \brief Creates a unit vector pointing to the given direction
 	/// \param direction is a direction of the vector

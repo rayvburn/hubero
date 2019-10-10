@@ -19,9 +19,9 @@ static bool print_info = false;
 #include "sfm/core/SFMDebug.h"
 #include "BoundingEllipseDebug.h"
 
-#define SFM_DEBUG_LARGE_VECTOR_LENGTH
+// #define SFM_DEBUG_LARGE_VECTOR_LENGTH
 // #define SFM_FUZZY_PROC_INDICATORS
-#define SFM_PRINT_FORCE_RESULTS
+// #define SFM_PRINT_FORCE_RESULTS
 
 // ----------------------------------------
 
@@ -48,11 +48,11 @@ SocialForceModel::SocialForceModel():
 	fov_(2.00), speed_max_(1.50), person_mass_(1),
 	factor_force_internal_(100.0), // desired_force_factor(200.0),
 	factor_force_interaction_(3000.0), // interaction_force_factor(6000.0),
-	factor_force_social_(1.0),
 	force_max_(2000.0), force_min_(300.0), // force_min(800.0)
 	inflation_type_(INFLATION_ELLIPSE),
 	interaction_static_type_(INTERACTION_ELLIPTICAL),
-	param_description_(PARAMETER_DESCRIPTION_2014)
+	param_description_(PARAMETER_DESCRIPTION_2014),
+	dir_alpha_(0.0)
 
 {
 
@@ -86,7 +86,6 @@ void SocialForceModel::init(std::shared_ptr<const actor::ros_interface::ParamLoa
 
 	factor_force_internal_ = params_ptr_->getSfmParams().internal_force_factor;
 	factor_force_interaction_ = params_ptr_->getSfmParams().interaction_force_factor;
-	// TODO: factor_force_social_
 	person_mass_ = static_cast<unsigned short int>(params_ptr_->getSfmParams().mass);
 	speed_max_ = params_ptr_->getSfmParams().max_speed;
 	fov_ = params_ptr_->getSfmParams().fov;
@@ -272,6 +271,12 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 			std::tie(f_alpha_beta, distance_v, distance) = computeInteractionForce(	actor_closest_to_model_pose, actor_velocity,
 													model_closest_point_pose, model_vel, is_an_actor);
 
+			// truncate to `FORCE_INTERACTION_MAX` length
+			const double FORCE_INTERACTION_MAX = 1200; 	// 900.0; (intersection occurs)
+			if ( f_alpha_beta.Length() * factor_force_interaction_ > FORCE_INTERACTION_MAX ) {
+				f_alpha_beta = f_alpha_beta.Normalized() * (FORCE_INTERACTION_MAX/(f_alpha_beta.Length() * factor_force_interaction_));
+			}
+
 		} else {
 
 			std::tie(f_alpha_beta, distance_v, distance) = computeForceStaticObstacle(actor_closest_to_model_pose, actor_velocity,
@@ -290,24 +295,11 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 			closest_points_.push_back(actor_closest_to_model_pose);
 		}
 
-		// truncate
-		const double FORCE_INTERACTION_MAX = 1200; 	// 900.0; (intersection occurs)
-		if ( (is_an_actor || is_dynamic) && 		// applies to dynamic objects
-			 (f_alpha_beta.Length() * factor_force_interaction_ > FORCE_INTERACTION_MAX) )
-		{
-			f_alpha_beta = f_alpha_beta.Normalized() * (FORCE_INTERACTION_MAX/(f_alpha_beta.Length() * factor_force_interaction_));
-		}
-
 		// - - - - fuzzylite & social conductor
-		if ( is_an_actor || is_dynamic ) {
+		if ( is_dynamic ) {
 
-			#ifdef SFM_FUZZY_PROC_INDICATORS
-			std::cout << "\n\n\tFuzzy logic processor - " << owner_name_ << "\tobstacle: " << model_ptr->GetName() << "\n";
-			#endif
+			/*
 			fuzzy_processor_.process();
-			#ifdef SFM_FUZZY_PROC_INDICATORS
-			std::cout << "" << std::endl << std::endl;
-			#endif
 
 			// store a term with the highest membership
 			std::string region;
@@ -319,10 +311,8 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 
 			// verbose interpretation of the selected output term (region)
 			social_conductor_.apply(region);
-			#ifdef SFM_FUZZY_PROC_INDICATORS
-			std::cout << "\n\n\tSocial conductor - " << owner_name_ << "\t" << social_conductor_.getSocialVector() << std::endl << std::endl;
-			#endif
 			force_social_ += social_conductor_.getSocialVector();
+			*/
 
 		}
 		// - - - -
@@ -533,11 +523,35 @@ ignition::math::Pose3d SocialForceModel::computeNewPose(const ignition::math::Po
 
 // ------------------------------------------------------------------- //
 
+void SocialForceModel::reset() {
+
+	closest_points_.clear();
+
+	force_internal_ = ignition::math::Vector3d();
+	force_interaction_ = ignition::math::Vector3d();
+//	force_social_ = ignition::math::Vector3d();
+	force_combined_ = ignition::math::Vector3d();
+
+	dir_alpha_ = 0.0;
+	rel_loc_dynamic_v_.clear();
+	dist_angle_dynamic_v_.clear();
+	dist_dynamic_v_.clear();
+	dir_beta_dynamic_v_.clear();
+
+}
+
+// ------------------------------------------------------------------- //
+
 ignition::math::Vector3d SocialForceModel::getForceInternal() const 	{ return (force_internal_);		}
 ignition::math::Vector3d SocialForceModel::getForceInteraction() const 	{ return (force_interaction_); 	}
-ignition::math::Vector3d SocialForceModel::getForceSocial() const 		{ return (force_social_); 		}
 ignition::math::Vector3d SocialForceModel::getForceCombined() const		{ return (force_combined_); 	}
-std::string SocialForceModel::getBehaviourActive() const { return (social_conductor_.getBehaviourActive()); }
+
+double SocialForceModel::getDirectionAlpha() const 						{ return (dir_alpha_); 				}
+std::vector<double> SocialForceModel::getDirectionBetaDynamic() const 	{ return (dir_beta_dynamic_v_); 	}
+std::vector<double> SocialForceModel::getRelativeLocationDynamic() const{ return (rel_loc_dynamic_v_); 		}
+std::vector<double> SocialForceModel::getDistanceAngleDynamic() const 	{ return (dist_angle_dynamic_v_); 	}
+std::vector<double> SocialForceModel::getDistanceDynamic() const 		{ return (dist_dynamic_v_); 		}
+
 std::vector<ignition::math::Pose3d> SocialForceModel::getClosestPointsVector() const { return (closest_points_); }
 
 // ------------------------------------------------------------------- //
@@ -832,40 +846,19 @@ SocialForceModel::computeInteractionForce(const ignition::math::Pose3d &actor_po
 	// save interaction force vector
 	f_alpha_beta = n_alpha_scaled + p_alpha_scaled;
 
-	// set Fuzzifier's internal components
-	fuzz_.setDistanceVectorLength(d_alpha_beta_length);
-	fuzz_.setObjectDirRelativeAngle(beta_angle_rel);
+	// ---- fuzzylite-related
+	dir_alpha_ = convertActorToWorldOrientation(actor_pose.Rot().Yaw());
+	rel_loc_dynamic_v_.push_back(beta_angle_rel);
+	dist_angle_dynamic_v_.push_back(d_alpha_beta_angle);
+	dist_dynamic_v_.push_back(d_alpha_beta_length);
 
-	//	fuzz_.setObjectVelocity(object_vel); //
 	if ( is_actor ) {
-		fuzz_.setObjectVelocity(object_pose.Rot().Yaw() - IGN_PI_2, speed_beta);
-		fuzz_.setVelsRelativeAngle(actor_pose.Rot().Yaw(), object_pose.Rot().Yaw()); // angle difference calculation based on angles computed in the same coordinate system, no rotation needed
+		dir_beta_dynamic_v_.push_back(convertActorToWorldOrientation(object_pose.Rot().Yaw()));
 	} else {
-		fuzz_.setObjectVelocity(object_pose.Rot().Yaw(), speed_beta);
-		fuzz_.setVelsRelativeAngle(theta_alpha_beta);
+		ignition::math::Angle angle(std::atan2(object_vel.Y(), object_vel.X()));
+		angle.Normalize();
+		dir_beta_dynamic_v_.push_back(angle.Radian());
 	}
-
-	// set Defuzzifier's internal components (utilized to modify actor's behavior)
-	defuzz_.setInteractionForceNorm(n_alpha_scaled);
-	defuzz_.setInteractionForcePerp(p_alpha_scaled);
-
-	// ---- fuzzylite
-	// TODO: make a function taking ign angle, offset, calculating normalized value
-	// FIXME: assuming that each object is of `actor` type
-
-	double alpha_dir_world = convertActorToWorldOrientation(actor_pose.Rot().Yaw());
-	fuzzy_processor_.setDirectionAlpha(alpha_dir_world);										// 1st input
-	fuzzy_processor_.setDirectionBeta(convertActorToWorldOrientation(object_pose.Rot().Yaw())); // 2nd input
-	fuzzy_processor_.setRelativeLocation(beta_angle_rel);										// 3rd input
-	fuzzy_processor_.setDistanceAngle(d_alpha_beta_angle);										// 4th input
-	// ----
-
-	// --------------------------------------------------------
-	// social conductor
-	social_conductor_.setDirection(alpha_dir_world);
-	social_conductor_.setDistance(d_alpha_beta_length);
-//	std::cout << "\tSocialConductorSetters | alpha_dir: " << alpha_dir_world << "\t\tdist: " << d_alpha_beta_length << std::endl;
-	// --------------------------------------------------------
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
 
@@ -1944,27 +1937,12 @@ double SocialForceModel::computeVectorDirection(const ignition::math::Vector3d &
 
 // ------------------------------------------------------------------- //
 
-void SocialForceModel::reset() {
-
-	closest_points_.clear();
-	defuzz_.reset();
-	social_conductor_.reset();
-
-	force_internal_ = ignition::math::Vector3d();
-	force_interaction_ = ignition::math::Vector3d();
-	force_social_ = ignition::math::Vector3d();
-	force_combined_ = ignition::math::Vector3d();
-
-}
-
-// ------------------------------------------------------------------- //
-
 void SocialForceModel::factorInForceCoefficients() {
 
 	force_internal_ 	*= factor_force_internal_;
 	force_interaction_ 	*= factor_force_interaction_;
-	force_social_ 		*= factor_force_social_;
-	force_combined_ 	 = force_internal_ + force_interaction_ + force_social_;
+//	force_social_ 		*= factor_force_social_;
+	force_combined_ 	 = force_internal_ + force_interaction_;// + force_social_;
 
 }
 
@@ -2078,7 +2056,7 @@ void SocialForceModel::applyNonlinearOperations(const double &dist_closest_stati
 		force_interaction_ += extension;
 
 		// sum up
-		force_combined_ = force_internal_ + force_interaction_ + force_social_;
+		force_combined_ = force_internal_ + force_interaction_; // + force_social_;
 		sf_values_.update(force_combined_);
 
 		// make sure the average is a non-zero vector
@@ -2106,8 +2084,9 @@ void SocialForceModel::multiplyForces(const double &coefficient) {
 
 	force_internal_ 	*= coefficient;
 	force_interaction_ 	*= coefficient;
-	force_social_ 		*= coefficient;
-	force_combined_ 	 = force_internal_ + force_interaction_ + force_social_;
+//	force_social_ 		*= coefficient;
+//	force_combined_ 	 = force_internal_ + force_interaction_ + force_social_;
+	force_combined_ 	 = force_internal_ + force_interaction_;
 
 }
 

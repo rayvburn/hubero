@@ -10,6 +10,7 @@
 
 #include "fl/Headers.h"
 #include <ignition/math/Angle.hh> // angle degree to radian conversion
+#include <vector>
 #include <tuple>
 #include <map>
 #include "TrapezoidLocDep.h"
@@ -27,20 +28,16 @@ class Processor {
 public:
 	Processor();
 
+	// debugger
 	void checkFl();
-
-	void setDirectionAlpha(const double &dir_alpha);
-	void setDirectionBeta(const double &dir_beta);
 
 	/// \brief Setter method for `d_alpha_beta` angle (see SFM doc for details).
 	/// `d_alpha_beta` angle is a direction of a vector connecting alpha and beta
 	/// center positions.
 	/// \param d_alpha_beta_angle is an angle described above
-	void setDistanceAngle(const double &d_alpha_beta_angle);
 
-	void setRelativeLocation(const double &rel_loc);
-
-	void setDirectionToTarget(const double &dir_target);
+	bool load(const double &dir_alpha, const std::vector<double> &dir_beta_v, const std::vector<double> &rel_loc_v,
+			  const std::vector<double> &dist_angle_v);
 
 	/// \brief Executes fuzzy calculations. The `process()` call must be preceded by `updateRegions()`
 	void process();
@@ -51,14 +48,6 @@ public:
 	/// \return Vector of tuples. Each tuple consists of behavior name (string) and membership level.
 	std::vector<std::tuple<std::string, double> > getOutput() const;
 
-	// TODO: check object dynamic
-	/// \brief Currently investigated model's velocity vector
-//	ignition::math::Vector3d vel_beta_;
-
-//	void setVelsRelativeAngle(const double &vels_relative_angle);					// φ_αβ (FIXME: phi there...)
-//	void setVelsRelativeAngle(const double &vel_alpha_angle, const double &vel_beta_angle);
-//	void setObjectDirRelativeAngle(const double &object_dir_relative_angle);		// β position direction relative to α direction
-
 	virtual ~Processor();
 
 private:
@@ -68,27 +57,32 @@ private:
 	void init();
 
 	/// \brief Determines location of the \beta element relative to \alpha direction of motion
-	char decodeRelativeLocation() const;
+	char decodeRelativeLocation(const double &rel_loc) const;
 
 	/// \brief Updates trapezoidal regions of input variables.
 	/// \note Must be preceded by `setters` of input variables.
-	void updateRegions();
+	void updateRegions(const double &alpha_dir, const double &beta_dir, const double &d_alpha_beta_angle, const double &rel_loc);
 
-	/// \brief Direction of the vector which connects \alpha 's position with \beta 's position.
-	double d_alpha_beta_angle_;
-
-	/// \brief Stores angle telling which \beta is located
-	/// in terms of \alpha 's direction of motion.
-	double rel_loc_;
-
+	/* ----- inputs ----- */
 	/// \brief Determines \alpha 's direction of motion.
 	double alpha_dir_;
 
+	/// \brief Direction of the vector which connects \alpha 's position with \beta 's position.
+	std::vector<double> d_alpha_beta_angle_;
+
+	/// \brief Stores angle telling which \beta is located
+	/// in terms of \alpha 's direction of motion.
+	std::vector<double> rel_loc_;
+
 	/// \brief Determines \beta 's direction of motion.
-	double beta_dir_;
+	std::vector<double> beta_dir_;
+
+	/* ------- output --------- */
+	std::vector<std::tuple<std::string, double> > output_v_;
+
+
 
 	/* ----- fuzzylite-related ----- */
-
 	/// \brief Fuzzy logic engine
 	fl::Engine engine_;
 
@@ -122,14 +116,8 @@ private:
 	/// direction points in the opposite direction as the `alpha`'s
 	TrapezoidLocIndep trapezoid_opp_{"opposite", 10, 20};
 
-	/// \brief Expresses direction to the target position relative to \alpha 's
-	/// current direction of motion
-	fl::InputVariable target_;
-
 	/* ----- Output variables ----- */
 	fl::OutputVariable social_behavior_;
-	std::string output_term_name_;
-	double output_term_fitness_;
 
 	/*  ----- Rule block ----- */
 	fl::RuleBlock rule_block_;

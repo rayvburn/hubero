@@ -1129,12 +1129,25 @@ bool Actor::manageTargetSingleReachment() {
 
 double Actor::move(const double &dt) {
 
+	// calculate `social` force (i.e. `internal` and `interaction` components)
 	sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_lin_,
 						    target_manager_.getCheckpoint(),
 						    common_info_, dt, ignored_models_);
 
+	// execute fuzzy operations block
+    fuzzy_processor_.load(sfm_.getDirectionAlpha(), sfm_.getDirectionBetaDynamic(),
+    					  sfm_.getRelativeLocationDynamic(), sfm_.getDistanceAngleDynamic());
+    fuzzy_processor_.process();
+
+    // create a force vector according to the activated `social behaviour`
+    social_conductor_.apply(sfm_.getForceCombined(), sfm_.getDirectionAlpha(), sfm_.getDistanceDynamic(),
+    						fuzzy_processor_.getOutput());
+
+//    std::cout << "SFM combined: " << sfm_.getForceCombined() << "\tsocial: " << social_conductor_.getSocialVector() << std::endl;
+
+    // according to the force, calculate a new pose
 	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_lin_,
-														  sfm_.getForceCombined(),
+														  sfm_.getForceCombined() + social_conductor_.getSocialVector(),
 														  target_manager_.getCheckpoint(), dt);
 
 	// object info update
@@ -1400,9 +1413,9 @@ void Actor::visualizeSfmCalculations() {
 
 		// social force vector - orange
 		sfm_vis_arrow_.setColor(1.0f, 0.6f, 0.0f, 1.0f);
-		stream_.publishData(ActorMarkerType::ACTOR_MARKER_SOCIAL_VECTOR, 			 sfm_vis_arrow_.create(ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.6), sfm_.getForceSocial()) );
+		stream_.publishData(ActorMarkerType::ACTOR_MARKER_SOCIAL_VECTOR, 			 sfm_vis_arrow_.create(ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.6), social_conductor_.getSocialVector()) );
 
-		stream_.publishData(ActorMarkerTextType::ACTOR_MARKER_TEXT_BEH, 			 sfm_vis_text_.create( ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 1.0), sfm_.getBehaviourActive()) );
+		stream_.publishData(ActorMarkerTextType::ACTOR_MARKER_TEXT_BEH, 			 sfm_vis_text_.create( ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 1.0), social_conductor_.getBehaviourActive()) );
 		stream_.publishData(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, sfm_vis_line_list_.createArray(sfm_.getClosestPointsVector()) );
 
 	}
