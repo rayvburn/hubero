@@ -63,7 +63,6 @@ add_service_files(
   SetGoalName.srv
   SetInteractionType.srv
   SetStance.srv
-  StopFollowing.srv
   LieDown.srv
   LieDownName.srv
 )

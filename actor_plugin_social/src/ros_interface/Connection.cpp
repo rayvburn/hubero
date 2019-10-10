@@ -162,11 +162,12 @@ bool Connection::srvFollowObjectCallback(actor_sim_srv::FollowObject::Request &r
 
 // ------------------------------------------------------------------- //
 
-bool Connection::srvStopFollowingCallback(actor_sim_srv::StopFollowing::Request &req, actor_sim_srv::StopFollowing::Response &resp) {
+bool Connection::srvStopFollowingCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp) {
 
 	std::cout << "\nsrvStopFollowingCallback()" << "\t" << namespace_ << "\n" << std::endl;
-	// TODO
+
 	// take ownership of the Actor shared_ptr
+	resp.success = actor_ptr_.lock()->followObjectStop();
 
 	return (true);
 

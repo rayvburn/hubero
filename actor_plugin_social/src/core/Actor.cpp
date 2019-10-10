@@ -338,6 +338,28 @@ bool Actor::followObject(const std::string &object_name) {
 
 // ------------------------------------------------------------------- //
 
+bool Actor::followObjectStop() {
+
+	if ( !target_manager_.isFollowing() ) {
+		return (false);
+	}
+
+	target_manager_.abandonTarget();
+	target_manager_.stopFollowing();
+
+	if ( ignored_models_.size() > 0 ) {
+		ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
+	}
+
+	setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
+	sfm_.reset(); // clear SFM markers
+
+	return (true);
+
+}
+
+// ------------------------------------------------------------------- //
+
 bool Actor::lieDown(const std::string &object_name, const double &height, const double &rotation) {
 
 	if ( lie_down_.isLyingDown() ) {
@@ -1138,6 +1160,8 @@ double Actor::move(const double &dt) {
     fuzzy_processor_.load(sfm_.getDirectionAlpha(), sfm_.getDirectionBetaDynamic(),
     					  sfm_.getRelativeLocationDynamic(), sfm_.getDistanceAngleDynamic());
     fuzzy_processor_.process();
+
+//    std::cout << actor_ptr_->GetName() << std::endl;
 
     // create a force vector according to the activated `social behaviour`
     social_conductor_.apply(sfm_.getForceCombined(), sfm_.getDirectionAlpha(), sfm_.getDistanceDynamic(),

@@ -136,6 +136,9 @@ public:
 	/// \return True if object is valid
 	bool followObject(const std::string &object_name);
 
+	/// \brief Finishes `followObject` mode operation.
+	bool followObjectStop();
+
 	/// \brief Processes command related to the FSM's state switch to `LieDown`.
 	/// \note Target point determined via object name.
 	/// \param object_name: object on which actor should lie down

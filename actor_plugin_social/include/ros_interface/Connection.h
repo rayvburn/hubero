@@ -26,14 +26,13 @@
 
 // service definitions
 #include <actor_sim_srv/FollowObject.h>
-#include <actor_sim_srv/StopFollowing.h>
 #include <actor_sim_srv/SetGoal.h>
 #include <actor_sim_srv/SetGoalName.h>
 #include <actor_sim_srv/SetStance.h>
 #include <actor_sim_srv/GetVelocity.h>
 #include <actor_sim_srv/LieDown.h>
 #include <actor_sim_srv/LieDownName.h>
-#include <std_srvs/Trigger.h> // stopLying
+#include <std_srvs/Trigger.h> 			// stopLying, stopFollowing
 
 // service for switching on/off SFM's debugging info
 #include <std_srvs/SetBool.h>
@@ -88,7 +87,7 @@ private:
 	bool srvSetGoalNameCallback		(actor_sim_srv::SetGoalName::Request 	&req,	actor_sim_srv::SetGoalName::Response 	&resp);
 	bool srvSetStanceCallback		(actor_sim_srv::SetStance::Request 		&req,	actor_sim_srv::SetStance::Response 		&resp);
 	bool srvFollowObjectCallback	(actor_sim_srv::FollowObject::Request 	&req, 	actor_sim_srv::FollowObject::Response 	&resp);
-	bool srvStopFollowingCallback	(actor_sim_srv::StopFollowing::Request 	&req, 	actor_sim_srv::StopFollowing::Response 	&resp);
+	bool srvStopFollowingCallback	(std_srvs::Trigger::Request 			&req, 	std_srvs::Trigger::Response 			&resp);
 	bool srvGetVelocityCallback		(actor_sim_srv::GetVelocity::Request 	&req,	actor_sim_srv::GetVelocity::Response 	&resp);
 	bool srvLieDownCallback			(actor_sim_srv::LieDown::Request		&req,	actor_sim_srv::LieDown::Response 		&resp);
 	bool srvLieDownNameCallback		(actor_sim_srv::LieDownName::Request	&req,	actor_sim_srv::LieDownName::Response 	&resp);
