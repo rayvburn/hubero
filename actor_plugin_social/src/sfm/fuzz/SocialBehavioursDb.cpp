@@ -54,6 +54,10 @@ ignition::math::Vector3d SocialBehavioursDb::turnLeft() {
 	double magnitude = calculateVectorMagnitude(500.0);
 	force_beh = setVectorLength(force_beh, magnitude);
 
+	// make sure that SFM result added to the SocialConductor's result
+	// creates a vector pointing to the proper side
+//	force_beh = assertForceDirection(force_beh);
+
 	return (force_beh);
 
 	// create diff vector: diff = behaviour_force - `social force`
@@ -76,6 +80,8 @@ ignition::math::Vector3d SocialBehavioursDb::turnLeftAccelerate() {
 	// acceleration section
 	magnitude *= 1.25;	// FIXME
 	force_beh = extendVector(force_beh, dir_alpha_, magnitude);
+
+//	force_beh = assertForceDirection(force_beh);
 
 	return (force_beh);
 	//return (force_beh - force_);
@@ -103,6 +109,8 @@ ignition::math::Vector3d SocialBehavioursDb::accelerate() {
 	force_beh = createDirVector(dir_alpha_);
 	force_beh = setVectorLength(force_beh, magnitude);
 
+//	force_beh = assertForceDirection(force_beh);
+
 	return (force_beh);
 	//return (force_beh - force_);
 }
@@ -125,6 +133,8 @@ ignition::math::Vector3d SocialBehavioursDb::turnRightAccelerate() {
 	//magnitude *= 1.25;
 	force_beh = extendVector(force_beh, dir_alpha_, magnitude);
 
+//	force_beh = assertForceDirection(force_beh);
+
 	return (force_beh);
 	//return (force_beh - force_);
 
@@ -142,6 +152,8 @@ ignition::math::Vector3d SocialBehavioursDb::turnRight() {
 	double magnitude = calculateVectorMagnitude(800.0); // 600.0
 
 	force_beh = setVectorLength(force_beh, magnitude);
+
+//	force_beh = assertForceDirection(force_beh);
 
 	return (force_beh);
 	//return (force_beh - force_);
@@ -167,6 +179,8 @@ ignition::math::Vector3d SocialBehavioursDb::turnRightDecelerate() {
 	magnitude *= 1.25;
 	force_beh = extendVector(force_beh, dir_rot, magnitude);
 
+//	force_beh = assertForceDirection(force_beh);
+
 	return (force_beh);
 	//return (force_beh - force_);
 
@@ -186,6 +200,8 @@ ignition::math::Vector3d SocialBehavioursDb::stop() {
 
 	force_beh = setVectorLength(force_beh, magnitude);
 
+//	force_beh = assertForceDirection(force_beh);
+
 	return (force_beh);
 	//return (force_beh - force_);
 
@@ -203,6 +219,8 @@ ignition::math::Vector3d SocialBehavioursDb::decelerate() {
 	double dir_opp = findOrientation(dir_alpha_, 'o');
 	force_beh = createDirVector(dir_opp);
 	force_beh = setVectorLength(force_beh, magnitude);
+
+//	force_beh = assertForceDirection(force_beh);
 
 	return (force_beh);
 	//return (force_beh - force_);
@@ -288,6 +306,32 @@ double SocialBehavioursDb::calculateVectorMagnitude(const double &max) const {
 	double y = a * d_alpha_beta_length_ + max; 		// form of a line equation for readability,
 													// the independent variable is `d_alpha_beta_length_`
 	return (y);
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Vector3d SocialBehavioursDb::assertForceDirection(const ignition::math::Vector3d &force_beh) const {
+
+	ignition::math::Vector3d result = force_beh + force_;
+	ignition::math::Vector3d force_beh_strengthened = force_beh;
+	ignition::math::Angle angle_res;
+	ignition::math::Angle angle_beh;
+
+	for ( size_t i = 0; i < 10; i++ ) {
+
+		result = force_beh_strengthened + force_;
+		angle_res.Radian(std::atan2(result.Y(), result.X()));
+		angle_beh.Radian(std::atan2(force_beh.Y(), force_beh.X()));
+
+		if ( std::fabs(angle_res.Radian() - angle_beh.Radian()) < IGN_PI_2 ) {
+			break;
+		} else {
+			force_beh_strengthened *= 1.20;
+		}
+
+	}
+	return (force_beh_strengthened);
 
 }
 

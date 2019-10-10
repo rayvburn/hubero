@@ -97,6 +97,11 @@ private:
 	/// \return Vector length based on `max` and `d_alpha_beta_length`
 	double calculateVectorMagnitude(const double &max) const;
 
+	/// \brief Strengthens a force generated in the behaviour handler
+	/// so a sum of that force and the SFM result creates a vector
+	/// pointing to a proper direction (according to the handler)
+	ignition::math::Vector3d assertForceDirection(const ignition::math::Vector3d &force_beh) const;
+
 };
 
 } /* namespace fuzz */
