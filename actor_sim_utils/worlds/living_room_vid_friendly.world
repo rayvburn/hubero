@@ -9111,7 +9111,14 @@
         <interpolate_x>1</interpolate_x>
       </animation>
       <plugin name='actor1_plugin' filename='libactor_plugin_social.so'>
-        <target>0.25 5.5 1.2138</target>
+        <target>
+          <point>+4.0 -4.0 0.0</point>
+          <point>-3.0 -2.0 0.0</point>
+          <point>-4.0 +4.0 0.0</point>
+          <point>+3.0 +4.0 0.0</point>
+          <point>-4.0 +4.0 0.0</point>
+          <point>-3.0 -4.0 0.0</point>
+        </target>
         <animation_factor>5.1</animation_factor>
         <ignore_obstacles>
           <model>cafe</model>
@@ -11980,7 +11987,14 @@
                         
 
       <plugin name="actor2_plugin" filename="libactor_plugin_social.so">
-        <target>0.25 5.5 1.2138</target>
+        <target>
+          <point>-3.0 -2.0 0.0</point>
+          <point>-4.0 +4.0 0.0</point>
+          <point>+3.0 +4.0 0.0</point>
+          <point>-4.0 +4.0 0.0</point>
+          <point>-3.0 -4.0 0.0</point>
+          <point>+4.0 -4.0 0.0</point>
+        </target>
         <animation_factor>5.1</animation_factor>
         <!-- Usage: Modify the set of models that the vector field should
              ignore when moving the actor -->

@@ -121,9 +121,6 @@ public:
 	/// GlobalPlan instance
 	void initActor(const sdf::ElementPtr sdf);
 
-	/// \brief Search for actor-related fields in the .world file to load parameters
-	void readSDFParameters(const sdf::ElementPtr sdf);
-
 	/* SCROLL DOWN for a `setNewTarget()` template */
 
 	/// \brief Method to set new target for actor - object's name

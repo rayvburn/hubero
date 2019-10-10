@@ -290,7 +290,15 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	} else if ( sdf && sdf->HasElement("target") ) {
 
 		// target coordinates in .YAML haven't been defined - use .sdf
-		target_manager_.setNewTarget(sdf->Get<ignition::math::Vector3d>("target"));
+		sdf::ElementPtr target_elem = sdf->GetElement("target")->GetElement("point");
+		while (target_elem) {
+			// readability
+			ignition::math::Vector3d pt = target_elem->Get<ignition::math::Vector3d>();
+			// add straight to the queue
+			target_manager_.setNewTarget(pt, true);
+			// try to get next element of the list
+			target_elem = target_elem->GetNextElement("point");
+		}
 
 	} else {
 
@@ -299,84 +307,9 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 
 	}
 
-	// TODO: make target list a parameter in the .world file
-	if ( actor_ptr_->GetName() == "actor1" ) {
-
-		target_manager_.setNewTarget(ignition::math::Vector3d(+4.0, -4.0, 0.0), true);
-		target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -2.0, 0.0), true);
-		target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true);
-		target_manager_.setNewTarget(ignition::math::Vector3d(+3.0, +4.0, 0.0), true);
-		target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true);
-		target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -4.0, 0.0), true);
-
-	} else if ( actor_ptr_->GetName() == "actor2" ) {
-
-		target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -2.0, 0.0), true);
-		target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true);
-		target_manager_.setNewTarget(ignition::math::Vector3d(+3.0, +4.0, 0.0), true);
-		target_manager_.setNewTarget(ignition::math::Vector3d(-4.0, +4.0, 0.0), true);
-		target_manager_.setNewTarget(ignition::math::Vector3d(-3.0, -4.0, 0.0), true);
-		target_manager_.setNewTarget(ignition::math::Vector3d(+4.0, -4.0, 0.0), true);
-
-	}
-
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// initialize SFM with loaded parameters set
 	initSFM();
-
-	// - - - - - - - - - - - - - - - - - - - - - - -
-	// debugging section
-//	std::cout << actor_ptr_->GetName() << "\tIGNORED MODELS VECTOR:" << std::endl;
-//	for ( size_t i = 0; i < params_ptr_->getSfmDictionary().ignored_models_.size(); i++ ) {
-//		std::cout << i << "\t" << params_ptr_->getSfmDictionary().ignored_models_.at(i) << std::endl;
-//	}
-//	std::cout << "\n\n" << std::endl;
-
-}
-
-// ------------------------------------------------------------------- //
-
-void Actor::readSDFParameters(const sdf::ElementPtr sdf) {
-
-	// DEPRECATED?
-//	if ( sdf && sdf->HasElement("target") ) {
-//		this->target = sdf->Get<ignition::math::Vector3d>("target");
-//	} else {
-//		this->target = ignition::math::Vector3d(0, -5, 1.2138);
-//	}
-//
-//	// Read in the target weight
-//	if ( sdf->HasElement("target_weight") ) {
-//		this->targetWeight = sdf->Get<double>("target_weight");
-//	} else {
-//		this->targetWeight = 1.15;
-//	}
-//
-//	// Read in the obstacle weight
-//	if ( sdf ->HasElement("obstacle_weight") ) {
-//		this->obstacleWeight = sdf ->Get<double>("obstacle_weight");
-//	} else {
-//		this->obstacleWeight = 1.5;
-//	}
-//
-//	// Read in the animation factor (applied in the OnUpdate function).
-//	if ( sdf ->HasElement("animation_factor") ) {
-//		this->animation_factor = sdf ->Get<double>("animation_factor");
-//	} else {
-//		this->animation_factor = 4.5;
-//	}
-//
-//	// Add our own name to models we should ignore when avoiding obstacles.
-//	this->ignoreModels.push_back(this->actor->GetName());
-//
-//	// Read in the other obstacles to ignore
-//	if ( sdf ->HasElement("ignore_obstacles") ) {
-//		sdf::ElementPtr modelElem =	sdf->GetElement("ignore_obstacles")->GetElement("model");
-//		while (modelElem) {
-//			this->ignoreModels.push_back(modelElem->Get<std::string>());
-//			modelElem = modelElem->GetNextElement("model");
-//		}
-//	}
 
 }
 
