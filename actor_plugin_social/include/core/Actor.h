@@ -132,7 +132,7 @@ public:
 	/// (whose name is given by `object_name`). Choose a dynamic obstacle
 	/// or put an extra object in a free map cell and move it if wish to debug.
 	/// \return True if object is valid
-	bool followObject(const std::string &object_name, const bool &stop_after_arrival); 	// TODO: stop_after_arrival handling
+	bool followObject(const std::string &object_name);
 
 	/// \brief Processes command related to the FSM's state switch to `LieDown`.
 	/// \note Target point determined via object name.

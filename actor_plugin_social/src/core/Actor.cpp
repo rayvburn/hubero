@@ -10,17 +10,8 @@
 #include <ignition/math/Line3.hh>
 #include <memory> 		// make_unique
 
-
-// FIXME: move to target manager later
-#include <chrono>
-
-// sleeper
-#include <thread>
-
 namespace actor {
 namespace core {
-
-// FIXME: init inflator private
 
 // ------------------------------------------------------------------- //
 
@@ -193,7 +184,7 @@ void Actor::initSFM() {
 				break;
 
 		case(actor::ActorBoundingType::ACTOR_NO_BOUNDING):
-				/* TODO this bounding type seems to not have a correspondence in code? */
+				/* this bounding type seems to not have a correspondence in code? */
 				sfm_inflation = sfm::core::InflationType::INFLATION_NONE;
 				break;
 
@@ -303,13 +294,6 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 
 	} else {
 
-		/*
-		// improper/no position set - choose random target during first OnUpdate TODO
-		gazebo::common::UpdateInfo info_init;
-		info_init.simTime = world_ptr_->SimTime();
-		target_manager_.chooseNewTarget(info_init); // do not execute this (at least not now)
-		*/
-
 		// No target set but do not try to choose it now as costmap is very likely
 		// not initialized yet. Proper state handlers will take care of that afterwards.
 
@@ -398,9 +382,8 @@ void Actor::readSDFParameters(const sdf::ElementPtr sdf) {
 
 // ------------------------------------------------------------------- //
 
-bool Actor::followObject(const std::string &object_name, const bool &stop_after_arrival) {
+bool Actor::followObject(const std::string &object_name) {
 
-	// TODO: stop_after_arrival?
 	if ( target_manager_.followObject(object_name) ) {
 		ignored_models_.push_back(object_name);
 		// NOTE: to make actor face the target first,
@@ -550,8 +533,8 @@ bool Actor::setState(const actor::ActorState &new_state) {
 	unsigned int state_to_be = static_cast<unsigned int>(new_state);
 	unsigned int state_lower_bound = static_cast<unsigned int>(actor::ACTOR_STATE_ALIGN_TARGET);
 
-	// TODO:
 	// NOTE: below needs to be adjusted if new state will be added!
+	// same note added in the `Enum.h` file
 	unsigned int state_upper_bound = static_cast<unsigned int>(actor::ACTOR_STATE_TELEOPERATION);
 
 	if ( (state_to_be >= state_lower_bound) && (state_to_be <= state_upper_bound) ) {
@@ -773,11 +756,11 @@ void Actor::stateHandlerTeleoperation (const gazebo::common::UpdateInfo &info) {
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	// TODO?
+	// this handler will be filled if needed
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	double dist_traveled = 0.007; // TODO
+	double dist_traveled = 0.001; // default animation speed
 	applyUpdate(dist_traveled);
 
 }
@@ -869,24 +852,8 @@ bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 		angle_change = static_cast<double>(sign) * YAW_INCREMENT;
 	}
 
-	// ----------------------------------------------------------------
-//	std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-//	std::cout << "\t\talignToTargetDirection(): " << actor_ptr_->GetName() << std::endl;
-//	std::cout << "\tisTargetChosen: " << target_manager_.isTargetChosen() << "\tisTargetReached: " << target_manager_.isTargetReached() << std::endl;
-//	std::cout << "\tcheckpoint: " << target_manager_.getCheckpoint() << "\ttarget: " << target_manager_.getTarget() << std::endl;
-//	std::cout << "\tpos_actor: " << pose_world_ptr_->Pos() << std::endl;
-//	std::cout << "\tto_target_vector: " << to_target_vector << "\t\tto_target_direction: " << to_target_direction.Radian() << std::endl;
-//	std::cout << "\tyaw_actor_w: " << yaw_actor_w.Radian() << std::endl;
-//	std::cout << "\tyaw_diff: " << yaw_diff.Radian() << std::endl;
-//	std::cout << "\tsign: " << (sign < 0 ? "negative" : "positive") << " | numeric: " << static_cast<int>(sign) << std::endl;
-	// ----------------------------------------------------------------
-
 	// apply the change
 	yaw_actor_w.Radian(yaw_actor_w.Radian() + angle_change);
-
-	// ----
-//	std::cout << "\tyaw_actor_w_changed: " << yaw_actor_w.Radian() << std::endl;
-	// ----
 
 	// transform actor `YAW` angle expressed in world coordinate system
 	// to the angle expressed in actor coordinate system
@@ -901,12 +868,6 @@ bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 	// True will be returned if the `yaw_diff` is small enough, false otherwise.
 	yaw_diff.Radian(yaw_diff.Radian() + angle_change);
 	yaw_diff.Normalize();
-
-	// ----------------------------------------------------------------
-//	std::cout << "\tyaw_diff_changed: " << yaw_diff.Radian() << "\t\tthreshold: " << IGN_DTOR(10) << std::endl;
-//	std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-//	std::cout << std::endl;
-	// ----------------------------------------------------------------
 
 	// consider 10 degrees tolerance
 	if ( std::fabs(yaw_diff.Radian()) < IGN_DTOR(10) ) {
@@ -923,7 +884,7 @@ double Actor::prepareForUpdate() {
 	// copy pose
 	*pose_world_ptr_ = actor_ptr_->WorldPose();
 
-	updateStanceOrientation(*pose_world_ptr_); // FIXME
+	updateStanceOrientation(*pose_world_ptr_);
 
 	double dt = (world_ptr_->SimTime() - time_last_update_).Double();
 	calculateVelocity(dt);
@@ -968,7 +929,7 @@ void Actor::applyUpdate(const double &dist_traveled) {
 	 * "gazebo::common::NodeAnimation::FrameAt(double, bool) const: Assertion
 	 *  `(t >= 0.0 && t <= 1.0)&&("t is not in the range 0.0..1.0")' failed."
 	 *
-	 *  FIXME: if such error occurs uncomment below line (not done for debugging process)
+	 *  NOTE: if such error occurs uncomment below line (not done for debugging process)
 	 *  (std::isnan(_dist_traveled)) ? (_dist_traveled = 0.0005) : (0);
 	 *
 	 */
@@ -996,7 +957,7 @@ bool Actor::manageTargetMovingAround() {
 
 	// check if call is executed for a proper mode
 	if ( target_manager_.isFollowing() ) {
-		// FIXME: this should not happen
+		// this should not happen
 		return (false);
 	}
 
@@ -1139,10 +1100,10 @@ bool Actor::manageTargetTracking() {
 
 	// change FSM state if needed
 	if ( stop_tracking ) {
-		target_manager_.abandonTarget(); // TODO: is needed?
+		target_manager_.abandonTarget();
 		target_manager_.stopFollowing();
 		ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
-		setState(ActorState::ACTOR_STATE_STOP_AND_STARE); // setState(ActorState::ACTOR_STATE_MOVE_AROUND);
+		setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
 		sfm_.reset(); // clear SFM markers
 		return (false);
 	}
@@ -1447,7 +1408,7 @@ std::string Actor::convertStanceToAnimationName() const {
 
 void Actor::visualizePositionData() {
 
-	// TODO: add a parameter?: tf_publish_freq
+	// Hard-coded 30 Hz refresh rate
 	if ( (world_ptr_->SimTime() - time_last_tf_pub_).Double() >= 0.033 ) {
 
 		// update time stamp

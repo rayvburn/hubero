@@ -1,4 +1,3 @@
 string object_name
-bool stop_after_finish
 ------
 bool flag

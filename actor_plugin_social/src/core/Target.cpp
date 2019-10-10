@@ -7,7 +7,10 @@
 
 #include <core/Target.h>
 #include <ignition/math/Rand.hh> // DblUniform
-#include <core/Enums.h> // actor model id
+#include <core/Enums.h> 	// actor model id
+
+#include <thread>			// thread: sleep for
+#include <chrono>			// timer: sleep_for
 
 namespace actor {
 namespace core {
