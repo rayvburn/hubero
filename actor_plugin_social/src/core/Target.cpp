@@ -144,19 +144,10 @@ bool Target::updateFollowedTarget() {
 		// update event time
 		time_last_follow_plan_ = world_ptr_->SimTime();
 
-		// DEPRECATED - isTargetReached does that
-//		// check distance to the model
-//		ignition::math::Vector3d dist = pose_world_ptr_->Pos() - followed_model_ptr_->WorldPose().Pos();
-//		if ( dist.Length() <= params_ptr_->getActorParams().target_tolerance ) {
-//			// return true as tracking proceeds well - the tracked
-//			// object has just stopped or moves very slowly
-//			return (true);
-//		}
-
 		// do not generate a new global plan if object is not moving;
 		// NOTE: for some reason static Turtlebot's velocity is:
 		// [0.003461 0.000151 -0.00718]
-		// FIXME: debugging with static bot
+		// FIXME: debugging with a static bot
 //		if ( followed_model_ptr_->WorldLinearVel().Length() <= 0.01 ) {
 //			return (true);
 //		}
@@ -336,10 +327,7 @@ bool Target::setNewTarget() {
 bool Target::chooseNewTarget() {
 
 	// FIXME: watch out for a situation in which actor's position is not in map bounds!
-	// THIS IN FACT SHOULD NOT EVEN HAPPEN after some errors will be eliminated
-
 	// FIXME: dynamic reconfiguration - any change hangs `global_planner_.makePlan` see `generatePathPlan`
-	// check if costmap ready or sth? or check status of the error message
 
 	// check whether global costmap has already initialized so global plan can be generated
 	if ( !global_planner_.isCostmapInitialized() ) {
@@ -390,14 +378,11 @@ bool Target::chooseNewTarget() {
 
 			// check if model's bounding box contains target point
 			if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), new_target) ) {
-				// TODO: make this an error log message
 				std::cout << "chooseNewTarget() - selection failed -> model containing target's pos: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
 				std::cout << std::endl;
 				new_target = target_;
 				continue;
 			}
-
-			/* TODO: choose a target that is at least 1 meter from any obstacle ??? */
 
 		} // for
 
@@ -436,7 +421,6 @@ bool Target::chooseNewTarget() {
 
 // ------------------------------------------------------------------- //
 
-// FIXME: name - update target?
 bool Target::changeTarget() {
 
 	if ( !isTargetQueueEmpty() ) {
@@ -555,7 +539,6 @@ bool Target::isTargetStillReachable() {
 		return (true);
 	}
 
-	// TODO: generate global plan?
 	// check periodically, no need to do this in each iteration
 	if ( (world_ptr_->SimTime() - time_last_reachability_).Double() > params_ptr_->getActorParams().target_reachable_check_period ) {
 
@@ -569,8 +552,11 @@ bool Target::isTargetStillReachable() {
 			// iterate over all models
 			for (unsigned int i = 0; i < world_ptr_->ModelCount(); ++i) {
 
-				// FIXME: cafe is a specific model that represents whole world
-				if ( world_ptr_->ModelByIndex(i)->GetName() == "cafe" ) {
+				// ignore specific models that cover whole world
+				// or are listed as `negligible`
+				if ( isModelNegligible( world_ptr_->ModelByIndex(i)->GetName(),
+										params_ptr_->getSfmDictionary().ignored_models_) )
+				{
 					continue;
 				}
 
@@ -578,7 +564,6 @@ bool Target::isTargetStillReachable() {
 				if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), target_) ) {
 
 					std::cout << "isTargetStillReachable()" << std::endl;
-//					std::cout << "\t" << actor_ptr_->GetName() << "\tDETECTED TARGET UNREACHABLE!" << std::endl;
 					std::cout << "\ttarget: " << target_ << "\tmodel containing: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
 					std::cout << std::endl;
 					std::cout << std::endl;
@@ -738,7 +723,6 @@ bool Target::isCheckpointReached() const {
 
 // ------------------------------------------------------------------- //
 
-// FIXME: this does not need to be called in each iteration (twice per second is enough)
 bool Target::isCheckpointAbandonable() const {
 
 	// firstly check whether some target is set
@@ -747,8 +731,8 @@ bool Target::isCheckpointAbandonable() const {
 	}
 
 	// non-const method if uncommented
-//	// make some time gap between evaluations
-//	if ( (world_ptr_->SimTime() - time_last_abandonability_).Double() >= 1.0 ) {
+	// make some time gap between evaluations, 100 Hz refresh rate
+//	if ( (world_ptr_->SimTime() - time_last_abandonability_).Double() >= 0.01 ) {
 //		// force the current checkpoint to stay active
 //		return (false);
 //	}
@@ -897,9 +881,8 @@ bool Target::doesBoundingBoxContainPoint(const ignition::math::Box &bb, const ig
 
 // ------------------------------------------------------------------- //
 
-Target::~Target() {
-	// TODO Auto-generated destructor stub
-}
+Target::~Target() {}
+
 // ------------------------------------------------------------------- //
 
 
