@@ -185,7 +185,7 @@ ignition::math::Pose3d GlobalPlan::getWaypoint() {
 // ------------------------------------------------------------------- //
 
 // cannot be const
-uint8_t GlobalPlan::getCost(const double &x_world, const double &y_world) {
+int16_t GlobalPlan::getCost(const double &x_world, const double &y_world) {
 
 	actor_global_plan::GetCost cost;
 
@@ -193,7 +193,7 @@ uint8_t GlobalPlan::getCost(const double &x_world, const double &y_world) {
 	cost.request.point.y = y_world;
 	bool success = srv_client_get_cost_.call(cost);
 
-	return (static_cast<uint8_t>(cost.response.cost));
+	return (static_cast<int16_t>(cost.response.cost));
 
 }
 

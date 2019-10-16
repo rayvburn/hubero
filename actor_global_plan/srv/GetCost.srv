@@ -1,5 +1,5 @@
 geometry_msgs/Point point
 ---
 
-uint8 cost
+int16 cost
 string error_message

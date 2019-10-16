@@ -326,25 +326,34 @@ bool Target::setNewTarget() {
 
 bool Target::chooseNewTarget() {
 
-	// FIXME: watch out for a situation in which actor's position is not in map bounds!
-	// FIXME: dynamic reconfiguration - any change hangs `global_planner_.makePlan` see `generatePathPlan`
-
 	// check whether global costmap has already initialized so global plan can be generated
 	if ( !global_planner_.isCostmapInitialized() ) {
 		// indicate that target can not be found now
 		return (false);
 	}
 
+	// Watch out for a situation in which actor's position is not within map bounds.
+	// A flag indicating that the actor is located in a place with a high
+	// cost (like he is unable to start in terms of cost).
+	bool extend_safe = false;
+	ignition::math::Vector3d start_safe = pose_world_ptr_->Pos();
+	if ( global_planner_.getCost(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y()) != 0 ) { // >0 or -1
+		extend_safe = true;
+	}
+
 	ignition::math::Vector3d new_target(target_);
 	bool reachable_gp = false; // whether global planner found a valid plan
 
-	// 1) look for target that is located at least 2 meters from the current one
+	// Target selection conditions:
+	// 1) look for target that is located at least 2 x TARGET_TOLERANCE [m] from the current one
 	// 2) look for target that is reachable (global plan can be found)
-//	while ( ((new_target - target_).Length() < 2.0) || !reachable_gp ) {
+//	while ( ((new_target - target_).Length() < (2.0 * params_ptr_->getActorParams().target_tolerance))
+//			|| !reachable_gp )
+//	{
+	while ( !((new_target - target_).Length() >= (2.0 * params_ptr_->getActorParams().target_tolerance) && reachable_gp) ) {
 
-	while ( ((new_target - target_).Length() < (2.0 * params_ptr_->getActorParams().target_tolerance))
-			|| !reachable_gp )
-	{
+		// reset flag
+		reachable_gp = false;
 
 		// get random coordinates based on world limits
 		new_target.X(ignition::math::Rand::DblUniform( params_ptr_->getActorParams().world_bound_x.at(0), params_ptr_->getActorParams().world_bound_x.at(1)) );
@@ -369,8 +378,8 @@ bool Target::chooseNewTarget() {
 			/* bounding-box-based target selection - safer for big obstacles,
 			 * accounting some tolerance for a target accomplishment - an actor should
 			 * not step into an object;
-			 * also, check if current model is not listed as neglible */
-
+			 * also, check if current model is not marked as negligible */
+			// FIXME?
 			if ( isModelNegligible(world_ptr_->ModelByIndex(i)->GetName(), params_ptr_->getSfmDictionary().ignored_models_) ) {
 //				std::cout << "MODEL NEGLIGIBLE: " << world_ptr_->ModelByIndex(i)->GetName() << "\tfor " << actor_ptr_->GetName() << std::endl;
 				continue;
@@ -380,15 +389,31 @@ bool Target::chooseNewTarget() {
 			if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), new_target) ) {
 				std::cout << "chooseNewTarget() - selection failed -> model containing target's pos: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
 				std::cout << std::endl;
-				new_target = target_;
+				new_target = target_; // find another
 				continue;
 			}
 
 		} // for
 
+		// point seems to be valid, but its cost must be evaluated if actor current
+		// position is somewhere in the high-cost location
+		if ( extend_safe ) {
+			std::cout << "SAFETY EXTENSION" << std::endl;
+			bool found_safe = false;
+			std::tie(found_safe, start_safe) = findSafePositionAlongLine(pose_world_ptr_->Pos(), new_target);
+			std::cout << "found_safe: " << found_safe << "\tstart: " << pose_world_ptr_->Pos() << "\tstart_shift: " << start_safe;
+			if ( !found_safe ) {
+				start_safe = pose_world_ptr_->Pos(); // not found - bring back the world position - TROUBLE!
+				std::cout << "\tNOT APPLIED" << std::endl;
+			} else {
+				std::cout << "\tAPPLIED!" << std::endl;
+			}
+		}
+
 		// seems that a proper target has been found, check whether it is reachable according to a global planner
-		if ( generatePathPlan(new_target) ) {
+		if ( generatePathPlan(start_safe, new_target) ) {
 			reachable_gp = true;
+			break;
 		} else {
 			reachable_gp = false;
 		}
@@ -450,7 +475,7 @@ bool Target::changeTarget() {
 
 // ------------------------------------------------------------------- //
 
-bool Target::generatePathPlan(const ignition::math::Vector3d &target_to_be) {
+bool Target::generatePathPlan(const ignition::math::Vector3d &start, const ignition::math::Vector3d &target_to_be) {
 
 	// Trying to find a global plan
 	actor::ros_interface::GlobalPlan::MakePlanStatus status = actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_UNKNOWN;
@@ -463,7 +488,7 @@ bool Target::generatePathPlan(const ignition::math::Vector3d &target_to_be) {
 		std::cout << "\n\n\n\n\n[generatePathPlan] Starting iteration number " << tries_num << std::endl;
 
 		// try to make a plan
-		status = global_planner_.makePlan(pose_world_ptr_->Pos(), target_to_be);;
+		status = global_planner_.makePlan(start, target_to_be);;
 
 		// check action status
 		switch (status) {
@@ -620,6 +645,7 @@ bool Target::isTargetNotReachedForTooLong() const {
 	if ( (world_ptr_->SimTime() - time_last_target_selection_).Double() > params_ptr_->getActorParams().target_reach_max_time ) {
 
 		std::cout << "isTargetNotReachedForTooLong()" << std::endl;
+		std::cout << "curr_time: " << world_ptr_->SimTime().Double() << "\tlast: " << time_last_target_selection_.Double() << "\tdelta_cur: " << (world_ptr_->SimTime() - time_last_target_selection_).Double() << "\tmax: " << params_ptr_->getActorParams().target_reach_max_time << std::endl;
 //		std::cout << "\t" << actor_ptr_->GetName() << "\tDETECTED TARGET UNREACHABLE IN FINITE TIME!" << std::endl;
 		std::cout << std::endl;
 		std::cout << std::endl;
@@ -903,6 +929,52 @@ std::tuple<bool, gazebo::physics::ModelPtr> Target::isModelValid(const std::stri
 
 // ------------------------------------------------------------------- //
 
+std::tuple<bool, ignition::math::Vector3d> Target::findSafePositionAlongLine(const ignition::math::Vector3d &start,
+		const ignition::math::Vector3d &end, const double &min_dist_to_end)
+{
+
+	ignition::math::Line3d line;
+	line.Set(start.X(), start.Y(), 0.0, end.X(), end.Y(), 0.0);
+	ignition::math::Vector3d line_dir = line.Direction();
+	ignition::math::Vector3d start_shifted = start;
+
+	// try to find a safe point near the target object whose
+	// cost (according to the global planner is small enough)
+	int tries_num = 10; // along with 0.5 factor below - maximum move-away from the intersection point is 5 m
+	while (tries_num--) {
+
+		// for some reason the getCost method returns unstable results (for the same point
+		// it shows 253 in first check and 0 in the next (actually invalid))
+		int16_t surrounding[4];
+		surrounding[0] = global_planner_.getCost(start_shifted.X()-0.01, start_shifted.Y()-0.01);
+		surrounding[1] = global_planner_.getCost(start_shifted.X()-0.01, start_shifted.Y()+0.01);
+		surrounding[2] = global_planner_.getCost(start_shifted.X()+0.01, start_shifted.Y()-0.01);
+		surrounding[3] = global_planner_.getCost(start_shifted.X()+0.01, start_shifted.Y()+0.01);
+		int16_t cost_superpose = *std::max_element(surrounding, surrounding+4);
+
+		if ( cost_superpose > 0 ) {
+			// move the point a little further according to line direction;
+			// move in the opposite direction (towards obstacle starting from
+			// the actor)
+			start_shifted.X(start_shifted.X() + 0.5 * line_dir.X());
+			start_shifted.Y(start_shifted.Y() + 0.5 * line_dir.Y());
+			continue;
+		}
+
+		// check how far from the end point the shifted `start` point is located
+		if ( (end - start_shifted).Length() >= min_dist_to_end ) {
+			return (std::make_tuple(true, start_shifted));
+		} else {
+			return (std::make_tuple(false, start_shifted));
+		}
+
+	}
+	return (std::make_tuple(false, ignition::math::Vector3d()));
+
+}
+
+// ------------------------------------------------------------------- //
+
 /// @note Must not be const because of call to GlobalPlan::getCost
 ignition::math::Vector3d Target::findReachableDirectionPoint(const ignition::math::Vector3d &pt_intersection,
 		const unsigned int &quarter) {
@@ -981,7 +1053,7 @@ ignition::math::Vector3d Target::findReachableDirectionPoint(const ignition::mat
 bool Target::tryToApplyTarget(const ignition::math::Vector3d &pt) {
 
 	// try to generate global path plan
-	if ( generatePathPlan(pt) ) {
+	if ( generatePathPlan(pose_world_ptr_->Pos(), pt) ) {
 
 		// plan has been generated
 		target_ = pt;
@@ -1085,7 +1157,8 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 		}
 
 		// verify whether the point is reachable in terms of costmap
-		if ( global_planner_.getCost(pt_intersection.X(), pt_intersection.Y()) < 100 ) {
+		int16_t cost = global_planner_.getCost(pt_intersection.X(), pt_intersection.Y());
+		if ( cost < 100 && cost >= 0 ) {
 			return (std::make_tuple(true, pt_intersection, line.Direction()));
 			break;
 		} else {

@@ -928,7 +928,7 @@ bool Actor::manageTargetMovingAround() {
 
 	// check whether a target has plan generated
 	if ( !target_manager_.isPlanGenerated() ) {
-		if ( !target_manager_.generatePathPlan(target_manager_.getTarget()) ) {
+		if ( !target_manager_.generatePathPlan(pose_world_ptr_->Pos(), target_manager_.getTarget()) ) {
 			target_manager_.abandonTarget();
 			// do not change the `new_target` flag as the new one was not chosen;
 			// what follows here is:
@@ -978,13 +978,25 @@ bool Actor::manageTargetMovingAround() {
 	// reachability test 2:
 	// check if actor is stuck
 	if ( target_manager_.isTargetNotReachedForTooLong() ) {
+
 		target_manager_.abandonTarget();
+		bool target_changed = false;
 		// try a few times
-		while ( target_manager_.changeTarget() ); // {
-			// after setting new target, first let's rotate to its direction
-			// state will be changed in the next iteration
-			new_target = true;
-		//}
+		for ( size_t i = 0; i < 10; i++ ) {
+			if ( target_manager_.changeTarget() ) {
+				// after setting new target, first let's rotate to its direction
+				// state will be changed in the next iteration
+				new_target = true;
+				target_changed = true;
+				break;
+			}
+		}
+		// new target was not found
+		if ( !target_changed ) {
+			setState(actor::ACTOR_STATE_STOP_AND_STARE);
+			return (false);
+		}
+
 	}
 
 	// evaluate whether a new target has been defined
@@ -1106,7 +1118,7 @@ bool Actor::manageTargetSingleReachment() {
 
 	// check whether a target has plan generated
 	if ( !target_manager_.isPlanGenerated() ) {
-		if ( !target_manager_.generatePathPlan(target_manager_.getTarget()) ) {
+		if ( !target_manager_.generatePathPlan(pose_world_ptr_->Pos(), target_manager_.getTarget()) ) {
 			abandon = true;
 		}
 	}

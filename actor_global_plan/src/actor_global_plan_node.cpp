@@ -177,7 +177,7 @@ static bool CostmapStatusSrv(std_srvs::Trigger::Request& req, std_srvs::Trigger:
 // ----------------------------------------------------------------------------------------------------
 static bool GetCostSrv(actor_global_plan::GetCost::Request& req, actor_global_plan::GetCost::Response& resp) {
 
-	resp.cost = static_cast<uint8_t>(costmap_global_ptr_->getCost(req.point.x, req.point.y));
+	resp.cost = static_cast<int16_t>(costmap_global_ptr_->getCost(req.point.x, req.point.y));
 	if ( resp.cost == 255 ) {
 		resp.error_message = "[ERROR] Given position is out of bounds or no information could have been acquired";
 	} else {

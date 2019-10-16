@@ -147,10 +147,11 @@ public:
 
     /**
      * @brief
+     * @param start
      * @param target_to_be
      * @return
      */
-    bool generatePathPlan(const ignition::math::Vector3d &target_to_be); // const ignition::math::Pose3d &pose_current,
+    bool generatePathPlan(const ignition::math::Vector3d &start, const ignition::math::Vector3d &target_to_be);
 
     /**
      * @brief Discards the current target. Resets `has_target` flag.
@@ -274,6 +275,16 @@ public:
 	 * @note Cannot be static (world_ptr_); utilized by Actor (see @ref lieDown)
 	 */
 	std::tuple<bool, gazebo::physics::ModelPtr> isModelValid(const std::string &object_name);
+
+	/**
+	 * @brief Starting from the position given by `start`, let's find a
+	 * @param start: start position
+	 * @param end: end position
+	 * @param min_dist_to_end: minimum distance to the end position, i.e. how far the search should be performed
+	 * @return A tuple with bool True only if a safe position was found considering the `min_dist_to_end` condition.
+	 * @note Non-const due to `global_planner's` getCost call
+	 */
+	std::tuple<bool, ignition::math::Vector3d> findSafePositionAlongLine(const ignition::math::Vector3d &start, const ignition::math::Vector3d &end, const double &min_dist_to_end = 2.0);
 
 	/**
 	 * @brief Destructor

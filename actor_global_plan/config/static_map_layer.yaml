@@ -27,4 +27,4 @@ use_maximum: false
 
 # trinary_costmap (bool, default: true)
 # If true, translates all map message values to NO_INFORMATION/FREE_SPACE/LETHAL_OBSTACLE (three values). If false, a full spectrum of intermediate values is possible. 
-trinary_costmap: true
+trinary_costmap: false

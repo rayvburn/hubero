@@ -142,7 +142,7 @@ public:
 	 * https://github.com/ros-planning/navigation/blob/kinetic-devel/costmap_2d/include/costmap_2d/cost_values.h
 	 * @note It must not be `const`.
 	 */
-	uint8_t getCost(const double &x_world, const double &y_world);
+	int16_t getCost(const double &x_world, const double &y_world);
 
 	/**
 	 * @brief Destructor
