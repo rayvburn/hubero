@@ -23,6 +23,8 @@ void Costmap2dMultiFrame::setFrameId(const std::string &frame_id) {
 
 }
 
+// --------------------------------------------------------------------------------------
+
 unsigned char Costmap2dMultiFrame::getCost(const double &x_world, const double &y_world) {
 
 	unsigned int x_map, y_map = 0;

@@ -335,6 +335,11 @@ bool Target::chooseNewTarget() {
 	// Watch out for a situation in which actor's position is not within map bounds.
 	// A flag indicating that the actor is located in a place with a high
 	// cost (like he is unable to start in terms of cost).
+	// NOTE: Despite the fact that the costmap's `trinary_costmap` parameter
+	// was set to `false` the costmap returns only these cost values:
+	// 	o 	0 (free space),
+	//  o	253 (unsafe space around the obstacle),
+	// 	o 	254 (lethal obstacle).
 	bool extend_safe = false;
 	ignition::math::Vector3d start_safe = pose_world_ptr_->Pos();
 	if ( global_planner_.getCost(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y()) != 0 ) { // >0 or -1
@@ -347,9 +352,6 @@ bool Target::chooseNewTarget() {
 	// Target selection conditions:
 	// 1) look for target that is located at least 2 x TARGET_TOLERANCE [m] from the current one
 	// 2) look for target that is reachable (global plan can be found)
-//	while ( ((new_target - target_).Length() < (2.0 * params_ptr_->getActorParams().target_tolerance))
-//			|| !reachable_gp )
-//	{
 	while ( !((new_target - target_).Length() >= (2.0 * params_ptr_->getActorParams().target_tolerance) && reachable_gp) ) {
 
 		// reset flag
@@ -379,9 +381,8 @@ bool Target::chooseNewTarget() {
 			 * accounting some tolerance for a target accomplishment - an actor should
 			 * not step into an object;
 			 * also, check if current model is not marked as negligible */
-			// FIXME?
 			if ( isModelNegligible(world_ptr_->ModelByIndex(i)->GetName(), params_ptr_->getSfmDictionary().ignored_models_) ) {
-//				std::cout << "MODEL NEGLIGIBLE: " << world_ptr_->ModelByIndex(i)->GetName() << "\tfor " << actor_ptr_->GetName() << std::endl;
+//				std::cout << "MODEL NEGLIGIBLE: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
 				continue;
 			}
 
@@ -395,25 +396,25 @@ bool Target::chooseNewTarget() {
 
 		} // for
 
-		// point seems to be valid, but its cost must be evaluated if actor current
-		// position is somewhere in the high-cost location
+		// point seems to be valid, but its cost must be evaluated if the actor's
+		// current position is somewhere in the high-cost location
 		if ( extend_safe ) {
-			std::cout << "SAFETY EXTENSION" << std::endl;
 			bool found_safe = false;
 			std::tie(found_safe, start_safe) = findSafePositionAlongLine(pose_world_ptr_->Pos(), new_target);
-			std::cout << "found_safe: " << found_safe << "\tstart: " << pose_world_ptr_->Pos() << "\tstart_shift: " << start_safe;
+			//std::cout << "found_safe: " << found_safe << "\tstart: " << pose_world_ptr_->Pos() << "\tstart_shift: " << start_safe;
 			if ( !found_safe ) {
-				start_safe = pose_world_ptr_->Pos(); // not found - bring back the world position - TROUBLE!
-				std::cout << "\tNOT APPLIED" << std::endl;
+				start_safe = pose_world_ptr_->Pos(); // not found - bring back the world position - TROUBLE on the way!
+				//std::cout << "\tNOT APPLIED" << std::endl;
+				std::cout << "[ERROR] actor's global planner cannot find a valid path because the actor's position has a high cost according to the costmap. System is probably stuck now :)" << std::endl;
 			} else {
-				std::cout << "\tAPPLIED!" << std::endl;
+				//std::cout << "\tAPPLIED!" << std::endl;
 			}
 		}
 
 		// seems that a proper target has been found, check whether it is reachable according to a global planner
 		if ( generatePathPlan(start_safe, new_target) ) {
 			reachable_gp = true;
-			break;
+			break; // necessary to break the `while` loop - seems that a valid new target was found and a path has been generated successfully
 		} else {
 			reachable_gp = false;
 		}
