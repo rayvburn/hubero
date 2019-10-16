@@ -1900,7 +1900,8 @@ bool SocialForceModel::isModelNegligible(const std::string &model_name,
 
 bool SocialForceModel::isDynamicObstacle(const ignition::math::Vector3d &vel) const {
 
-	if (vel.Length() > 1e-06) {
+	// NOTE: static robot can reach up to 0.008 m/s - is it the ODE issue?
+	if (vel.Length() >= 0.01) {
 		return (true);
 	}
 	return (false);
