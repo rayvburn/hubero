@@ -113,3 +113,21 @@ If `interaction_force_factor: 1500.0` parameter is set too high then you will no
 
 If `target_tolerance: 1.25` is too small, especially smaller than bounding figure's radius (or half of the diagonal, when bounding box is set etc.) the target can never be reached and actor will start to rotate many times when approaching target (result of big repulsion force presence which tends overall force vector to point in opposite direction relative to target location). It's safe to set this parameter at least 110% of the bounding radius/half-diagonal/semi-major-axis.
 
+
+## Examplary target queue (in a world file)
+
+<plugin name='actor1_plugin' filename='libactor_plugin_social.so'>
+        <target>
+          <point>+4.0 -4.0 0.0</point>
+          <point>-3.0 -2.0 0.0</point>
+          <point>-4.0 +4.0 0.0</point>
+          <point>+3.0 +4.0 0.0</point>
+          <point>-4.0 +4.0 0.0</point>
+          <point>-3.0 -4.0 0.0</point>
+        </target>
+        <animation_factor>5.1</animation_factor>
+        <ignore_obstacles>
+          <model>cafe</model>
+          <model>ground_plane</model>
+        </ignore_obstacles>
+</plugin>	
