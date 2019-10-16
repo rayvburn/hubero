@@ -42,6 +42,12 @@ void ParamLoader::setSfmParamsPrefix(const std::string &sfm_prefix) {
 
 // ------------------------------------------------------------------- //
 
+void ParamLoader::setBehaviourParamsPrefix(const std::string &beh_prefix) {
+	setLocalNs(beh_ns_prefix_, beh_prefix);
+}
+
+// ------------------------------------------------------------------- //
+
 void ParamLoader::loadParameters(const std::shared_ptr<ros::NodeHandle> nh_ptr) {
 
 	if ( nh_ptr == nullptr ) {
@@ -59,6 +65,8 @@ void ParamLoader::loadParameters(const std::shared_ptr<ros::NodeHandle> nh_ptr) 
 		loadSfmDictionary(nh_ptr);
 		dict_vis_loaded_ = true;
 	}
+
+	loadBehaviourParams(nh_ptr);
 
 }
 
@@ -90,6 +98,12 @@ ParamLoader::SfmVisParams ParamLoader::getSfmVisParams() const {
 
 ParamLoader::SfmDictionary ParamLoader::getSfmDictionary() const {
 	return (dict_sfm_);
+}
+
+// ------------------------------------------------------------------- //
+
+ParamLoader::BehaviourParams ParamLoader::getBehaviourParams() const {
+	return (params_beh_);
 }
 
 // ------------------------------------------------------------------- //
@@ -233,6 +247,27 @@ void ParamLoader::loadSfmDictionary(const std::shared_ptr<ros::NodeHandle> nh_pt
 		}
 
 	}
+
+}
+
+// ------------------------------------------------------------------- //
+
+void ParamLoader::loadBehaviourParams (const std::shared_ptr<ros::NodeHandle> nh_ptr) {
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - -
+	// SFM Visualization params section
+	if ( nh_ptr->getParam(ns_ + beh_ns_prefix_ + "behaviour/force_factor", params_beh_.force_factor) ) { }
+	if ( nh_ptr->getParam(ns_ + beh_ns_prefix_ + "behaviour/turn_left", params_beh_.turn_left) ) { }
+	if ( nh_ptr->getParam(ns_ + beh_ns_prefix_ + "behaviour/turn_left_accelerate_turn", params_beh_.turn_left_accelerate_turn) ) { }
+	if ( nh_ptr->getParam(ns_ + beh_ns_prefix_ + "behaviour/turn_left_accelerate_acc", params_beh_.turn_left_accelerate_acc) ) { }
+	if ( nh_ptr->getParam(ns_ + beh_ns_prefix_ + "behaviour/accelerate", params_beh_.accelerate) ) { }
+	if ( nh_ptr->getParam(ns_ + beh_ns_prefix_ + "behaviour/turn_right_accelerate_turn", params_beh_.turn_right_accelerate_turn) ) { }
+	if ( nh_ptr->getParam(ns_ + beh_ns_prefix_ + "behaviour/turn_right_accelerate_acc", params_beh_.turn_right_accelerate_acc) ) { }
+	if ( nh_ptr->getParam(ns_ + beh_ns_prefix_ + "behaviour/turn_right", params_beh_.turn_right) ) { }
+	if ( nh_ptr->getParam(ns_ + beh_ns_prefix_ + "behaviour/turn_right_decelerate_turn", params_beh_.turn_right_decelerate_turn) ) { }
+	if ( nh_ptr->getParam(ns_ + beh_ns_prefix_ + "behaviour/turn_right_decelerate_dec", params_beh_.turn_right_decelerate_dec) ) { }
+	if ( nh_ptr->getParam(ns_ + beh_ns_prefix_ + "behaviour/stop", params_beh_.stop) ) { }
+	if ( nh_ptr->getParam(ns_ + beh_ns_prefix_ + "behaviour/decelerate", params_beh_.decelerate) ) { }
 
 }
 

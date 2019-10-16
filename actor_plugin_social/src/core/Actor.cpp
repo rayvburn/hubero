@@ -45,6 +45,7 @@ void Actor::initRosInterface() {
 	params_ptr_ = std::make_shared<actor::ros_interface::ParamLoader>();
 	params_ptr_->setActorParamsPrefix("actor");	// if this prefix will be changed then "actor_global_plan_node"'s SetPlannerTolerance function must be adjusted accordingly
 	params_ptr_->setSfmParamsPrefix("sfm");
+	params_ptr_->setBehaviourParamsPrefix("beh");
 	params_ptr_->loadParameters(node_.getNodeHandlePtr());
 
 	/* initialize SFM visualization instances */
@@ -308,8 +309,12 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
-	// initialize SFM with loaded parameters set
+	// initialize SFM with loaded set of parameters
 	initSFM();
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+	// initialize SocialConductor with loaded set of parameters
+	social_conductor_.configure(params_ptr_->getBehaviourParams());
 
 }
 

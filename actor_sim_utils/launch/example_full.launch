@@ -16,6 +16,7 @@
 
     <arg name="actor_params_ns" default="/gazebo/actor_plugin_ros_interface/actor"/>
     <arg name="sfm_params_ns"   default="/gazebo/actor_plugin_ros_interface/sfm"/>
+    <arg name="beh_params_ns"   default="/gazebo/actor_plugin_ros_interface/beh"/>
 
     <!-- ========================= launch world (Gazebo server and GUI) ========================================= -->
 
@@ -54,6 +55,7 @@
 	<!-- ========================= load parameters ========================================= -->
     <rosparam file="$(find actor_sim_utils)/config/actor_param.yaml" command="load" ns="$(arg actor_params_ns)"/>
     <rosparam file="$(find actor_sim_utils)/config/sfm_param.yaml"   command="load" ns="$(arg sfm_params_ns)"/> 
+    <rosparam file="$(find actor_sim_utils)/config/beh_param.yaml"   command="load" ns="$(arg beh_params_ns)"/> 
 
     <!-- ============================== load map =========================================== -->
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" output="screen" /> 

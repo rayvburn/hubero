@@ -164,6 +164,9 @@ void SocialConductor::superpose(const std::vector<ignition::math::Vector3d> &for
 		behaviour_active_str_.clear();
 	}
 
+	// at the end, let's apply multiplier
+	sf_result_ *= this->magnitude_beh_factor_;
+
 }
 
 // ------------------------------------------------------------------- //

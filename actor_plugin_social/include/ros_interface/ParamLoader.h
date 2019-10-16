@@ -95,6 +95,23 @@ public:
 		std::vector<std::tuple<std::string, int, double> > model_description;
 	} SfmDictionary;
 
+	/// \brief Declaration of a BehaviourParams typedef'ed struct;
+	/// default values are provided
+	typedef struct {
+		double			force_factor					= 1.0;
+		double			turn_left 						= 500.0;
+		double			turn_left_accelerate_turn 		= 500.0;
+		double 			turn_left_accelerate_acc 		= 625.0;
+		double 			accelerate 						= 500.0;
+		double 			turn_right_accelerate_turn 		= 500.0;
+		double			turn_right_accelerate_acc 		= 625.0;
+		double			turn_right 						= 800.0;
+		double 			turn_right_decelerate_turn 		= 500.0;
+		double 			turn_right_decelerate_dec 		= 625.0;
+		double 			stop 							= 500.0;
+		double			decelerate 						= 500.0;
+	} BehaviourParams;
+
 	// -------------------------
 
 	/// \brief Default constructor
@@ -103,19 +120,24 @@ public:
 	/// \brief Sets main namespace of parameters to search within,
 	/// it is meant to be an actor's name (if each actor has
 	/// different parameters);
-	/// for further explanation find `namespace and prefixes
+	/// for further explanation see `namespace and prefixes
 	/// explanation` section in this file
 	void setNamespace(const std::string &ns);
 
 	/// \brief Sets namespace of actor's parameters to search within,
-	/// for further explanation find `namespace and prefixes
+	/// for further explanation see `namespace and prefixes
 	/// explanation` section in this file
 	void setActorParamsPrefix(const std::string &actor_prefix);
 
 	/// \brief Sets namespace of SFM's parameters to search within,
-	/// for further explanation find `namespace and prefixes
+	/// for further explanation see `namespace and prefixes
 	/// explanation` section in this file
 	void setSfmParamsPrefix(const std::string &sfm_prefix);
+
+	/// \brief Sets namespace of the Behaviour-related parameters to search within,
+	/// for further explanation see `namespace and prefixes
+	/// explanation` section in this file
+	void setBehaviourParamsPrefix(const std::string &beh_prefix);
 
 	/// \brief Loads parameters into typedef'ed struct
 	/// instances (marked as private in this class)
@@ -123,28 +145,33 @@ public:
 
 	/// \brief Returns actor's parameters
 	/// \return ActorParams struct with non-default values
-	/// if parameters was successfully decoded
+	/// if parameters were successfully decoded
 	ActorParams getActorParams() const;
 
 	/// \brief Returns actor bounding's parameters
 	/// \return InflatorParams struct with non-default values
-	/// if parameters was successfully decoded
+	/// if parameters were successfully decoded
 	InflatorParams getActorInflatorParams() const;
 
 	/// \brief Returns SFM's parameters
 	/// \return SfmParams struct with non-default values
-	/// if parameters was successfully decoded
+	/// if parameters were successfully decoded
 	SfmParams getSfmParams() const;
 
 	/// \brief Returns SFM's visualization parameters
 	/// \return SfmParams struct with non-default values
-	/// if parameters was successfully decoded
+	/// if parameters were successfully decoded
 	SfmVisParams getSfmVisParams() const;
 
 	/// \brief Returns SFM's dictionary
 	/// \return Non-empty SfmDictionary struct
-	/// if parameters was successfully decoded
+	/// if parameters were successfully decoded
 	SfmDictionary getSfmDictionary() const;
+
+	/// \brief Returns Behaviours parameters
+	/// \return BehaviourParams struct with non-default values
+	/// if parameters were succesfully decoded
+	BehaviourParams getBehaviourParams() const;
 
 	/// \brief Default destructor
 	virtual ~ParamLoader();
@@ -170,6 +197,10 @@ private:
 	/// \brief Helper function which loads SFM's dictionary
 	/// into typedef'ed struct
 	void loadSfmDictionary (const std::shared_ptr<ros::NodeHandle> nh_ptr);
+
+	/// \brief Helper function which loads Behaviours' parameters
+	/// into typedef'ed struct
+	void loadBehaviourParams (const std::shared_ptr<ros::NodeHandle> nh_ptr);
 
 	/// \brief Helper function which converts a given string
 	/// into namespace pattern - '/' at the end
@@ -204,6 +235,9 @@ private:
 	/// \brief SFM's parameters namespace prefix
 	std::string sfm_ns_prefix_;
 
+	/// \brief Behaviour-related parameters namespace prefix
+	std::string beh_ns_prefix_;
+
 	/// \brief Struct storing actor's parameters
 	ActorParams params_actor_;
 
@@ -212,6 +246,9 @@ private:
 
 	/// \brief Struct storing SFM's parameters
 	SfmParams params_sfm_;
+
+	/// \brief Struct storing behaviours' parameters
+	BehaviourParams params_beh_;
 
 	/// \brief Struct storing SFM's dictionary;
 	/// marked static as dictionary is shared

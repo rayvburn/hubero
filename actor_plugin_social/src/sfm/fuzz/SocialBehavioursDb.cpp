@@ -14,8 +14,39 @@ namespace fuzz {
 // ------------------------------------------------------------------- //
 
 SocialBehavioursDb::SocialBehavioursDb()
-	: d_alpha_beta_length_(0.0), dir_alpha_(0.0)
+	: 	d_alpha_beta_length_(0.0), dir_alpha_(0.0),
+		magnitude_turn_left_(1.0),
+		magnitude_turn_left_accelerate_turn_(1.0),
+		magnitude_turn_left_accelerate_acc_(1.0),
+		magnitude_accelerate_(1.0),
+		magnitude_turn_right_accelerate_turn_(1.0),
+		magnitude_turn_right_accelerate_acc_(1.0),
+		magnitude_turn_right_(1.0),
+		magnitude_turn_right_decelerate_turn_(1.0),
+		magnitude_turn_right_decelerate_dec_(1.0),
+		magnitude_stop_(1.0),
+		magnitude_decelerate_(1.0),
+		magnitude_beh_factor_(1.0)
 {}
+
+// ------------------------------------------------------------------- //
+
+void SocialBehavioursDb::configure(const actor::ros_interface::ParamLoader::BehaviourParams &beh_params) {
+
+	magnitude_beh_factor_ = beh_params.force_factor;
+	magnitude_turn_left_ = beh_params.turn_left;
+	magnitude_turn_left_accelerate_turn_ = beh_params.turn_left_accelerate_turn;
+	magnitude_turn_left_accelerate_acc_ = beh_params.turn_left_accelerate_acc;
+	magnitude_accelerate_ = beh_params.accelerate;
+	magnitude_turn_right_accelerate_turn_ = beh_params.turn_right_accelerate_turn;
+	magnitude_turn_right_accelerate_acc_ = beh_params.turn_right_accelerate_acc;
+	magnitude_turn_right_ = beh_params.turn_right;
+	magnitude_turn_right_decelerate_turn_ = beh_params.turn_right_decelerate_turn;
+	magnitude_turn_right_decelerate_dec_ = beh_params.turn_right_decelerate_dec;
+	magnitude_stop_ = beh_params.stop;
+	magnitude_decelerate_ = beh_params.decelerate;
+
+}
 
 // ------------------------------------------------------------------- //
 
@@ -51,7 +82,7 @@ ignition::math::Vector3d SocialBehavioursDb::turnLeft() {
 	// create desired force vector
 	double dir_rot = findOrientation(dir_alpha_, 'l');
 	force_beh = createDirVector(dir_rot);
-	double magnitude = calculateVectorMagnitude(500.0);
+	double magnitude = calculateVectorMagnitude(magnitude_turn_left_);
 	force_beh = setVectorLength(force_beh, magnitude);
 
 	// make sure that SFM result added to the SocialConductor's result
@@ -74,12 +105,12 @@ ignition::math::Vector3d SocialBehavioursDb::turnLeftAccelerate() {
 	// rotation section (turning)
 	double dir_rot = findOrientation(dir_alpha_, 'l');
 	force_beh = createDirVector(dir_rot);
-	double magnitude = calculateVectorMagnitude(500.0);
+	double magnitude = calculateVectorMagnitude(magnitude_turn_left_accelerate_turn_);
 	force_beh = setVectorLength(force_beh, magnitude);
 
 	// acceleration section
-	magnitude *= 1.25;	// FIXME
-	force_beh = extendVector(force_beh, dir_alpha_, magnitude);
+	magnitude = calculateVectorMagnitude(magnitude_turn_left_accelerate_acc_);
+	force_beh = extendVector(force_beh, dir_alpha_, magnitude_turn_left_accelerate_acc_); // FIXME:
 
 //	force_beh = assertForceDirection(force_beh);
 
@@ -104,7 +135,7 @@ ignition::math::Vector3d SocialBehavioursDb::accelerate() {
 	ignition::math::Vector3d force_beh;
 
 	// acceleration section
-	double magnitude = calculateVectorMagnitude(500.0);
+	double magnitude = calculateVectorMagnitude(magnitude_accelerate_);
 
 	force_beh = createDirVector(dir_alpha_);
 	force_beh = setVectorLength(force_beh, magnitude);
@@ -125,13 +156,13 @@ ignition::math::Vector3d SocialBehavioursDb::turnRightAccelerate() {
 	double dir_rot = findOrientation(dir_alpha_, 'r');
 	force_beh = createDirVector(dir_rot);
 
-	double magnitude = calculateVectorMagnitude(500.0);
+	double magnitude = calculateVectorMagnitude(magnitude_turn_right_accelerate_turn_);
 
 	force_beh = setVectorLength(force_beh, magnitude);
 
 	// acceleration section
-	//magnitude *= 1.25;
-	force_beh = extendVector(force_beh, dir_alpha_, magnitude);
+	magnitude = calculateVectorMagnitude(magnitude_turn_right_accelerate_acc_);
+	force_beh = extendVector(force_beh, dir_alpha_, magnitude_turn_right_accelerate_acc_); // FIXME
 
 //	force_beh = assertForceDirection(force_beh);
 
@@ -149,7 +180,7 @@ ignition::math::Vector3d SocialBehavioursDb::turnRight() {
 	double dir_rot = findOrientation(dir_alpha_, 'r');
 	force_beh = createDirVector(dir_rot);
 
-	double magnitude = calculateVectorMagnitude(800.0); // 600.0
+	double magnitude = calculateVectorMagnitude(magnitude_turn_right_);
 
 	force_beh = setVectorLength(force_beh, magnitude);
 
@@ -170,14 +201,14 @@ ignition::math::Vector3d SocialBehavioursDb::turnRightDecelerate() {
 	double dir_rot = findOrientation(dir_alpha_, 'r');
 	force_beh = createDirVector(dir_rot);
 
-	double magnitude = calculateVectorMagnitude(500.0);
+	double magnitude = calculateVectorMagnitude(magnitude_turn_right_decelerate_turn_);
 
 	force_beh = setVectorLength(force_beh, magnitude);
 
 	// deceleration section
 	dir_rot = findOrientation(dir_alpha_, 'o');
-	magnitude *= 1.25;
-	force_beh = extendVector(force_beh, dir_rot, magnitude);
+	magnitude = calculateVectorMagnitude(magnitude_turn_right_decelerate_dec_);
+	force_beh = extendVector(force_beh, dir_rot, magnitude_turn_right_decelerate_dec_); // FIXME:
 
 //	force_beh = assertForceDirection(force_beh);
 
@@ -196,7 +227,7 @@ ignition::math::Vector3d SocialBehavioursDb::stop() {
 	double dir_rot = findOrientation(dir_alpha_, 'o');
 	force_beh = createDirVector(dir_rot);
 
-	double magnitude = calculateVectorMagnitude(500.0);
+	double magnitude = calculateVectorMagnitude(magnitude_stop_);
 
 	force_beh = setVectorLength(force_beh, magnitude);
 
@@ -214,7 +245,7 @@ ignition::math::Vector3d SocialBehavioursDb::decelerate() {
 	ignition::math::Vector3d force_beh;
 
 	// acceleration section
-	double magnitude = calculateVectorMagnitude(500.0);
+	double magnitude = calculateVectorMagnitude(magnitude_decelerate_);
 
 	double dir_opp = findOrientation(dir_alpha_, 'o');
 	force_beh = createDirVector(dir_opp);

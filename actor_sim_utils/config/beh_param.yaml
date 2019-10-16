@@ -1,0 +1,22 @@
+behaviour:
+
+    force_factor: 1.001
+
+    turn_left: 501.0
+
+    turn_left_accelerate_turn: 501.0
+    turn_left_accelerate_acc: 626.0
+
+    accelerate: 501.0
+
+    turn_right_accelerate_turn: 501.0
+    turn_right_accelerate_acc: 501.0
+
+    turn_right: 801.0
+
+    turn_right_decelerate_turn: 501.0
+    turn_right_decelerate_dec: 626.0
+
+    stop: 501.0 # TODO - actual stoppage! -> del param
+
+    decelerate: 501.0
