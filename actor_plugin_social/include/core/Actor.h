@@ -370,7 +370,11 @@ private:
     /// \brief Helper class to handle LIE_DOWN state
     LieDownHelper lie_down_;
 
+    /// \brief Based on actors parameters computes fuzzy
+    /// output representing social behaviour
     sfm::fuzz::Processor fuzzy_processor_;
+
+    /// \brief Social behaviour-based force generator
     sfm::fuzz::SocialConductor social_conductor_;
 
 public:

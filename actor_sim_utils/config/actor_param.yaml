@@ -3,9 +3,10 @@ initialization:
     # if pose not set - as initial pose the .world's file <pose> tag values will be used
     # this will apply to all actors (they all will be initialized in the same place unless separate files and namespaces are created (or at least parameter remapping feature used))
     # pose: [1.0, 1.0, 0.0, 0.0, 0.0, 0.75] # {x, y, z, r, p, y}, express yaw in terms of world coordinate system, this overwrites .sdf pose setting!
-    
-    # target: [1.0, 2.0, 3.0]           # initial target coordinates
-    stance: 1                           # look for core/Enums.h
+
+    # initial target coordinates, see `target` tag in the .world file (look for `plugin` tag)
+
+    stance: 1                           # 0 - walk, 1 - stand, 2 - lie, 3 - sit down , 4 - sitting, 5 - stand up, 6 - run, 7 - talk1, 8 - talk2; for details see include/core/Enums.h
 
 general:
 

@@ -968,21 +968,9 @@ bool Actor::manageTargetMovingAround() {
 
 	}
 
-	// reachability test 1:
-	// check if there has been some obstacle put into world since last target selection
-	if ( !target_manager_.isTargetStillReachable() ) {
-		target_manager_.abandonTarget();
-		// try a few times
-		while ( !target_manager_.changeTarget() ); // {
-			// after setting new target, first let's rotate to its direction
-			// state will be changed in the next iteration
-			new_target = true;
-		//}
-	}
-
-	// reachability test 2:
-	// check if actor is stuck
-	if ( target_manager_.isTargetNotReachedForTooLong() ) {
+	// reachability test 1: check if there has been some obstacle put into world since last target selection
+	// reachability test 2: check if actor is stuck
+	if ( !target_manager_.isTargetStillReachable() || target_manager_.isTargetNotReachedForTooLong() ) {
 
 		target_manager_.abandonTarget();
 		bool target_changed = false;
@@ -1178,13 +1166,9 @@ double Actor::move(const double &dt) {
     					  sfm_.getRelativeLocationDynamic(), sfm_.getDistanceAngleDynamic());
     fuzzy_processor_.process();
 
-//    std::cout << actor_ptr_->GetName() << std::endl;
-
     // create a force vector according to the activated `social behaviour`
     social_conductor_.apply(sfm_.getForceCombined(), sfm_.getDirectionAlpha(), sfm_.getDistanceDynamic(),
     						fuzzy_processor_.getOutput());
-
-//    std::cout << "SFM combined: " << sfm_.getForceCombined() << "\tsocial: " << social_conductor_.getSocialVector() << std::endl;
 
     // according to the force, calculate a new pose
 	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_lin_,

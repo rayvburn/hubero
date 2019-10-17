@@ -201,6 +201,7 @@ void ParamLoader::loadSfmParams(const std::shared_ptr<ros::NodeHandle> nh_ptr) {
 	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "algorithm/fov", params_sfm_.fov) ) {	}
 	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "algorithm/max_speed", params_sfm_.max_speed) ) { }
 	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "algorithm/mass", params_sfm_.mass) ) { }
+	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "algorithm/maneuverability", params_sfm_.maneuverability) ) { }
 	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "algorithm/internal_force_factor", params_sfm_.internal_force_factor) ) { }
 	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "algorithm/interaction_force_factor", params_sfm_.interaction_force_factor) ) { }
 	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "algorithm/min_force", params_sfm_.min_force) ) { }
@@ -214,6 +215,10 @@ void ParamLoader::loadSfmParams(const std::shared_ptr<ros::NodeHandle> nh_ptr) {
 
 	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "algorithm/box_inflation_type", temp_int) ) {
 		params_sfm_.box_inflation_type = static_cast<unsigned short int>(temp_int);
+	}
+
+	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "algorithm/opposite_force", temp_int) ) {
+		params_sfm_.opposite_force = static_cast<unsigned short int>(temp_int);
 	}
 
 }

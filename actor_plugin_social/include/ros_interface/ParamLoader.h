@@ -67,6 +67,7 @@ public:
 		double 				fov 						= 2.00;
 		double 				max_speed 					= 1.50;
 		double 				mass 						= 80.0;
+		double 				maneuverability				= 6.5;
 		double 				internal_force_factor 		= 100.0;
 		double 				interaction_force_factor 	= 3000.0;
 		double 				min_force 					= 300.0;
@@ -74,6 +75,7 @@ public:
 		bool 				heterogenous_population 	= false;
 		unsigned short int 	static_obj_interaction 		= 1;
 		unsigned short int 	box_inflation_type 			= 0;
+		unsigned short int	opposite_force				= 0;
 
 	} SfmParams;
 
