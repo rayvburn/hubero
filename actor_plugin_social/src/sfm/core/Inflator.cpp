@@ -6,6 +6,7 @@
  */
 
 #include <sfm/core/Inflator.h>
+#include <algorithm> // std::min_element
 
 namespace sfm {
 namespace core {
@@ -107,20 +108,23 @@ ignition::math::Vector3d Inflator::findModelsClosestPoints(const ignition::math:
 
 	/* */
 	// 3rd case -------------------------------------------------------------------
+	return (findClosestBoundingBoxVertex(actor_pose.Pos(), bb));
+
+	/*
 	std::vector<ignition::math::Vector3d> vertices_vector = createVerticesVector(bb);
 	std::vector<double> lengths_vector = calculateLengthToVertices(actor_pose.Pos(), vertices_vector);
 
-	double min_value = 3.4e+38;
-	unsigned int index = 0;
-
-	for ( size_t i = 0; i < lengths_vector.size(); i++ ) {
-
-		if ( lengths_vector[i] < min_value ) {
-			index = i;
-			min_value = lengths_vector[i];
-		}
-
-	}
+//	double min_value = 3.4e+38;
+//	unsigned int index = 0;
+//
+//	for ( size_t i = 0; i < lengths_vector.size(); i++ ) {
+//
+//		if ( lengths_vector[i] < min_value ) {
+//			index = i;
+//			min_value = lengths_vector[i];
+//		}
+//
+//	}
 
 	#ifdef DEBUG_BOUNDING_BOX
 	if ( print_info ) {
@@ -132,7 +136,9 @@ ignition::math::Vector3d Inflator::findModelsClosestPoints(const ignition::math:
 	}
 	#endif
 
-	return (vertices_vector[index]);
+//	return (vertices_vector[index]);
+	return ( *std::min_element(lengths_vector,lengths_vector + lengths_vector.size()) );
+	*/
 
 }
 
@@ -144,7 +150,8 @@ std::vector<ignition::math::Vector3d> Inflator::createVerticesVector(const actor
 	std::vector<ignition::math::Vector3d> temp_container;
 	ignition::math::Vector3d temp_vector;
 
-	temp_vector.Z(0.5); // hard-coded, planar objects considered
+//	temp_vector.Z(0.5); // hard-coded, planar objects considered
+	temp_vector.Z(bb.getCenter().Z());
 
 	temp_vector.X(bb.getMin().X()); 	temp_vector.Y(bb.getMin().Y());
 	temp_container.push_back(temp_vector);
@@ -177,7 +184,9 @@ std::vector<double> Inflator::calculateLengthToVertices(const ignition::math::Ve
 
 	std::vector<double> temp_containter;
 	for ( size_t i = 0; i < vertices_pts.size(); i++ ) {
-		temp_containter.push_back( (vertices_pts[i] - actor_pos).Length() );
+		// planar
+		ignition::math::Vector3d v_plane = vertices_pts.at(i) - actor_pos; 	v_plane.Z(0.0);
+		temp_containter.push_back(v_plane.Length());
 	}
 	return (temp_containter);
 
@@ -390,6 +399,9 @@ std::tuple<bool, ignition::math::Vector3d> Inflator::isWithinRangeOfBB(
 		const actor::inflation::Box &object_bb) const
 {
 
+	//debug
+	std::cout << "object: " << SfmDebugGetCurrentObjectName() << "\t" << SfmDebugGetCurrentActorName() << std::endl;
+
 	/* Using the fact that in Gazebo, the Bounding Box is axis-aligned
 	 * so it is never rotated around the world Z axis.
 	 * NOTE: actor's both X and Y coordinates will be within the BB range
@@ -410,7 +422,7 @@ std::tuple<bool, ignition::math::Vector3d> Inflator::isWithinRangeOfBB(
 		intersection_end.Y(actor_center.Y());
 	}
 
-	if ( within_x && within_y ) {
+	if ( (within_x && within_y) || (!within_x && !within_y) ) {
 		// actor stepped onto an obstacle,
 		// a procedure for this case is already implemented;
 		// return unmodified center position of the object's BB
@@ -486,6 +498,25 @@ ignition::math::Vector3d Inflator::calculateBoxIntersection(const ignition::math
 	}
 
 	return (box_intersection);
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Vector3d Inflator::findClosestBoundingBoxVertex(const ignition::math::Vector3d &actor_pos, const actor::inflation::Box &object_box) const {
+
+	std::vector<ignition::math::Vector3d> vertices_vector = createVerticesVector(object_box);
+	std::vector<double> lengths_vector = calculateLengthToVertices(actor_pos, vertices_vector);
+	auto shortest = std::min_element(lengths_vector.begin(), lengths_vector.end());
+	if ( shortest == lengths_vector.end() ) {
+		// FIXME:
+		// FAIL
+		std::cout << "[ERROR] sfm::core::Inflator::findClosestBoundingBoxVertex" << std::endl;
+	}
+
+	// convert iterator to vector index
+	size_t index = std::distance(lengths_vector.begin(), shortest);
+	return (vertices_vector.at(index));
 
 }
 

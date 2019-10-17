@@ -22,7 +22,8 @@
 #include <tuple>
 #include <string>
 #include <vector>
-#include <limits> // std::numeric_limits
+#include <limits> 	// std::numeric_limits
+#include <iterator> // std::distance
 
 // template definition placed in header - load directives
 // which parts of code to compile
@@ -128,6 +129,8 @@ private:
 			const ignition::math::Vector3d &box_pos = ignition::math::Vector3d(std::numeric_limits<double>::quiet_NaN(),
 					std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN())) const;
 
+	ignition::math::Vector3d findClosestBoundingBoxVertex(const ignition::math::Vector3d &actor_pos, const actor::inflation::Box &object_box) const;
+
 public:
 
 	/* Template definition in cpp threw an error:
@@ -164,7 +167,15 @@ public:
 		// for details see @ref isWithinRangeOfBB
 		ignition::math::Vector3d object_anchor;
 		std::tie(within_bb, object_anchor) = isWithinRangeOfBB(actor_pose.Pos(), object_box);
+
 		// `within_bb` is TRUE if `object_anchor` is not equal to the `object_box`'s center
+		if ( within_bb ) {
+			// find object shifted position (intersection)
+			object_pos_shifted = calculateBoxIntersection(actor_bound.getCenter(), object_box, object_anchor);
+		} else {
+			// try to find the closest vertex of the Box
+			object_pos_shifted = findClosestBoundingBoxVertex(actor_bound.getCenter(), object_box);
+		}
 
 		// =================================================================
 
@@ -186,8 +197,7 @@ public:
 		 * which may produce false `intersects` flag. Let's stick to bounding
 		 * box'es center (instead of `object_pose` */
 
-		// find object shifted position (intersection)
-		object_pos_shifted = calculateBoxIntersection(actor_pose.Pos(), object_box, object_anchor);
+
 
 		/* bb's Intersect returns intersection point whose X and Y are equal
 		 * to actor's X and Y thus 0 distance between points and no solutions
@@ -276,7 +286,7 @@ public:
 	} /* findModelsClosestPoints() */
 
 
-};
+}; /* class Inflator */
 
 } /* namespace core */
 } /* namespace sfm */
