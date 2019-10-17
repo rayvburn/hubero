@@ -6,6 +6,7 @@
  */
 
 #include <sfm/core/Inflator.h>
+#include <ignition/math/Line3.hh>
 #include <algorithm> // std::min_element
 
 namespace sfm {
@@ -21,7 +22,7 @@ ignition::math::Vector3d Inflator::findModelsClosestPoints(const ignition::math:
 		const ignition::math::Pose3d &object_pose, const actor::inflation::Box &bb) const
 {
 
-	// FIXME
+	// TODO: check operation
 	// it doesn't take ACTOR's BOUNDING BOX into consideration (only object's BB)
 
 	/* Assuming axis-aligned bounding box - closest point search algorithm:
@@ -36,29 +37,13 @@ ignition::math::Vector3d Inflator::findModelsClosestPoints(const ignition::math:
 	 * 			check) and choose the closest one
 	 */
 
-	#ifdef DEBUG_BOUNDING_BOX
-	if ( print_info ) {
-		std::cout << "GetModelPointClosestToActor()" << "\tname: " << _model_name << "\tcenter: " << bb.Center() << "\tmax: " << bb.Max() << "\tmin: " << bb.Min() << "\n\t\t\t";
-	}
-	#endif
-
-	// std::cout << "\nisinf: " << std::isinf( bb.Center().X() ) << "\tcenter_x: " << bb.Center().X() << std::endl;
-
-	/* */
 	// inf has an object with no bounding box defined (for example - actor)
 	if ( std::fabs(bb.getCenter().X()) > 1e+300 ) {
-		#ifdef DEBUG_BOUNDING_BOX
-		if ( print_info ) {
-			std::cout << "\tANOTHER ACTOR HERE!\n";
-		}
-		#endif
+		// another actor met
 		return ( ignition::math::Vector3d(object_pose.Pos()) );
 	}
 
-
-	ignition::math::Line3d line;
-
-	// Intersect() method returns a tuple
+	// BB's Intersect() method returns a tuple
 	bool does_intersect = false;
 	double dist_intersect = 0.0;
 	ignition::math::Vector3d point_intersect;
@@ -71,21 +56,14 @@ ignition::math::Vector3d Inflator::findModelsClosestPoints(const ignition::math:
 	}
 
 	// 1st case -------------------------------------------------------------------
+	ignition::math::Line3d line;
 	// create a line of which intersection with a bounding box will be checked, syntax: x1, y1, x2, y2, z_common
 //	line.Set(-1e+50, actor_pose.Pos().Y(), +1e+50, actor_pose.Pos().Y(), bb.Center().Z() );
 	line.Set(actor_pose.Pos().X(), actor_pose.Pos().Y(), bb.getCenter().X(), actor_pose.Pos().Y(), bb.getCenter().Z() );
 	std::tie(does_intersect, point_intersect) = bb.doesIntersect(line);
 
 	if ( does_intersect ) {
-
-		#ifdef DEBUG_BOUNDING_BOX
-		if ( print_info ) {
-			std::cout << "\tY-intersection - bounding box point: " << point_intersect << std::endl;
-		}
-		#endif
-
 		return (point_intersect);
-
 	}
 
 	// 2nd case -------------------------------------------------------------------
@@ -94,51 +72,11 @@ ignition::math::Vector3d Inflator::findModelsClosestPoints(const ignition::math:
 	std::tie(does_intersect, point_intersect) = bb.doesIntersect(line);
 
 	if ( does_intersect ) {
-
-		#ifdef DEBUG_BOUNDING_BOX
-		if ( print_info ) {
-			std::cout << "\tX-intersection - bounding box point: " << point_intersect << std::endl;
-		}
-		#endif
-
 		return (point_intersect);
-
 	}
 
-
-	/* */
 	// 3rd case -------------------------------------------------------------------
 	return (findClosestBoundingBoxVertex(actor_pose.Pos(), bb));
-
-	/*
-	std::vector<ignition::math::Vector3d> vertices_vector = createVerticesVector(bb);
-	std::vector<double> lengths_vector = calculateLengthToVertices(actor_pose.Pos(), vertices_vector);
-
-//	double min_value = 3.4e+38;
-//	unsigned int index = 0;
-//
-//	for ( size_t i = 0; i < lengths_vector.size(); i++ ) {
-//
-//		if ( lengths_vector[i] < min_value ) {
-//			index = i;
-//			min_value = lengths_vector[i];
-//		}
-//
-//	}
-
-	#ifdef DEBUG_BOUNDING_BOX
-	if ( print_info ) {
-		std::cout << "\tvertices_vector: 0) " << vertices_vector[0] << "  1) " << vertices_vector[1] << "  2) " << vertices_vector[2] << "  3) " << vertices_vector[3];
-		std::cout << "\n\t\t\t";
-		std::cout << "\tlengths_vector: 0) " << lengths_vector[0] << "  1) " << lengths_vector[1] << "  2) " << lengths_vector[2] << "  3) " << lengths_vector[3];
-		std::cout << "\n\t\t\t";
-		std::cout << "\tCLOSEST VERTEX - bounding box point: " << vertices_vector[index] << std::endl;
-	}
-	#endif
-
-//	return (vertices_vector[index]);
-	return ( *std::min_element(lengths_vector,lengths_vector + lengths_vector.size()) );
-	*/
 
 }
 
@@ -146,11 +84,12 @@ ignition::math::Vector3d Inflator::findModelsClosestPoints(const ignition::math:
 
 std::vector<ignition::math::Vector3d> Inflator::createVerticesVector(const actor::inflation::Box &bb) const
 {
-	// 4 vertices only (on-plane)
+	// 4 vertices only (planar)
 	std::vector<ignition::math::Vector3d> temp_container;
 	ignition::math::Vector3d temp_vector;
 
-//	temp_vector.Z(0.5); // hard-coded, planar objects considered
+	// planar objects considered, height does not matter
+	// as long as it is the same for both vector points
 	temp_vector.Z(bb.getCenter().Z());
 
 	temp_vector.X(bb.getMin().X()); 	temp_vector.Y(bb.getMin().Y());
@@ -165,13 +104,7 @@ std::vector<ignition::math::Vector3d> Inflator::createVerticesVector(const actor
 	temp_vector.X(bb.getMax().X()); 	temp_vector.Y(bb.getMax().Y());
 	temp_container.push_back(temp_vector);
 
-	/* // emplace_back() blocks stdio messages
-	temp_container.emplace_back(_bb.Min().X(), _bb.Min().Y(), BOUNDING_BOX_Z_FIXED);
-	temp_container.emplace_back(_bb.Min().X(), _bb.Max().Y(), BOUNDING_BOX_Z_FIXED);
-	temp_container.emplace_back(_bb.Max().X(), _bb.Min().Y(), BOUNDING_BOX_Z_FIXED);
-	temp_container.emplace_back(_bb.Max().X(), _bb.Max().Y(), BOUNDING_BOX_Z_FIXED);
-	*/
-
+	// emplace_back() makes system stuck completely
 	return (temp_container);
 
 }
@@ -399,9 +332,6 @@ std::tuple<bool, ignition::math::Vector3d> Inflator::isWithinRangeOfBB(
 		const actor::inflation::Box &object_bb) const
 {
 
-	//debug
-	std::cout << "object: " << SfmDebugGetCurrentObjectName() << "\t" << SfmDebugGetCurrentActorName() << std::endl;
-
 	/* Using the fact that in Gazebo, the Bounding Box is axis-aligned
 	 * so it is never rotated around the world Z axis.
 	 * NOTE: actor's both X and Y coordinates will be within the BB range
@@ -487,14 +417,6 @@ ignition::math::Vector3d Inflator::calculateBoxIntersection(const ignition::math
 	// if `object_pos` is not located within BB bounds
 	if ( intersects ) {
 		box_intersection = point_intersect;
-	} else {
-		#ifdef DEBUG_BOUNDING_BOX
-		std::cout << "\n\n\nGetActorModelBBsClosestPoints() ERROR"; // \n\n\n";
-		std::cout << "\nACTOR BB check - center: " << _actor_bb.Center() << "\tmin: " << _actor_bb.Min() << "\tmax: " << _actor_bb.Max() << std::endl;
-		std::cout << "ACTOR pos: " << _actor_pose.Pos().X() << " " << _actor_pose.Pos().Y() << "  BB closest: " << point_intersect.X() << " " << point_intersect.Y() << std::endl;
-		std::cout << "OBJECT pos: " << _object_pose.Pos();
-		std::cout << "\n\n\n";
-		#endif
 	}
 
 	return (box_intersection);
@@ -508,9 +430,8 @@ ignition::math::Vector3d Inflator::findClosestBoundingBoxVertex(const ignition::
 	std::vector<ignition::math::Vector3d> vertices_vector = createVerticesVector(object_box);
 	std::vector<double> lengths_vector = calculateLengthToVertices(actor_pos, vertices_vector);
 	auto shortest = std::min_element(lengths_vector.begin(), lengths_vector.end());
+
 	if ( shortest == lengths_vector.end() ) {
-		// FIXME:
-		// FAIL
 		std::cout << "[ERROR] sfm::core::Inflator::findClosestBoundingBoxVertex" << std::endl;
 	}
 
@@ -543,30 +464,9 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 	 * compare the length of a vector from actor's center to the object's position
 	 * shifted. When it's longer than radius then both bounding circles are safe -
 	 * they are not intersecting each other. */
-//	ignition::math::Vector3d connection;
-//	connection = object_pos_shifted - actor_pose.Pos();
-//	connection.Z(0.0); // planar
-//
-//	if ( connection.Length() <= actor_circle.GetRadius() ) {
-//	std::cout << SfmDebugGetCurrentActorName() << "'s center: " << actor_pose.Pos() << "\tBC's center: " << actor_circle.GetCenter() << std::endl;
-
-	// above commented -> instead isWithin method created
 	if ( actor_circle.doesContain(object_pos_shifted) ) {
-
 		std::tie(actor_pose_shifted.Pos(), object_pos_shifted) = findIntersectedModelsClosestPoints(actor_pose.Pos(), object_pose.Pos(), INTERSECTION_ACTORS);
-
-	} else {
-
-		#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX
-		std::cout << "\nINFO - " << SfmDebugGetCurrentActorName() << "'s bounding circle IS SAFE\tlength: " << connection.Length() << "\tradius: " << actor_circle.GetRadius() << std::endl;
-		#endif
-
 	}
-
-	#ifdef DEBUG_BOUNDING_CIRCLE
-	std::cout << "\n\nBOUND - 2 actors | 1 pos: " << actor_pose.Pos() << "\tintersection: " << actor_pose_shifted.Pos() << std::endl;
-	std::cout << "BOUND - 2 actors |" << _object_name << "'s pos: " << object_pose.Pos() << "\tintersection: " << object_pos_shifted << std::endl;
-	#endif
 
 	return ( std::make_tuple(actor_pose_shifted, object_pos_shifted) );
 
@@ -586,39 +486,13 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 	// intersection of the 1st actor's circle (currently processed)
 	ignition::math::Pose3d actor_pose_shifted = actor_pose;
 
-	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( SfmGetPrintData() ) {
-	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
-		std::cout << "\n*******************************************************************************\n";
-		std::cout << "in GetActorModelBBsClosestPoints() - 2 ACTORS - checking intersection\n";
-		std::cout << "\t" << SfmDebugGetCurrentActorName() << "'s pos: " << actor_pose.Pos() << "\t" << SfmDebugGetCurrentObjectName() << "'s pos: " << object_pose.Pos() << std::endl;
-	}
-	}
-	#endif
-
 	std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_ellipse.getIntersection(object_pose.Pos());
-
-	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( SfmGetPrintData() ) {
-	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
-		std::cout << "\n\tActor's BE intersection result: " << actor_pose_shifted.Pos();
-	}
-	}
-	#endif
 
 	// intersection of the 2nd actor's circle (another one)
 	ignition::math::Vector3d object_pos_shifted;
+
 	// current actor ellipse's shifted center ( = actor's pos) is connected with object ellipse's center; the connector is a line
 	std::tie(std::ignore, object_pos_shifted) = object_ellipse.getIntersection(actor_pose.Pos());
-//	std::tie(std::ignore, object_pos_shifted) = object_ellipse.getIntersection(actor_pose_shifted.Pos());
-
-	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( SfmGetPrintData() ) {
-	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
-		std::cout << "\n\tObject's BE intersection result: " << object_pos_shifted;
-	}
-	}
-	#endif
 
 	/* Let's check whether the bounding circles are not intruding each other -
 	 * compare the length of a vector from actor's center to the object's position
@@ -626,36 +500,8 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 	 * they are not intersecting each other. */
 
 	if ( actor_ellipse.doesContain(object_pos_shifted) ) {
-
-		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-		if ( SfmGetPrintData() ) {
-		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
-			std::cout << "\n\n\tACTOR'S BE CONTAINS " << SfmDebugGetCurrentObjectName() << "'s POINT!!!!\n";
-		}
-		}
-		#endif
 		std::tie(actor_pose_shifted.Pos(), object_pos_shifted) = findIntersectedModelsClosestPoints(actor_pose.Pos(), object_pose.Pos(), INTERSECTION_ACTORS);
-
-	} else {
-
-		#ifdef DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX
-		std::cout << "\nINFO - " << SfmDebugGetCurrentActorName() << "'s bounding circle IS SAFE\tlength: " << connection.Length() << "\tradius: " << _actor_bc.GetRadius() << std::endl;
-		#endif
-
 	}
-
-	#ifdef DEBUG_BOUNDING_CIRCLE
-	std::cout << "\n\nBOUND - 2 actors | 1 pos: " << actor_pose.Pos() << "\tintersection: " << actor_pose_shifted.Pos() << std::endl;
-	std::cout << "BOUND - 2 actors |" << _object_name << "'s pos: " << object_pose.Pos() << "\tintersection: " << object_pos_shifted << std::endl;
-	#endif
-
-	#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
-	if ( SfmGetPrintData() ) {
-	if ( SfmDebugGetCurrentActorName() == "actor1" ) {
-		std::cout << "\n*******************************************************************************\n\n\n";
-	}
-	}
-	#endif
 
 	return ( std::make_tuple(actor_pose_shifted, object_pos_shifted) );
 
