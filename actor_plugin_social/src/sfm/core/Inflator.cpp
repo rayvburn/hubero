@@ -20,6 +20,7 @@ ignition::math::Vector3d Inflator::findModelsClosestPoints(const ignition::math:
 		const ignition::math::Pose3d &object_pose, const actor::inflation::Box &bb) const
 {
 
+	// FIXME
 	// it doesn't take ACTOR's BOUNDING BOX into consideration (only object's BB)
 
 	/* Assuming axis-aligned bounding box - closest point search algorithm:
@@ -190,65 +191,35 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 		const std::string &_object_name /* debug only */ ) const
 {
 
-	/* the below algorithm of searching the closest points of 2 bounding boxes
-	 * consists of creation of a line starting in the 1st bounding box's center,
-	 * ending in the 2nd bb's center; then the Intersects method of the Box class
-	 * will be used to find 2 points creating the shortest distance between boxes */
-
-	/* no error handling as there should always be an intersection found
-	 * when 2 center points from each bounding box are connected by a line */
-
-	/* the only exception is calculating the social force for visualization -
-	 * in such a case there is a very high possibility of being unable to
-	 * finding intersection */
-
-	// for some reason the line has to be 'inverted' for a second case (see below)
-
-	ignition::math::Line3d line;
-
-	// Intersect() method returns a tuple
-	bool does_intersect = false;
-	double dist_intersect = 0.0;
-	ignition::math::Vector3d point_intersect;
-
-	// actor's bounding box point that is closest to object's bounding box
-	line.Set(object_box.getCenter().X(), object_box.getCenter().Y(), actor_pose.Pos().X(), actor_pose.Pos().Y(), actor_box.getCenter().Z() );
-	std::tie(does_intersect, point_intersect) = actor_box.doesIntersect(line);
-
-	// create new pose based on actor's pose, POSSIBLY update only position component
+	// allocate shifted poses/positions, their position components will likely be updated
 	ignition::math::Pose3d actor_pose_shifted = actor_pose;
+	ignition::math::Pose3d object_pose_shifted = object_pose;
 
-	if ( !does_intersect ) {
-		#ifdef DEBUG_BOUNDING_BOX
-		std::cout << "\n\n\nGetActorModelBBsClosestPoints() ERROR1"; // \n\n\n";
-		std::cout << "\nACTOR BB check - center: " << _actor_bb.Center() << "\tmin: " << _actor_bb.Min() << "\tmax: " << _actor_bb.Max() << std::endl;
-		std::cout << "ACTOR pos: " << _actor_pose.Pos().X() << " " << _actor_pose.Pos().Y() << "  BB closest: " << point_intersect.X() << " " << point_intersect.Y() << std::endl;
-		std::cout << "OBJECT pos: " << _object_pose.Pos();
-		std::cout << "\n\n\n";
-		#endif
-	} else {
-		// the intersection is found - update
-		actor_pose_shifted.Pos() = point_intersect;
-	}
+	// ----------------------------------------------------
+	// 1st case: actor's center is within object BB's range
+	// (i.e. x_actor <= x_bb_max, x_actor >= x_bb_min,
+	// analogically along the Y-axis)
+	//
+	// 2nd case: actor's center is not within object BB's range
+	// (i.e. x_actor <= x_bb_max, x_actor >= x_bb_min,
+	// analogically along the Y-axis)
 
+	bool within_bb = false;
+	// represents an object's BOX reference point, it can be equal
+	// to the `object_pose`'s position or shifted along X/Y axis;
+	// for details see @ref isWithinRangeOfBB
+	ignition::math::Vector3d object_anchor;
+	std::tie(within_bb, object_anchor) = isWithinRangeOfBB(actor_pose.Pos(), object_box);
+	// `within_bb` is TRUE if `object_anchor` is not equal to the `object_box`'s center
 
-	// object's bounding box point that is closest to actor's bounding box
-	line.Set(actor_pose.Pos().X(), actor_pose.Pos().Y(), object_box.getCenter().X(), object_box.getCenter().Y(), object_box.getCenter().Z() );
-	std::tie(does_intersect, point_intersect) = object_box.doesIntersect(line);
+	// find object shifted position (intersection)
+	object_pose_shifted.Pos() = calculateBoxIntersection(actor_pose.Pos(), object_box, object_anchor);
 
-	if ( !does_intersect ) {
-		#ifdef DEBUG_BOUNDING_BOX
-		std::cout << "\n\n\nGetActorModelBBsClosestPoints() ERROR2"; // \n\n\n";
-		std::cout << "\t" << _object_name << "'s pos: " << _object_pose.Pos() << "\tBB closest: " << point_intersect.X() << " " << point_intersect.Y() << std::endl;
-		std::cout << "\n\n\n";
-		#endif
-		// the intersection was not found - set intersection point as a object's central point
-		point_intersect = object_pose.Pos();
-	} else {
-		// that's ok, point_intersect will be returned from function
-	}
+	// find actor shifted position (intersection);
+	// the line has to be 'inverted' for a second case (see below);
+	actor_pose_shifted.Pos() = calculateBoxIntersection(object_anchor, actor_box);
 
-	return ( std::make_tuple(actor_pose_shifted, point_intersect) );
+	return (std::make_tuple(actor_pose_shifted, object_pose_shifted.Pos()));
 
 }
 
@@ -409,6 +380,112 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findInt
 		return (std::make_tuple(actor_shifted, pt_intersect));
 
 	}
+
+}
+
+// ------------------------------------------------------------------- //
+
+std::tuple<bool, ignition::math::Vector3d> Inflator::isWithinRangeOfBB(
+		const ignition::math::Vector3d &actor_center,
+		const actor::inflation::Box &object_bb) const
+{
+
+	/* Using the fact that in Gazebo, the Bounding Box is axis-aligned
+	 * so it is never rotated around the world Z axis.
+	 * NOTE: actor's both X and Y coordinates will be within the BB range
+	 * only if actor's center is located within object bounds. */
+
+	// stores the end point of the `intersection line`
+	ignition::math::Vector3d intersection_end = object_bb.getCenter();
+
+	bool within_x = false;
+	if ( actor_center.X() >= object_bb.getMin().X() && actor_center.X() <= object_bb.getMax().X() ) {
+		within_x = true;
+		intersection_end.X(actor_center.X());
+	}
+
+	bool within_y = false;
+	if ( actor_center.Y() >= object_bb.getMin().Y() && actor_center.Y() <= object_bb.getMax().Y() ) {
+		within_y = true;
+		intersection_end.Y(actor_center.Y());
+	}
+
+	if ( within_x && within_y ) {
+		// actor stepped onto an obstacle,
+		// a procedure for this case is already implemented;
+		// return unmodified center position of the object's BB
+		return (std::make_tuple(false, intersection_end));
+	}
+
+	// some gap between actor and object is present - desired configuration
+	return (std::make_tuple(true, intersection_end));
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Vector3d Inflator::calculateBoxIntersection(const ignition::math::Vector3d &object_pos,
+		const actor::inflation::Box &box,
+		const ignition::math::Vector3d &box_pos) const {
+
+	/* The algorithm of searching the closest points of 2 bounding boxes (presented below)
+	 * consists of creation of a line starting in the 1st bounding box's center,
+	 * ending in the 2nd bb's center; then the Intersects method of the Box class
+	 * will be used to find 2 points creating the shortest distance between boxes */
+
+	/* no error handling as there should always be an intersection found
+	 * when 2 center points from each bounding box are connected by a line */
+
+	/* the only exception is calculating the social force for visualization -
+	 * in such a case there is a very high possibility of being unable to
+	 * finding intersection */
+
+	// will be likely updated later (return value)
+	ignition::math::Vector3d box_intersection(box.getCenter().X(), box.getCenter().Y(), 0.0);
+
+	// by default use box center position as line end point
+	ignition::math::Vector3d box_pt = box.getCenter();
+
+	// check if box_pos is valid number or NaN (default, see header file)
+	if ( !std::isnan(box_pos.X()) ) {
+		if ( box.doesContain(box_pos) ) {
+			box_pt = box_pos;
+		}
+	}
+
+	/* create a line from the object center to the box position and check
+	 * the intersection point of that line with the object's bounding box */
+
+	/* NOTE1: some models have their centers not matched with bounding box'es center
+	 * which may produce false `intersects` flag. Let's stick to bounding
+	 * box'es center (instead of `object_pose` */
+
+	/* NOTE2: line direction is important. The line given by `A` point (start)
+	 * and `B` point (end point) must cross the BoundingBox so the end
+	 * point is located within BB bounds (direction INTO the box). */
+	ignition::math::Line3d line;
+	line.Set(object_pos.X(), object_pos.Y(), box_pt.X(), box_pt.Y(), box_pt.Z() );
+
+	// find intersection point
+	bool intersects = false;
+	ignition::math::Vector3d point_intersect;
+	std::tie(intersects, point_intersect) = box.doesIntersect(line);
+
+	// check if intersection point was found - it always should
+	// if `object_pos` is not located within BB bounds
+	if ( intersects ) {
+		box_intersection = point_intersect;
+	} else {
+		#ifdef DEBUG_BOUNDING_BOX
+		std::cout << "\n\n\nGetActorModelBBsClosestPoints() ERROR"; // \n\n\n";
+		std::cout << "\nACTOR BB check - center: " << _actor_bb.Center() << "\tmin: " << _actor_bb.Min() << "\tmax: " << _actor_bb.Max() << std::endl;
+		std::cout << "ACTOR pos: " << _actor_pose.Pos().X() << " " << _actor_pose.Pos().Y() << "  BB closest: " << point_intersect.X() << " " << point_intersect.Y() << std::endl;
+		std::cout << "OBJECT pos: " << _object_pose.Pos();
+		std::cout << "\n\n\n";
+		#endif
+	}
+
+	return (box_intersection);
 
 }
 

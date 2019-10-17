@@ -22,6 +22,7 @@
 #include <tuple>
 #include <string>
 #include <vector>
+#include <limits> // std::numeric_limits
 
 // template definition placed in header - load directives
 // which parts of code to compile
@@ -102,6 +103,31 @@ private:
 			const ignition::math::Vector3d &actor_pos, const ignition::math::Vector3d &pt_intersect,
 			const IntersectionType &type) const;
 
+	/// \brief Helper function used to evaluate if actor's center is located
+	/// within the object's BB range (i.e. actor center coordinates
+	/// are located within the object coordinates range).
+	/// This does not mean that actor's center is located in the space
+	/// bounded by the box edges!
+	/// \return A tuple consisting of bool (True if actor center is within
+	/// the object BB range), double (x_coordinate TODO
+	/// \note Extremely useful for objects like long walls.
+	std::tuple<bool, ignition::math::Vector3d> isWithinRangeOfBB(
+			const ignition::math::Vector3d &actor_center,
+			const actor::inflation::Box &object_bb) const;
+
+	/// \brief Tries to find an intersection point starting in the `object_pos`,
+	/// ending in the `box`'es center or `box_pos` if given (default value provided).
+	/// The intersection point is calculated via BB'es `Intersect` method
+	/// taking an ignition::math::Line3 instance.
+	/// \param[in] object_pos: a point which must be located outside of the BoundingBox,
+	/// otherwise computations will fail and no intersection will be found.
+	/// \note `box_pos` must be within `box` bounds, otherwise the center point
+	/// will be considered in calculations.
+	ignition::math::Vector3d calculateBoxIntersection(const ignition::math::Vector3d &object_pos,
+			const actor::inflation::Box &box,
+			const ignition::math::Vector3d &box_pos = ignition::math::Vector3d(std::numeric_limits<double>::quiet_NaN(),
+					std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN())) const;
+
 public:
 
 	/* Template definition in cpp threw an error:
@@ -127,9 +153,20 @@ public:
 		 * of objects in the world - this provides some kind of an inflation
 		 * around the objects */
 
+		// allocate shifted poses/positions, their position components will likely be updated
 		ignition::math::Pose3d actor_pose_shifted = actor_pose;
-		ignition::math::Line3d line;
-		ignition::math::Vector3d point_intersect;
+		ignition::math::Vector3d object_pos_shifted = object_pose.Pos();
+
+
+		bool within_bb = false;
+		// represents an object's BOX reference point, it can be equal
+		// to the `object_pose`'s position or shifted along X/Y axis;
+		// for details see @ref isWithinRangeOfBB
+		ignition::math::Vector3d object_anchor;
+		std::tie(within_bb, object_anchor) = isWithinRangeOfBB(actor_pose.Pos(), object_box);
+		// `within_bb` is TRUE if `object_anchor` is not equal to the `object_box`'s center
+
+		// =================================================================
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 		if ( SfmGetPrintData() ) {
@@ -145,42 +182,30 @@ public:
 		/* create a line from the actor's center to the object's center and check
 		 * the intersection point of that line with the object's bounding box */
 
-		/* NOTE: some models have their center not matched with bounding box'es center
+		/* NOTE: some models have their centers not matched with bounding box'es center
 		 * which may produce false `intersects` flag. Let's stick to bounding
-		 * boxes center (instead of `object_pose`. */
-		line.Set(actor_pose.Pos().X(), 			actor_pose.Pos().Y(),
-				 object_box.getCenter().X(), 	object_box.getCenter().Y(), 	// object_pose.Pos().X(), object_pose.Pos().Y()
-				 object_box.getCenter().Z() );
+		 * box'es center (instead of `object_pose` */
 
-		bool intersects = false;
-		std::tie(intersects, point_intersect) = object_box.doesIntersect(line);
-
-		// if somehow did not manage to find intersection point
-		if ( !intersects ) {
-			// This should not happen. Unable to catch this line with debugger so should be fine
-			point_intersect = object_box.getCenter();
-		}
+		// find object shifted position (intersection)
+		object_pos_shifted = calculateBoxIntersection(actor_pose.Pos(), object_box, object_anchor);
 
 		/* bb's Intersect returns intersection point whose X and Y are equal
 		 * to actor's X and Y thus 0 distance between points and no solutions
 		 * are generated in quadratic equation (happens when actor steps into
 		 * obstacle; as a hack - set intersection point as an object's center */
-		if ( (point_intersect.X() == actor_pose.Pos().X()) && (point_intersect.Y() == actor_pose.Pos().Y()) ) {
-			point_intersect = object_pose.Pos();
-		}
-
-		// when centers are aligned, move a little in arbitrary direction
-		// just to avoid zeroing force
-		if ( (point_intersect.X() == actor_pose.Pos().X()) && (point_intersect.Y() == actor_pose.Pos().Y()) ) {
-			point_intersect.X( point_intersect.X() + 0.005 ); point_intersect.Y( point_intersect.Y() - 0.005 );
+		if ( (object_pos_shifted.X() == actor_pose.Pos().X()) && (object_pos_shifted.Y() == actor_pose.Pos().Y()) ) {
+			object_pos_shifted = object_pose.Pos();
+			// when centers are aligned, move a little in arbitrary direction
+			// just to avoid zeroing force
+			object_pos_shifted.X( object_pos_shifted.X() + 0.005 );
+			object_pos_shifted.Y( object_pos_shifted.Y() - 0.005 );
 		}
 
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 		if ( SfmGetPrintData() ) {
 		if ( SfmDebugGetCurrentActorName() == "actor1" ) {
-			std::cout << "\n\tObject's BBox intersection result: " << intersects << "\tpt: "<< point_intersect;
-			std::cout << "\n\tline len: " << line.Length();
+			std::cout << "\n\tObject's BBox intersection result: " << within_bb << "\tpt: "<< object_pos_shifted;
 		}
 		}
 		#endif
@@ -188,14 +213,14 @@ public:
 		/* now there is an ability to check whether actor has stepped into some obstacle
 		 * (its bounding box - to be specific) */
 
-		if ( actor_bound.doesContain(point_intersect) ) {
+		if ( actor_bound.doesContain(object_pos_shifted) ) {
 
 			#if defined(DEBUG_ACTORS_BOUNDING_CIRCLES_LENGTH_FIX_BB) || defined(DEBUG_BOUNDING_ELLIPSE_INTERSECTION)
 			if ( SfmGetPrintData() ) {
 			std::cout << "\n\n\n\n\n1\tACTOR STEPPED INTO OBSTACLE\n\n\n\n\n\t" << SfmDebugGetCurrentActorName() << "\t" << SfmDebugGetCurrentObjectName() << "\n" << std::endl;
 			}
 			#endif
-			std::tie(actor_pose_shifted.Pos(), point_intersect) = findIntersectedModelsClosestPoints(actor_pose.Pos(), point_intersect, INTERSECTION_ACTOR_OBJECT);
+			std::tie(actor_pose_shifted.Pos(), object_pos_shifted) = findIntersectedModelsClosestPoints(actor_pose.Pos(), object_pos_shifted, INTERSECTION_ACTOR_OBJECT);
 
 			#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 			if ( SfmGetPrintData() ) {
@@ -205,18 +230,18 @@ public:
 			}
 			#endif
 
-			return ( std::make_tuple(actor_pose_shifted, point_intersect) );
+			return ( std::make_tuple(actor_pose_shifted, object_pos_shifted) );
 
 		}
 
 		#ifdef DEBUG_CLOSEST_POINTS
 		if ( _object_name == "table1" ) {
-			std::cout << "GetClosestPoints()\t" << _object_name << "'s BB point of intersection: " << point_intersect;
+			std::cout << "GetClosestPoints()\t" << _object_name << "'s BB point of intersection: " << object_pos_shifted;
 		}
 		#endif
 
 		// intersection of the actor's circle
-		std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_bound.getIntersection(point_intersect);
+		std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_bound.getIntersection(object_pos_shifted);
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
 		if ( SfmGetPrintData() ) {
@@ -235,7 +260,7 @@ public:
 
 		#ifdef DEBUG_BOUNDING_CIRCLE
 		std::cout << "\n\nBOUND - actor & object | actor pos: " << _actor_pose.Pos() << "\tintersection: " << actor_pose_shifted.Pos() << std::endl;
-		std::cout << "BOUND - actor & object |" << _object_name << "'s pos: " << _object_pose.Pos() << "\tintersection: " << point_intersect << std::endl;
+		std::cout << "BOUND - actor & object |" << _object_name << "'s pos: " << _object_pose.Pos() << "\tintersection: " << object_pos_shifted << std::endl;
 		#endif
 
 		#ifdef DEBUG_BOUNDING_ELLIPSE_INTERSECTION
@@ -246,7 +271,7 @@ public:
 		}
 		#endif
 
-		return ( std::make_tuple(actor_pose_shifted, point_intersect) );
+		return ( std::make_tuple(actor_pose_shifted, object_pos_shifted) );
 
 	} /* findModelsClosestPoints() */
 
