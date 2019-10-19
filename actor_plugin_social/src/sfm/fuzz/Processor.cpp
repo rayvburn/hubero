@@ -19,7 +19,7 @@ namespace fuzz {
 //#define PROCESSOR_EXTRA_TERM_CROSS_FRONT 	(0x04)
 //#define PROCESSOR_EXTRA_TERM_CROSS_BEHIND 	(0x08)
 
-// #define PROCESSOR_PRINT_DEBUG_INFO
+//#define PROCESSOR_PRINT_DEBUG_INFO
 
 Processor::Processor(): alpha_dir_(0.0) {
 	// FIXME: move init() to ctor()
@@ -371,7 +371,6 @@ void Processor::process() {
 		// - - - - - - print meaningful data
 
 		#ifdef PROCESSOR_PRINT_DEBUG_INFO
-		// FIXME: debugging only
 		std::cout << "location\t value: " << location_.getValue() << "\tmemberships: " << location_.fuzzify(location_.getValue()) << std::endl;
 		std::cout << "direction\t value: " << direction_.getValue() << "\tmemberships: " << direction_.fuzzify(direction_.getValue()) << std::endl;
 		std::cout << "output\t\t value: " << social_behavior_.getValue() << std::endl;
@@ -387,7 +386,7 @@ void Processor::process() {
 		}
 
 		#ifdef PROCESSOR_PRINT_DEBUG_INFO
-		std::cout << "\n\t\tname: " << output_term_name_ << "\theight: " << y_highest_temp << std::endl;
+		std::cout << "\n\t\tname: " << term_name << "\theight: " << y_highest_temp << std::endl;
 		#endif
 
 		// NOTE: fl::variable::fuzzyOutputValue() returns a list of available terms

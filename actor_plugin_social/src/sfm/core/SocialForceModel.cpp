@@ -992,9 +992,9 @@ SocialForceModel::computeForceStaticObstacle(const ignition::math::Pose3d &actor
 	f_alpha_i = Aw_ * exp(-w_alpha_i/Bw_) * ((d_alpha_i_len + (d_alpha_i - y_alpha_i).Length()) /
 			    2*w_alpha_i) * 0.5 * (d_alpha_i.Normalized() + (d_alpha_i - y_alpha_i).Normalized());
 
-	// FIXME: temp mass factor, make it a parameter
-	// setting too high produces noticeable accelerations around objects
-	f_alpha_i *= 50.00; // 40.00 - 61.25; <- no noticeable difference
+	// setting the `strength` (numerator) too high produces noticeable accelerations around objects
+	double factor = 90.0/(std::exp(0.5 * d_alpha_i_len));
+	f_alpha_i *= factor;
 
 	// -----------------------------------------------------
 	// FIXME: debugging large vector length ----------------
