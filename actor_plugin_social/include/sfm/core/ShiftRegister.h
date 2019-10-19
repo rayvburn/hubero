@@ -95,6 +95,53 @@ public:
 	}
 
 	/**
+	 * @brief Evaluates if all buffer's elements have already
+	 * been filled with data.
+	 * @return
+	 */
+	bool isFull() const {
+
+		if ( v_.size() < capacity_ ) {
+			return (false);
+		}
+		return (true);
+
+	}
+
+	/**
+	 * @brief Returns the newest (i.e. the one that was loaded as last)
+	 * @return
+	 */
+	T getNewest() const {
+
+		// empty
+		if ( v_.size() == 0 ) {
+			return (T());
+		}
+
+		if ( v_.size() < capacity_ ) {
+
+			/* Register is not full */
+			return (v_.at(v_.size() - 1));
+
+		} else {
+
+			/* Register is full */
+			return (v_.at(capacity_ - 1));
+
+		}
+
+	}
+
+	/**
+	 * @brief Returns whole data vector
+	 * @return
+	 */
+	std::vector<T> get() const {
+		return (v_);
+	}
+
+	/**
 	 * @brief Calculates the average value based on vector content.
 	 * @note This does not have any sense when class type is literal.
 	 * @return
