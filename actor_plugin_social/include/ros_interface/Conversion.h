@@ -19,8 +19,8 @@ class Conversion {
 
 public:
 // helper functions --------------------------------------------------------------------------
-static geometry_msgs::PoseStamped 	convertIgnVectorToPoseStamped	(const ignition::math::Vector3d 	&pos);
-static geometry_msgs::PoseStamped 	convertIgnPoseToPoseStamped		(const ignition::math::Pose3d 		&pose);
+static geometry_msgs::PoseStamped 	convertIgnVectorToPoseStamped	(const ignition::math::Vector3d 	&pos, 	bool zero_height = false);
+static geometry_msgs::PoseStamped 	convertIgnPoseToPoseStamped		(const ignition::math::Pose3d 		&pose, 	bool zero_height = false);
 static ignition::math::Vector3d 	convertPoseStampedToIgnVector	(const geometry_msgs::PoseStamped 	&pose);
 static ignition::math::Pose3d 		convertPoseStampedToIgnPose		(const geometry_msgs::PoseStamped 	&pose);
 // -------------------------------------------------------------------------------------------

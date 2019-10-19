@@ -13,7 +13,7 @@ namespace ros_interface {
 // ------------------------------------------------------------------- //
 // helper functions -------------------------------------------------- //
 // ------------------------------------------------------------------- //
-geometry_msgs::PoseStamped Conversion::convertIgnVectorToPoseStamped (const ignition::math::Vector3d &pos) {
+geometry_msgs::PoseStamped Conversion::convertIgnVectorToPoseStamped (const ignition::math::Vector3d &pos, bool zero_height) {
 
 	geometry_msgs::PoseStamped pose_stamped;
 
@@ -21,7 +21,11 @@ geometry_msgs::PoseStamped Conversion::convertIgnVectorToPoseStamped (const igni
 	pose_stamped.header.stamp = ros::Time::now();
 	pose_stamped.pose.position.x = pos.X();
 	pose_stamped.pose.position.y = pos.Y();
-	pose_stamped.pose.position.z = pos.Z();
+	if ( !zero_height ) {
+		pose_stamped.pose.position.z = pos.Z();
+	} else {
+		pose_stamped.pose.position.z = 0.0;
+	}
 	pose_stamped.pose.orientation.x = 0.0f;
 	pose_stamped.pose.orientation.y = 0.0f;
 	pose_stamped.pose.orientation.z = 0.0f;
@@ -33,7 +37,7 @@ geometry_msgs::PoseStamped Conversion::convertIgnVectorToPoseStamped (const igni
 
 // ------------------------------------------------------------------- //
 
-geometry_msgs::PoseStamped Conversion::convertIgnPoseToPoseStamped (const ignition::math::Pose3d &pose) {
+geometry_msgs::PoseStamped Conversion::convertIgnPoseToPoseStamped (const ignition::math::Pose3d &pose, bool zero_height) {
 
 	geometry_msgs::PoseStamped pose_stamped;
 
@@ -41,7 +45,11 @@ geometry_msgs::PoseStamped Conversion::convertIgnPoseToPoseStamped (const igniti
 	pose_stamped.header.stamp = ros::Time::now();
 	pose_stamped.pose.position.x = pose.Pos().X();
 	pose_stamped.pose.position.y = pose.Pos().Y();
-	pose_stamped.pose.position.z = pose.Pos().Z();
+	if ( !zero_height ) {
+		pose_stamped.pose.position.z = pose.Pos().Z();
+	} else {
+		pose_stamped.pose.position.z = 0.0;
+	}
 	pose_stamped.pose.orientation.x = pose.Rot().X();
 	pose_stamped.pose.orientation.y = pose.Rot().Y();
 	pose_stamped.pose.orientation.z = pose.Rot().Z();
