@@ -11,6 +11,7 @@
 #include <ignition/math/Vector3.hh>
 #include <nav_msgs/Path.h>
 #include <ros_interface/Conversion.h>
+#include <sfm/core/ShiftRegister.h>
 
 namespace actor {
 namespace core {
@@ -70,18 +71,14 @@ private:
 	ignition::math::Vector3d last_valid_pos_;
 
 	/// @brief Vector of positions (in fact poses)
-	std::vector<geometry_msgs::PoseStamped> path_;
+	sfm::core::ShiftRegister<geometry_msgs::PoseStamped> path_{500, 0};
 
 	/// @brief Vector of distances to the closest obstacle in the world
-	std::vector<double> dists_;
+	sfm::core::ShiftRegister<double> dists_{500, 0};
 
 	/// @brief Flag storing information whether internal vectors
 	/// have just been updated
 	bool updated_;
-
-	/// @brief Stores an index of the vector. A new element will be added
-	/// in position defined by that index
-	size_t index_;
 
 };
 

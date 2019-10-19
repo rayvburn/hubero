@@ -12,7 +12,7 @@ namespace core {
 
 // ------------------------------------------------------------------- //
 
-Path::Path(const double &path_resolution): resolution_(path_resolution), updated_(false), index_(0) {}
+Path::Path(const double &path_resolution): resolution_(path_resolution), updated_(false) {}
 
 // ------------------------------------------------------------------- //
 
@@ -23,25 +23,13 @@ bool Path::collect(const ignition::math::Vector3d &pos, const double &distance_t
 	// evaluate length condition - if length between a given point
 	// and the lastly saved one is bigger or equal to the `resolution`,
 	// then `pos` should be saved in the path vector
-	if ( ((pos - last_valid_pos_).Length() >= resolution_) || (path_.size() == 0) ) {
+	if ( ((pos - last_valid_pos_).Length() >= resolution_) || path_.isEmpty() ) {
 
 		last_valid_pos_ = pos;
 
-		// indicates that a buffer is full and the oldest data should be overwritten
-		if ( path_.size() <= 1000 ) {
+		path_.update(converter_.convertIgnVectorToPoseStamped(pos, true));
+		dists_.update(distance_to_closest_obstacle);
 
-			path_.push_back(converter_.convertIgnVectorToPoseStamped(pos, true));
-			dists_.push_back(distance_to_closest_obstacle);
-
-		} else {
-
-			path_.at(index_) = converter_.convertIgnVectorToPoseStamped(pos, true);
-			dists_.at(index_) = distance_to_closest_obstacle;
-			if ( ++index_ > 1000 ) {
-				index_ = 0;
-			}
-
-		}
 		updated_ = true;
 		return (true);
 
@@ -57,7 +45,6 @@ bool Path::collect(const ignition::math::Vector3d &pos, const double &distance_t
 void Path::reset() {
 	path_.clear();
 	dists_.clear();
-	index_ = 0;
 	last_valid_pos_ = ignition::math::Vector3d();
 	updated_ = false; // to prevent trying to get element from empty vector
 }
@@ -73,7 +60,7 @@ bool Path::isUpdated() const {
 nav_msgs::Path Path::getPath() const {
 
 	nav_msgs::Path path_msg;
-	path_msg.poses = path_;
+	path_msg.poses = path_.get();
 	path_msg.header.frame_id = "map";
 	path_msg.header.stamp = ros::Time::now();
 	return (path_msg);
@@ -83,19 +70,19 @@ nav_msgs::Path Path::getPath() const {
 // ------------------------------------------------------------------- //
 
 std::vector<double> Path::getDistances() const {
-	return (dists_);
+	return (dists_.get());
 }
 
 // ------------------------------------------------------------------- //
 
 geometry_msgs::PoseStamped Path::getPosition() const {
-	return (path_.at(path_.size() - 1));
+	return (path_.getNewest());
 }
 
 // ------------------------------------------------------------------- //
 
 double Path::getDistance() const {
-	return (dists_.at(dists_.size() - 1));
+	return (dists_.getNewest());
 }
 
 // ------------------------------------------------------------------- //
