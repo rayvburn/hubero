@@ -974,7 +974,7 @@ SocialForceModel::computeForceStaticObstacle(const ignition::math::Pose3d &actor
 			    2*w_alpha_i) * 0.5 * (d_alpha_i.Normalized() + (d_alpha_i - y_alpha_i).Normalized());
 
 	// setting the `strength` (numerator) too high produces noticeable accelerations around objects
-	double factor = 80.0/(std::exp(0.5 * d_alpha_i_len));
+	double factor = 90.0/(std::exp(0.5 * d_alpha_i_len));
 	f_alpha_i *= factor;
 
 	// -----------------------------------------------------
