@@ -115,7 +115,8 @@ typedef enum {
 // -------------------------
 
 typedef enum {
-	ACTOR_NAV_PATH = 300u,
+	ACTOR_NAV_PATH_GLOBAL = 300u,
+	ACTOR_NAV_PATH_REAL,
 } ActorNavMsgType;
 
 // -------------------------
@@ -124,6 +125,12 @@ typedef enum {
 typedef enum {
 	ACTOR_MARKER_TEXT_BEH = 400u,
 } ActorMarkerTextType;
+
+// -------------------------
+
+typedef enum {
+	ACTOR_OBSTACLE_DIST_CLOSEST = 500u
+} ActorObstacleMsgType;
 
 // -------------------------
 

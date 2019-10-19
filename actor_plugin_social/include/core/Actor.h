@@ -20,6 +20,7 @@
 #include "core/CommonInfo.h"
 #include "core/FSM.h"
 #include "core/Target.h"
+#include "core/Path.h"
 #include "ros_interface/Node.h"
 #include "ros_interface/Stream.h"
 #include "ros_interface/ConnectionFwd.h" // must be here due to circular dependency
@@ -376,6 +377,10 @@ private:
 
     /// \brief Social behaviour-based force generator
     sfm::fuzz::SocialConductor social_conductor_;
+
+    /// \brief Helper class storing actor's path
+    /// and distance to the closest obstacle
+    Path path_storage_{0.05}; // resolution
 
 public:
 

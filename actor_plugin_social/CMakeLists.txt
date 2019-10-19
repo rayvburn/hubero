@@ -89,11 +89,13 @@ add_library(actor_core
   include/core/FSM.h 
   include/core/Target.h
   include/core/LieDownHelper.h
+  include/core/Path.h
   src/core/Actor.cpp 
   src/core/CommonInfo.cpp 
   src/core/FSM.cpp
   src/core/Target.cpp
   src/core/LieDownHelper.cpp
+  src/core/Path.cpp
 )
 
 add_library(actor_ros 

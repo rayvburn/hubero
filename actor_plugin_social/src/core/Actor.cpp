@@ -6,9 +6,10 @@
  */
 
 #include "core/Actor.h"
-#include <algorithm>    // std::find
+#include <algorithm>    		// std::find
 #include <ignition/math/Line3.hh>
-#include <memory> 		// make_unique
+#include <memory> 				// make_unique
+#include <std_msgs/Float32.h> 	// ActorObstacleMsgType
 
 namespace actor {
 namespace core {
@@ -78,7 +79,9 @@ void Actor::initRosInterface() {
 	stream_.initPublisher<ActorMarkerType, visualization_msgs::Marker>(ActorMarkerType::ACTOR_MARKER_COMBINED_VECTOR, "sfm_combined");
 	stream_.initPublisher<ActorMarkerTextType, visualization_msgs::Marker>(ActorMarkerTextType::ACTOR_MARKER_TEXT_BEH, "behaviour");
 	stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, "closest_points");
-	stream_.initPublisher<ActorNavMsgType, nav_msgs::Path>(ActorNavMsgType::ACTOR_NAV_PATH, "path");
+	stream_.initPublisher<ActorNavMsgType, nav_msgs::Path>(ActorNavMsgType::ACTOR_NAV_PATH_GLOBAL, "path");
+	stream_.initPublisher<ActorNavMsgType, nav_msgs::Path>(ActorNavMsgType::ACTOR_NAV_PATH_REAL, "path_real");
+	stream_.initPublisher<ActorObstacleMsgType, std_msgs::Float32>(ActorObstacleMsgType::ACTOR_OBSTACLE_DIST_CLOSEST, "dist_obstacle");
 
 	// check if grid usage has been enabled in .YAML file
 	if ( params_ptr_->getSfmVisParams().publish_grid ) {
@@ -541,6 +544,7 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 			// select experimentally
 			setState(actor::ACTOR_STATE_MOVE_AROUND);
 		}
+		path_storage_.reset();
 
 	}
 
@@ -909,6 +913,15 @@ void Actor::applyUpdate(const double &dist_traveled) {
 	// this is useful whatever the state of the actor is
 	visualizePositionData();
 
+	if ( path_storage_.isUpdated() ) {
+		// publish closest distance
+		std_msgs::Float32 msg;
+		msg.data = path_storage_.getDistance();
+		stream_.publishData(ActorObstacleMsgType::ACTOR_OBSTACLE_DIST_CLOSEST, msg);
+		// publish real path
+		stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH_REAL, path_storage_.getPath());
+	}
+
 }
 
 // ------------------------------------------------------------------- //
@@ -1181,6 +1194,9 @@ double Actor::move(const double &dt) {
 	// update the local copy of the actor's pose
 	*pose_world_ptr_ = new_pose;
 
+	// collect data to visualize actor's path
+	path_storage_.collect(pose_world_ptr_->Pos(), sfm_.getDistanceClosestStaticObstacle());
+
 	return (dist_traveled);
 
 }
@@ -1409,7 +1425,7 @@ void Actor::visualizePositionData() {
 
 	// publish path if a new one has just been generated
 	if ( target_manager_.isPathNew() ) {
-		stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH, target_manager_.getPath());
+		stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH_GLOBAL, target_manager_.getPath());
 	}
 
 }

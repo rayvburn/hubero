@@ -5,9 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Actor11
-        - /Actor11/SFM-Social1/Status1
         - /Actor21
-        - /Actor21/Path1
       Splitter Ratio: 0.5
     Tree Height: 717
   - Class: rviz/Selection
@@ -197,6 +195,29 @@ Visualization Manager:
           Topic: /gazebo/actor_plugin_ros_interface/actor1/path
           Unreliable: false
           Value: true
+        - Alpha: 0.100000001
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 25; 255; 0
+          Enabled: true
+          Head Diameter: 0.300000012
+          Head Length: 0.200000003
+          Length: 0.300000012
+          Line Style: Billboards
+          Line Width: 0.0299999993
+          Name: PathReal
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Radius: 0.0299999993
+          Shaft Diameter: 0.100000001
+          Shaft Length: 0.100000001
+          Topic: /gazebo/actor_plugin_ros_interface/actor1/path_real
+          Unreliable: false
+          Value: true
         - Class: rviz/Marker
           Enabled: true
           Marker Topic: /gazebo/actor_plugin_ros_interface/actor1/behaviour
@@ -218,29 +239,29 @@ Visualization Manager:
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
-          Enabled: false
+          Enabled: true
           Marker Topic: /gazebo/actor_plugin_ros_interface/actor2/sfm_internal
           Name: SFM-Internal
           Namespaces:
-            {}
+            "": true
           Queue Size: 100
-          Value: false
+          Value: true
         - Class: rviz/Marker
-          Enabled: false
+          Enabled: true
           Marker Topic: /gazebo/actor_plugin_ros_interface/actor2/sfm_interaction
           Name: SFM-Interaction
           Namespaces:
-            {}
+            "": true
           Queue Size: 100
-          Value: false
+          Value: true
         - Class: rviz/Marker
-          Enabled: false
+          Enabled: true
           Marker Topic: /gazebo/actor_plugin_ros_interface/actor2/sfm_social
           Name: SFM-Social
           Namespaces:
-            {}
+            "": true
           Queue Size: 100
-          Value: false
+          Value: true
         - Class: rviz/Marker
           Enabled: true
           Marker Topic: /gazebo/actor_plugin_ros_interface/actor2/sfm_combined
@@ -288,6 +309,29 @@ Visualization Manager:
           Topic: /gazebo/actor_plugin_ros_interface/actor2/path
           Unreliable: false
           Value: true
+        - Alpha: 0.100000001
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 255; 85; 255
+          Enabled: true
+          Head Diameter: 0.300000012
+          Head Length: 0.200000003
+          Length: 0.300000012
+          Line Style: Billboards
+          Line Width: 0.0299999993
+          Name: PathReal
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Radius: 0.0299999993
+          Shaft Diameter: 0.100000001
+          Shaft Length: 0.100000001
+          Topic: /gazebo/actor_plugin_ros_interface/actor2/path_real
+          Unreliable: false
+          Value: true
         - Class: rviz/Marker
           Enabled: true
           Marker Topic: /gazebo/actor_plugin_ros_interface/actor2/behaviour
@@ -323,25 +367,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 20.3227406
+      Distance: 18.0472641
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.2828238
-        Y: -0.135934621
-        Z: -1.79081178
+        X: 1.25371039
+        Y: -0.0862328708
+        Z: -1.79842591
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.52479637
+      Pitch: 1.51979637
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.1386025
+      Yaw: 3.12860227
     Saved: ~
 Window Geometry:
   Displays:
