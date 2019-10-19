@@ -54,7 +54,9 @@ SocialForceModel::SocialForceModel():
 	param_description_(PARAMETER_DESCRIPTION_2014),
 	opposite_force_method_(OPPOSITE_FORCE_GO_TOWARDS_GOAL),
 	factor_maneuverability_(6.5),
-	dir_alpha_(0.0)
+	dir_alpha_(0.0),
+	dist_closest_dynamic_(std::numeric_limits<double>::max()),
+	dist_closest_static_(std::numeric_limits<double>::max())
 
 {
 
@@ -156,11 +158,6 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	 * `closest` points) and its length */
 	ignition::math::Vector3d distance_v;
 	double distance = 0.0;
-
-	// store distance to the closest static obstacle
-	double dist_closest_static  = std::numeric_limits<double>::max();
-	// store distance to the closest dynamic obstacle
-	double dist_closest_dynamic = std::numeric_limits<double>::max();
 
 	// ============================================================================
 	// iterate over all world's objects
@@ -300,31 +297,10 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 			closest_points_.push_back(actor_closest_to_model_pose);
 		}
 
-		// - - - - fuzzylite & social conductor
-		if ( is_dynamic ) {
-
-			/*
-			fuzzy_processor_.process();
-
-			// store a term with the highest membership
-			std::string region;
-
-			// TODO: make it more flexible (getOutput)? or get rid of single element vector
-			// in fact defuzzification always returns a single term with the highest
-			// membership so the vector may be omitted?
-			std::tie(region, std::ignore) = fuzzy_processor_.getOutput().at(0); // FIXME
-
-			// verbose interpretation of the selected output term (region)
-			social_conductor_.apply(region);
-			force_social_ += social_conductor_.getSocialVector();
-			*/
-
-		}
-		// - - - -
-
-		// FIXME: `is_an_actor` is confusing, robot etc. must be considered too
-		// save distance to the closest obstacle (if smaller than the one considered closest so far)
-		updateClosestObstacleDistance((is_an_actor ? dist_closest_dynamic : dist_closest_static), distance);
+		// save distance to the closest obstacle (evaluates if the given one is smaller
+		// than the one considered as `the closest` so far);
+		// NOTE `actor` is treated as a dynamic object all the time (even if currently doesn't move)
+		updateClosestObstacleDistance(((is_an_actor || is_dynamic) ? dist_closest_dynamic_ : dist_closest_static_), distance);
 
 		// sum all forces
 		force_interaction_ += f_alpha_beta;
@@ -543,6 +519,9 @@ void SocialForceModel::reset() {
 	dist_dynamic_v_.clear();
 	dir_beta_dynamic_v_.clear();
 
+	dist_closest_dynamic_ = std::numeric_limits<double>::max();
+	dist_closest_static_ = std::numeric_limits<double>::max();
+
 }
 
 // ------------------------------------------------------------------- //
@@ -556,6 +535,8 @@ std::vector<double> SocialForceModel::getDirectionBetaDynamic() const 	{ return 
 std::vector<double> SocialForceModel::getRelativeLocationDynamic() const{ return (rel_loc_dynamic_v_); 		}
 std::vector<double> SocialForceModel::getDistanceAngleDynamic() const 	{ return (dist_angle_dynamic_v_); 	}
 std::vector<double> SocialForceModel::getDistanceDynamic() const 		{ return (dist_dynamic_v_); 		}
+double SocialForceModel::getDistanceClosestStaticObstacle() const 		{ return (dist_closest_static_);	}
+double SocialForceModel::getDistanceClosestDynamicObstacle() const 		{ return (dist_closest_dynamic_); 	}
 
 std::vector<ignition::math::Pose3d> SocialForceModel::getClosestPointsVector() const { return (closest_points_); }
 
