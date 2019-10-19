@@ -325,7 +325,7 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 #endif
 
 	// extend or truncate force vectors if needed
-	applyNonlinearOperations(dist_closest_static, dist_closest_dynamic);
+	applyNonlinearOperations(dist_closest_static_, dist_closest_dynamic_);
 
 #ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	( SfmGetPrintData() ) ? (print_info = true) : (0);
