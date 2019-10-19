@@ -29,12 +29,18 @@ bool Path::collect(const ignition::math::Vector3d &pos, const double &distance_t
 
 		// indicates that a buffer is full and the oldest data should be overwritten
 		if ( path_.size() <= 1000 ) {
-			path_.push_back(converter_.convertIgnVectorToPoseStamped(pos));
+
+			path_.push_back(converter_.convertIgnVectorToPoseStamped(pos, true));
 			dists_.push_back(distance_to_closest_obstacle);
+
 		} else {
-			path_.at(index_) = converter_.convertIgnVectorToPoseStamped(pos);
+
+			path_.at(index_) = converter_.convertIgnVectorToPoseStamped(pos, true);
 			dists_.at(index_) = distance_to_closest_obstacle;
-			index_++;
+			if ( ++index_ > 1000 ) {
+				index_ = 0;
+			}
+
 		}
 		updated_ = true;
 		return (true);
