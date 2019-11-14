@@ -61,11 +61,11 @@ namespace core {
 
 typedef enum {
 
-	/* `The repulsive force from static obstacles f αi is modeled by using the functional
+	/** `The repulsive force from static obstacles f αi is modeled by using the functional
 	 * form as given by the repulsive force for elliptical formulation` - 2014 */
 	INTERACTION_ELLIPTICAL = 0,		// a.k.a. v2014
 
-	/* `repulsion from walls uses the same formulas as the repulsion from other
+	/** `repulsion from walls uses the same formulas as the repulsion from other
 	 * pedestrians` - 2011 */
 	INTERACTION_REPULSIVE_EVASIVE	// a.k.a. v2011
 
@@ -93,7 +93,7 @@ typedef enum {
 
 // ---------------------------------
 
-/* 	φ_αβ issue
+/** 	φ_αβ issue
  * There is an inconsistency in papers connected with the Rudloff's version of Social Force model -
  * in Rudloff et al. 2011 - https://www.researchgate.net/publication/236149039_Can_Walking_Behavior_Be_Predicted_Analysis_of_Calibration_and_Fit_of_Pedestrian_Models
  * there is a statement that theta_alpha_beta is an "angle between velocity of pedestrian α and the displacement of pedestrian β"
@@ -101,7 +101,7 @@ typedef enum {
  * they say that in this model "φ αβ is the angle between n α and d αβ" (they call it phi instead of theta)
  */
 
-/* 	n_α issue
+/** 	n_α issue
  * Another inconsistency between 2011 and 2014 papers connected to Rudloff's SFM version is n_alpha issue.
  * In 2011 original paper there is said that n_alpha is "pointing in the opposite direction to the walking
  * direction (deceleration force)".
@@ -111,17 +111,17 @@ typedef enum {
 
 typedef enum {
 
-	/* " φ_αβ is an angle between velocity of pedestrian α and the displacement of pedestrian β "
+	/** " φ_αβ is an angle between velocity of pedestrian α and the displacement of pedestrian β "
 	 * " n_α is pointing in the opposite direction to the walking direction (deceleration force) "
 	 *   2011 */
 	PARAMETER_DESCRIPTION_2011 = 0,
 
-	/* " φ_αβ is the angle between n_α and d_αβ "
+	/** " φ_αβ is the angle between n_α and d_αβ "
 	 * " n_α is the direction of movement of pedestrian α "
 	 *   2014 */
 	PARAMETER_DESCRIPTION_2014,
 
-	/* Connected only with another φ_αβ angle description:
+	/** Connected only with another φ_αβ angle description:
 	 * NOTE: below method of calculating the angle is only correct when both objects are:
 	 * 		o dynamic,
 	 * 		o currently moving,
@@ -216,18 +216,18 @@ public:
 	/// whereas getters from this section are related
 	/// to dynamic obstacles only.
 	///
-	/// \brief Returns \alpha's direction of motion
+	/// \brief Returns \f$\alpha\f$'s direction of motion
 	/// expressed in world coordinate system
 	double getDirectionAlpha() const;
 	/// \brief Returns a vector of \beta objects direction
 	/// of motion
 	std::vector<double> getDirectionBetaDynamic() const;
 	/// \brief Returns a vector of \beta objects' relative
-	/// to \alpha locations
+	/// to \f$\alpha\f$ locations
 	std::vector<double> getRelativeLocationDynamic() const;
 	/// \brief Returns a set of dynamic objects vector
 	/// directions. Each of these vectors connect
-	/// \alpha with \beta_i
+	/// \f$\alpha\f$ with \beta_i
 	std::vector<double> getDistanceAngleDynamic() const;
 	/// \brief Returns a set of lengths of vectors
 	/// described in \ref getDistanceAngleDynamic
@@ -338,9 +338,9 @@ private:
 	/// facing direction (in this case it is equal to a movement
 	/// direction)
 	/// \return A 3-element tuple consisting of:
-	/// - relative location of the \beta object (relative to \alpha's direction), see \ref RelativeLocation
+	/// - relative location of the \beta object (relative to \f$\alpha\f$'s direction), see \ref RelativeLocation
 	/// - relative location expressed as an angle (radians)
-	/// - angle of the vector connecting \alpha and \beta
+	/// - angle of the vector connecting \f$\alpha\f$ and \beta
 	std::tuple<RelativeLocation, double, double> computeObjectRelativeLocation(const ignition::math::Angle &actor_yaw,
 			const ignition::math::Vector3d &d_alpha_beta);
 
@@ -439,10 +439,10 @@ private:
 	/// likely there is a highly weakened potential field.
 	/// This in turn can cause a very difference force vector
 	/// direction in 2 consecutive iterations.
-	/// \note This saves only each `Arg2`th sample and stores `Arg1` samples
+	/// \note This saves only each `Arg2`-th sample and stores `Arg1` samples
 	ShiftRegister<ignition::math::Vector3d> sf_values_{25, 15};
 
-	/// \section Force vectors section
+	/// \section Section: Force vectors section
 	///
 	/// \brief Internal force vector (a.k.a. f_alpha)
 	ignition::math::Vector3d force_internal_;
@@ -457,7 +457,7 @@ private:
 	ignition::math::Vector3d force_combined_;
 
 
-	/// \section Force factors
+	/// \section Section: Force factors
 	///
 	/// \brief Multiplier of the internal force
 	float factor_force_internal_;
@@ -466,7 +466,7 @@ private:
 	float factor_force_interaction_;
 
 
-	/// \section Social Force Model parameters
+	/// \section Section: Social Force Model parameters
 	///
 	/// \brief Relaxation time
 	float relaxation_time_;
@@ -485,7 +485,7 @@ private:
 	unsigned short int person_mass_;
 
 
-	/// \section Non-linear operations with force vectors parameters
+	/// \section Section: Non-linear operations with force vectors parameters
 	///
 	/// \brief Maximum allowable force
 	float force_max_;
@@ -496,7 +496,7 @@ private:
 	float force_min_;
 
 
-	/// \section SFM parameters
+	/// \section Section: SFM parameters
 	///
 	/// \brief Determines method of calculating force for static obstacles
 	sfm::core::StaticObjectInteraction interaction_static_type_;
@@ -506,7 +506,7 @@ private:
 	/// presented in the papers, see \ref ParameterDescription
 	sfm::core::ParameterDescription param_description_;
 	/// \brief Method of computing a new pose while force
-	/// of the opposite direction (relative to \alpha is generated)
+	/// of the opposite direction (relative to \f$\alpha\f$ is generated)
 	sfm::core::OppositeForceMethod opposite_force_method_;
 	/// \brief Determines maneuverability of the actor,
 	/// for more details see \ref computeYawMovementDirection
@@ -523,8 +523,7 @@ private:
 	sfm::core::ActorInfoDecoder actor_decoder_;
 
 
-	/// \section Values transferred to the FuzzyProcessor
-	/// and SocialConductor class instances.
+	/// \section Section: Values transferred to the FuzzyProcessor and SocialConductor class instances.
 	///
 	/// \brief Current movement direction of an object
 	double dir_alpha_;

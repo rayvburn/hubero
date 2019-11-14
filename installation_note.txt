@@ -32,3 +32,4 @@ cd fuzzylite/
 
 ## to run Turtlebot3 example the package below needs to be in the workspace (clone it)
 https://github.com/rayvburn/turtlebot3
+sudo apt-get install ros-kinetic-turtlebot3-applications
