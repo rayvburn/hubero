@@ -15,29 +15,18 @@
  *
 */
 
-#include <functional>
-#include <tgmath.h>		// fabs()
-
-#include <thread> // sleeper
-#include <chrono>
-
-#include <ignition/math.hh>
+#include "gazebo/common/UpdateInfo.hh"
 #include "gazebo/physics/physics.hh"
 #include "ActorPluginSocial.h"
 
-using namespace gazebo; // FIXME?
-
-GZ_REGISTER_MODEL_PLUGIN(ActorPlugin)
-
-
-#define SILENT_
+GZ_REGISTER_MODEL_PLUGIN(gazebo::ActorPlugin)
 
 /////////////////////////////////////////////////
 
-ActorPlugin::ActorPlugin(): controller_enabled_(false) { }
+gazebo::ActorPlugin::ActorPlugin(): controller_enabled_(false) { }
 
 /////////////////////////////////////////////////
-void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
+void gazebo::ActorPlugin::Load(gazebo::physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
 
 	this->sdf = _sdf;
@@ -50,37 +39,23 @@ void ActorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 	// - - - - - - - - - - - - - - - - - - - - - -  - - - -- - - -- - - -- -  -- -
 
     std::cout << "LOADED POSE: " << this->actor->WorldPose() << std::endl;
-
-#ifndef ACTOR_SHARED_PTR
-
-    actor_object.initGazeboInterface(actor, world);
-	actor_object.initInflator(1.00, 0.80, 0.35, 0.0);
-	actor_object.initRosInterface();
-
-#else
-
-//	actor::core::Actor obj;
-//	actor_ptr_ = obj.shared_from_this();
 	actor_ptr_ = std::make_shared<actor::core::Actor>();
 	actor_ptr_->initGazeboInterface(actor, world);
 	actor_ptr_->initRosInterface();
 	actor_ptr_->initActor(_sdf);
 	std::cout << "MODDED POSE: " << this->actor->WorldPose() << std::endl;
 
-#endif
-
-
 }
 
 /////////////////////////////////////////////////
-void ActorPlugin::Reset()
+void gazebo::ActorPlugin::Reset()
 {
 
 }
 
 /////////////////////////////////////////////////
 
-void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
+void gazebo::ActorPlugin::OnUpdate(const gazebo::common::UpdateInfo &_info)
 {
 
 	// NOTE: `_info.realTime.Double()` returns seconds from the launch
@@ -108,11 +83,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo &_info)
 		return;
 	};
 
-#ifndef ACTOR_SHARED_PTR
-	actor_object.executeTransitionFunction(_info);
-#else
 	actor_ptr_->executeTransitionFunction(_info);
-#endif
 
   	return; // OnUpdate testing
 

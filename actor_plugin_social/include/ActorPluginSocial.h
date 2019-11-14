@@ -45,38 +45,6 @@
 #include <memory>
 #endif
 
-// -------------------------
-
-//#define VISUALIZE_SFM
-//#define CREATE_ROS_INTERFACE
-
-// -------------------------
-
-#ifdef VISUALIZE_SFM
-	//#define VIS_SFM_GRID
-	#define VIS_SFM_POINT
-#endif
-
-// -------------------------
-
-#ifdef CREATE_ROS_INTERFACE
-#include "ActorROSInterface.h"
-#endif
-
-// -------------------------
-
-#ifdef VISUALIZE_SFM
-
-	#ifdef VIS_SFM_POINT
-	#include <SFMVisPoint.h>
-	#elif defined(VIS_SFM_GRID)
-	#include <SFMVisGrid.h>
-	#endif
-
-#endif
-
-#define REFACTOR_COMMON
-
 namespace gazebo
 {
 
@@ -88,11 +56,7 @@ namespace gazebo
     public: ActorPlugin();
 
     /// \brief Actor class object
-#ifndef ACTOR_SHARED_PTR
-    public: actor::core::Actor actor_object;
-#else
     public: std::shared_ptr<actor::core::Actor> actor_ptr_;
-#endif
 
     /// \brief Load the actor plugin.
     /// \param[in] _model Pointer to the parent model.
@@ -133,31 +97,7 @@ namespace gazebo
     /// \brief List of models to ignore. Used for vector field
     private: std::vector<std::string> ignoreModels;
 
-    /// \brief TODO
-    private: bool ReadSDF();
-
     private: bool controller_enabled_;
-
-
-#ifdef VISUALIZE_SFM
-
-    private: void VisualizeForceField();
-
-#ifdef VIS_SFM_POINT
-    private: static SocialForceModel::SFMVisPoint sfm_vis;
-    private: SocialForceModel::SFMVisPoint sf_vis;
-#elif defined(VIS_SFM_GRID)
-    private: static SocialForceModel::SFMVisGrid sfm_vis;
-#endif
-
-    private: static SocialForceModel::SFMVisGrid grid_vis;
-
-#endif
-
-
-#ifdef CREATE_ROS_INTERFACE
-    ActorUtils::ActorROSInterface ros_interface;
-#endif
 
   };
 }
