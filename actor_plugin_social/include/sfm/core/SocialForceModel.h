@@ -9,6 +9,11 @@
 #define INCLUDE_SOCIALFORCEMODEL_H_
 
 // Gazebo
+#include <actor/core/CommonInfo.h>
+#include <actor/inflation/Box.h>
+#include <actor/inflation/Circle.h>
+#include <actor/inflation/Ellipse.h>
+#include <actor/ros_interface/ParamLoader.h>	// objects dictionary
 #include <gazebo-8/gazebo/physics/World.hh>
 #include <gazebo-8/gazebo/physics/Model.hh>
 
@@ -16,28 +21,15 @@
 #include <ignition/math/Vector3.hh>
 #include <ignition/math/Pose3.hh>
 #include <ignition/math/Angle.hh>
+#include <sfm/core/ActorInfoDecoder.h>
+#include <sfm/core/Inflator.h>
+#include <sfm/core/ShiftRegister.h>
 
 // C++ STL
 #include <vector>	// closest points
 #include <tuple>	// rel_loc
 
 // Actor's data storage
-#include "core/CommonInfo.h"
-
-// Helper
-#include <ros_interface/ParamLoader.h>	// objects dictionary
-
-// Bounding models of an actor
-#include "inflation/Ellipse.h"
-#include "inflation/Circle.h"
-#include "inflation/Box.h"
-
-// SFM's other files
-#include <sfm/core/Inflator.h>
-#include <sfm/core/ActorInfoDecoder.h>
-#include <sfm/core/ShiftRegister.h>
-#include <sfm/fuzz/Fuzzifier.h>
-#include <sfm/fuzz/Defuzzifier.h>
 
 // ----------------------------------------------------------------------------------------------- //
 /*
@@ -55,7 +47,6 @@
 // ----------------------------------------------------------------------------------------------- //
 
 namespace sfm {
-namespace core {
 
 // ---------------------------------
 
@@ -499,15 +490,15 @@ private:
 	/// \section Section: SFM parameters
 	///
 	/// \brief Determines method of calculating force for static obstacles
-	sfm::core::StaticObjectInteraction interaction_static_type_;
+	sfm::StaticObjectInteraction interaction_static_type_;
 	/// \brief Determines type of inflation figure
-	sfm::core::InflationType inflation_type_;
+	sfm::InflationType inflation_type_;
 	/// \brief Related to an inconsistency in symbols
 	/// presented in the papers, see \ref ParameterDescription
-	sfm::core::ParameterDescription param_description_;
+	sfm::ParameterDescription param_description_;
 	/// \brief Method of computing a new pose while force
 	/// of the opposite direction (relative to \f$\alpha\f$ is generated)
-	sfm::core::OppositeForceMethod opposite_force_method_;
+	sfm::OppositeForceMethod opposite_force_method_;
 	/// \brief Determines maneuverability of the actor,
 	/// for more details see \ref computeYawMovementDirection
 	double factor_maneuverability_;
@@ -515,12 +506,12 @@ private:
 
 	/// \brief Inflator class enlarges a surface around
 	/// person to provide some safe distance from the obstacles
-	sfm::core::Inflator inflator_;
+	sfm::Inflator inflator_;
 
 	/// \brief ActorInfoDecoder is a helper class which helps
 	/// during decoding of some ActorPlugin instances
 	/// which cannot be saved in the WorldPtr.
-	sfm::core::ActorInfoDecoder actor_decoder_;
+	sfm::ActorInfoDecoder actor_decoder_;
 
 
 	/// \section Section: Values transferred to the FuzzyProcessor and SocialConductor class instances.
@@ -565,7 +556,6 @@ private:
 
 };
 
-} /* namespace core */
 } /* namespace sfm */
 
 #endif /* INCLUDE_SOCIALFORCEMODEL_H_ */

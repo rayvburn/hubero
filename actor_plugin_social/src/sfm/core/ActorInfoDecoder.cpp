@@ -5,11 +5,10 @@
  *      Author: rayvburn
  */
 
+#include <actor/core/Enums.h> // ACTOR_MODEL_TYPE_ID
 #include <sfm/core/ActorInfoDecoder.h>
-#include "core/Enums.h" // ACTOR_MODEL_TYPE_ID
 
 namespace sfm {
-namespace core {
 
 
 // ------------------------------------------------------------------- //
@@ -50,5 +49,4 @@ ActorInfoDecoder::~ActorInfoDecoder() { }
 
 // ------------------------------------------------------------------- //
 
-} /* namespace core */
 } /* namespace sfm */

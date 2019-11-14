@@ -18,24 +18,22 @@
 #ifndef GAZEBO_PLUGINS_ACTORPLUGIN_HH_
 #define GAZEBO_PLUGINS_ACTORPLUGIN_HH_
 
+#include <actor/core/Actor.h>
+#include <actor/core/CommonInfo.h>
+#include <actor/core/Enums.h>
+#include <actor/core/FSM.h>
+#include <actor/inflation/Box.h>
+#include <actor/inflation/Circle.h>
+#include <actor/inflation/Ellipse.h>
+#include <sfm/core/SFMDebug.h>
+#include <sfm/core/SocialForceModel.h>
 #include <string>
 #include <vector>
-
-#include "core/Actor.h"
-#include "core/Enums.h"
-#include "core/CommonInfo.h"
-#include "core/FSM.h"
-
-#include "inflation/Box.h"
-#include "inflation/Circle.h"
-#include "inflation/Ellipse.h"
 
 #include "gazebo/common/Plugin.hh"
 #include "gazebo/physics/physics.hh"
 #include "gazebo/util/system.hh"
 
-#include "sfm/core/SocialForceModel.h"
-#include "sfm/core/SFMDebug.h"
 
 
 #define ACTOR_SHARED_PTR

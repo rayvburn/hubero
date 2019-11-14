@@ -5,7 +5,7 @@
  *      Author: rayvburn
  */
 
-#include "sfm/core/SFMDebug.h"
+#include <sfm/core/SFMDebug.h>
 
 void SfmDebugSetCurrentActorName(const std::string &name) {
 	debug_current_actor_name = name;

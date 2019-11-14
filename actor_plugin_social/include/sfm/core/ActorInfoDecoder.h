@@ -8,17 +8,16 @@
 #ifndef INCLUDE_SFM_CORE_ACTORINFODECODER_H_
 #define INCLUDE_SFM_CORE_ACTORINFODECODER_H_
 
+#include <actor/inflation/Box.h>
+#include <actor/inflation/Circle.h>
+#include <actor/inflation/Ellipse.h>
 #include <ignition/math/Vector3.hh>
 #include <vector>
 #include <string>
 #include <map>
 
-#include "inflation/Box.h"
-#include "inflation/Circle.h"
-#include "inflation/Ellipse.h"
 
 namespace sfm {
-namespace core {
 
 /// \brief InfoDecoder class is more of a failure blocker than a real decoder -
 /// decoder returns default object constructor when actor is not found.
@@ -76,7 +75,6 @@ public:
 
 };
 
-} /* namespace core */
 } /* namespace sfm */
 
 #endif /* INCLUDE_SFM_CORE_ACTORINFODECODER_H_ */

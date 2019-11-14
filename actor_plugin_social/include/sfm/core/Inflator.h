@@ -9,14 +9,13 @@
 #define INCLUDE_SFM_CORE_INFLATOR_H_
 
 
+#include <actor/inflation/Box.h>
+#include <actor/inflation/Circle.h>
+#include <actor/inflation/Ellipse.h>
 #include <ignition/math/Pose3.hh>
 #include <ignition/math/Vector3.hh>
 #include <ignition/math/Angle.hh>
-
-#include "inflation/Box.h"
-#include "inflation/Circle.h"
-#include "inflation/Ellipse.h"
-
+#include <sfm/core/SFMDebug.h>
 #include <tuple>
 #include <string>
 #include <vector>
@@ -25,10 +24,8 @@
 
 // template definition placed in header - load directives
 // which parts of code to compile
-#include "sfm/core/SFMDebug.h"
 
 namespace sfm {
-namespace core {
 
 // ---------------------------------
 
@@ -212,7 +209,6 @@ public:
 
 }; /* class Inflator */
 
-} /* namespace core */
 } /* namespace sfm */
 
 #endif /* INCLUDE_SFM_CORE_INFLATOR_H_ */

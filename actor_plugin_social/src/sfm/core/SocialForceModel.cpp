@@ -5,19 +5,18 @@
  *      Author: rayvburn
  */
 
-#include "sfm/core/SocialForceModel.h"
+#include <actor/core/Target.h>	// isModelNegligible static function
 #include <cmath>			// atan2()
 #include <tgmath.h>			// fabs()
 #include <math.h>			// exp()
-#include <core/Target.h>	// isModelNegligible static function
+#include <sfm/core/SocialForceModel.h>
 #include <algorithm>    	// std::find
 
 // ----------------------------------------
 
 // debugging
 static bool print_info = false;
-#include "sfm/core/SFMDebug.h"
-#include "BoundingEllipseDebug.h"
+#include <sfm/core/SFMDebug.h>
 
 // #define SFM_DEBUG_LARGE_VECTOR_LENGTH
 // #define SFM_FUZZY_PROC_INDICATORS
@@ -27,7 +26,6 @@ static bool print_info = false;
 
 
 namespace sfm {
-namespace core {
 
 
 // ------------------------------------------------------------------- //
@@ -97,9 +95,9 @@ void SocialForceModel::init(std::shared_ptr<const actor::ros_interface::ParamLoa
 	fov_ = params_ptr_->getSfmParams().fov;
 	force_min_ = params_ptr_->getSfmParams().min_force;
 	force_max_ = params_ptr_->getSfmParams().max_force;
-	interaction_static_type_ = static_cast<sfm::core::StaticObjectInteraction>(params_ptr_->getSfmParams().static_obj_interaction);
+	interaction_static_type_ = static_cast<sfm::StaticObjectInteraction>(params_ptr_->getSfmParams().static_obj_interaction);
 	inflation_type_ = inflation_type;
-	opposite_force_method_ = static_cast<sfm::core::OppositeForceMethod>(params_ptr_->getSfmParams().opposite_force);
+	opposite_force_method_ = static_cast<sfm::OppositeForceMethod>(params_ptr_->getSfmParams().opposite_force);
 
 	owner_name_ = actor_name;
 
@@ -2018,5 +2016,4 @@ SocialForceModel::~SocialForceModel() { }
 
 // ------------------------------------------------------------------- //
 
-} /* namespace core */
 } /* namespace sfm */

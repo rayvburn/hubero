@@ -13,7 +13,6 @@
 #include <algorithm>	// std::rotate
 
 namespace sfm {
-namespace core {
 
 /**
  * @brief Special version of shift register which loads each N-th value
@@ -205,7 +204,6 @@ private:
 
 };
 
-} /* namespace core */
 } /* namespace sfm */
 
 #endif /* INCLUDE_SFM_CORE_SHIFTREGISTER_H_ */

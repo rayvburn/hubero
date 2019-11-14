@@ -5,12 +5,11 @@
  *      Author: rayvburn
  */
 
-#include <sfm/core/Inflator.h>
 #include <ignition/math/Line3.hh>
+#include <sfm/core/Inflator.h>
 #include <algorithm> // std::min_element
 
 namespace sfm {
-namespace core {
 
 // ------------------------------------------------------------------- //
 
@@ -513,5 +512,4 @@ Inflator::~Inflator() { }
 
 // ------------------------------------------------------------------- //
 
-} /* namespace core */
 } /* namespace sfm */

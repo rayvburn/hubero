@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(actor_plugin_social)
 
-# note: fuzzylite library utilized by SFM
+# note: fuzzylite library utilized in `fuzz` namespace
 find_library(fuzzylite_LIBRARY fuzzylite $ENV{HOME}/libraries/fuzzylite/fuzzylite/release/bin) # path to the .so file
 include_directories($ENV{HOME}/libraries/fuzzylite/fuzzylite) # include fuzzylite's headers folder
 
@@ -9,7 +9,8 @@ find_package(roscpp REQUIRED)
 find_package(actor_sim_utils REQUIRED)
 find_package(actor_sim_srv REQUIRED)
 find_package(actor_global_plan REQUIRED)
-find_package(catkin REQUIRED COMPONENTS social_force_vis)
+# find_package(catkin REQUIRED COMPONENTS social_force_model) DEPRECATED
+find_package(catkin REQUIRED COMPONENTS visualization_msgs)
 
 find_package(tf REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -19,7 +20,7 @@ include_directories(${roscpp_INCLUDE_DIRS})
 include_directories(${actor_sim_utils_INCLUDE_DIRS})
 include_directories(${actor_sim_srv_INCLUDE_DIRS})
 include_directories(${actor_global_plan_INCLUDE_DIRS})
-include_directories(${social_force_vis_INCLUDE_DIRS})
+#include_directories(${social_force_model_INCLUDE_DIRS})
 
 include_directories(${tf_INCLUDE_DIRS})
 include_directories(${std_msgs_INCLUDE_DIRS})
@@ -28,7 +29,7 @@ include_directories(${std_srvs_INCLUDE_DIRS})
 include_directories(/user/include/sdformat-5.2)
 include_directories(./include)
 
-link_directories(${social_force_vis_LIBRARY_DIRS})
+#link_directories(${social_force_model_LIBRARY_DIRS})
 
 find_package(gazebo REQUIRED)
 include_directories(${GAZEBO_INCLUDE_DIRS})
@@ -36,9 +37,82 @@ link_directories(${GAZEBO_LIBRARY_DIRS})
 list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
-add_library(${PROJECT_NAME} SHARED include/ActorPluginSocial.h src/ActorPluginSocial.cpp)
+add_library(${PROJECT_NAME} SHARED 
+  include/ActorPluginSocial.h 
+  src/ActorPluginSocial.cpp
+)
 
-add_library(social_force_model 
+# CommonInfo doesnt see Ellipse - namespace?
+# solution: move headers into include/, sources into src/
+add_library(actor_core
+
+  include/actor/core/Actor.h 
+  include/actor/core/CommonInfo.h 
+  include/actor/core/FSM.h 
+  include/actor/core/Target.h
+  include/actor/core/LieDownHelper.h
+  include/actor/core/Path.h
+
+  src/actor/core/Actor.cpp 
+  src/actor/core/CommonInfo.cpp 
+  src/actor/core/FSM.cpp
+  src/actor/core/Target.cpp
+  src/actor/core/LieDownHelper.cpp
+  src/actor/core/Path.cpp
+
+)
+
+add_library(actor_inflation
+  
+  include/actor/inflation/Box.h
+  include/actor/inflation/Circle.h
+  include/actor/inflation/Ellipse.h
+
+  src/actor/inflation/Box.cpp
+  src/actor/inflation/Circle.cpp
+  src/actor/inflation/Ellipse.cpp
+
+)
+
+add_library(actor_ros 
+
+  include/actor/ros_interface/Connection.h
+  include/actor/ros_interface/Stream.h
+  include/actor/ros_interface/Node.h
+  include/actor/ros_interface/ParamLoader.h
+  include/actor/ros_interface/Conversion.h
+  include/actor/ros_interface/GlobalPlan.h
+
+  src/actor/ros_interface/Connection.cpp
+  src/actor/ros_interface/Stream.cpp
+  src/actor/ros_interface/Node.cpp
+  src/actor/ros_interface/ParamLoader.cpp
+  src/actor/ros_interface/Conversion.cpp
+  src/actor/ros_interface/GlobalPlan.cpp
+
+)
+
+add_library(fuzzy
+
+  include/fuzz/Processor.h
+  include/fuzz/TrapezoidParted.h
+  include/fuzz/TrapezoidLocIndep.h
+  include/fuzz/TrapezoidLocDep.h
+  include/fuzz/SocialBehavioursDb.h
+  include/fuzz/SocialConductor.h
+
+  src/fuzz/Processor.cpp
+  src/fuzz/TrapezoidParted.cpp
+  src/fuzz/TrapezoidLocIndep.cpp
+  src/fuzz/TrapezoidLocDep.cpp
+  src/fuzz/SocialBehavioursDb.cpp
+  src/fuzz/SocialConductor.cpp
+
+)
+
+add_library(sfm_core
+
+  # SFM core
   include/sfm/core/SocialForceModel.h 
   include/sfm/core/Inflator.h 
   include/sfm/core/SFMDebug.h
@@ -50,97 +124,57 @@ add_library(social_force_model
   src/sfm/core/SFMDebug.cpp
   src/sfm/core/ActorInfoDecoder.cpp
 )
+ 
+add_library(sfm_vis
 
-add_library(social_force_model_fuzzy
-  include/sfm/fuzz/Fuzzifier.h
-  include/sfm/fuzz/Defuzzifier.h
-  include/sfm/fuzz/Processor.h
-  include/sfm/fuzz/TrapezoidParted.h
-  include/sfm/fuzz/TrapezoidLocIndep.h
-  include/sfm/fuzz/TrapezoidLocDep.h
-  include/sfm/fuzz/SocialBehavioursDb.h
-  include/sfm/fuzz/SocialConductor.h
-  src/sfm/fuzz/Fuzzifier.cpp
-  src/sfm/fuzz/Defuzzifier.cpp
-  src/sfm/fuzz/Processor.cpp
-  src/sfm/fuzz/TrapezoidParted.cpp
-  src/sfm/fuzz/TrapezoidLocIndep.cpp
-  src/sfm/fuzz/TrapezoidLocDep.cpp
-  src/sfm/fuzz/SocialBehavioursDb.cpp
-  src/sfm/fuzz/SocialConductor.cpp
+ # Visualization
+ include/sfm/vis/MarkerBase.h
+ include/sfm/vis/Arrow.h
+ include/sfm/vis/LineList.h
+ include/sfm/vis/Text.h
+ include/sfm/vis/Grid.h
+
+ src/sfm/vis/MarkerBase.cpp
+ src/sfm/vis/Arrow.cpp
+ src/sfm/vis/LineList.cpp
+ src/sfm/vis/Text.cpp
+ src/sfm/vis/Grid.cpp
+
 )
 
-add_library(social_force_model_utils include/SocialForceModelUtils.h src/SocialForceModelUtils.cpp)
+# TODO: this might cause errors
+#target_link_libraries(actor_inflation actor_core actor_ros ) # ros needed here?
 
-# CommonInfo doesnt see Ellipse - namespace?
-# solution: move headers into include/, sources into src/
-add_library(actor_inflation
-  include/inflation/Box.h
-  src/inflation/Box.cpp
-  include/inflation/Circle.h
-  src/inflation/Circle.cpp
-  include/inflation/Ellipse.h
-  src/inflation/Ellipse.cpp
-)
+target_link_libraries(fuzzy ${fuzzylite_LIBRARY})
 
-add_library(actor_core 
-  include/core/Actor.h 
-  include/core/CommonInfo.h 
-  include/core/FSM.h 
-  include/core/Target.h
-  include/core/LieDownHelper.h
-  include/core/Path.h
-  src/core/Actor.cpp 
-  src/core/CommonInfo.cpp 
-  src/core/FSM.cpp
-  src/core/Target.cpp
-  src/core/LieDownHelper.cpp
-  src/core/Path.cpp
-)
-
-add_library(actor_ros 
-  #include/ActorROSInterface.h 
-  #src/ActorROSInterface.cpp
-
-  include/ros_interface/Connection.h
-  src/ros_interface/Connection.cpp
-  include/ros_interface/Stream.h
-  src/ros_interface/Stream.cpp
-  include/ros_interface/Node.h
-  src/ros_interface/Node.cpp
-
-  include/ros_interface/ParamLoader.h
-  src/ros_interface/ParamLoader.cpp
-
-  include/ros_interface/Conversion.h
-  src/ros_interface/Conversion.cpp
-
-  include/ros_interface/GlobalPlan.h
-  src/ros_interface/GlobalPlan.cpp
-)
-
-target_link_libraries(actor_inflation actor_core actor_ros) # ros needed here?
-target_link_libraries(social_force_model social_force_model_fuzzy ${fuzzylite_LIBRARY})
+# DEPRECATED
+#target_link_libraries(social_force_model social_force_model_fuzzy )
 #target_link_libraries(actor_core actor_ros)
 
 #add_library(enums include/Enums.h)
 
+# libraries linked to `ActorPluginSocial`
 target_link_libraries( ${PROJECT_NAME} 
-  social_force_model 
-  social_force_model_utils
-  #actor_bounding_circle
-  #actor_common_info
-  actor_inflation
+
   actor_core
+  actor_inflation
   actor_ros
-  #enums
+  fuzzy
+
+  # enums (header only) -> DEPRECATED
+
+  sfm_core
+  sfm_vis
+
   ${GAZEBO_LIBRARIES}  
   ${roscpp_LIBRARIES} 
   ${tf_LIBRARIES}
   ${catkin_LIBRARIES}
-#  ${social_force_vis_LIBRARIES} # catkin sees it, gazebo seems to not - plugin does not load
-  /home/rayvburn/ros_workspace/ws_people_sim/src/gazebo_ros_people_sim/social_force_vis/lib/libsocial_force_vis.so 
-#  social_force_vis
+
+# ${social_force_vis_LIBRARIES} # catkin sees it, gazebo seems to not - plugin does not load
+#  /home/rayvburn/ros_workspace/ws_people_sim/src/gazebo_ros_people_sim/social_force_model/lib/libsocial_force_model_core.so
+#  /home/rayvburn/ros_workspace/ws_people_sim/src/gazebo_ros_people_sim/social_force_model/lib/libsocial_force_model_vis.so
+
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
