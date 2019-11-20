@@ -24,6 +24,7 @@
 // ROS Kinetic
 #include <tf/transform_listener.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf/LinearMath/Transform.h>
 
 // ROS Melodic
 //#include <tf2_ros/buffer.h>
@@ -58,9 +59,11 @@ static void SetInflationRadius(ros::NodeHandle &nh, const std::string &srv_ns);
 
 // transform listener ------------------------------------------------------------------------
 static tf::TransformListener* tf_listener_ptr_;
-static std::string frame = "world";
+static std::string frame = "map"; // "world";
 static tf2_ros::TransformBroadcaster* tf_broadcaster_ptr_;
 static void SendTfBlank();
+geometry_msgs::PoseStamped transformPointToMap(double &x_world, double &y_world);
+geometry_msgs::PoseStamped transformPointToMap(geometry_msgs::PoseStamped &point);
 
 // -------------------------------------------------------------------------------------------
 // main --------------------------------------------------------------------------------------
@@ -147,7 +150,11 @@ static bool MakePlanSrv(actor_global_plan::MakeNavPlanFrame::Request& req, actor
 
 	// if global planner is not busy, let's try to find a path for a proper frame
 	glob_planner_ptr_->setFrameId(req.controlled_frame);
-	resp.plan_found = glob_planner_ptr_->makePlan(req.start, req.goal, path_);
+
+	// transform points
+	resp.plan_found = glob_planner_ptr_->makePlan(transformPointToMap(req.start),
+												  transformPointToMap(req.goal),
+												  path_);
 
 	if ( resp.plan_found ) {
 
@@ -177,12 +184,19 @@ static bool CostmapStatusSrv(std_srvs::Trigger::Request& req, std_srvs::Trigger:
 // ----------------------------------------------------------------------------------------------------
 static bool GetCostSrv(actor_global_plan::GetCost::Request& req, actor_global_plan::GetCost::Response& resp) {
 
-	resp.cost = static_cast<int16_t>(costmap_global_ptr_->getCost(req.point.x, req.point.y));
+	// transform point
+	geometry_msgs::PoseStamped map_point = transformPointToMap(req.point.x, req.point.y);
+
+	// frames transformation
+	resp.cost = static_cast<int16_t>(costmap_global_ptr_->getCost(map_point.pose.position.x, map_point.pose.position.y));
+
+	// evaluate cost
 	if ( resp.cost == 255 ) {
 		resp.error_message = "[ERROR] Given position is out of bounds or no information could have been acquired";
 	} else {
 		resp.error_message = "OK";
 	}
+
 	return (true);
 
 }
@@ -313,5 +327,77 @@ static void SetInflationRadius(ros::NodeHandle &nh, const std::string &srv_ns) {
 	// update parameter if `getParam()` was successful
 	nh.setParam(*node_name_ + "/gcm/inflation_layer/inflation_radius", inflation);
 	nh.setParam(*node_name_ + "/gcm/robot_radius", inflation);
+
+}
+
+/**
+ * Transforms point from actor coordinate system (`world`) to `map` coordinate system
+ * @param x_world
+ * @param y_world
+ * @return
+ */
+geometry_msgs::PoseStamped transformPointToMap(double &x_world, double &y_world) {
+
+	geometry_msgs::PoseStamped pose_map;
+	pose_map.pose.position.x = x_world;
+	pose_map.pose.position.y = y_world;
+	pose_map.pose.orientation.w = 1.0;
+	return (transformPointToMap(pose_map));
+
+}
+
+/**
+ * Transforms point from actor coordinate system (`world`) to `map` coordinate system
+ * @param x_world
+ * @param y_world
+ * @return
+ */
+geometry_msgs::PoseStamped transformPointToMap(geometry_msgs::PoseStamped &point) {
+
+	geometry_msgs::PoseStamped pose_map;
+
+	/* MELODIC
+	geometry_msgs::TransformStamped transformStamped;
+	try{
+	  transformStamped = tfBuffer.lookupTransform("turtle2", "turtle1",
+							   ros::Time(0));
+	}
+	catch (tf2::TransformException &ex) {
+	  ROS_WARN("%s",ex.what());
+	  ros::Duration(1.0).sleep();
+	  continue;
+	} */
+
+	/* ROS Kinetic */
+//	tf::StampedTransform transform;
+	try{
+//		tf_listener_ptr_->lookupTransform("/map", "/world", ros::Time(0), transform);
+		point.header.frame_id = "world";
+		tf_listener_ptr_->transformPose("map", point, pose_map);
+	}
+	catch (tf::TransformException &ex){
+		ROS_ERROR("%s",ex.what());
+		ros::Duration(1.0).sleep();
+	}
+
+//	pose_map.header.frame_id = "map";
+//	pose_map.header.stamp = ros::Time::now();
+//
+//	pose_map.pose.position.x += static_cast<double>(transform.getOrigin().x());
+//	pose_map.pose.position.y += static_cast<double>(transform.getOrigin().y());
+//	pose_map.pose.position.z += static_cast<double>(transform.getOrigin().z());
+//
+//	pose_map.pose.orientation.x += static_cast<double>(transform.getRotation().x());
+//	pose_map.pose.orientation.y += static_cast<double>(transform.getRotation().y());
+//	pose_map.pose.orientation.z += static_cast<double>(transform.getRotation().z());
+//	pose_map.pose.orientation.w += static_cast<double>(transform.getRotation().w());
+
+	std::cout << "\n" << std::endl;
+	std::cout << "position raw: " << point.pose.position << std::endl;
+//	std::cout << "tf: " << transform.getOrigin() << std::endl;
+	std::cout << "position new: " << pose_map.pose.position << std::endl;
+	std::cout << "\n" << std::endl;
+
+	return (pose_map);
 
 }
