@@ -502,6 +502,10 @@ private:
 	/// \brief Determines maneuverability of the actor,
 	/// for more details see \ref computeYawMovementDirection
 	double factor_maneuverability_;
+	/// \brief Defines whether interaction forces should be calculated;
+	/// if set to false (parameter) will force actor to take the shortest
+	/// possible path.
+	bool disable_interaction_forces_;
 
 
 	/// \brief Inflator class enlarges a surface around

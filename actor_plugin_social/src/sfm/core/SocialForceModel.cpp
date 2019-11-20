@@ -98,6 +98,7 @@ void SocialForceModel::init(std::shared_ptr<const actor::ros_interface::ParamLoa
 	interaction_static_type_ = static_cast<sfm::StaticObjectInteraction>(params_ptr_->getSfmParams().static_obj_interaction);
 	inflation_type_ = inflation_type;
 	opposite_force_method_ = static_cast<sfm::OppositeForceMethod>(params_ptr_->getSfmParams().opposite_force);
+	disable_interaction_forces_ = params_ptr_->getSfmParams().disable_interaction_forces;
 
 	owner_name_ = actor_name;
 
@@ -132,7 +133,11 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	// compute internal acceleration
 	force_internal_ = computeInternalForce(actor_pose, actor_velocity, actor_target);
 
-#ifdef CALCULATE_INTERACTION
+	// check whether it is needed to calculate interaction force
+	if ( disable_interaction_forces_ ) {
+		factorInForceCoefficients(); 	// multiply force vector components by parameter values
+		return (false);
+	}
 
 	// added up to the `force_interaction_`
 	ignition::math::Vector3d f_alpha_beta;
@@ -308,8 +313,6 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 
 	// multiply force vector components by parameter values
 	factorInForceCoefficients();
-
-#endif // end of `#ifdef CALCULATE_INTERACTION`
 
 #ifdef SFM_PRINT_FORCE_RESULTS
 	if ( print_info ) {

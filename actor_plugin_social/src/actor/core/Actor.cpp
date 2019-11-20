@@ -1174,18 +1174,29 @@ double Actor::move(const double &dt) {
 						    target_manager_.getCheckpoint(),
 						    common_info_, dt, ignored_models_);
 
-	// execute fuzzy operations block
-    fuzzy_processor_.load(sfm_.getDirectionAlpha(), sfm_.getDirectionBetaDynamic(),
-    					  sfm_.getRelativeLocationDynamic(), sfm_.getDistanceAngleDynamic());
-    fuzzy_processor_.process();
+	// actual `social` vector
+	ignition::math::Vector3d human_action_force(0.0, 0.0, 0.0);
 
-    // create a force vector according to the activated `social behaviour`
-    social_conductor_.apply(sfm_.getForceCombined(), sfm_.getDirectionAlpha(), sfm_.getDistanceDynamic(),
-    						fuzzy_processor_.getOutput());
+	// evaluate whether more complex forces are supposed to be calculated
+	if ( !params_ptr_->getSfmParams().disable_interaction_forces ) {
+
+		// execute fuzzy operations block
+		fuzzy_processor_.load(sfm_.getDirectionAlpha(), sfm_.getDirectionBetaDynamic(),
+							  sfm_.getRelativeLocationDynamic(), sfm_.getDistanceAngleDynamic());
+		fuzzy_processor_.process();
+
+		// create a force vector according to the activated `social behaviour`
+		social_conductor_.apply(sfm_.getForceCombined(), sfm_.getDirectionAlpha(), sfm_.getDistanceDynamic(),
+								fuzzy_processor_.getOutput());
+
+		// assign `social` vector
+		human_action_force = social_conductor_.getSocialVector();
+
+	}
 
     // according to the force, calculate a new pose
 	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_lin_,
-														  sfm_.getForceCombined() + social_conductor_.getSocialVector(),
+														  sfm_.getForceCombined() + human_action_force,
 														  target_manager_.getCheckpoint(), dt);
 
 	// object info update
