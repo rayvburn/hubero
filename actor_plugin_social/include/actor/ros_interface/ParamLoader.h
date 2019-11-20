@@ -76,6 +76,7 @@ public:
 		unsigned short int 	static_obj_interaction 		= 1;
 		unsigned short int 	box_inflation_type 			= 0;
 		unsigned short int	opposite_force				= 0;
+		bool 				disable_interaction_forces	= false;
 
 	} SfmParams;
 

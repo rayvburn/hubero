@@ -221,6 +221,8 @@ void ParamLoader::loadSfmParams(const std::shared_ptr<ros::NodeHandle> nh_ptr) {
 		params_sfm_.opposite_force = static_cast<unsigned short int>(temp_int);
 	}
 
+	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "algorithm/disable_interaction_forces", params_sfm_.disable_interaction_forces) ) { }
+
 }
 
 // ------------------------------------------------------------------- //

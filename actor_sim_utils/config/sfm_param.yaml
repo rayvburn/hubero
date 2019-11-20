@@ -12,6 +12,7 @@ algorithm:                              # social force model
     static_obj_interaction: 0           # SocialForceModel.h, look for enums declaration section
     box_inflation_type: 1               # 0 - only other objects, 1 - all objects; valid only when bounding type chosen is BOX; bounding type is an actor's parameter
     opposite_force: 0                   # 0 - go towards goal, 1 - rotate left, for details see OppositeForceMethod enum in include/sfm/core/SocialForceModel.h
+    disable_interaction_forces: true    # true disables `local planner` (actor will head according to the global plan (optimal))
 
 visualization:
 

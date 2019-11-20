@@ -277,6 +277,7 @@ private:
     /// \brief Stores type of an actor's bounding for SFM
     actor::ActorBoundingType bounding_type_;
 
+    // FIXME: bounding_ptr
     /// \brief Object that acts as a inflation around the actor - box-shaped
     /// used by SFM, chosen as a parameter
     actor::inflation::Box bounding_box_;
