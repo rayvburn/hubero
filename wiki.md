@@ -131,3 +131,7 @@ If `target_tolerance: 1.25` is too small, especially smaller than bounding figur
           <model>ground_plane</model>
         </ignore_obstacles>
 </plugin>	
+
+## Problem: actor runs straight from 0,0 a few meters and then immediately moves to the starting point and so on and so on
+
+- try to increase the delay parameter which is in `gazebo_ros_people_sim/actor_plugin_social/src/ActorPluginSocial.cpp` (look for the condition: `if ( _info.realTime.Double() >= 1.5 )` and increase the 1.5 second delay)
