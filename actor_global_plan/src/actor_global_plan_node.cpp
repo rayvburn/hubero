@@ -20,15 +20,20 @@
 
 #include <std_srvs/Trigger.h> 				// Costmap status
 #include <actor_global_plan/GetCost.h> 		// GetCost service
-
 // ROS Kinetic
-#include <tf/transform_listener.h>
-#include <tf2_ros/transform_broadcaster.h>
-#include <tf/LinearMath/Transform.h>
+// #include <tf/transform_listener.h>
+// #include <tf2_ros/transform_broadcaster.h>
+// #include <tf/LinearMath/Transform.h>
+// static tf::TransformListener* tf_listener_ptr_;
 
 // ROS Melodic
-//#include <tf2_ros/buffer.h>
-//#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
+static tf2_ros::TransformListener* tf_listener_ptr_;
+static tf2_ros::Buffer* tf2_buffer_ptr_;
 
 // global planner ----------------------------------------------------------------------------
 static std::string* node_name_;
@@ -57,8 +62,6 @@ static bool costmap_ready_ = false;	// flag set true when node becomes fully ini
 // NOTE: with a single actor in the world everything is the same.
 static void SetInflationRadius(ros::NodeHandle &nh, const std::string &srv_ns);
 
-// transform listener ------------------------------------------------------------------------
-static tf::TransformListener* tf_listener_ptr_;
 static std::string frame = "map"; // "world";
 static tf2_ros::TransformBroadcaster* tf_broadcaster_ptr_;
 static void SendTfBlank();
@@ -95,9 +98,16 @@ int main(int argc, char** argv) {
 
 
 	// initialize transform listener
-	tf::TransformListener tf_listener(ros::Duration(5.0)); // TODO: make shorter as more stable version comes in
-	tf_listener_ptr_ = &tf_listener;
 
+	// ROS Kinetic
+	// tf::TransformListener tf_listener(ros::Duration(5.0)); // TODO: make shorter as more stable version comes in
+
+	// ROS Melodic
+	tf2_ros::Buffer tfBuffer;
+  	tf2_ros::TransformListener tf_listener(tfBuffer);
+	tf2_buffer_ptr_ = &tfBuffer;
+
+	tf_listener_ptr_ = &tf_listener;
 
 	// initialize broadcaster and send a blank TF (NOTE: it may be deleted if static_tf_publisher works OK, see below)
 	tf2_ros::TransformBroadcaster tf_broadcaster;
@@ -106,10 +116,15 @@ int main(int argc, char** argv) {
 
 	// initialize global costmap
 	// NOTE: costmap 2d takes tf2_ros::Buffer in ROS Melodic, in Kinetic - tf::TransformListener
-	SetInflationRadius(nh, srv_ns); // NOTE: it's safer to call this before costmap ctor
-	Costmap2dMultiFrame costmap_global(std::string("gcm"), *tf_listener_ptr_); // ("actor_global_costmap", tf_listener);
-	costmap_global_ptr_ = &costmap_global;
 
+	// ROS Kinetic
+	// SetInflationRadius(nh, srv_ns); // NOTE: it's safer to call this before costmap ctor
+	// Costmap2dMultiFrame costmap_global(std::string("gcm"), *tf_listener_ptr_); // ("actor_global_costmap", tf_listener);
+	// costmap_global_ptr_ = &costmap_global;
+	// ROS Melodic
+	SetInflationRadius(nh, srv_ns); // NOTE: it's safer to call this before costmap ctor
+	Costmap2dMultiFrame costmap_global(std::string("gcm"), tfBuffer); // ("actor_global_costmap", tf_listener);
+	costmap_global_ptr_ = &costmap_global;
 
 	// initialize global planner
 	GlobalPlannerMultiFrame global_planner(std::string("global_planner"), &costmap_global, frame);
@@ -372,16 +387,28 @@ geometry_msgs::PoseStamped transformPointToMap(geometry_msgs::PoseStamped &point
 //	tf::StampedTransform transform;
 	try{
 //		tf_listener_ptr_->lookupTransform("/map", "/world", ros::Time(0), transform);
+
+		// ROS Melodic
+		geometry_msgs::TransformStamped base_link_to_leap_motion;
 		point.header.frame_id = "world";
-		tf_listener_ptr_->transformPose("map", point, pose_map);
-	}
-	catch (tf::TransformException &ex){
+		base_link_to_leap_motion = tf2_buffer_ptr_->lookupTransform("map", "world", ros::Time(0), ros::Duration(1.0) );
+		tf2::doTransform(point, pose_map, base_link_to_leap_motion); // robotPose is the PoseStamped I want to transform
+    }
+	catch (tf2::TransformException &ex){
 		ROS_ERROR("%s",ex.what());
 		ros::Duration(1.0).sleep();
 	}
+		// ROS Kinetic
+		// point.header.frame_id = "world";
+		// tf_listener_ptr_->transformPose("map", point, pose_map);
+	// }
+	// catch (tf::TransformException &ex){
+	// 	ROS_ERROR("%s",ex.what());
+	// 	ros::Duration(1.0).sleep();
+	// }
 
-//	pose_map.header.frame_id = "map";
-//	pose_map.header.stamp = ros::Time::now();
+	pose_map.header.frame_id = "map";
+	pose_map.header.stamp = ros::Time::now();
 //
 //	pose_map.pose.position.x += static_cast<double>(transform.getOrigin().x());
 //	pose_map.pose.position.y += static_cast<double>(transform.getOrigin().y());
