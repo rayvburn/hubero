@@ -70,7 +70,7 @@ void gazebo::ActorPlugin::OnUpdate(const gazebo::common::UpdateInfo &_info)
 	// https://github.com/rayvburn/gazebo_ros_people_sim/commit/62c8719b25aac5aff53447ba483045364fcd783f
 	// After many tries brought back some delay as below:
 	if ( !controller_enabled_ ) {
-		if ( _info.realTime.Double() >= 1.5 ) {
+		if ( _info.realTime.Double() >= 8 ) {
 			std::cout << "\t[ActorPlugin] Actor controller starting the job!" << std::endl;
 			controller_enabled_ = true;
 		}

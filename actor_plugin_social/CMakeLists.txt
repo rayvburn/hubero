@@ -26,7 +26,7 @@ include_directories(${tf_INCLUDE_DIRS})
 include_directories(${std_msgs_INCLUDE_DIRS})
 include_directories(${std_srvs_INCLUDE_DIRS})
 
-include_directories(/user/include/sdformat-5.2)
+include_directories(/user/include/sdformat-6.0)
 include_directories(./include)
 
 #link_directories(${social_force_model_LIBRARY_DIRS})

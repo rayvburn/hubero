@@ -10,6 +10,7 @@
 
 #include <ros/ros.h>
 #include <costmap_2d/costmap_2d_ros.h>
+#include <tf2_ros/buffer.h>
 
 /**
  * Costmap2dMultiFrame is a costmap_2d's extension which provides plan calculation
@@ -25,7 +26,11 @@ public:
 	 * and will look for parameters somewhere in {CALLING_NODE_NAMESPACE}/{COSTMAP_NAMESPACE}
 	 * @param tf - TransformListener instance
 	 */
-	Costmap2dMultiFrame(std::string name, tf::TransformListener& tf);
+
+	// ROS Kinetic
+	// Costmap2dMultiFrame(std::string name, tf::TransformListener& tf);
+	// ROS Melodic
+	Costmap2dMultiFrame(std::string name, tf2_ros::Buffer& tf_buffer);
 
 	/**
 	 * @brief Sets a Costmap2D's protected variable to a given frame_id which allows to calculate plans

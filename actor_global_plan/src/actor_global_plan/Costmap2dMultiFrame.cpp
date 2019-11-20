@@ -11,8 +11,14 @@
 
 // --------------------------------------------------------------------------------------
 
-Costmap2dMultiFrame::Costmap2dMultiFrame(std::string name, tf::TransformListener& tf)
-		: costmap_2d::Costmap2DROS(name, tf) { }
+// ROS Kinetic
+// Costmap2dMultiFrame::Costmap2dMultiFrame(std::string name, tf::TransformListener& tf)
+// 		: costmap_2d::Costmap2DROS(name, tf) { }
+// --------------------------------------------------------------------------------------
+
+// ROS Melodic
+Costmap2dMultiFrame::Costmap2dMultiFrame(std::string name, tf2_ros::Buffer& tf_buffer)
+		: costmap_2d::Costmap2DROS(name, tf_buffer) { }
 
 // --------------------------------------------------------------------------------------
 

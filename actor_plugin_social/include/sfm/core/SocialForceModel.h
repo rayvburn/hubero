@@ -14,8 +14,8 @@
 #include <actor/inflation/Circle.h>
 #include <actor/inflation/Ellipse.h>
 #include <actor/ros_interface/ParamLoader.h>	// objects dictionary
-#include <gazebo-8/gazebo/physics/World.hh>
-#include <gazebo-8/gazebo/physics/Model.hh>
+#include <gazebo-9/gazebo/physics/World.hh>
+#include <gazebo-9/gazebo/physics/Model.hh>
 
 // ignition
 #include <ignition/math/Vector3.hh>

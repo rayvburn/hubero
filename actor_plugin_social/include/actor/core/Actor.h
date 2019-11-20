@@ -41,11 +41,11 @@
 #include <sfm/vis/Text.h> // FIXME: path
 
 // Gazebo
-#include <gazebo-8/gazebo/common/UpdateInfo.hh>
-#include <gazebo-8/gazebo/physics/Model.hh>
-#include <gazebo-8/gazebo/physics/Actor.hh>
-#include <gazebo-8/gazebo/physics/World.hh>
-#include <sdformat-5.3/sdf/Element.hh>
+#include <gazebo-9/gazebo/common/UpdateInfo.hh>
+#include <gazebo-9/gazebo/physics/Model.hh>
+#include <gazebo-9/gazebo/physics/Actor.hh>
+#include <gazebo-9/gazebo/physics/World.hh>
+#include <sdformat-6.0/sdf/Element.hh>
 
 // ignition
 #include <ignition/math/Angle.hh>

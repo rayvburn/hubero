@@ -21,8 +21,8 @@ general:
 
 inflation:
 
-    bounding_type: 2                    # look for core/Enums.h for further description
-    circle_radius: 0.5                  # bounding circle radius, ignored when another type of inflator selected
+    bounding_type: 1                   # look for core/Enums.h for further description
+    circle_radius: 0.02                # bounding circle radius, ignored when another type of inflator selected
     box_size:                           # bounding box sides' lengths, ignored when another type of inflator selected
         - {x_half: 0.45, y_half: 0.45, z_half: 1.00}
     ellipse:                            # ellipse configuration, offset created to achieve something like described in `E. T. Hall, “Proxemics/Personal Space in Different Cultures`

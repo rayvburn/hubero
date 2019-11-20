@@ -22,12 +22,15 @@
 #include <actor_global_plan/GetCost.h> 		// GetCost service
 
 // ROS Kinetic
-#include <tf/transform_listener.h>
-#include <tf2_ros/transform_broadcaster.h>
+// #include <tf/transform_listener.h>
+// #include <tf2_ros/transform_broadcaster.h>
+// static tf::TransformListener* tf_listener_ptr_;
 
 // ROS Melodic
-//#include <tf2_ros/buffer.h>
-//#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/transform_broadcaster.h>
+static tf2_ros::TransformListener* tf_listener_ptr_;
 
 // global planner ----------------------------------------------------------------------------
 static std::string* node_name_;
@@ -57,7 +60,7 @@ static bool costmap_ready_ = false;	// flag set true when node becomes fully ini
 static void SetInflationRadius(ros::NodeHandle &nh, const std::string &srv_ns);
 
 // transform listener ------------------------------------------------------------------------
-static tf::TransformListener* tf_listener_ptr_;
+
 static std::string frame = "world";
 static tf2_ros::TransformBroadcaster* tf_broadcaster_ptr_;
 static void SendTfBlank();
@@ -90,9 +93,15 @@ int main(int argc, char** argv) {
 	// start costmap status service
 	costmap_status_srv_ = nh.advertiseService(std::string(srv_ns + "/ActorGlobalPlanner/CostmapStatus"), CostmapStatusSrv);
 
-
 	// initialize transform listener
-	tf::TransformListener tf_listener(ros::Duration(5.0)); // TODO: make shorter as more stable version comes in
+
+	// ROS Kinetic
+	// tf::TransformListener tf_listener(ros::Duration(5.0)); // TODO: make shorter as more stable version comes in
+
+	// ROS Melodic
+	tf2_ros::Buffer tfBuffer;
+  	tf2_ros::TransformListener tf_listener(tfBuffer);
+
 	tf_listener_ptr_ = &tf_listener;
 
 
@@ -104,7 +113,7 @@ int main(int argc, char** argv) {
 	// initialize global costmap
 	// NOTE: costmap 2d takes tf2_ros::Buffer in ROS Melodic, in Kinetic - tf::TransformListener
 	SetInflationRadius(nh, srv_ns); // NOTE: it's safer to call this before costmap ctor
-	Costmap2dMultiFrame costmap_global(std::string("gcm"), *tf_listener_ptr_); // ("actor_global_costmap", tf_listener);
+	Costmap2dMultiFrame costmap_global(std::string("gcm"), tfBuffer); // ("actor_global_costmap", tf_listener);
 	costmap_global_ptr_ = &costmap_global;
 
 
