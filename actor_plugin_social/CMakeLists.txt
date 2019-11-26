@@ -8,8 +8,8 @@ include_directories($ENV{HOME}/libraries/fuzzylite/fuzzylite) # include fuzzylit
 find_package(roscpp REQUIRED)
 find_package(actor_sim_utils REQUIRED)
 find_package(actor_sim_srv REQUIRED)
+find_package(incare_human_robot_communication REQUIRED)
 find_package(actor_global_plan REQUIRED)
-# find_package(catkin REQUIRED COMPONENTS social_force_model) DEPRECATED
 find_package(catkin REQUIRED COMPONENTS visualization_msgs)
 
 find_package(tf REQUIRED)
@@ -19,8 +19,8 @@ find_package(std_srvs REQUIRED)
 include_directories(${roscpp_INCLUDE_DIRS})
 include_directories(${actor_sim_utils_INCLUDE_DIRS})
 include_directories(${actor_sim_srv_INCLUDE_DIRS})
+include_directories(${incare_human_robot_communication_INCLUDE_DIRS})
 include_directories(${actor_global_plan_INCLUDE_DIRS})
-#include_directories(${social_force_model_INCLUDE_DIRS})
 
 include_directories(${tf_INCLUDE_DIRS})
 include_directories(${std_msgs_INCLUDE_DIRS})
@@ -29,7 +29,7 @@ include_directories(${std_srvs_INCLUDE_DIRS})
 include_directories(/user/include/sdformat-5.2)
 include_directories(./include)
 
-#link_directories(${social_force_model_LIBRARY_DIRS})
+link_directories(${incare_human_robot_communication_LIBRARY_DIRS})
 
 find_package(gazebo REQUIRED)
 include_directories(${GAZEBO_INCLUDE_DIRS})
@@ -142,16 +142,10 @@ add_library(sfm_vis
 
 )
 
-# TODO: this might cause errors
-#target_link_libraries(actor_inflation actor_core actor_ros ) # ros needed here?
-
+# link the external library
 target_link_libraries(fuzzy ${fuzzylite_LIBRARY})
 
-# DEPRECATED
-#target_link_libraries(social_force_model social_force_model_fuzzy )
-#target_link_libraries(actor_core actor_ros)
-
-#add_library(enums include/Enums.h)
+#add_library(enums include/Enums.h) # (header only) -> DEPRECATED
 
 # libraries linked to `ActorPluginSocial`
 target_link_libraries( ${PROJECT_NAME} 
@@ -161,7 +155,7 @@ target_link_libraries( ${PROJECT_NAME}
   actor_ros
   fuzzy
 
-  # enums (header only) -> DEPRECATED
+  # enums -> DEPRECATED
 
   sfm_core
   sfm_vis
@@ -170,12 +164,10 @@ target_link_libraries( ${PROJECT_NAME}
   ${roscpp_LIBRARIES} 
   ${tf_LIBRARIES}
   ${catkin_LIBRARIES}
-
-# ${social_force_vis_LIBRARIES} # catkin sees it, gazebo seems to not - plugin does not load
-#  /home/rayvburn/ros_workspace/ws_people_sim/src/gazebo_ros_people_sim/social_force_model/lib/libsocial_force_model_core.so
-#  /home/rayvburn/ros_workspace/ws_people_sim/src/gazebo_ros_people_sim/social_force_model/lib/libsocial_force_model_vis.so
+  ${incare_human_robot_communication_LIBRARIES} # in case of a bad inclusion something like this should help - /home/rayvburn/ros_workspace/ws_people_sim/src/incare_human_robot_communication/lib/libincare_human_robot_communication.so
 
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib
+)
