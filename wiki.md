@@ -72,6 +72,8 @@ To make Eclipse IDE recognize created new srv files go to:
 click on the project with a right hand mouse button -> Properties -> C/C++ Include Paths and Preprocessor Symbols
 and Add External Include Path -> Browse -> go to {YOUR WS FOLDER}/devel and click on the "include" folder and choose OK -> OK -> Apply and Close
 
+EDIT: example - `/home/rayvburn/ros_workspace/ws_people_sim/devel/.private/{PACKAGE_NAME}/include`
+
 created services are achieveable via: 
 `#include <{PACKAGE DEFINING NEW SRV}/{SRV_NAME}>`
 
