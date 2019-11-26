@@ -1,4 +1,5 @@
 actor_plugin_social/doc/*
 actor_plugin_social/doxygen/*
+actor_plugin_social/lib/*
 terminator_launch.md
 actor_sim_utils/rviz/actor_groups_map_costmap_ext_vis_turtle_nav1.rviz
