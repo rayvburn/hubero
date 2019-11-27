@@ -30,10 +30,12 @@
 #include <actor_sim_srv/GetVelocity.h>
 #include <actor_sim_srv/LieDown.h>
 #include <actor_sim_srv/LieDownName.h>
-#include <std_srvs/Trigger.h> 			// stopLying, stopFollowing
 
-// service for switching on/off SFM's debugging info
-#include <std_srvs/SetBool.h>
+#include <incare_human_robot_communication/Database.h>
+#include <incare_human_robot_communication/Communicate.h>
+
+#include <std_srvs/Trigger.h>	// stopLying, stopFollowing
+#include <std_srvs/SetBool.h>	// switching on/off SFM's debugging info
 
 
 namespace actor {
@@ -67,12 +69,14 @@ public:
 	/// for services' callbacks processing
 	void startCallbackProcessingThread();
 
-	/// \brief Initializes callback queue, starts separate thread
-	/// for callback handling, used for teleoperation mode of an Actor
-	bool prepareForTeleoperation();
+//	/// \brief Initializes callback queue, starts separate thread
+//	/// for callback handling, used for teleoperation mode of an Actor
+//	/// DEPRECATED
+//	bool prepareForTeleoperation();
 
-//	// TODO: makes sense then thread termination is possible
+//	// TODO: makes sense when thread termination is possible
 //	/// \brief Invoked after teleoperation mode stoppage
+//	/// DEPRECATED
 //	void finishTeleoperation();
 
 	/// \brief Default destructor
@@ -93,6 +97,9 @@ private:
 
 	/// \brief Switcher of a debug info printing
 	bool srvSetDebugSFMCallback		(std_srvs::SetBool::Request				&req,	std_srvs::SetBool::Response 			&resp);
+
+	/// \brief A service for communication (verbose) with a robot/other actors
+	bool srvCommunicateCallback		(incare_human_robot_communication::Communicate::Request &req, incare_human_robot_communication::Communicate::Response &resp);
 
 	/// \brief `main` for a callback thread
 	void callbackThreadHandler();
@@ -135,6 +142,11 @@ private:
 
 	/// \brief Only for debugging purposes
 	ros::ServiceServer srv_switch_debug_sfm_;
+
+	/// \brief Service server for 'verbal' communication via ROS
+	ros::ServiceServer srv_communicate_;
+	/// \brief Database for 'voice'-alike commands recognition
+	static incare::communication::RobotCommands voice_robot_;
 
 };
 

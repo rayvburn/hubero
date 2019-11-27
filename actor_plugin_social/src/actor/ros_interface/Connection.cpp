@@ -16,6 +16,9 @@
 namespace actor {
 namespace ros_interface {
 
+// declaration of a static variable(s) - database is shared among actors
+incare::communication::RobotCommands Connection::voice_robot_;
+
 // ------------------------------------------------------------------- //
 
 Connection::Connection()
@@ -65,6 +68,18 @@ void Connection::initServices() {
 
 	srv_switch_debug_sfm_= nh_ptr_->advertiseService(namespace_ + "/debug_sfm", 	&Connection::srvSetDebugSFMCallback, this);
 
+	srv_communicate_	= nh_ptr_->advertiseService(namespace_ + "/communicate", 	&Connection::srvCommunicateCallback, this);
+
+
+	std::cout << "\n\n\nTESTING\n\n\n";
+	for (size_t i = 0; i < voice_robot_.getDatabase().size(); i++) {
+		for (size_t j = 0; j < voice_robot_.getDatabase().at(i).size(); j++) {
+			std::cout << voice_robot_.getDatabase().at(i).at(j) << "\t";
+		}
+		std::cout << "\n";
+	}
+	std::cout << "\n\n\nEND\n\n\n";
+
 }
 
 // ------------------------------------------------------------------- //
@@ -84,21 +99,21 @@ void Connection::startCallbackProcessingThread() {
 
 // ------------------------------------------------------------------- //
 
-bool Connection::prepareForTeleoperation() {
-
-	// first check if NodeHandle pointer was set
-	if ( nh_ptr_ == nullptr ) {
-		return (false);
-	}
-	// no thread termination possibility (unless !ros::ok() )
-	callback_thread_ = std::thread( std::bind(&Connection::callbackThreadHandler, this) );
-
-	// version with thread termination possibility
-//	callback_thread_ = std::thread( std::bind(&Connection::callbackThreadHandler, this), std::move(future_obj_) );
-
-	return (true);
-
-}
+//bool Connection::prepareForTeleoperation() {
+//
+//	// first check if NodeHandle pointer was set
+//	if ( nh_ptr_ == nullptr ) {
+//		return (false);
+//	}
+//	// no thread termination possibility (unless !ros::ok() )
+//	callback_thread_ = std::thread( std::bind(&Connection::callbackThreadHandler, this) );
+//
+//	// version with thread termination possibility
+////	callback_thread_ = std::thread( std::bind(&Connection::callbackThreadHandler, this), std::move(future_obj_) );
+//
+//	return (true);
+//
+//}
 
 // ------------------------------------------------------------------- //
 
@@ -233,6 +248,27 @@ bool Connection::srvSetDebugSFMCallback(std_srvs::SetBool::Request &req, std_srv
 	}
 
 	resp.success = true;
+	return (true);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Connection::srvCommunicateCallback(incare_human_robot_communication::Communicate::Request &req, incare_human_robot_communication::Communicate::Response &resp) {
+
+	std::cout << "\nsrvCommunicateCallback()" << "\t" << namespace_ << "\n" << std::endl;
+
+	//	req.str
+
+	//	std::vector<std::string> db;
+//	for (size_t i = 0; i < db.size(); i++) {
+//		db.at(i)
+//	}
+//	if (s1.find(s2) != std::string::npos) {
+//
+//	}
+
+	resp.str = "TEST_RESP";
 	return (true);
 
 }
