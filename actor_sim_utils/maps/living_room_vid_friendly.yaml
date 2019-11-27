@@ -1,5 +1,6 @@
 #roslaunch pgm_map_creator request_publisher.launch map_name:=living_room_vid_friendly xmin:=-5.75 xmax:=+8.5 ymin:=-6.5 ymax:=+6.5 resolution:=0.02
-image: /home/rayvburn/ros_workspace/ws_people_sim/src/gazebo_ros_people_sim/actor_sim_utils/maps/living_room_vid_friendly.pgm
+#/home/rayvburn/ros_workspace/ws_people_sim/src/gazebo_ros_people_sim/actor_sim_utils/maps/living_room_vid_friendly.pgm
+image: living_room_vid_friendly.pgm
 resolution: 0.020000
 origin: [-5.750000, -6.500000, 0.000000]
 negate: 0
