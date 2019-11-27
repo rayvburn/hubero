@@ -17,18 +17,15 @@
   <build_depend>rospy</build_depend>
   <build_depend>actor_sim_utils</build_depend>
   <build_depend>actor_sim_srv</build_depend>
-  <!-- <build_depend>social_force_model</build_depend>  -->
-  <!-- <build_depend>grid_map_ros</build_depend> -->
 
   <exec_depend>roscpp</exec_depend>
   <exec_depend>actor_sim_utils</exec_depend>
   <exec_depend>actor_sim_srv</exec_depend>
-  <!-- <exec_depend>social_force_model</exec_depend> -->
-  <!-- <exec_depend>grid_map_ros</exec_depend> -->
 
   <depend>actor_global_plan</depend>
   <depend>std_srvs</depend>
   <depend>visualization_msgs</depend> <!-- SFM visualization -->
+  <depend>incare_human_robot_communication</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
