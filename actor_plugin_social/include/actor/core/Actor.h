@@ -128,6 +128,9 @@ public:
 
 	/* SCROLL DOWN for a `setNewTarget()` template */
 
+	/// \brief Calls `target_manager_` method to evaluate the `target_reached` flag.
+	bool isTargetReached();
+
 	/// \brief Method to set new target for actor - object's name
 	/// \note Object tracking will not run properly when a static
 	/// obstacle (the one marked on the actor global costmap) is selected

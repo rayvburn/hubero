@@ -323,6 +323,12 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 
 // ------------------------------------------------------------------- //
 
+bool Actor::isTargetReached() {
+	return (target_manager_.isTargetReached());
+}
+
+// ------------------------------------------------------------------- //
+
 bool Actor::followObject(const std::string &object_name) {
 
 	if ( target_manager_.followObject(object_name) ) {

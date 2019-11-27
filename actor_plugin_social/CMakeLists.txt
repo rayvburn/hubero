@@ -56,6 +56,7 @@ add_library(actor_core
   include/actor/core/Target.h
   include/actor/core/LieDownHelper.h
   include/actor/core/Path.h
+  include/actor/core/Voice.h
 
   src/actor/core/Actor.cpp 
   src/actor/core/CommonInfo.cpp 
@@ -63,6 +64,7 @@ add_library(actor_core
   src/actor/core/Target.cpp
   src/actor/core/LieDownHelper.cpp
   src/actor/core/Path.cpp
+  src/actor/core/Voice.cpp
 
 )
 
