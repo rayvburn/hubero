@@ -124,6 +124,7 @@ void ParamLoader::loadActorParams(const std::shared_ptr<ros::NodeHandle> nh_ptr)
 	// - - - - - - - - - - - - - - - - - - - - - - - - -
 	// general section
 
+	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "general/global_frame_name", params_actor_.global_frame_name) ) { }
 	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "general/animation_factor", params_actor_.animation_factor) ) { }
 	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "general/animation_speed_rotation", params_actor_.animation_speed_rotation) ) { }
 	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "general/target_tolerance", params_actor_.target_tolerance) ) { }

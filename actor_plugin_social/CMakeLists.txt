@@ -68,6 +68,11 @@ add_library(actor_core
 
 )
 
+add_library(actor_frame
+  include/actor/FrameGlobal.h
+  src/actor/FrameGlobal.cpp
+)
+
 add_library(actor_inflation
   
   include/actor/inflation/Box.h
@@ -159,8 +164,14 @@ target_link_libraries(actor_ros
 
 	# TODO: this issue must be fixed
 	/home/rayvburn/ros_workspace/ws_people_sim/src/incare_human_robot_communication/lib/libincare_human_robot_communication.so
+
+  # link common library
+  actor_frame
 	
 )
+target_link_libraries(actor_inflation actor_frame)
+target_link_libraries(actor_ros actor_frame)
+
 
 #add_library(enums include/Enums.h) # (header only) -> DEPRECATED
 

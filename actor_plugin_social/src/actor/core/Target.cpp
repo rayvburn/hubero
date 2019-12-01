@@ -387,7 +387,7 @@ bool Target::chooseNewTarget() {
 
 			// check if model's bounding box contains target point
 			if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), new_target) ) {
-				std::cout << "chooseNewTarget() - selection failed -> model containing target's pos: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
+				std::cout << "chooseNewTarget() - selection failed -> model containing the temporary `target` position: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
 				std::cout << std::endl;
 				new_target = target_; // find another
 				continue;
@@ -404,7 +404,7 @@ bool Target::chooseNewTarget() {
 			if ( !found_safe ) {
 				start_safe = pose_world_ptr_->Pos(); // not found - bring back the world position - TROUBLE on the way!
 				//std::cout << "\tNOT APPLIED" << std::endl;
-				std::cout << "[ERROR] actor's global planner cannot find a valid path because the actor's position has a high cost according to the costmap. System is probably stuck now :)" << std::endl;
+				std::cout << "[ERROR] chooseNewTarget - actor's global planner cannot find a valid path because the actor's position has a high cost according to the costmap. System is probably stuck now :)" << std::endl;
 			} else {
 				//std::cout << "\tAPPLIED!" << std::endl;
 			}
@@ -485,7 +485,7 @@ bool Target::generatePathPlan(const ignition::math::Vector3d &start, const ignit
 	// repeat up to 10 times (more than 1 execution will be performed only when planner is busy)
 	while ( tries_num++ <= 10 ) {
 
-		std::cout << "\n\n\n\n\n[generatePathPlan] Starting iteration number " << tries_num << std::endl;
+		std::cout << "[generatePathPlan] Starting iteration number: " << tries_num << std::endl;
 
 		// try to make a plan
 		status = global_planner_.makePlan(start, target_to_be);;
@@ -494,7 +494,7 @@ bool Target::generatePathPlan(const ignition::math::Vector3d &start, const ignit
 		switch (status) {
 
 		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_SUCCESSFUL):
-			std::cout << "\n\n\n[generatePathPlan] Global planning successfull\n\n\n" << std::endl;
+			std::cout << "[generatePathPlan] Global planning successful!" << std::endl;
 
 			has_global_plan_ = true;
 			has_new_path_ = true;
@@ -502,21 +502,21 @@ bool Target::generatePathPlan(const ignition::math::Vector3d &start, const ignit
 			break;
 
 		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_FAILED):
-			// TODO: check if within map bounds
-			std::cout << "\n\n\n[generatePathPlan] Global planning failed\n\n\n" << std::endl;
+			// TODO: check if within map bounds (solved in pre-processing - proper points selected)
+			std::cout << "[generatePathPlan] Global planning failed" << std::endl;
 			return (false);
 			break;
 
 		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_BUSY):
 			// TODO: debug this
-			std::cout << "\n\n\n[generatePathPlan] OOPS, need to wait for the global planner...\n\n\n" << std::endl;
+			std::cout << "[generatePathPlan] Oops, need to wait for the global planner (busy)..." << std::endl;
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			continue;
 			break;
 
 		default:
 			// unexpected behavior
-			std::cout << "\n\n\n[generatePathPlan] UNEXPECTED BEHAVIOR\n\n\n" << std::endl;
+			std::cout << "[generatePathPlan] UNEXPECTED BEHAVIOUR" << std::endl;
 			return (false);
 			break;
 
@@ -525,7 +525,7 @@ bool Target::generatePathPlan(const ignition::math::Vector3d &start, const ignit
 	}
 
 	// if managed to get there then many tries were performed but planner is still busy
-	std::cout << "\n\n\n[generatePathPlan] PLANNER UNABLE TO PROCESS THE REQUEST\n\n\n" << std::endl;
+	std::cout << "[generatePathPlan] PLANNER WAS UNABLE TO PROCESS THE REQUEST" << std::endl;
 	return (false);
 
 }
@@ -588,7 +588,7 @@ bool Target::isTargetStillReachable() {
 				// check if model's bounding box contains target point
 				if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), target_) ) {
 
-					std::cout << "isTargetStillReachable()" << std::endl;
+					std::cout << "isTargetStillReachable() - NO!" << std::endl;
 					std::cout << "\ttarget: " << target_ << "\tmodel containing: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
 					std::cout << std::endl;
 					std::cout << std::endl;
@@ -970,81 +970,6 @@ std::tuple<bool, ignition::math::Vector3d> Target::findSafePositionAlongLine(con
 
 	}
 	return (std::make_tuple(false, ignition::math::Vector3d()));
-
-}
-
-// ------------------------------------------------------------------- //
-
-/// @note Must not be const because of call to GlobalPlan::getCost
-ignition::math::Vector3d Target::findReachableDirectionPoint(const ignition::math::Vector3d &pt_intersection,
-		const unsigned int &quarter) {
-
-	/*
-//	ignition::math::Vector3d v(nan, nan, nan);
-	ignition::math::Vector3d v(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
-	ignition::math::Vector3d v_temp = pt_intersection;
-	const double DELTA = 0.05;
-	double x_delta = 0.0;
-	double y_delta = 0.0;
-
-//	// I quarter
-//	pt_intersection.X( pt_intersection.X() - 0.05 );
-//	pt_intersection.Y( pt_intersection.Y() - 0.05 );
-//
-//	// II quarter
-//	pt_intersection.X( pt_intersection.X() + 0.05 );
-//	pt_intersection.Y( pt_intersection.Y() - 0.05 );
-//
-//	// III quarter
-//	pt_intersection.X( pt_intersection.X() + 0.05 );
-//	pt_intersection.Y( pt_intersection.Y() + 0.05 );
-//
-//	// IV quarter
-//	pt_intersection.X( pt_intersection.X() - 0.05 );
-//	pt_intersection.Y( pt_intersection.Y() + 0.05 );
-
-	// determine deltas based on direction of the line (see SetNewTarget method)
-	switch (quarter) {
-
-	case(1):
-		x_delta = -DELTA;
-		y_delta = -DELTA;
-		break;
-	case(2):
-		x_delta = +DELTA;
-		y_delta = -DELTA;
-		break;
-	case(3):
-		x_delta = +DELTA;
-		y_delta = +DELTA;
-		break;
-	case(4):
-		x_delta = -DELTA;
-		y_delta = +DELTA;
-		break;
-
-	}
-
-	// perform `num_tries` checks moving away from the intersection point
-	unsigned int num_tries = 100;
-	while (num_tries--) {
-
-		// check points located further and further away
-		v_temp.X(v_temp.X() + x_delta);
-		v_temp.Y(v_temp.Y() + y_delta);
-
-		// if cost is small enough - accept the point and break the loop
-		if ( global_planner_.getCost(v_temp.X(), v_temp.Y()) < 100 ) {
-			v = pt_intersection;
-			break;
-		}
-
-	}
-
-	return (v);
-	*/
-
-	return (ignition::math::Vector3d());
 
 }
 

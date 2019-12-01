@@ -12,6 +12,7 @@
 #include <actor_global_plan/MakeNavPlanFrame.h>
 #include <std_srvs/Trigger.h>
 #include <actor_global_plan/GetCost.h>
+#include <actor/FrameGlobal.h>
 
 namespace actor {
 namespace ros_interface {
@@ -46,6 +47,10 @@ void GlobalPlan::initialize(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_
 	srv_client_get_cost_ = nh_ptr_->serviceClient<actor_global_plan::GetCost>("ActorGlobalPlanner/GetCost");
 	waypoint_gap_ = gap;
 	frame_id_ = frame_id;
+
+	std::cout << "\n\n\n";
+	std::cout << "[GlobalPlan::init] actor::actor_global_frame_id: " << actor::FrameGlobal::getFrame() << std::endl;
+	std::cout << "\n\n\n";
 
 }
 
@@ -124,10 +129,14 @@ std::vector<geometry_msgs::PoseStamped> GlobalPlan::getPoses() const {
 
 nav_msgs::Path GlobalPlan::getPath() const {
 
-	// NOTE: path is definitely related to `map` coordinate system
+	std::cout << "\n\n\n";
+	std::cout << "[GlobalPlan::getPath] actor::actor_global_frame_id: " << actor::FrameGlobal::getFrame() << std::endl;
+	std::cout << "\n\n\n";
+
+	// NOTE: path is calculated in the 'actor' global coordinate system (usually `world`)
 	nav_msgs::Path path_msg;
 	path_msg.poses = path_;
-	path_msg.header.frame_id = "map";
+	path_msg.header.frame_id = actor::FrameGlobal::getFrame();
 	path_msg.header.stamp = ros::Time::now();
 	return (path_msg);
 
@@ -205,12 +214,12 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlanHandler(geometry_msgs::PoseStampe
 	ros::Time time_curr = ros::Time::now();
 
 	// fill start fields
-	nav_plan.request.start.header.frame_id = "world";
+	nav_plan.request.start.header.frame_id = actor::FrameGlobal::getFrame();
 	nav_plan.request.start.header.stamp = time_curr;
 	nav_plan.request.start.pose = start.pose;
 
 	// fill goal fields
-	nav_plan.request.goal.header.frame_id = "world";
+	nav_plan.request.goal.header.frame_id = actor::FrameGlobal::getFrame();
 	nav_plan.request.goal.header.stamp = time_curr;
 	nav_plan.request.goal.pose = goal.pose;
 
@@ -229,6 +238,14 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlanHandler(geometry_msgs::PoseStampe
 		target_reached_ = false;
 		waypoint_curr_ = 0;
 		//std::cout << "\tGoal is reachable, path size: " << path_.size() << std::endl;
+
+		// FIXME:
+		std::cout << "\n\n\n\n" << std::endl;
+		std::cout << "path frame: " << path_.at(0).header.frame_id << std::endl;
+		std::cout << "goal pose   x: " << goal.pose.position.x << "  y: " << goal.pose.position.y << std::endl;
+		std::cout << "path end    x: " << path_.at(path_.size() - 1).pose.position.x << "  y: " << path_.at(path_.size() - 1).pose.position.y << std::endl;
+		std::cout << "\n\n\n\n" << std::endl;
+
 		return (MakePlanStatus::GLOBAL_PLANNER_SUCCESSFUL);
 
 	} else {
@@ -238,13 +255,13 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlanHandler(geometry_msgs::PoseStampe
 		if ( nav_plan.response.error_message == "!GLOBAL_PLANNER_BUSY!" ) {
 
 			// planner busy now
-			std::cout << "Plan couldn't be calculated - planner is busy now" << std::endl;
+			std::cout << "[makePlanHandler] Plan cannot be calculated - planner is busy now" << std::endl;
 			return (MakePlanStatus::GLOBAL_PLANNER_BUSY);
 
 		} else {
 
 			// planner failed to make a valid plan
-			std::cout << "Plan couldn't be calculated, error message: " << nav_plan.response.error_message << std::endl;
+			std::cout << "[makePlanHandler] Plan cannot be calculated, error message: `" << nav_plan.response.error_message << "`" << std::endl;
 			return (MakePlanStatus::GLOBAL_PLANNER_FAILED);
 
 		}

@@ -8,6 +8,8 @@
 #ifndef INCLUDE_ACTOR_ENUMS_H_
 #define INCLUDE_ACTOR_ENUMS_H_
 
+#include <string>
+
 namespace actor {
 
 /// \brief Gazebo model ID for ActorPlugin objects
@@ -15,6 +17,11 @@ static constexpr unsigned int ACTOR_MODEL_TYPE_ID = 32771;
 
 /// \brief Gazebo model ID for static obstacle objects
 static constexpr unsigned int STATIC_OBSTACLE_MODEL_TYPE_ID = 3;
+
+/// \brief Name of the frame associated with the Gazebo world.
+/// \note Parameter value is assigned to this variable at startup.
+/// \note This is a global variable within the `actor` namespace.
+static std::string actor_global_frame_id = "_";
 
 // -------------------------
 

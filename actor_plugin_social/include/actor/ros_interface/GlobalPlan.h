@@ -19,6 +19,7 @@
 #include <vector>
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Path.h>
+#include "actor/core/Enums.h" // global frame id
 
 #include <stdint.h>
 

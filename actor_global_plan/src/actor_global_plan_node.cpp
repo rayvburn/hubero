@@ -59,8 +59,14 @@ static void SetInflationRadius(ros::NodeHandle &nh, const std::string &srv_ns);
 
 // transform listener ------------------------------------------------------------------------
 static tf::TransformListener* tf_listener_ptr_;
-static std::string frame = "map"; // "world";
+static std::string frame_planner = "map"; // global planner (and costmap) frame
 static tf2_ros::TransformBroadcaster* tf_broadcaster_ptr_;
+
+// actor -------------------------------------------------------------------------------------
+static std::string frame_actor_global = "map"; // "world" is default
+static bool setActorGlobalFrame(ros::NodeHandle &nh, const std::string &srv_ns);
+
+// helpers -----------------------------------------------------------------------------------
 static void SendTfBlank();
 geometry_msgs::PoseStamped transformPointToMap(double &x_world, double &y_world);
 geometry_msgs::PoseStamped transformPointToMap(geometry_msgs::PoseStamped &point);
@@ -102,7 +108,7 @@ int main(int argc, char** argv) {
 	// initialize broadcaster and send a blank TF (NOTE: it may be deleted if static_tf_publisher works OK, see below)
 	tf2_ros::TransformBroadcaster tf_broadcaster;
 	tf_broadcaster_ptr_ = &tf_broadcaster;
-	SendTfBlank(); // this is invoked just in case if `tf_static_publisher` did not start up before costmap initialization process
+//	SendTfBlank(); // this is invoked just in case if `tf_static_publisher` did not start up before costmap initialization process
 
 	// initialize global costmap
 	// NOTE: costmap 2d takes tf2_ros::Buffer in ROS Melodic, in Kinetic - tf::TransformListener
@@ -112,9 +118,9 @@ int main(int argc, char** argv) {
 
 
 	// initialize global planner
-	GlobalPlannerMultiFrame global_planner(std::string("global_planner"), &costmap_global, frame);
+	GlobalPlannerMultiFrame global_planner(std::string("global_planner"), &costmap_global, frame_planner);
 	glob_planner_ptr_ = &global_planner;
-
+	setActorGlobalFrame(nh, srv_ns);
 
 
 	// start plan making and cost getter services
@@ -151,14 +157,28 @@ static bool MakePlanSrv(actor_global_plan::MakeNavPlanFrame::Request& req, actor
 	// if global planner is not busy, let's try to find a path for a proper frame
 	glob_planner_ptr_->setFrameId(req.controlled_frame);
 
+	std::cout << "[MakePlanSrv] 1) start (frame): " << req.start.header.frame_id << "\tgoal (frame): " << req.goal.header.frame_id << std::endl;
+
 	// transform points
 	resp.plan_found = glob_planner_ptr_->makePlan(transformPointToMap(req.start),
 												  transformPointToMap(req.goal),
 												  path_);
 
+//	resp.plan_found = glob_planner_ptr_->makePlan(req.start, req.goal, path_);
+
+	std::cout << "[MakePlanSrv] 2) start (frame): " << req.start.header.frame_id << "\tgoal (frame): " << req.goal.header.frame_id << std::endl;
+
 	if ( resp.plan_found ) {
 
+		// transform points
+		geometry_msgs::PoseStamped pt_mod;
+		for ( unsigned int i = 0; i < path_.size(); i++ ) {
+			tf_listener_ptr_->transformPose(frame_actor_global, path_.at(i), pt_mod);
+			path_.at(i) = pt_mod;
+		}
 		resp.path = path_;
+		std::cout << "[MakePlanSrv] 3) path0 (frame): " << resp.path.at(0).header.frame_id << "\tpath1 (frame): " << resp.path.at(1).header.frame_id << std::endl;
+
 		ROS_INFO("Actor global planner made a plan consisting of %u points", static_cast<unsigned int>(resp.path.size()));
 
 	}
@@ -331,6 +351,21 @@ static void SetInflationRadius(ros::NodeHandle &nh, const std::string &srv_ns) {
 }
 
 /**
+ * @brief Loads the `actor/general/global_frame_name` parameter (if possible)
+ * @param nh
+ * @param srv_ns
+ */
+static bool setActorGlobalFrame(ros::NodeHandle &nh, const std::string &srv_ns) {
+
+	if ( !nh.getParam(srv_ns + "/actor/general/global_frame_name", frame_actor_global) ) {
+		ROS_ERROR("'global_frame_name' parameter could not be found, `world` will be treated as actors global frame");
+		return (false);
+	}
+	return (true);
+
+}
+
+/**
  * Transforms point from actor coordinate system (`world`) to `map` coordinate system
  * @param x_world
  * @param y_world
@@ -392,11 +427,11 @@ geometry_msgs::PoseStamped transformPointToMap(geometry_msgs::PoseStamped &point
 //	pose_map.pose.orientation.z += static_cast<double>(transform.getRotation().z());
 //	pose_map.pose.orientation.w += static_cast<double>(transform.getRotation().w());
 
-	std::cout << "\n" << std::endl;
-	std::cout << "position raw: " << point.pose.position << std::endl;
-//	std::cout << "tf: " << transform.getOrigin() << std::endl;
-	std::cout << "position new: " << pose_map.pose.position << std::endl;
-	std::cout << "\n" << std::endl;
+//	std::cout << "\n" << std::endl;
+//	std::cout << "position raw: " << point.pose.position << std::endl;
+////	std::cout << "tf: " << transform.getOrigin() << std::endl;
+//	std::cout << "position new: " << pose_map.pose.position << std::endl;
+//	std::cout << "\n" << std::endl;
 
 	return (pose_map);
 

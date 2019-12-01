@@ -6,7 +6,8 @@
     <!-- during restructurization this was removed: :$(find social_force_vis)/lib -->
     
     <env name="GAZEBO_PLUGIN_PATH" value="$(find actor_plugin_social)/lib:$(optenv GAZEBO_PLUGIN_PATH)"/>
-    
+    <env name="GAZEBO_MODEL_PATH" value="$(find actor_sim_utils)/models:$(optenv GAZEBO_MODEL_PATH)"/> <!-- 012 world extra files -->
+
     <!-- ====================== default values for parameters ================================== -->
     <arg name="world"       default="cafe_example"/>
     <arg name="world_file"  default="$(find actor_sim_utils)/worlds/$(arg world).world"/>
@@ -61,13 +62,42 @@
     <!-- ============================== load map =========================================== -->
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" output="screen" /> 
 
-    <!-- ======================== load global planner node ================================= -->
-    <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
+
     
     <!-- ========================= change parameters based on chosen world ================= -->
     <!-- inflation/bounding_type -> Box - 0, Circle - 1, Ellipse - 2, NoBounding - 3 -->
 
+    <group if="$(eval world == 'classroom')">
+        
+        <!-- PROBLEM: if a world has numbers in the name this section will be ommitted -->
+
+        <!-- ======================== load global planner node ================================= -->
+        <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> 
+            <!-- map image-based calculations - - -->
+            <arg name="world_map_tf" value="-0.26 -3.97 0.0 0.18534795 0.0 0.0"/>
+        </include>
+
+        <!-- Circle -->
+        <rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
+        <rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.02</rosparam>
+
+        <rosparam param="$(arg actor_params_ns)/general/world_bound_x">[-3.25, +3.80]</rosparam>
+        <rosparam param="$(arg actor_params_ns)/general/world_bound_y">[-6.00, +6.00]</rosparam>
+        <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">true</rosparam>
+
+        <rosparam param="$(arg sfm_params_ns)/world_dictionary/ignored_models">[ground_plane, sun, 012]</rosparam>
+        <rosparam param="$(arg sfm_params_ns)/algorithm/internal_force_factor">500.0</rosparam>
+        <rosparam param="$(arg sfm_params_ns)/algorithm/interaction_force_factor">500.0</rosparam>
+
+    </group>
+
     <group if="$(eval world == 'living_room_vid_friendly')">
+
+
+        <!-- ======================== load global planner node ================================= -->
+        <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
+
+
     	<!-- Ellipse
     	<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">2</rosparam>
     	<rosparam param="$(arg actor_params_ns)/inflation/ellipse">[{semi_major: 1.9, semi_minor: 1.2, offset_x: 0.35, offset_y: 0.0}]</rosparam>
@@ -88,11 +118,18 @@
         <rosparam param="$(arg sfm_params_ns)/algorithm/internal_force_factor">500.0</rosparam>
         <rosparam param="$(arg sfm_params_ns)/algorithm/interaction_force_factor">1000.0</rosparam>
 
+
     </group>
 
 
 
     <group if="$(eval world == 'parking')">
+
+
+        <!-- ======================== load global planner node ================================= -->
+        <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
+
+
     	<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
     	<rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.35</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/world_bound_x">[+20.5, -5.5]</rosparam>
@@ -100,11 +137,16 @@
         <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">false</rosparam>
         <rosparam param="$(arg sfm_params_ns)/world_dictionary/ignored_models">[ground_plane, sun]</rosparam>
         <rosparam param="$(arg sfm_params_ns)/algorithm/min_force">700.0</rosparam> <!-- to force a faster movement (lack of objects in space makes people walking slowly) -->
+
     </group>
 
 
 
     <group if="$(eval world == 'reading_room')">
+
+        <!-- ======================== load global planner node ================================= -->
+        <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
+
 
         <!-- Ellipse -->
         <rosparam param="$(arg actor_params_ns)/inflation/bounding_type">2</rosparam>
@@ -123,6 +165,7 @@
         <rosparam param="$(arg sfm_params_ns)/algorithm/internal_force_factor">100.0</rosparam>
         <rosparam param="$(arg sfm_params_ns)/algorithm/interaction_force_factor">250.0</rosparam>
 
+
     </group>
 
 
@@ -137,6 +180,9 @@
 
 
     <group if="$(eval world == 'cafe_example_cafe_tables')"> <!-- cafe_example_vid_friendly -->
+
+        <!-- ======================== load global planner node ================================= -->
+        <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
 
     	<!-- NoBound 
 	    <rosparam param="$(arg actor_params_ns)/inflation/bounding_type">3</rosparam>

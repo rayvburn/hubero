@@ -10,6 +10,7 @@ initialization:
 
 general:
 
+    global_frame_name: "world"          # frame of reference for actors (should be associated to Gazebo world center; usually "world")
     animation_factor: 4.5               # how fast the animation is played
     animation_speed_rotation: 0.0007    # dist_traveled
     target_tolerance: 1.25              # in meters, the smaller tolerance the bigger probability that actor will step into some obstacle

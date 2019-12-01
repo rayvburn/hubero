@@ -9,7 +9,7 @@
 #include <actor/inflation/Box.h>
 #include <math.h>
 #include <iostream> // debugging
-
+#include "actor/FrameGlobal.h" // global frame id
 
 namespace actor {
 namespace inflation {
@@ -119,7 +119,7 @@ visualization_msgs::Marker Box::getMarkerConversion() const {
 
 	visualization_msgs::Marker marker;
 
-	marker.header.frame_id = "map";
+	marker.header.frame_id = actor::FrameGlobal::getFrame();
 	marker.header.stamp = ros::Time();
 	marker.ns = "test";
 	// marker.id = marker_arr_index;

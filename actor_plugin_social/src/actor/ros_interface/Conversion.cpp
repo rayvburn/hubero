@@ -13,11 +13,11 @@ namespace ros_interface {
 // ------------------------------------------------------------------- //
 // helper functions -------------------------------------------------- //
 // ------------------------------------------------------------------- //
-geometry_msgs::PoseStamped Conversion::convertIgnVectorToPoseStamped (const ignition::math::Vector3d &pos, bool zero_height) {
+geometry_msgs::PoseStamped Conversion::convertIgnVectorToPoseStamped (const ignition::math::Vector3d &pos, const std::string &frame, bool zero_height) {
 
 	geometry_msgs::PoseStamped pose_stamped;
 
-	pose_stamped.header.frame_id = "map"; // world?
+	pose_stamped.header.frame_id = frame;
 	pose_stamped.header.stamp = ros::Time::now();
 	pose_stamped.pose.position.x = pos.X();
 	pose_stamped.pose.position.y = pos.Y();
@@ -37,11 +37,11 @@ geometry_msgs::PoseStamped Conversion::convertIgnVectorToPoseStamped (const igni
 
 // ------------------------------------------------------------------- //
 
-geometry_msgs::PoseStamped Conversion::convertIgnPoseToPoseStamped (const ignition::math::Pose3d &pose, bool zero_height) {
+geometry_msgs::PoseStamped Conversion::convertIgnPoseToPoseStamped (const ignition::math::Pose3d &pose, const std::string &frame, bool zero_height) {
 
 	geometry_msgs::PoseStamped pose_stamped;
 
-	pose_stamped.header.frame_id = "map"; // world?
+	pose_stamped.header.frame_id = frame;
 	pose_stamped.header.stamp = ros::Time::now();
 	pose_stamped.pose.position.x = pose.Pos().X();
 	pose_stamped.pose.position.y = pose.Pos().Y();

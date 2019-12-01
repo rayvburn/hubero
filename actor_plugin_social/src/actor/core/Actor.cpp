@@ -49,13 +49,28 @@ void Actor::initRosInterface() {
 	params_ptr_->setBehaviourParamsPrefix("beh");
 	params_ptr_->loadParameters(node_.getNodeHandlePtr());
 
+	// assign the parameter value to the `actor_global_frame_id`;
+	// the parameter is also used by global plan ROS node
+	frame_.setFrame(params_ptr_->getActorParams().global_frame_name);
+
+	std::cout << "\n\n\n";
+	std::cout << "frame_.getFrame(): " << frame_.getFrame() << std::endl;
+	std::cout << "param global_frame_name: " << params_ptr_->getActorParams().global_frame_name << std::endl;
+	std::cout << "\n\n\n";
+
 	/* initialize SFM visualization instances */
+	sfm_vis_arrow_.init(frame_.getFrame());
 	sfm_vis_arrow_.setParameters(1.0f, params_ptr_->getSfmParams().max_force);
+
+	sfm_vis_text_.init(frame_.getFrame());
 	sfm_vis_text_.setColor(0.9f, 0.9f, 0.9f, 0.95f);
 	sfm_vis_text_.setParameters(0.2f);
+
+	sfm_vis_line_list_.init(frame_.getFrame());
 	sfm_vis_line_list_.setColor(1.0f, 1.0f, 0.0f, 0.7f);
 
 	if ( params_ptr_->getSfmVisParams().publish_grid ) {
+		sfm_vis_grid_.init(frame_.getFrame());
 		sfm_vis_grid_.setParameters(1.0f, params_ptr_->getSfmParams().max_force);
 		sfm_vis_grid_.setColor(0.2f, 1.0f, 0.0f, 0.7f);
 		/* make grid artificially bigger than a world's bounds;

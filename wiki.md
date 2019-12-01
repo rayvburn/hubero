@@ -118,6 +118,8 @@ If `target_tolerance: 1.25` is too small, especially smaller than bounding figur
 
 ## Examplary target queue (in a world file)
 
+Point coordinates are treated as expressed in the "world" coordinate system.
+
 <plugin name='actor1_plugin' filename='libactor_plugin_social.so'>
         <target>
           <point>+4.0 -4.0 0.0</point>

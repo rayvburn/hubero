@@ -21,6 +21,7 @@
 #include <ros/ros.h>
 #include <ros/service_server.h>
 #include <ros/callback_queue.h>
+#include <tf/transform_listener.h>	// ROS Kinetic
 
 // Actor
 #include <actor_sim_srv/FollowObject.h>
@@ -30,6 +31,8 @@
 #include <actor_sim_srv/GetVelocity.h>
 #include <actor_sim_srv/LieDown.h>
 #include <actor_sim_srv/LieDownName.h>
+
+#include <actor/ros_interface/Conversion.h>
 
 #include <incare_human_robot_communication/Database.h>
 #include <incare_human_robot_communication/Communicate.h>
@@ -108,12 +111,19 @@ private:
 	/// nullptr by default
 	std::shared_ptr<ros::NodeHandle> nh_ptr_;
 
+	// TODO
+	tf::TransformListener* tf_listener_ptr_; // looks for a static tf, no need for a longer buffer
+
 	/// \brief Namespace in which all services will be available (actor's name)
 	std::string namespace_;
 
 	/// \brief Pointer to an Actor object
 	/// nullptr by default
 	std::weak_ptr<actor::core::Actor> actor_ptr_;
+
+	// TODO:
+	Conversion conversion_;
+
 
 	/// \brief ROS Callback queue to process messages;
 	/// typical pointer just like NodeHandle requires

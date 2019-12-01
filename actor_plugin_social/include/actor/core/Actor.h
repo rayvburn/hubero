@@ -33,6 +33,7 @@
 #include <actor/ros_interface/Stream.h>
 #include <fuzz/Processor.h>
 #include <fuzz/SocialConductor.h>
+#include <actor/FrameGlobal.h>
 
 // Visualization
 #include <sfm/vis/Arrow.h>
@@ -384,6 +385,9 @@ private:
     /// \brief Helper class storing actor's path
     /// and distance to the closest obstacle
     Path path_storage_{0.05}; // resolution
+
+    /// \brief Stores name of the global frame of Gazebo world
+    actor::FrameGlobal frame_;
 
 public:
 

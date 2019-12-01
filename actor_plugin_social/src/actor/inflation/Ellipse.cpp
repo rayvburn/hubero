@@ -10,6 +10,7 @@
 #include <ignition/math/Quaternion.hh>
 #include <math.h> // fabs(), pow(), atan2(), tan()
 #include <sfm/core/SFMDebug.h>
+#include "actor/FrameGlobal.h" // global frame id
 
 namespace actor {
 namespace inflation {
@@ -308,7 +309,7 @@ visualization_msgs::Marker Ellipse::getMarkerConversion() const {
 
 	visualization_msgs::Marker marker;
 
-	marker.header.frame_id = "map";
+	marker.header.frame_id = actor::FrameGlobal::getFrame();
 	//marker.header.stamp = 0.0;
 	marker.ns = "test"; // TODO: change ns name
 	marker.id = 0;

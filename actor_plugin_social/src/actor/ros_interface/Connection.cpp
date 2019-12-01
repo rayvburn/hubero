@@ -10,6 +10,7 @@
 #include <ignition/math/Vector3.hh>
 #include <ignition/math/Pose3.hh>
 #include <sfm/core/SFMDebug.h>
+#include <actor/FrameGlobal.h>
 
 // - - - - - - - - - - - - - - - -
 
@@ -70,6 +71,8 @@ void Connection::initServices() {
 
 	srv_communicate_	= nh_ptr_->advertiseService(namespace_ + "/communicate", 	&Connection::srvCommunicateCallback, this);
 
+	// FIXME: unique ptr
+	tf_listener_ptr_ = new tf::TransformListener(ros::Duration(5.1));
 
 	std::cout << "\n\n\nTESTING\n\n\n";
 	for (size_t i = 0; i < voice_robot_.getDatabase().size(); i++) {
@@ -79,6 +82,10 @@ void Connection::initServices() {
 		std::cout << "\n";
 	}
 	std::cout << "\n\n\nEND\n\n\n";
+
+	std::cout << "\n\n\n";
+	std::cout << "[Connection::init] actor::actor_global_frame_id: " << actor::actor_global_frame_id << std::endl;
+	std::cout << "\n\n\n";
 
 }
 
@@ -120,9 +127,34 @@ void Connection::startCallbackProcessingThread() {
 bool Connection::srvSetGoalCallback(actor_sim_srv::SetGoal::Request &req, actor_sim_srv::SetGoal::Response &resp) {
 
 	std::cout << "\nsrvSetGoalCallback()" << "\t" << namespace_ << "\n" << std::endl;
+
+	// Preprocessing step - assert point expressed in the `world` frame;
+	// Whatever frame the goal point is expressed in, it will be converted
+	// into ACTOR_GLOBAL_FRAME_ID.
+	// NOTE: all internal containers (path, target) use the ACTOR_GLOBAL_FRAME_ID
+	// as a reference (i.e. store points expressed in ACTOR_GLOBAL_FRAME_ID).
+	geometry_msgs::PoseStamped pose_global;
+
+	// this is not necessary if point is defined in the actor global frame
+	tf_listener_ptr_->transformPose(actor::FrameGlobal::getFrame(),
+									conversion_.convertIgnVectorToPoseStamped(ignition::math::Vector3d(req.x_pos, req.y_pos, 0.0), req.frame),
+									pose_global);
+
+	std::cout << "\n" << std::endl;
+	std::cout << "position raw: " << req.x_pos << "\t" << req.y_pos << std::endl;
+//	std::cout << "tf: " << transform.getOrigin() << std::endl;
+	std::cout << "position new: " << pose_global.pose.position << std::endl;
+	std::cout << "\n" << std::endl;
+
+	//TODO:
+
 	ignition::math::Pose3d pose;
-	pose.Pos().X() = static_cast<double>(req.x_pos);
-	pose.Pos().Y() = static_cast<double>(req.y_pos);
+//	pose.Pos().X() = static_cast<double>(req.x_pos);
+//	pose.Pos().Y() = static_cast<double>(req.y_pos);
+
+	pose.Pos().X() = static_cast<double>(pose_global.pose.position.x);
+	pose.Pos().Y() = static_cast<double>(pose_global.pose.position.y);
+
 
 	// take ownership of the Actor shared_ptr
 	resp.flag = actor_ptr_.lock()->setNewTarget(pose);
@@ -289,7 +321,10 @@ void Connection::callbackThreadHandler() {
 
 // ------------------------------------------------------------------- //
 
-Connection::~Connection() { }
+Connection::~Connection() {
+	// FIXME:
+	delete tf_listener_ptr_;
+}
 
 // ------------------------------------------------------------------- //
 
