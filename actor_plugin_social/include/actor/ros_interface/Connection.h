@@ -121,10 +121,6 @@ private:
 	/// nullptr by default
 	std::weak_ptr<actor::core::Actor> actor_ptr_;
 
-	// TODO:
-	Conversion conversion_;
-
-
 	/// \brief ROS Callback queue to process messages;
 	/// typical pointer just like NodeHandle requires
 	ros::CallbackQueue cb_queue_;
@@ -155,6 +151,7 @@ private:
 
 	/// \brief Service server for 'verbal' communication via ROS
 	ros::ServiceServer srv_communicate_;
+
 	/// \brief Database for 'voice'-alike commands recognition
 	static incare::communication::RobotCommands voice_robot_;
 

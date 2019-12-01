@@ -7,6 +7,7 @@
 
 #include <actor/core/Path.h>
 #include "actor/FrameGlobal.h" // global frame id
+#include <actor/ros_interface/Conversion.h>
 
 namespace actor {
 namespace core {
@@ -28,7 +29,7 @@ bool Path::collect(const ignition::math::Vector3d &pos, const double &distance_t
 
 		last_valid_pos_ = pos;
 
-		path_.update(converter_.convertIgnVectorToPoseStamped(pos, actor::FrameGlobal::getFrame(), true));
+		path_.update(actor::ros_interface::Conversion::convertIgnVectorToPoseStamped(pos, actor::FrameGlobal::getFrame(), true));
 		dists_.update(distance_to_closest_obstacle);
 
 		updated_ = true;
@@ -59,10 +60,6 @@ bool Path::isUpdated() const {
 // ------------------------------------------------------------------- //
 
 nav_msgs::Path Path::getPath() const {
-
-	std::cout << "\n\n\n";
-	std::cout << "[Path::getPath()] actor::actor_global_frame_id: " << actor::FrameGlobal::getFrame() << std::endl;
-	std::cout << "\n\n\n";
 
 	nav_msgs::Path path_msg;
 	path_msg.poses = path_.get();

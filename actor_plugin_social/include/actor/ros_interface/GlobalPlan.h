@@ -8,8 +8,6 @@
 #ifndef INCLUDE_ACTOR_ROS_INTERFACE_GLOBALPLAN_H_
 #define INCLUDE_ACTOR_ROS_INTERFACE_GLOBALPLAN_H_
 
-
-#include <actor/ros_interface/Conversion.h>
 #include <ros/ros.h>
 #include <memory>
 #include <chrono>	// time getter
@@ -19,7 +17,6 @@
 #include <vector>
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Path.h>
-#include "actor/core/Enums.h" // global frame id
 
 #include <stdint.h>
 
@@ -191,11 +188,6 @@ private:
 	 * @brief Vector of poses
 	 */
 	std::vector<geometry_msgs::PoseStamped> path_;
-
-	/**
-	 * @brief Helper class providing some conversions to/from geometry_msgs::PoseStamped
-	 */
-	actor::ros_interface::Conversion converter_;
 
 	/**
 	 * @brief Helper variable for iteration through waypoints vector; waypoint index is increased by its value

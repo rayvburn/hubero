@@ -20,11 +20,6 @@ MarkerBase::MarkerBase(): frame_("map") { }
 
 void MarkerBase::init(const std::string &parent_frame) {
 	frame_ = parent_frame;
-
-	std::cout << "\n\n\n";
-	std::cout << "[MarkerBase::init] actor::actor_global_frame_id/frame_: " << frame_ << std::endl;
-	std::cout << "\n\n\n";
-
 }
 
 // ------------------------------------------------------------------- //

@@ -22,8 +22,7 @@ incare::communication::RobotCommands Connection::voice_robot_;
 
 // ------------------------------------------------------------------- //
 
-Connection::Connection()
-{
+Connection::Connection(): tf_listener_ptr_(NULL) {
 
 	// threading - get std::future object out of std::promise
 //	future_obj_ = exit_signal_.get_future();
@@ -83,10 +82,6 @@ void Connection::initServices() {
 	}
 	std::cout << "\n\n\nEND\n\n\n";
 
-	std::cout << "\n\n\n";
-	std::cout << "[Connection::init] actor::actor_global_frame_id: " << actor::actor_global_frame_id << std::endl;
-	std::cout << "\n\n\n";
-
 }
 
 // ------------------------------------------------------------------- //
@@ -137,24 +132,12 @@ bool Connection::srvSetGoalCallback(actor_sim_srv::SetGoal::Request &req, actor_
 
 	// this is not necessary if point is defined in the actor global frame
 	tf_listener_ptr_->transformPose(actor::FrameGlobal::getFrame(),
-									conversion_.convertIgnVectorToPoseStamped(ignition::math::Vector3d(req.x_pos, req.y_pos, 0.0), req.frame),
+									actor::ros_interface::Conversion::convertIgnVectorToPoseStamped(ignition::math::Vector3d(req.x_pos, req.y_pos, 0.0), req.frame),
 									pose_global);
 
-	std::cout << "\n" << std::endl;
-	std::cout << "position raw: " << req.x_pos << "\t" << req.y_pos << std::endl;
-//	std::cout << "tf: " << transform.getOrigin() << std::endl;
-	std::cout << "position new: " << pose_global.pose.position << std::endl;
-	std::cout << "\n" << std::endl;
-
-	//TODO:
-
 	ignition::math::Pose3d pose;
-//	pose.Pos().X() = static_cast<double>(req.x_pos);
-//	pose.Pos().Y() = static_cast<double>(req.y_pos);
-
 	pose.Pos().X() = static_cast<double>(pose_global.pose.position.x);
 	pose.Pos().Y() = static_cast<double>(pose_global.pose.position.y);
-
 
 	// take ownership of the Actor shared_ptr
 	resp.flag = actor_ptr_.lock()->setNewTarget(pose);

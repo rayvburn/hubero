@@ -53,11 +53,6 @@ void Actor::initRosInterface() {
 	// the parameter is also used by global plan ROS node
 	frame_.setFrame(params_ptr_->getActorParams().global_frame_name);
 
-	std::cout << "\n\n\n";
-	std::cout << "frame_.getFrame(): " << frame_.getFrame() << std::endl;
-	std::cout << "param global_frame_name: " << params_ptr_->getActorParams().global_frame_name << std::endl;
-	std::cout << "\n\n\n";
-
 	/* initialize SFM visualization instances */
 	sfm_vis_arrow_.init(frame_.getFrame());
 	sfm_vis_arrow_.setParameters(1.0f, params_ptr_->getSfmParams().max_force);

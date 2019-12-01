@@ -13,6 +13,7 @@
 #include <std_srvs/Trigger.h>
 #include <actor_global_plan/GetCost.h>
 #include <actor/FrameGlobal.h>
+#include <actor/ros_interface/Conversion.h>
 
 namespace actor {
 namespace ros_interface {
@@ -72,8 +73,8 @@ bool GlobalPlan::isCostmapInitialized() {
 
 GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Vector3d &start, const ignition::math::Vector3d &goal) {
 
-	geometry_msgs::PoseStamped start_pose = converter_.convertIgnVectorToPoseStamped(start);
-	geometry_msgs::PoseStamped goal_pose  = converter_.convertIgnVectorToPoseStamped(goal);
+	geometry_msgs::PoseStamped start_pose = actor::ros_interface::Conversion::convertIgnVectorToPoseStamped(start);
+	geometry_msgs::PoseStamped goal_pose  = actor::ros_interface::Conversion::convertIgnVectorToPoseStamped(goal);
 
 	// forcing planar calculations
 	start_pose.pose.position.z = 0.0;
@@ -87,8 +88,8 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Vector3d &
 
 GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Pose3d &start, const ignition::math::Pose3d &goal) {
 
-	geometry_msgs::PoseStamped start_pose = converter_.convertIgnPoseToPoseStamped(start);
-	geometry_msgs::PoseStamped goal_pose  = converter_.convertIgnPoseToPoseStamped(goal);
+	geometry_msgs::PoseStamped start_pose = actor::ros_interface::Conversion::convertIgnPoseToPoseStamped(start);
+	geometry_msgs::PoseStamped goal_pose  = actor::ros_interface::Conversion::convertIgnPoseToPoseStamped(goal);
 
 	// forcing planar calculations
 	start_pose.pose.position.z = 0.0;
@@ -102,8 +103,8 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Pose3d &st
 
 GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Pose3d &start, const ignition::math::Vector3d &goal) {
 
-	geometry_msgs::PoseStamped start_pose = converter_.convertIgnPoseToPoseStamped(start);
-	geometry_msgs::PoseStamped goal_pose  = converter_.convertIgnVectorToPoseStamped(goal);
+	geometry_msgs::PoseStamped start_pose = actor::ros_interface::Conversion::convertIgnPoseToPoseStamped(start);
+	geometry_msgs::PoseStamped goal_pose  = actor::ros_interface::Conversion::convertIgnVectorToPoseStamped(goal);
 
 	// forcing planar calculations
 	start_pose.pose.position.z = 0.0;
@@ -128,10 +129,6 @@ std::vector<geometry_msgs::PoseStamped> GlobalPlan::getPoses() const {
 // ------------------------------------------------------------------- //
 
 nav_msgs::Path GlobalPlan::getPath() const {
-
-	std::cout << "\n\n\n";
-	std::cout << "[GlobalPlan::getPath] actor::actor_global_frame_id: " << actor::FrameGlobal::getFrame() << std::endl;
-	std::cout << "\n\n\n";
 
 	// NOTE: path is calculated in the 'actor' global coordinate system (usually `world`)
 	nav_msgs::Path path_msg;
@@ -158,11 +155,11 @@ ignition::math::Pose3d GlobalPlan::getWaypoint(const size_t &index) {
 		path_index = path_.size() - 1;
 		break;
 	case(GLOBAL_PLAN_GET_WAYPOINT_PATH_EMPTY):
-		return (converter_.convertPoseStampedToIgnPose(geometry_msgs::PoseStamped()));
+		return (actor::ros_interface::Conversion::convertPoseStampedToIgnPose(geometry_msgs::PoseStamped()));
 		break;
 	}
 
-	return (converter_.convertPoseStampedToIgnPose(path_.at(path_index)));
+	return (actor::ros_interface::Conversion::convertPoseStampedToIgnPose(path_.at(path_index)));
 
 }
 
@@ -183,11 +180,11 @@ ignition::math::Pose3d GlobalPlan::getWaypoint() {
 		index = path_.size() - 1;
 		break;
 	case(GLOBAL_PLAN_GET_WAYPOINT_PATH_EMPTY):
-		return (converter_.convertPoseStampedToIgnPose(geometry_msgs::PoseStamped()));
+		return (actor::ros_interface::Conversion::convertPoseStampedToIgnPose(geometry_msgs::PoseStamped()));
 		break;
 	}
 
-	return (converter_.convertPoseStampedToIgnPose(path_.at(index)));
+	return (actor::ros_interface::Conversion::convertPoseStampedToIgnPose(path_.at(index)));
 
 }
 
@@ -238,14 +235,6 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlanHandler(geometry_msgs::PoseStampe
 		target_reached_ = false;
 		waypoint_curr_ = 0;
 		//std::cout << "\tGoal is reachable, path size: " << path_.size() << std::endl;
-
-		// FIXME:
-		std::cout << "\n\n\n\n" << std::endl;
-		std::cout << "path frame: " << path_.at(0).header.frame_id << std::endl;
-		std::cout << "goal pose   x: " << goal.pose.position.x << "  y: " << goal.pose.position.y << std::endl;
-		std::cout << "path end    x: " << path_.at(path_.size() - 1).pose.position.x << "  y: " << path_.at(path_.size() - 1).pose.position.y << std::endl;
-		std::cout << "\n\n\n\n" << std::endl;
-
 		return (MakePlanStatus::GLOBAL_PLANNER_SUCCESSFUL);
 
 	} else {

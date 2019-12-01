@@ -8,7 +8,6 @@
 #ifndef INCLUDE_ACTOR_CORE_PATH_H_
 #define INCLUDE_ACTOR_CORE_PATH_H_
 
-#include <actor/ros_interface/Conversion.h>
 #include <ignition/math/Vector3.hh>
 #include <nav_msgs/Path.h>
 #include <sfm/core/ShiftRegister.h>
@@ -61,10 +60,6 @@ private:
 
 	/// @brief Determines minimum length between 2 consecutive path points
 	double resolution_;
-
-	/// @brief Helper class instance for conversions from ignition Vector3
-	/// to the PoseStamped
-	actor::ros_interface::Conversion converter_;
 
 	/// @brief Stores a point which is a reference in length calculation
 	/// during evaluation whether to add a new point to the path.

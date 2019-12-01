@@ -63,7 +63,7 @@ static std::string frame_planner = "map"; // global planner (and costmap) frame
 static tf2_ros::TransformBroadcaster* tf_broadcaster_ptr_;
 
 // actor -------------------------------------------------------------------------------------
-static std::string frame_actor_global = "map"; // "world" is default
+static std::string frame_actor_global = ""; // "world" is default
 static bool setActorGlobalFrame(ros::NodeHandle &nh, const std::string &srv_ns);
 
 // helpers -----------------------------------------------------------------------------------
@@ -157,16 +157,10 @@ static bool MakePlanSrv(actor_global_plan::MakeNavPlanFrame::Request& req, actor
 	// if global planner is not busy, let's try to find a path for a proper frame
 	glob_planner_ptr_->setFrameId(req.controlled_frame);
 
-	std::cout << "[MakePlanSrv] 1) start (frame): " << req.start.header.frame_id << "\tgoal (frame): " << req.goal.header.frame_id << std::endl;
-
 	// transform points
 	resp.plan_found = glob_planner_ptr_->makePlan(transformPointToMap(req.start),
 												  transformPointToMap(req.goal),
 												  path_);
-
-//	resp.plan_found = glob_planner_ptr_->makePlan(req.start, req.goal, path_);
-
-	std::cout << "[MakePlanSrv] 2) start (frame): " << req.start.header.frame_id << "\tgoal (frame): " << req.goal.header.frame_id << std::endl;
 
 	if ( resp.plan_found ) {
 
@@ -177,8 +171,6 @@ static bool MakePlanSrv(actor_global_plan::MakeNavPlanFrame::Request& req, actor
 			path_.at(i) = pt_mod;
 		}
 		resp.path = path_;
-		std::cout << "[MakePlanSrv] 3) path0 (frame): " << resp.path.at(0).header.frame_id << "\tpath1 (frame): " << resp.path.at(1).header.frame_id << std::endl;
-
 		ROS_INFO("Actor global planner made a plan consisting of %u points", static_cast<unsigned int>(resp.path.size()));
 
 	}

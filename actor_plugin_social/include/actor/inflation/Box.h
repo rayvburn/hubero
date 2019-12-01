@@ -8,7 +8,6 @@
 #ifndef SRC_INFLATION_BOX_H_
 #define SRC_INFLATION_BOX_H_
 
-
 #include <ignition/math/Vector3.hh>
 #include <ignition/math/Pose3.hh>
 #include <ignition/math/Box.hh>
