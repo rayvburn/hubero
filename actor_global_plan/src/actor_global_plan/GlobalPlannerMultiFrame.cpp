@@ -41,13 +41,8 @@ bool GlobalPlannerMultiFrame::makePlan(const geometry_msgs::PoseStamped& start,
 	// set `busy` flag
 	busy_ = true;
 
-	std::cout << "[makePlan] 1 frame: " << this->frame_id_ << "\tgoal_frame: " << goal.header.frame_id <<
-				 "\tstart frame: " << start.header.frame_id << std::endl;
-
 	// save status of the plan
 	bool success = global_planner::GlobalPlanner::makePlan(start, goal, plan);
-
-	std::cout << "[makePlan] 2 frame: " << this->frame_id_ << std::endl;
 
 	// clear `busy` flag
 	busy_ = false;

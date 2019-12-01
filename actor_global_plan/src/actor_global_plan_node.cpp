@@ -108,7 +108,6 @@ int main(int argc, char** argv) {
 	// initialize broadcaster and send a blank TF (NOTE: it may be deleted if static_tf_publisher works OK, see below)
 	tf2_ros::TransformBroadcaster tf_broadcaster;
 	tf_broadcaster_ptr_ = &tf_broadcaster;
-//	SendTfBlank(); // this is invoked just in case if `tf_static_publisher` did not start up before costmap initialization process
 
 	// initialize global costmap
 	// NOTE: costmap 2d takes tf2_ros::Buffer in ROS Melodic, in Kinetic - tf::TransformListener
@@ -212,31 +211,7 @@ static bool GetCostSrv(actor_global_plan::GetCost::Request& req, actor_global_pl
 	return (true);
 
 }
-// ----------------------------------------------------------------------------------------------------
-// ---- blank transform sender ------------------------------------------------------------------------
-// ----------------------------------------------------------------------------------------------------
-static void SendTfBlank() {
 
-	geometry_msgs::TransformStamped tf;
-
-	// NOTE: by default costmap initialized with base frame set to `map`
-	// (see parameters (.yaml) in `config` folder
-	tf.child_frame_id = "map";
-	tf.header.frame_id = "world";
-
-	tf.header.stamp = ros::Time::now();
-	tf.transform.translation.x = 0.0;
-	tf.transform.translation.y = 0.0;
-	tf.transform.translation.z = 0.0;
-
-	tf.transform.rotation.x = 0.0;
-	tf.transform.rotation.y = 0.0;
-	tf.transform.rotation.z = 0.0;
-	tf.transform.rotation.w = 1.0;
-
-	tf_broadcaster_ptr_->sendTransform(tf);
-
-}
 // ----------------------------------------------------------------------------------------------------
 // ---- costmap's `inflation_radius` setter -------------------------------------------------------------
 // ----------------------------------------------------------------------------------------------------
@@ -396,9 +371,7 @@ geometry_msgs::PoseStamped transformPointToMap(geometry_msgs::PoseStamped &point
 	} */
 
 	/* ROS Kinetic */
-//	tf::StampedTransform transform;
 	try{
-//		tf_listener_ptr_->lookupTransform("/map", "/world", ros::Time(0), transform);
 		point.header.frame_id = "world";
 		tf_listener_ptr_->transformPose("map", point, pose_map);
 	}
@@ -406,24 +379,6 @@ geometry_msgs::PoseStamped transformPointToMap(geometry_msgs::PoseStamped &point
 		ROS_ERROR("%s",ex.what());
 		ros::Duration(1.0).sleep();
 	}
-
-//	pose_map.header.frame_id = "map";
-//	pose_map.header.stamp = ros::Time::now();
-//
-//	pose_map.pose.position.x += static_cast<double>(transform.getOrigin().x());
-//	pose_map.pose.position.y += static_cast<double>(transform.getOrigin().y());
-//	pose_map.pose.position.z += static_cast<double>(transform.getOrigin().z());
-//
-//	pose_map.pose.orientation.x += static_cast<double>(transform.getRotation().x());
-//	pose_map.pose.orientation.y += static_cast<double>(transform.getRotation().y());
-//	pose_map.pose.orientation.z += static_cast<double>(transform.getRotation().z());
-//	pose_map.pose.orientation.w += static_cast<double>(transform.getRotation().w());
-
-//	std::cout << "\n" << std::endl;
-//	std::cout << "position raw: " << point.pose.position << std::endl;
-////	std::cout << "tf: " << transform.getOrigin() << std::endl;
-//	std::cout << "position new: " << pose_map.pose.position << std::endl;
-//	std::cout << "\n" << std::endl;
 
 	return (pose_map);
 
