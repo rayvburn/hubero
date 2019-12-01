@@ -347,14 +347,25 @@ bool Target::chooseNewTarget() {
 
 	ignition::math::Vector3d new_target(target_);
 	bool reachable_gp = false; // whether global planner found a valid plan
+	bool force_new_target = false;
+
+	std::cout << "\n\n\nNEW TARGET SELECTION\n";
+	unsigned int iteration = 0;
+	const unsigned int MAX_TRIES_NUM = 300;
 
 	// Target selection conditions:
 	// 1) look for target that is located at least 2 x TARGET_TOLERANCE [m] from the current one
 	// 2) look for target that is reachable (global plan can be found)
-	while ( !((new_target - target_).Length() >= (2.0 * params_ptr_->getActorParams().target_tolerance) && reachable_gp) ) {
+	while ( !((new_target - target_).Length() >= (2.0 * params_ptr_->getActorParams().target_tolerance) && reachable_gp) && (iteration < MAX_TRIES_NUM) ) {
 
-		// reset flag
+		// reset flags
 		reachable_gp = false;
+		force_new_target = false;
+
+		// increment the counter
+		iteration++;
+
+		std::cout << "\tnew ITERATION num: " << iteration << "\n";
 
 		// get random coordinates based on world limits
 		new_target.X(ignition::math::Rand::DblUniform( params_ptr_->getActorParams().world_bound_x.at(0), params_ptr_->getActorParams().world_bound_x.at(1)) );
@@ -362,6 +373,8 @@ bool Target::chooseNewTarget() {
 
 		// check distance to all world's objects
 		for (unsigned int i = 0; i < world_ptr_->ModelCount(); ++i) {
+
+			std::cout << "\tnew MODEL num: " << i << "\n";
 
 			/* distance-based target selection - could fail for very big objects
 			 *
@@ -376,23 +389,37 @@ bool Target::chooseNewTarget() {
 			*
 			*/
 
+			// FIXME:
+			if ( world_ptr_->ModelByIndex(i)->GetName() == "012" ) {
+				int breaker = 0;
+				breaker++;
+			}
+
 			/* bounding-box-based target selection - safer for big obstacles,
 			 * accounting some tolerance for a target accomplishment - an actor should
 			 * not step into an object;
 			 * also, check if current model is not marked as negligible */
 			if ( isModelNegligible(world_ptr_->ModelByIndex(i)->GetName(), params_ptr_->getSfmDictionary().ignored_models_) ) {
-//				std::cout << "MODEL NEGLIGIBLE: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
+				std::cout << "MODEL NEGLIGIBLE: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
+				// no need to check if current model BB contains the `new_target` (as the model is negligible)
 				continue;
 			}
 
 			// check if model's bounding box contains target point
 			if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), new_target) ) {
 				std::cout << "[chooseNewTarget] - selection failed -> temporary `target` position [world frame]: " << new_target.X() << " " << new_target.Y() << "\tmodel containing: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
-				new_target = target_; // find another
-				continue;
+				new_target = target_; // forces finding another due target to the distance condition
+				force_new_target = true;
+				break; // continue;
 			}
 
-		} // for
+		} // for (ModelCount)
+
+		// whether another target should be selected
+		if ( force_new_target ) {
+			std::cout << "\t\tFORCED NEW TARGET\n";
+			continue;
+		}
 
 		// point seems to be valid, but its cost must be evaluated if the actor's
 		// current position is somewhere in the high-cost location
@@ -409,6 +436,8 @@ bool Target::chooseNewTarget() {
 			}
 		}
 
+		std::cout << "\tPLAN GENERATION\n\n\n";
+
 		// seems that a proper target has been found, check whether it is reachable according to a global planner
 		if ( generatePathPlan(start_safe, new_target) ) {
 			reachable_gp = true;
@@ -418,6 +447,12 @@ bool Target::chooseNewTarget() {
 		}
 
 	} // while
+	std::cout << "END of TARGET SELECTION\titeration: " << iteration << "\n\n\n";
+
+	// evaluate the iteration number-related stop condition
+	if ( iteration == MAX_TRIES_NUM ) {
+		return (false);
+	}
 
 	// finally found a new target
 	target_ = new_target;

@@ -981,6 +981,8 @@ bool Actor::manageTargetMovingAround() {
 	if ( !target_manager_.isTargetChosen() ) {
 		if ( target_manager_.changeTarget() ) {
 			new_target = true;
+		} else {
+			setState(actor::ACTOR_STATE_STOP_AND_STARE);
 		}
 	}
 
@@ -1012,6 +1014,8 @@ bool Actor::manageTargetMovingAround() {
 		if ( target_manager_.changeTarget() ) {
 			// after setting a new target, firstly let's rotate to its direction
 			new_target = true;
+		} else {
+			setState(actor::ACTOR_STATE_STOP_AND_STARE);
 		}
 
 	} else if ( target_manager_.isCheckpointReached() ) {

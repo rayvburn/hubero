@@ -79,7 +79,7 @@
 
         <!-- Circle -->
         <rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
-        <rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.25</rosparam>
+        <rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.18</rosparam>
 
         <rosparam param="$(arg actor_params_ns)/general/world_bound_x">[-3.25, +3.80]</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/world_bound_y">[-6.00, +6.00]</rosparam>
