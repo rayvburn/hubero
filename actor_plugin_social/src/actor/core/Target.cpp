@@ -349,7 +349,7 @@ bool Target::chooseNewTarget() {
 	bool reachable_gp = false; // whether global planner found a valid plan
 	bool force_new_target = false;
 
-	std::cout << "\n\n\nNEW TARGET SELECTION\n";
+	// additional condition to prevent system from being stuck in while loop
 	unsigned int iteration = 0;
 	const unsigned int MAX_TRIES_NUM = 300;
 
@@ -365,16 +365,12 @@ bool Target::chooseNewTarget() {
 		// increment the counter
 		iteration++;
 
-		std::cout << "\tnew ITERATION num: " << iteration << "\n";
-
 		// get random coordinates based on world limits
 		new_target.X(ignition::math::Rand::DblUniform( params_ptr_->getActorParams().world_bound_x.at(0), params_ptr_->getActorParams().world_bound_x.at(1)) );
 		new_target.Y(ignition::math::Rand::DblUniform( params_ptr_->getActorParams().world_bound_y.at(0), params_ptr_->getActorParams().world_bound_y.at(1)) );
 
 		// check distance to all world's objects
 		for (unsigned int i = 0; i < world_ptr_->ModelCount(); ++i) {
-
-			std::cout << "\tnew MODEL num: " << i << "\n";
 
 			/* distance-based target selection - could fail for very big objects
 			 *
@@ -389,18 +385,12 @@ bool Target::chooseNewTarget() {
 			*
 			*/
 
-			// FIXME:
-			if ( world_ptr_->ModelByIndex(i)->GetName() == "012" ) {
-				int breaker = 0;
-				breaker++;
-			}
-
 			/* bounding-box-based target selection - safer for big obstacles,
 			 * accounting some tolerance for a target accomplishment - an actor should
 			 * not step into an object;
 			 * also, check if current model is not marked as negligible */
 			if ( isModelNegligible(world_ptr_->ModelByIndex(i)->GetName(), params_ptr_->getSfmDictionary().ignored_models_) ) {
-				std::cout << "MODEL NEGLIGIBLE: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
+//				std::cout << "MODEL NEGLIGIBLE: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
 				// no need to check if current model BB contains the `new_target` (as the model is negligible)
 				continue;
 			}
@@ -415,9 +405,8 @@ bool Target::chooseNewTarget() {
 
 		} // for (ModelCount)
 
-		// whether another target should be selected
+		// whether another target should be selected (see @ref doesBoundingBoxContainPoint)
 		if ( force_new_target ) {
-			std::cout << "\t\tFORCED NEW TARGET\n";
 			continue;
 		}
 
@@ -436,8 +425,6 @@ bool Target::chooseNewTarget() {
 			}
 		}
 
-		std::cout << "\tPLAN GENERATION\n\n\n";
-
 		// seems that a proper target has been found, check whether it is reachable according to a global planner
 		if ( generatePathPlan(start_safe, new_target) ) {
 			reachable_gp = true;
@@ -447,7 +434,6 @@ bool Target::chooseNewTarget() {
 		}
 
 	} // while
-	std::cout << "END of TARGET SELECTION\titeration: " << iteration << "\n\n\n";
 
 	// evaluate the iteration number-related stop condition
 	if ( iteration == MAX_TRIES_NUM ) {
