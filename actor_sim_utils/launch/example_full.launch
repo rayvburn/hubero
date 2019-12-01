@@ -79,13 +79,37 @@
 
         <!-- Circle -->
         <rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
+        <rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.25</rosparam>
+
+        <rosparam param="$(arg actor_params_ns)/general/world_bound_x">[-3.25, +3.80]</rosparam>
+        <rosparam param="$(arg actor_params_ns)/general/world_bound_y">[-6.00, +6.00]</rosparam>
+        <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">true</rosparam>
+
+        <rosparam param="$(arg sfm_params_ns)/world_dictionary/ignored_models">[]</rosparam>            <!-- allows reading ignored models list from the .world file -->
+        <rosparam param="$(arg sfm_params_ns)/algorithm/internal_force_factor">500.0</rosparam>
+        <rosparam param="$(arg sfm_params_ns)/algorithm/interaction_force_factor">500.0</rosparam>
+
+    </group>
+
+    <group if="$(eval world == 'classroom_cluttered')">
+        
+        <!-- PROBLEM: if a world has numbers in the name this section will be ommitted -->
+
+        <!-- ======================== load global planner node ================================= -->
+        <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> 
+            <!-- map image-based calculations - - -->
+            <arg name="world_map_tf" value="-0.26 -3.97 0.0 0.18534795 0.0 0.0"/>
+        </include>
+
+        <!-- Circle -->
+        <rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
         <rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.02</rosparam>
 
         <rosparam param="$(arg actor_params_ns)/general/world_bound_x">[-3.25, +3.80]</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/world_bound_y">[-6.00, +6.00]</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">true</rosparam>
 
-        <rosparam param="$(arg sfm_params_ns)/world_dictionary/ignored_models">[ground_plane, sun, 012]</rosparam>
+        <rosparam param="$(arg sfm_params_ns)/world_dictionary/ignored_models">[]</rosparam>            <!-- allows reading ignored models list from the .world file -->
         <rosparam param="$(arg sfm_params_ns)/algorithm/internal_force_factor">500.0</rosparam>
         <rosparam param="$(arg sfm_params_ns)/algorithm/interaction_force_factor">500.0</rosparam>
 

@@ -23,7 +23,7 @@ visualization:
 
 world_dictionary:
 
-    ignored_models:
+    ignored_models:                     # NOTE: must be empty if one wants to use ignored_models list from the .world file
       - cafe
       - ground_plane
       - sun

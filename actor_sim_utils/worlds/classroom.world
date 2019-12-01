@@ -2402,9 +2402,12 @@
         <animation_factor>5.1</animation_factor>
         <!-- Usage: Modify the set of models that the vector field should
              ignore when moving the actor -->
+         <!-- NOTE: processed only if sfm_params' world_dictionary/ignored_models 
+              is empty -->
         <ignore_obstacles>
-          <model>cafe</model>
           <model>ground_plane</model>
+          <model>sun</model>
+          <model>012</model>
         </ignore_obstacles>
       </plugin>
     </actor>
