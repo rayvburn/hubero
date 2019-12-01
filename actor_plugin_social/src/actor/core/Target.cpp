@@ -387,8 +387,7 @@ bool Target::chooseNewTarget() {
 
 			// check if model's bounding box contains target point
 			if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), new_target) ) {
-				std::cout << "chooseNewTarget() - selection failed -> model containing the temporary `target` position: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
-				std::cout << std::endl;
+				std::cout << "[chooseNewTarget] - selection failed -> temporary `target` position [world frame]: " << new_target.X() << " " << new_target.Y() << "\tmodel containing: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
 				new_target = target_; // find another
 				continue;
 			}

@@ -96,7 +96,7 @@ ParamLoader::SfmVisParams ParamLoader::getSfmVisParams() const {
 
 // ------------------------------------------------------------------- //
 
-ParamLoader::SfmDictionary ParamLoader::getSfmDictionary() const {
+ParamLoader::SfmDictionary& ParamLoader::getSfmDictionary() const {
 	return (dict_sfm_);
 }
 

@@ -49,10 +49,6 @@ void GlobalPlan::initialize(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_
 	waypoint_gap_ = gap;
 	frame_id_ = frame_id;
 
-	std::cout << "\n\n\n";
-	std::cout << "[GlobalPlan::init] actor::actor_global_frame_id: " << actor::FrameGlobal::getFrame() << std::endl;
-	std::cout << "\n\n\n";
-
 }
 
 // ------------------------------------------------------------------- //

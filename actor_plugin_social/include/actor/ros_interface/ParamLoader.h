@@ -167,10 +167,10 @@ public:
 	/// if parameters were successfully decoded
 	SfmVisParams getSfmVisParams() const;
 
-	/// \brief Returns SFM's dictionary
+	/// \brief Returns SFM dictionary mutable reference
 	/// \return Non-empty SfmDictionary struct
 	/// if parameters were successfully decoded
-	SfmDictionary getSfmDictionary() const;
+	SfmDictionary& getSfmDictionary() const;
 
 	/// \brief Returns Behaviours parameters
 	/// \return BehaviourParams struct with non-default values
