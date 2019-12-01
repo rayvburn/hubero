@@ -322,6 +322,30 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
+	// ignored models section
+
+	// check if model names have been set in .YAML (YAML takes precedence over the .world file configuration)
+	if ( params_ptr_->getSfmDictionary().ignored_models_.size() == 0 ) {
+
+		// ignored models haven't been defined in .YAML
+		if ( sdf && sdf->HasElement("ignore_obstacles") ) {
+
+			// // evaluate .world file contents - use .sdf
+			sdf::ElementPtr model_elem = sdf->GetElement("ignore_obstacles")->GetElement("model");
+			while (model_elem) {
+				// readability
+				std::string model = model_elem->Get<std::string>();
+				// extend dictionary
+				params_ptr_->getSfmDictionary().ignored_models_.push_back(model);
+				// try to get next element of the list
+				model_elem = model_elem->GetNextElement("model");
+			}
+
+		}
+
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
 	// initialize SFM with loaded set of parameters
 	initSFM();
 
