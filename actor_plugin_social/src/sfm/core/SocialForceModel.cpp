@@ -137,7 +137,8 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	// compute internal acceleration
 	force_internal_ = computeInternalForce(actor_pose, actor_velocity, actor_target);
 
-	// check whether it is needed to calculate interaction force
+	// check whether it is needed to calculate interaction force or only the internal one
+	// should be considered
 	if ( disable_interaction_forces_ ) {
 		factorInForceCoefficients(); 	// multiply force vector components by parameter values
 		return (false);
@@ -159,7 +160,6 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	/* below flag is used as a workaround for the problem connected with being unable to set actor's
 	 * velocity and acceleration in the gazebo::physics::WorldPtr */
 	bool is_an_actor = false;
-//	gazebo::physics::ModelPtr model_ptr; // FIXME
 	ignition::math::Pose3d model_raw_pose;
 	std::string model_name;
 
@@ -172,34 +172,28 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	// iterate over all world's objects + 4 walls (at least try)
 	for ( unsigned int i = 0; i < (world_ptr->ModelCount() + 4); i++ ) {
 
-//		std::cout << "NEW iteration\t";
+		// evaluate if the object to consider is a valid Gazebo model or only artificial,
+		// i.e. that is represented by a bounding box and is not recognized
+		// in Gazebo model list
 		if ( isTypicalModel(i, world_ptr->ModelCount()) ) {
 
-//			std::cout << "TYPICAL MODEL\t";
 			if ( !preprocessTypicalModel(world_ptr, i, ignored_models_v, is_an_actor, actor_info, model_name, model_vel, model_raw_pose, model_circle, model_ellipse, model_box) ) {
-//				std::cout << "BREAK\n";
 				continue;
 			}
 
 		} else {
 
-//			std::cout << "WORLD BOUNDARY\t";
 			// `wall_num` range: 0-3
 			if ( !preprocessWorldBoundary(world_ptr->ModelCount() + 3 - i, is_an_actor, model_name, model_vel, model_raw_pose, model_box) ) {
-//				std::cout << "BREAK\n";
-				std::cout << "WORLD BOUNDARY BREAK\n";
 				continue;
 			}
 
 		}
-//		std::cout << "PROCESS\t";
 
 		// ============================================================================
 
 		// check if the obstacle is static or dynamic (force calculation differs)
 		is_dynamic = isDynamicObstacle(model_vel);
-
-//		std::cout << "BP1\t";
 
 		// model_closest i.e. closest to an actor or the actor's bounding
 		ignition::math::Pose3d actor_closest_to_model_pose = actor_pose;
@@ -218,7 +212,7 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 
 				std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
 						inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingBox(),
-															 model_raw_pose, model_box, model_name );
+														  model_raw_pose, model_box, model_name );
 				break;
 
 		case(INFLATION_CIRCLE):
@@ -226,11 +220,11 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 				if ( is_an_actor ) {
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
 							inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingCircle(),
-																 model_raw_pose, model_circle, model_name );
+															  model_raw_pose, model_circle, model_name );
 				} else {
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
 							inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingCircle(),
-																 model_raw_pose, model_box, model_name );
+															  model_raw_pose, model_box, model_name );
 				}
 				break;
 
@@ -239,11 +233,11 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 				if ( is_an_actor ) {
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
 							inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingEllipse(),
-																 model_raw_pose, model_ellipse, model_name );
+															  model_raw_pose, model_ellipse, model_name );
 				} else {
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
 							inflator_.findModelsClosestPoints(actor_pose, actor_info.getBoundingEllipse(),
-																 model_raw_pose, model_box, model_name );
+															  model_raw_pose, model_box, model_name );
 
 				}
 				break;
@@ -254,8 +248,6 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 				break;
 
 		}
-
-//		std::cout << "BP2\t";
 
 		// based on a parameter and an object type - calculate a force from a static object properly
 		if ( is_dynamic || interaction_static_type_ == INTERACTION_REPULSIVE_EVASIVE ) {
@@ -277,8 +269,6 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 
 		}
 
-//		std::cout << "BP3\t";
-
 		/* debug closest points
 		 * a pair must be added to vector, pair consists
 		 * of model closest point's pose and an actor's
@@ -290,14 +280,10 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 			closest_points_.push_back(actor_closest_to_model_pose);
 		}
 
-//		std::cout << "BP4\t";
-
 		// save distance to the closest obstacle (evaluates if the given one is smaller
 		// than the one considered as `the closest` so far);
 		// NOTE `actor` is treated as a dynamic object all the time (even if currently doesn't move)
 		updateClosestObstacleDistance(((is_an_actor || is_dynamic) ? dist_closest_dynamic_ : dist_closest_static_), distance);
-
-//		std::cout << "BP5\t";
 
 		// sum all forces
 		force_interaction_ += f_alpha_beta;
@@ -343,8 +329,6 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	std::cout << "\t\tTOTAL: \t\t" << force_combined_ << std::endl;
 	std::cout << "**************************************************************************\n\n";
 #endif
-
-//	std::cout << "BP6\n";
 
 	return (true);
 
@@ -2035,12 +2019,8 @@ bool SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &w
 		actor::inflation::Box &model_box)
 {
 
-//	std::cout << "[SocialForceModel::preprocessTypicalModel] model_num: " << model_num;
-
 	// save a pointer to the new model
 	gazebo::physics::ModelPtr model_ptr = world_ptr->ModelByIndex(model_num);
-
-//	std::cout << "\tafter model_ptr | name: " << model_ptr->GetName() << std::endl;
 
 	// check whether social force calculation is necessary (list given by system parameters)
 	if ( isModelNegligible(model_ptr->GetName()) ) {
@@ -2052,12 +2032,6 @@ bool SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &w
 	if ( isModelNegligible(model_ptr->GetName(), ignored_models_v) ) {
 		return (false);
 	}
-
-	//////////////////////////////////////////////////////////////////////////
-	/// catch model name - debugging /////////////////////////////////////////
-	SfmDebugSetCurrentObjectName(model_ptr->GetName()); //////////////////////
-	SfmDebugSetCurrentActorName(owner_name_); ////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
 
 	// decode information if the current model is of `Actor` type
 	if ( (is_an_actor = actor_decoder_.isActor(model_ptr->GetType())) ) {
@@ -2087,16 +2061,24 @@ bool SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &w
 	model_raw_pose = model_ptr->WorldPose();
 	model_name = model_ptr->GetName();
 
+	//////////////////////////////////////////////////////////////////////////
+	/// catch model name - debugging /////////////////////////////////////////
+	SfmDebugSetCurrentObjectName(model_ptr->GetName()); //////////////////////
+	SfmDebugSetCurrentActorName(owner_name_); ////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+
 	return (true);
 
 }
 
 // ------------------------------------------------------------------- //
 
-bool SocialForceModel::preprocessWorldBoundary(const size_t &wall_num, bool &is_an_actor, std::string &model_name, ignition::math::Vector3d &model_vel, ignition::math::Pose3d &model_raw_pose, actor::inflation::Box &model_box) const {
+bool SocialForceModel::preprocessWorldBoundary(const size_t &wall_num, bool &is_an_actor, std::string &model_name,
+		ignition::math::Vector3d &model_vel, ignition::math::Pose3d &model_raw_pose,
+		actor::inflation::Box &model_box) const
+{
 
-	std::cout << "[SocialForceModel::preprocessWorldBoundary] wall_num: " << wall_num << std::endl;
-
+	// evaluate validity of the boundary box
 	if ( !boundary_.isValid(wall_num) ) {
 		return (false);
 	}
@@ -2112,7 +2094,14 @@ bool SocialForceModel::preprocessWorldBoundary(const size_t &wall_num, bool &is_
 	model_raw_pose.Pos() = model_box.getCenter();
 	model_raw_pose.Pos().Z() = 0.0;
 
+	// trivial rotation component
 	model_raw_pose.Rot() = ignition::math::Quaterniond(0.0, 0.0, 0.0);
+
+	//////////////////////////////////////////////////////////////////////////
+	/// catch model ARTIFICIAL name - debugging //////////////////////////////
+	SfmDebugSetCurrentObjectName(model_name);   //////////////////////////////
+	SfmDebugSetCurrentActorName(owner_name_);   //////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
 
 	return (true);
 

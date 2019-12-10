@@ -14,11 +14,14 @@ namespace core {
 // ------------------------------------------------------------------- //
 
 WorldBoundary::WorldBoundary() {
+
 	params_ptr_ = nullptr;
+
 	// fill BB vector with null pointers
 	for ( size_t i = 0; i < 4; i++ ) {
 		box_ptr_v_.push_back(nullptr);
 	}
+
 }
 
 // ------------------------------------------------------------------- //
@@ -27,16 +30,11 @@ bool WorldBoundary::init(std::shared_ptr<const actor::ros_interface::ParamLoader
 						 const gazebo::physics::WorldPtr &world_ptr) {
 
 	params_ptr_ = params_ptr;
-//	while (!world_ptr->IsLoaded());
+
 	gazebo::physics::ModelPtr model_ptr = world_ptr->ModelByName(params_ptr_->getSfmDictionary().world_model.name);
 	if ( model_ptr == nullptr ) {
 		return (false);
 	}
-
-	std::cout << "\n\n\n[WorldBoundary::init] model: " << model_ptr->GetName() << "\t";
-	std::cout << "center: " << model_ptr->BoundingBox().Center() << "\t";
-	std::cout << "min: " << model_ptr->BoundingBox().Min() << "\t";
-	std::cout << "max: " << model_ptr->BoundingBox().Max() << "\n\n\n";
 
 	return (divide(model_ptr->BoundingBox(), params_ptr_->getSfmDictionary().world_model.wall_width));
 
@@ -96,10 +94,10 @@ bool WorldBoundary::divide(const ignition::math::Box &bb, const double &wall_wid
 	ignition::math::Box* bb4_ptr = new ignition::math::Box(bb.Max().X(), 				bb.Max().Y(), 				bb.Max().Z(),
 														   bb.Min().X(), 				bb.Max().Y() - wall_width, 	bb.Min().Z());
 
-	std::cout << "\t1) center: " << bb1_ptr->Center() << "\tMin: " << bb1_ptr->Min() << "\tMax: " << bb1_ptr->Max() << std::endl;
-	std::cout << "\t2) center: " << bb2_ptr->Center() << "\tMin: " << bb2_ptr->Min() << "\tMax: " << bb2_ptr->Max() << std::endl;
-	std::cout << "\t3) center: " << bb3_ptr->Center() << "\tMin: " << bb3_ptr->Min() << "\tMax: " << bb3_ptr->Max() << std::endl;
-	std::cout << "\t4) center: " << bb4_ptr->Center() << "\tMin: " << bb4_ptr->Min() << "\tMax: " << bb4_ptr->Max() << std::endl;
+//	std::cout << "\t1) center: " << bb1_ptr->Center() << "\tMin: " << bb1_ptr->Min() << "\tMax: " << bb1_ptr->Max() << std::endl;
+//	std::cout << "\t2) center: " << bb2_ptr->Center() << "\tMin: " << bb2_ptr->Min() << "\tMax: " << bb2_ptr->Max() << std::endl;
+//	std::cout << "\t3) center: " << bb3_ptr->Center() << "\tMin: " << bb3_ptr->Min() << "\tMax: " << bb3_ptr->Max() << std::endl;
+//	std::cout << "\t4) center: " << bb4_ptr->Center() << "\tMin: " << bb4_ptr->Min() << "\tMax: " << bb4_ptr->Max() << std::endl;
 
 	// update box vector
 	box_ptr_v_.at(0) = bb1_ptr;

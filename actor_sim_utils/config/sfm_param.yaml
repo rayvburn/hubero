@@ -32,6 +32,7 @@ world_dictionary:
       - ground_plane
       - sun
 
+    # DEPRECATED feature
     # unknown objects will have default values (mass of 5 kg and immunity of 0.75)
     model_description:
       #- cafe_table: {name: table, mass: 10, immunity: 0.7 }

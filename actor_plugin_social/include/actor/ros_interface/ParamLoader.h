@@ -95,8 +95,8 @@ public:
 	/// \brief Struct containing name of the world model (in a `combined` form)
 	/// along with a width of a single wall
 	typedef struct {
-		std::string name;
-		double wall_width;
+		std::string 		name;
+		double 				wall_width;
 	} WorldModel;
 
 	/// \brief Declaration of an SfmDictionary typedef'ed struct;
@@ -237,7 +237,6 @@ private:
 	/// loaded from YAML.
 	/// \details See \ref convertModelDescriptionToTuple
 	WorldModel convertWorldModelToStruct(XmlRpc::XmlRpcValue &sublist);
-	std::tuple<std::string, double> convertWorldModelToTuple(XmlRpc::XmlRpcValue &sublist);
 
 	/// \brief Helper function which sets smaller axis-bound
 	/// value to 0 element and bigger to 1st;
