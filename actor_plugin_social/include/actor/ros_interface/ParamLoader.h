@@ -92,9 +92,17 @@ public:
 
 	} SfmVisParams;
 
+	/// \brief Struct containing name of the world model (in a `combined` form)
+	/// along with a width of a single wall
+	typedef struct {
+		std::string name;
+		double wall_width;
+	} WorldModel;
+
 	/// \brief Declaration of an SfmDictionary typedef'ed struct;
 	/// default values are provided
 	typedef struct {
+		WorldModel world_model;
 		std::vector<std::string> ignored_models_;
 		std::vector<std::tuple<std::string, int, double> > model_description;
 	} SfmDictionary;
@@ -224,6 +232,12 @@ private:
 	/// NOTE: XmlRpc::XmlRpcValue passed to function must
 	/// be non-const
 	std::tuple<std::string, int, double> convertModelDescriptionToTuple(XmlRpc::XmlRpcValue &sublist);
+
+	/// \brief Helper function which converts world model data
+	/// loaded from YAML.
+	/// \details See \ref convertModelDescriptionToTuple
+	WorldModel convertWorldModelToStruct(XmlRpc::XmlRpcValue &sublist);
+	std::tuple<std::string, double> convertWorldModelToTuple(XmlRpc::XmlRpcValue &sublist);
 
 	/// \brief Helper function which sets smaller axis-bound
 	/// value to 0 element and bigger to 1st;

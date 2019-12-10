@@ -260,6 +260,12 @@ public:
 	static bool isModelNegligible(const std::string &object_name, const std::vector<std::string> &dictionary);
 
 	/**
+	 * @brief Evaluates if a given model is a world model in a `combined` form.
+	 * `isModelNegligible` cannot be used because the model name must be given explicitly.
+	 */
+	static bool isCombinedWorldModel(const std::string &object_name, const std::string &world_model_name);
+
+	/**
 	 * @brief Helper, static method that checks if any obstacle's bounding box does contain the investigated point
 	 * @param bb - bounding box
 	 * @param pt - point to be checked

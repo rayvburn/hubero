@@ -244,9 +244,36 @@ void ParamLoader::loadSfmDictionary(const std::shared_ptr<ros::NodeHandle> nh_pt
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - -
 	// SFM dictionary section
-	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "world_dictionary/ignored_models", dict_sfm_.ignored_models_) ) { }
+//	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "world_dictionary/world_model", dict_sfm_.world_model) ) {
+//		// if parameter is set to `none` then there is no `combined` model of the world
+//		// but a divided one exists
+//		if ( dict_sfm_.world_model == "none" ) {
+//			dict_sfm_.world_model = "";
+//		}
+//	}
+
+//		dict_sfm_.world_model = convertWorldModelToTuple(list[0]);
+//		if ( std::get<0>(dict_sfm_.world_model) == "none" ) {
+//			std::get<0>(dict_sfm_.world_model) = "";
+//			std::get<1>(dict_sfm_.world_model) = 0.0;
+//		}
 
 	XmlRpc::XmlRpcValue list;
+	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "world_dictionary/world_model", list) ) {
+
+		std::cout << "\n\n\nPRELOADING\t" << list.size() << "\n\n\n";
+		// assuming world bounds are composed from a single model,
+		// the `list` length can be acquired via the `size()` method
+		dict_sfm_.world_model = convertWorldModelToStruct(list[0]);
+		std::cout << "\n\n\nlist size: " << list.size() << "\tWORLD_MODEL: " << dict_sfm_.world_model.name << "\tWALL WIDTH: " << dict_sfm_.world_model.wall_width << "\n\n\n";
+		if ( dict_sfm_.world_model.name == "none" ) {
+			dict_sfm_.world_model.name = "";
+			dict_sfm_.world_model.wall_width = 0.0;
+		}
+	}
+
+	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "world_dictionary/ignored_models", dict_sfm_.ignored_models_) ) { }
+
 	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "world_dictionary/model_description", list) ) {
 
 		for (int i = 0; i < list.size(); i++) {
@@ -313,6 +340,28 @@ std::tuple<std::string, int, double> ParamLoader::convertModelDescriptionToTuple
 	return ( std::make_tuple(name, mass, immunity) );
 
 }
+
+// ------------------------------------------------------------------- //
+
+ParamLoader::WorldModel ParamLoader::convertWorldModelToStruct(XmlRpc::XmlRpcValue &sublist) {
+
+	ParamLoader::WorldModel world_model;
+
+	world_model.name = static_cast<std::string>( sublist["name"] );
+	world_model.wall_width = static_cast<double>( sublist["wall_width"] );
+
+	return (world_model);
+
+}
+
+//std::tuple<std::string, double> ParamLoader::convertWorldModelToTuple(XmlRpc::XmlRpcValue &sublist) {
+//
+//	std::string name = static_cast<std::string>( sublist["name"] );
+//	double wall_width = static_cast<int>( sublist["wall_width"] );
+//
+//	return ( std::make_tuple(name, wall_width) );
+//
+//}
 
 // ------------------------------------------------------------------- //
 

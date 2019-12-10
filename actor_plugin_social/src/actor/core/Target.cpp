@@ -369,8 +369,15 @@ bool Target::chooseNewTarget() {
 		new_target.X(ignition::math::Rand::DblUniform( params_ptr_->getActorParams().world_bound_x.at(0), params_ptr_->getActorParams().world_bound_x.at(1)) );
 		new_target.Y(ignition::math::Rand::DblUniform( params_ptr_->getActorParams().world_bound_y.at(0), params_ptr_->getActorParams().world_bound_y.at(1)) );
 
-		// check distance to all world's objects
+		// evaluate `new_target` reachability based on world objects information
 		for (unsigned int i = 0; i < world_ptr_->ModelCount(); ++i) {
+
+			// ignore model of world in combined form
+			if ( isCombinedWorldModel( world_ptr_->ModelByIndex(i)->GetName(),
+									   params_ptr_->getSfmDictionary().world_model.name) )
+			{
+				continue;
+			}
 
 			/* distance-based target selection - could fail for very big objects
 			 *
@@ -596,6 +603,13 @@ bool Target::isTargetStillReachable() {
 			//
 			// iterate over all models
 			for (unsigned int i = 0; i < world_ptr_->ModelCount(); ++i) {
+
+				// ignore model of world in combined form
+				if ( isCombinedWorldModel( world_ptr_->ModelByIndex(i)->GetName(),
+										   params_ptr_->getSfmDictionary().world_model.name) )
+				{
+					continue;
+				}
 
 				// ignore specific models that cover whole world
 				// or are listed as `negligible`
@@ -885,6 +899,17 @@ bool Target::isModelNegligible(const std::string &object_name, const std::vector
 
 //	std::cout << "NOT FOUND" << std::endl;
 	// iterated through whole dictionary and did not found a given pattern
+	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Target::isCombinedWorldModel(const std::string &object_name, const std::string &world_model_name) {
+
+	if ( object_name == world_model_name ) {
+		return (true);
+	}
 	return (false);
 
 }

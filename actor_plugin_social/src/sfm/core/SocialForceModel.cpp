@@ -175,6 +175,7 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		}
 
 		// check model name's presence in the dynamic list of negligible objects
+		// (usually the list is not empty only in `following` state)
 		if ( isModelNegligible(model_ptr->GetName(), ignored_models_v) ) {
 			continue;
 		}
