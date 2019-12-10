@@ -24,8 +24,8 @@ visualization:
 world_dictionary:
 
     world_model: 
-      - {name: none, wall_width: 0.2}   # name of the model whose dimensions cover whole world (i.e. actor workspace is located fully within the bounds of the model); set this field to `none` if each wall is a separate model
-                                        # width of the wall
+      - {name: "012",                   # name of the model whose dimensions cover a whole world (i.e. actor workspace is located fully within the bounds of the model); set this field to `none` if each wall is a separate model; if a model name consists of digits only, put it into quotation marks `"__"`
+         wall_width: 0.2}               # width of the wall
 
     ignored_models:                     # NOTE: must be empty if one wants to use ignored_models list from the .world file
       - cafe

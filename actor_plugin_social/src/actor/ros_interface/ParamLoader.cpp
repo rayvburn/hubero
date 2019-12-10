@@ -260,9 +260,7 @@ void ParamLoader::loadSfmDictionary(const std::shared_ptr<ros::NodeHandle> nh_pt
 
 	XmlRpc::XmlRpcValue list;
 	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "world_dictionary/world_model", list) ) {
-
-		std::cout << "\n\n\nPRELOADING\t" << list.size() << "\n\n\n";
-		// assuming world bounds are composed from a single model,
+		// assuming that world bounds are composed from a single model,
 		// the `list` length can be acquired via the `size()` method
 		dict_sfm_.world_model = convertWorldModelToStruct(list[0]);
 		std::cout << "\n\n\nlist size: " << list.size() << "\tWORLD_MODEL: " << dict_sfm_.world_model.name << "\tWALL WIDTH: " << dict_sfm_.world_model.wall_width << "\n\n\n";

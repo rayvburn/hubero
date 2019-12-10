@@ -129,11 +129,14 @@ add_library(sfm_core
   include/sfm/core/SFMDebug.h
   include/sfm/core/ActorInfoDecoder.h
   include/sfm/core/ShiftRegister.h
+  include/sfm/core/WorldBoundary.h
 
   src/sfm/core/SocialForceModel.cpp
   src/sfm/core/Inflator.cpp
   src/sfm/core/SFMDebug.cpp
   src/sfm/core/ActorInfoDecoder.cpp
+  src/sfm/core/WorldBoundary.cpp
+
 )
  
 add_library(sfm_vis

@@ -24,6 +24,7 @@
 #include <sfm/core/ActorInfoDecoder.h>
 #include <sfm/core/Inflator.h>
 #include <sfm/core/ShiftRegister.h>
+#include <sfm/core/WorldBoundary.h>
 
 // C++ STL
 #include <vector>	// closest points
@@ -410,6 +411,28 @@ private:
 	/// \return True if `dist_compare` variable has been updated
 	bool updateClosestObstacleDistance(double &dist_compare, const double &dist) const;
 
+	/// \brief Typical model is the one which stands for a valid Gazebo 3D model instance.
+	/// World model (see parameter `world_dictionary/world_model`) is divided into 4 extra
+	/// bounding boxes (only if the parameter is not empty, i.e. name is not set to `none`)
+	bool isTypicalModel(const unsigned int &count_curr, const unsigned int &models_total);
+
+	/// \brief Prepares `model_vel`, `model_raw_pose` and inflation shape according
+	/// to the parameters and the Gazebo model setup.
+	/// \return True if preprocessing finished with success
+	/// \note non-const due to `setID` call of actor::core::CommonInfo
+	bool preprocessTypicalModel(const gazebo::physics::WorldPtr &world_ptr, const size_t &model_num, const std::vector<std::string> &ignored_models_v,
+			bool &is_an_actor, const actor::core::CommonInfo &actor_info, std::string &model_name,
+			ignition::math::Vector3d &model_vel, ignition::math::Pose3d &model_raw_pose,
+			actor::inflation::Circle &model_circle, actor::inflation::Ellipse &model_ellipse,
+			actor::inflation::Box &model_box);
+
+	/// \brief Prepares `model_vel`, `model_raw_pose` and inflation rectangle according
+	/// to the `world_dictionary/world_model/*` parameters.
+	/// \return True if preprocessing finished with success
+	bool preprocessWorldBoundary(const size_t &wall_num, bool &is_an_actor, std::string &model_name,
+			ignition::math::Vector3d &model_vel, ignition::math::Pose3d &model_raw_pose,
+			actor::inflation::Box &model_box) const;
+
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 	/// \brief A vector of poses of closest points
@@ -545,6 +568,10 @@ private:
 
 	/// \brief Shared pointer to element of ParamLoader class.
 	std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr_;
+
+	/// \brief Stores bounding boxes of walls (only if `world_dictionary/world_model/name`
+	/// is not set to `none`)
+	sfm::core::WorldBoundary boundary_;
 
 	/* Model C -> Rudloff et al. (2011) model's parameters based on  S. Seer et al. (2014) */
 	/* setting parameters static will create a population of actors moving in the same way */
