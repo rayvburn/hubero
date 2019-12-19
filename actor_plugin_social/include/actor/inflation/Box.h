@@ -82,8 +82,6 @@ public:
 	/// \brief Default destructor
 	virtual ~Box();
 
-	virtual void test() override { std::cout << "BOX CLASS" << std::endl; };
-
 private:
 
 	/// \brief An ignition's Box instance which

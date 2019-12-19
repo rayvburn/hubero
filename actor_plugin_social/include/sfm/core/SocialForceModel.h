@@ -427,7 +427,7 @@ private:
 	/// \param model_box
 	/// \return Tuple: bool is_negligible, bool is_an_actor, std::string model_name, ignition::math::Pose3d model_raw_pose,
 	/// ignition::math::Vector3d model_vel, actor::inflation::Border* model_border_ptr
-	std::tuple<bool, bool, std::string, ignition::math::Pose3d, ignition::math::Vector3d, actor::inflation::Border*>
+	std::tuple<bool, bool, std::string, ignition::math::Pose3d, ignition::math::Vector3d, actor::inflation::Border* /* std::shared_ptr<actor::inflation::Border> */ >
 	preprocessTypicalModel(const gazebo::physics::WorldPtr &world_ptr, const size_t &model_num,
 			const std::vector<std::string> &ignored_models_v, const actor::core::CommonInfo &actor_info,
 			actor::inflation::Box &model_box);
@@ -439,7 +439,7 @@ private:
 	/// \param model_box
 	/// \return Tuple: bool is_valid, bool is_an_actor, std::string model_name, ignition::math::Pose3d model_raw_pose,
 	/// ignition::math::Vector3d model_vel, actor::inflation::Border* model_border_ptr
-	std::tuple<bool, bool, std::string, ignition::math::Pose3d, ignition::math::Vector3d, actor::inflation::Border*>
+	std::tuple<bool, bool, std::string, ignition::math::Pose3d, ignition::math::Vector3d, actor::inflation::Border* /* std::shared_ptr<actor::inflation::Border> */ >
 	preprocessWorldBoundary(const size_t &wall_num, actor::inflation::Box &model_box);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

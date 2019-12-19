@@ -30,6 +30,9 @@ public:
 	/// \brief Constructor
 	Border();
 
+	/// \brief Copy constructor
+	Border(const Border &obj);
+
 	/// \brief Returns true if the Border if of a rectangular shape (represents a 3D box)
 	bool isBox() const;
 

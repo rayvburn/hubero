@@ -284,7 +284,7 @@ private:
     /// \brief Object that acts as a inflation around the actor used by the SFM,
     /// the type of the border is chosen as a parameter
     /// \details Actor border instance which abstracts of the actual shape of the border
-    actor::inflation::Border* bounding_ptr_;
+    std::shared_ptr<actor::inflation::Border> bounding_ptr_;
 
     /// \brief Actor's current stance
     actor::ActorStance stance_;

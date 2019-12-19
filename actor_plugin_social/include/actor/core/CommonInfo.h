@@ -70,7 +70,7 @@ public:
 
 	/// \brief Methods that update appropriate instance
 	/// in a whole vector
-	void setBorderPtr		(actor::inflation::Border* border_ptr);
+	void setBorderPtr		(std::shared_ptr<actor::inflation::Border> border_ptr);
 	void setLinearVel		(const ignition::math::Vector3d &vel);
 
 	unsigned int							getActorID() const;
@@ -78,12 +78,12 @@ public:
 	/// \brief Returns non-const pointer to allow call of the `setBox` method in case of the bounding box object
 	/// \return Pointer to the Border instance (which was previously configured by one of the derived classes
 	/// (i.e. the base class uses the virtual methods versions provided by a derived class)
-	actor::inflation::Border*				getBorderPtr() const;
-	ignition::math::Vector3d				getLinearVelocity() const;
+	std::shared_ptr<actor::inflation::Border>	getBorderPtr() const;
+	ignition::math::Vector3d					getLinearVelocity() const;
 
-	std::vector<actor::inflation::Border*> getBorderPtrsVector() const;
-	std::vector<ignition::math::Vector3d>		 getLinearVelocitiesVector() const;
-	std::map<std::string, unsigned int>			 getNameIDMap() const;
+	std::vector<std::shared_ptr<actor::inflation::Border> >	getBorderPtrsVector() const;
+	std::vector<ignition::math::Vector3d>					getLinearVelocitiesVector() const;
+	std::map<std::string, unsigned int>						getNameIDMap() const;
 
 	/// \brief Default destructor
 	virtual ~CommonInfo();
@@ -103,8 +103,8 @@ private:
 	/// instances of a given type for whole actors
 	/// population - length of a vector is equal
 	/// actors number in a world
-	static std::vector<actor::inflation::Border*> 	bounding_vector_;
-	static std::vector<ignition::math::Vector3d>  	lin_vel_vector_;
+	static std::vector<std::shared_ptr<actor::inflation::Border> > 	bounding_vector_;
+	static std::vector<ignition::math::Vector3d>  					lin_vel_vector_;
 
 	/// \brief A map which stores actors names
 	/// and assigns their corresponding IDs each time

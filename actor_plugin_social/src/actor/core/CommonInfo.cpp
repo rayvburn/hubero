@@ -12,9 +12,9 @@ namespace core {
 
 // ------------------------------------------------------------------- //
 
-std::vector<actor::inflation::Border*> 	CommonInfo::bounding_vector_;
-std::vector<ignition::math::Vector3d>  	CommonInfo::lin_vel_vector_;
-std::map<std::string, unsigned int>    	CommonInfo::name_id_map_;
+std::vector<std::shared_ptr<actor::inflation::Border> > 	CommonInfo::bounding_vector_;
+std::vector<ignition::math::Vector3d>  						CommonInfo::lin_vel_vector_;
+std::map<std::string, unsigned int>    						CommonInfo::name_id_map_;
 
 // ------------------------------------------------------------------- //
 
@@ -38,7 +38,7 @@ void CommonInfo::addActor (const std::string &name) {
 
 // ------------------------------------------------------------------- //
 
-void CommonInfo::setBorderPtr(actor::inflation::Border* border_ptr) {
+void CommonInfo::setBorderPtr(std::shared_ptr<actor::inflation::Border> border_ptr) {
 	bounding_vector_.at(id_actor_) = border_ptr;
 }
 
@@ -56,7 +56,7 @@ unsigned int CommonInfo::getActorID() const {
 
 // ------------------------------------------------------------------- //
 
-actor::inflation::Border* CommonInfo::getBorderPtr() const {
+std::shared_ptr<actor::inflation::Border> CommonInfo::getBorderPtr() const {
 	return (bounding_vector_.at(id_actor_));
 }
 
@@ -68,7 +68,7 @@ ignition::math::Vector3d CommonInfo::getLinearVelocity() const {
 
 // ------------------------------------------------------------------- //
 
-std::vector<actor::inflation::Border*> CommonInfo::getBorderPtrsVector() const {
+std::vector<std::shared_ptr<actor::inflation::Border> > CommonInfo::getBorderPtrsVector() const {
 	return (bounding_vector_);
 }
 
@@ -89,8 +89,6 @@ std::map<std::string, unsigned int> CommonInfo::getNameIDMap() const {
 void CommonInfo::clearInternalMemory() {
 
 	lin_vel_vector_.clear();
-
-	delete (bounding_vector_.at(id_actor_));
 	bounding_vector_.at(id_actor_) = nullptr;
 
 	//name_id_map_.clear();

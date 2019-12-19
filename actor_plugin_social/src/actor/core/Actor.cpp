@@ -115,8 +115,9 @@ void Actor::initRosInterface() {
 
 void Actor::initInflator(const double &circle_radius) {
 
+	// got rid of the smart pointer, ref: https://stackoverflow.com/questions/4665266/creating-shared-ptr-from-raw-pointer
 	// circle
-	actor::inflation::Circle* bounding_circle_ptr = new actor::inflation::Circle();
+	std::shared_ptr<actor::inflation::Circle> bounding_circle_ptr = std::make_shared<actor::inflation::Circle>();
 	bounding_type_ = ACTOR_BOUNDING_CIRCLE;
 	bounding_circle_ptr->setRadius(circle_radius);
 	bounding_circle_ptr->updatePose(*pose_world_ptr_);
@@ -130,7 +131,7 @@ void Actor::initInflator(const double &circle_radius) {
 void Actor::initInflator(const double &box_x_half, const double &box_y_half, const double &box_z_half) {
 
 	// box
-	actor::inflation::Box* bounding_box_ptr = new actor::inflation::Box();
+	std::shared_ptr<actor::inflation::Box> bounding_box_ptr = std::make_shared<actor::inflation::Box>();
 	bounding_type_ = ACTOR_BOUNDING_BOX;
 	bounding_box_ptr->init(box_x_half, box_y_half, box_z_half);
 	bounding_box_ptr->updatePose(*pose_world_ptr_);
@@ -145,7 +146,7 @@ void Actor::initInflator(const double &semi_major, const double &semi_minor, con
 						 const double &center_offset_y) {
 
 	// ellipse
-	actor::inflation::Ellipse* bounding_ellipse_ptr = new actor::inflation::Ellipse();
+	std::shared_ptr<actor::inflation::Ellipse> bounding_ellipse_ptr = std::make_shared<actor::inflation::Ellipse>();
 	bounding_type_ = ACTOR_BOUNDING_ELLIPSE;
 
 	// correct yaw angle to make ellipse abstract from Actor coordinate system's orientation
@@ -270,6 +271,8 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// bounding setup section
+	bounding_ptr_ = std::make_shared<actor::inflation::Border>();
+
 	// convert int to enum value and initialize a proper inflator/bounding
 	bounding_type_ = static_cast<actor::ActorBoundingType>(params_ptr_->getActorInflatorParams().bounding_type);
 
@@ -1261,29 +1264,26 @@ void Actor::updateBounding(const ignition::math::Pose3d &pose) {
 	switch ( bounding_type_ ) {
 
 	case(ACTOR_BOUNDING_BOX):
-			// ref: https://gradestack.com/Programming-in-C-/Binding-Polymorphisms-/Pointer-To-Base-and/21206-4330-52995-study-wtw
-			((actor::inflation::Box*)bounding_ptr_)->updatePose(pose);
+			bounding_ptr_->updatePose(pose);
 			break;
 
 	case(ACTOR_BOUNDING_CIRCLE):
-			((actor::inflation::Circle*)bounding_ptr_)->updatePose(pose);
+			bounding_ptr_->updatePose(pose);
 			break;
 
 	case(ACTOR_BOUNDING_ELLIPSE):
 			// correct yaw angle to make ellipse abstract from Actor coordinate system's orientation
 			ignition::math::Angle yaw_world( pose.Rot().Yaw() - IGN_PI_2);
 			yaw_world.Normalize();
-			((actor::inflation::Ellipse*)bounding_ptr_)->updatePose(ignition::math::Pose3d( pose.Pos(),
-																ignition::math::Quaterniond(pose.Rot().Roll(),
-																							pose.Rot().Pitch(),
-																							yaw_world.Radian()) ));
+			bounding_ptr_->updatePose(ignition::math::Pose3d( pose.Pos(),
+									  ignition::math::Quaterniond(pose.Rot().Roll(),
+																pose.Rot().Pitch(),
+																yaw_world.Radian()) ));
 			break;
 
 	}
 
 	common_info_.setBorderPtr(bounding_ptr_);
-
-
 
 }
 

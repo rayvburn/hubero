@@ -13,6 +13,11 @@ namespace inflation {
 // default constructor
 Border::Border(): is_box_(false) {};
 
+// copy constructor
+Border::Border(const Border &obj) {
+	is_box_ = obj.is_box_;
+}
+
 // non-virtual method
 bool Border::isBox() const {
 	return (is_box_);

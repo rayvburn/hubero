@@ -158,9 +158,12 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 
 	/* Border pointer which will carry cases related to repulsive force calculations
 	 * associated with other actors borders (i.e. box/circle/ellipse) stored
-	 * in the `actor::core::CommonInfo` 'container' class
+	 * in the `actor::core::CommonInfo` 'container' class.
+	 * A raw (`naked`) pointer is used instead of the shared_ptr instance because
+	 * of Border->Box casting problems (`dynamic_pointer_cast` tested with no luck -
+	 * the Box pointer still executes Border virtual methods)
 	 */
-	actor::inflation::Border* model_border_ptr = nullptr;
+	actor::inflation::Border* model_border_ptr = nullptr; // std::shared_ptr<actor::inflation::Border> model_border_ptr;
 
 	/* The `dynamic_cast` operation does not allow to convert `actor::inflation::Border`
 	 * to the `actor::inflation::Box` class. Because of that, a new instance
@@ -235,7 +238,7 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		case(INFLATION_BOX_OTHER_OBJECTS):
 
 				actor_closest_to_model_pose = actor_pose;
-				model_closest_point_pose.Pos() = inflator_.findClosestPointsModelBox(actor_pose, model_raw_pose, *(actor::inflation::Box*)model_border_ptr);
+				model_closest_point_pose.Pos() = inflator_.findClosestPointsModelBox(actor_pose, model_raw_pose, *model_border_ptr);
 				break;
 
 		case(INFLATION_BOX_ALL_OBJECTS):
@@ -2037,7 +2040,7 @@ bool SocialForceModel::isTypicalModel(const unsigned int &count_curr, const unsi
 
 // ------------------------------------------------------------------- //
 
-std::tuple<bool, bool, std::string, ignition::math::Pose3d, ignition::math::Vector3d, actor::inflation::Border*>
+std::tuple<bool, bool, std::string, ignition::math::Pose3d, ignition::math::Vector3d, actor::inflation::Border* /* std::shared_ptr<actor::inflation::Border> */ >
 SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &world_ptr,
 		const size_t &model_num,
 		const std::vector<std::string> &ignored_models_v,
@@ -2070,7 +2073,9 @@ SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &world_
 	// some of the outputs
 	bool is_an_actor = false;
 	ignition::math::Vector3d model_vel;
-	actor::inflation::Border* model_border_ptr = nullptr;
+
+//	std::shared_ptr<actor::inflation::Border> model_border_ptr;
+	actor::inflation::Border* model_border_ptr;
 
 	// decode information if the current model is of `Actor` type
 	if ( (is_an_actor = actor_decoder_.isActor(model_ptr->GetType())) ) {
@@ -2080,7 +2085,8 @@ SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &world_
 
 		// load data from CommonInfo based on actor's id
 		model_vel = actor_decoder_.getData(actor_info.getLinearVelocitiesVector());
-		model_border_ptr = actor_decoder_.getData(actor_info.getBorderPtrsVector());
+		model_border_ptr = actor_decoder_.getData(actor_info.getBorderPtrsVector()).get(); // returns a naked pointer
+
 
 	} else {
 
@@ -2104,7 +2110,7 @@ SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &world_
 
 // ------------------------------------------------------------------- //
 
-std::tuple<bool, bool, std::string, ignition::math::Pose3d, ignition::math::Vector3d, actor::inflation::Border*>
+std::tuple<bool, bool, std::string, ignition::math::Pose3d, ignition::math::Vector3d, actor::inflation::Border* /* std::shared_ptr<actor::inflation::Border> */ >
 SocialForceModel::preprocessWorldBoundary(const size_t &wall_num, actor::inflation::Box &model_box) {
 
 	// evaluate validity of the boundary box
@@ -2125,13 +2131,17 @@ SocialForceModel::preprocessWorldBoundary(const size_t &wall_num, actor::inflati
 	// rest of the outputs
 	bool is_an_actor = false;
 	ignition::math::Vector3d model_vel;
-	actor::inflation::Border* model_border_ptr = nullptr;
 	ignition::math::Pose3d model_raw_pose;
+
+//	std::shared_ptr<actor::inflation::Border> model_border_ptr;
+	actor::inflation::Border* model_border_ptr = nullptr;
 
 	// processing section
 	model_vel = ignition::math::Vector3d(0.0, 0.0, 0.0);
 
 	model_box.setBox(*boundary_.getBoundingBoxPtr(wall_num));
+//	model_border_ptr = std::make_shared<actor::inflation::Border>(&model_box);
+//	model_border_ptr = std::make_shared<actor::inflation::Border>(dynamic_cast<actor::inflation::Border>(&model_box));
 	model_border_ptr = &model_box;
 
 	// a trivial rotation component
