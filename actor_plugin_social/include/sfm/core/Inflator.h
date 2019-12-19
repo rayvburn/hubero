@@ -46,15 +46,15 @@ public:
 
 	/// \brief Function used when only other objects' bounding
 	/// box is considered and an actor is treated as a point
-	ignition::math::Vector3d findModelsClosestPoints(const ignition::math::Pose3d &actor_pose,
+	ignition::math::Vector3d findClosestPointsModelBox(const ignition::math::Pose3d &actor_pose,
 														  const ignition::math::Pose3d &object_pose,
-														  const actor::inflation::Box &bb) const;
+														  const actor::inflation::Border &bb) const;
 
 	/// \brief Function used when an actor's Bounding Box
 	/// and an object's Bounding Box are considered
-	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
-			const ignition::math::Pose3d &actor_pose,  const actor::inflation::Box &actor_box,
-			const ignition::math::Pose3d &object_pose, const actor::inflation::Box &object_box,
+	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findClosestPointsBoxes(
+			const ignition::math::Pose3d &actor_pose,  const actor::inflation::Border &actor_box,
+			const ignition::math::Pose3d &object_pose, const actor::inflation::Border &object_box,
 			const std::string &object_name /* debug only */) const;
 
 	/* Scroll down for an additional template definition which is used
@@ -62,16 +62,16 @@ public:
 
 	/// \brief Function used when 2 actors
 	/// with Bounding Circles are considered
-	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
-			const ignition::math::Pose3d &actor_pose,  const actor::inflation::Circle &actor_circle,
-			const ignition::math::Pose3d &object_pose, const actor::inflation::Circle &object_circle,
+	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findClosestPointsCircles(
+			const ignition::math::Pose3d &actor_pose,  const actor::inflation::Border &actor_circle,
+			const ignition::math::Pose3d &object_pose, const actor::inflation::Border &object_circle,
 			const std::string &_object_name /* debug only */) const;
 
 	/// \brief Function used when 2 actors
 	/// with Bounding Ellipses are considered
-	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
-			const ignition::math::Pose3d &actor_pose,	const actor::inflation::Ellipse &actor_ellipse,
-			const ignition::math::Pose3d &object_pose,	const actor::inflation::Ellipse &object_ellipse,
+	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findClosestPointsEllipses(
+			const ignition::math::Pose3d &actor_pose,	const actor::inflation::Border &actor_ellipse,
+			const ignition::math::Pose3d &object_pose,	const actor::inflation::Border &object_ellipse,
 			const std::string &object_name /* debug only */ ) const;
 
 	/// \brief Default destructor
@@ -84,7 +84,7 @@ private:
 	/// creates a vector of vertices of a Bounding Box;
 	/// \return A vector of 4 vertices of a rectangle is created -
 	/// Bounding Box is considered to be planar here
-	std::vector<ignition::math::Vector3d> createVerticesVector(const actor::inflation::Box &bb) const;
+	std::vector<ignition::math::Vector3d> createVerticesVector(const ignition::math::Box &bb) const;
 
 	/// \brief Helper function used when only other objects' bounding
 	/// box is considered and an actor is treated as a point;
@@ -122,13 +122,14 @@ private:
 	/// \note `box_pos` must be within `box` bounds, otherwise the center point
 	/// will be considered in calculations.
 	ignition::math::Vector3d calculateBoxIntersection(const ignition::math::Vector3d &object_pos,
-			const actor::inflation::Box &box,
+			const actor::inflation::Border &box,
 			const ignition::math::Vector3d &box_pos = ignition::math::Vector3d(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN())) const;
 
 	/// \brief Helper method which finds the closest Bounding
 	/// Box vertex relative to the given position (`actor_pos`)
 	/// \return Vector of the closest vertex coordinates
-	ignition::math::Vector3d findClosestBoundingBoxVertex(const ignition::math::Vector3d &actor_pos, const actor::inflation::Box &object_box) const;
+	ignition::math::Vector3d findClosestBoundingBoxVertex(const ignition::math::Vector3d &actor_pos,
+			const actor::inflation::Border &object_box) const;
 
 public:
 
@@ -142,9 +143,9 @@ public:
 	/// Bounding Circle/Bounding Ellipse and an object's Box
 	/// are considered
 	template <class T>
-	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findModelsClosestPoints(
+	std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> findClosestPointsActorBox(
 			const ignition::math::Pose3d &actor_pose, const T &actor_bound,
-			const ignition::math::Pose3d &object_pose,const actor::inflation::Box &object_box,
+			const ignition::math::Pose3d &object_pose,const actor::inflation::Border &object_box,
 			const std::string &object_name /* debug only */	) const {
 
 		/* BoundingCircle and BoundingBox  -> actor and static object */
@@ -167,7 +168,7 @@ public:
 		// to the `object_pose`'s position or shifted along X/Y axis;
 		// for details see @ref isWithinRangeOfBB
 		ignition::math::Vector3d object_anchor;
-		std::tie(within_bb, object_anchor) = isWithinRangeOfBB(actor_pose.Pos(), object_box);
+		std::tie(within_bb, object_anchor) = isWithinRangeOfBB(actor_pose.Pos(), object_box.getBox()); // note: without the `isBox` evaluation
 
 		// `within_bb` is TRUE if `object_anchor` is not equal to the `object_box`'s center
 		if ( within_bb ) {

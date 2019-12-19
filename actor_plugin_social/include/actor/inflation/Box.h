@@ -67,6 +67,11 @@ public:
 	/// \brief Returns a Box'es center coordinates
 	virtual ignition::math::Vector3d getCenter() const override;
 
+	/// \brief Returns a ignition's Box
+	/// instance which class wraps
+	virtual ignition::math::Box getBox() const override;
+
+	// TODO: get rid of these 2 below (either delete completely and modify code or introduce double inheritance :Box)
 	/// \brief Returns a Box'es minimum
 	/// vector coordinates
 	ignition::math::Vector3d getMin() const;
@@ -74,10 +79,6 @@ public:
 	/// \brief Returns a Box'es maximum
 	/// vector coordinates
 	ignition::math::Vector3d getMax() const;
-
-	/// \brief Returns a ignition's Box
-	/// instance which class wraps
-	ignition::math::Box getBox() const;
 
 	/// \brief Default destructor
 	virtual ~Box();

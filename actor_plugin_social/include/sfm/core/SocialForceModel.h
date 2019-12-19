@@ -424,14 +424,15 @@ private:
 	bool preprocessTypicalModel(const gazebo::physics::WorldPtr &world_ptr, const size_t &model_num, const std::vector<std::string> &ignored_models_v,
 			bool &is_an_actor, const actor::core::CommonInfo &actor_info, std::string &model_name,
 			ignition::math::Vector3d &model_vel, ignition::math::Pose3d &model_raw_pose,
-			actor::inflation::Border* &model_border_ptr);
+			actor::inflation::Border* &model_border_ptr, actor::inflation::Box &model_border_box);
 
 	/// \brief Prepares `model_vel`, `model_raw_pose` and inflation rectangle according
 	/// to the `world_dictionary/world_model/*` parameters.
 	/// \return True if preprocessing finished with success
 	bool preprocessWorldBoundary(const size_t &wall_num, bool &is_an_actor, std::string &model_name,
 			ignition::math::Vector3d &model_vel, ignition::math::Pose3d &model_raw_pose,
-			actor::inflation::Border* &model_border_ptr) const;
+			actor::inflation::Border* &model_border_ptr,
+			actor::inflation::Box &model_border_box) const;
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

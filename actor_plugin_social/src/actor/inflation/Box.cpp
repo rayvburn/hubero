@@ -19,7 +19,8 @@ namespace inflation {
 Box::Box():	bb_(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
 			bb_x_half_(0.45), bb_y_half_(0.45), bb_z_half_(1.00)
 {
-
+	// protected member of the base class
+	this->is_box_ = true;
 }
 
 // ------------------------------------------------------------------- //

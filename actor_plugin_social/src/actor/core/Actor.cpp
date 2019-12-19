@@ -133,12 +133,12 @@ void Actor::initInflator(const double &circle_radius) {
 	bounding_ptr_ = bounding_circle_ptr;
 	common_info_.setBorderPtr(bounding_ptr_);
 
-	std::cout << "\n[initInflator] Circle class: ";
-	bounding_circle_ptr->test();
-	std::cout << "[initInflator] Border class: ";
-	bounding_ptr_ = bounding_circle_ptr;
-	bounding_ptr_->test();
-	std::cout << "\n" << std::endl;
+//	std::cout << "\n[initInflator] Circle class: ";
+//	bounding_circle_ptr->test();
+//	std::cout << "[initInflator] Border class: ";
+//	bounding_ptr_ = bounding_circle_ptr;
+//	bounding_ptr_->test();
+//	std::cout << "\n" << std::endl;
 
 }
 
@@ -154,12 +154,12 @@ void Actor::initInflator(const double &box_x_half, const double &box_y_half, con
 	bounding_ptr_ = bounding_box_ptr;
 	common_info_.setBorderPtr(bounding_ptr_);
 
-	std::cout << "\n[initInflator] Box class: ";
-	bounding_box_ptr->test();
-	std::cout << "[initInflator] Border class: ";
-	bounding_ptr_ = bounding_box_ptr;
-	bounding_ptr_->test();
-	std::cout << "\n" << std::endl;
+//	std::cout << "\n[initInflator] Box class: ";
+//	bounding_box_ptr->test();
+//	std::cout << "[initInflator] Border class: ";
+//	bounding_ptr_ = bounding_box_ptr;
+//	bounding_ptr_->test();
+//	std::cout << "\n" << std::endl;
 
 }
 
@@ -179,12 +179,12 @@ void Actor::initInflator(const double &semi_major, const double &semi_minor, con
 	bounding_ptr_ = bounding_ellipse_ptr;
 	common_info_.setBorderPtr(bounding_ptr_);
 
-	std::cout << "\n[initInflator] Ellipse class: ";
-	bounding_ellipse_ptr->test();
-	std::cout << "[initInflator] Border class: ";
-	bounding_ptr_ = bounding_ellipse_ptr;
-	bounding_ptr_->test();
-	std::cout << "\n" << std::endl;
+//	std::cout << "\n[initInflator] Ellipse class: ";
+//	bounding_ellipse_ptr->test();
+//	std::cout << "[initInflator] Border class: ";
+//	bounding_ptr_ = bounding_ellipse_ptr;
+//	bounding_ptr_->test();
+//	std::cout << "\n" << std::endl;
 
 }
 

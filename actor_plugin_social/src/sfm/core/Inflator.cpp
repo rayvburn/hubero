@@ -17,8 +17,8 @@ Inflator::Inflator() { }
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d Inflator::findModelsClosestPoints(const ignition::math::Pose3d &actor_pose,
-		const ignition::math::Pose3d &object_pose, const actor::inflation::Box &bb) const
+ignition::math::Vector3d Inflator::findClosestPointsModelBox(const ignition::math::Pose3d &actor_pose,
+		const ignition::math::Pose3d &object_pose, const actor::inflation::Border &bb) const
 {
 
 	// TODO: check operation
@@ -81,7 +81,7 @@ ignition::math::Vector3d Inflator::findModelsClosestPoints(const ignition::math:
 
 // ------------------------------------------------------------------- //
 
-std::vector<ignition::math::Vector3d> Inflator::createVerticesVector(const actor::inflation::Box &bb) const
+std::vector<ignition::math::Vector3d> Inflator::createVerticesVector(const ignition::math::Box &bb) const
 {
 	// 4 vertices only (planar)
 	std::vector<ignition::math::Vector3d> temp_container;
@@ -89,18 +89,18 @@ std::vector<ignition::math::Vector3d> Inflator::createVerticesVector(const actor
 
 	// planar objects considered, height does not matter
 	// as long as it is the same for both vector points
-	temp_vector.Z(bb.getCenter().Z());
+	temp_vector.Z(bb.Center().Z());
 
-	temp_vector.X(bb.getMin().X()); 	temp_vector.Y(bb.getMin().Y());
+	temp_vector.X(bb.Min().X()); 	temp_vector.Y(bb.Min().Y());
 	temp_container.push_back(temp_vector);
 
-	temp_vector.X(bb.getMin().X()); 	temp_vector.Y(bb.getMax().Y());
+	temp_vector.X(bb.Min().X()); 	temp_vector.Y(bb.Max().Y());
 	temp_container.push_back(temp_vector);
 
-	temp_vector.X(bb.getMax().X()); 	temp_vector.Y(bb.getMin().Y());
+	temp_vector.X(bb.Max().X()); 	temp_vector.Y(bb.Min().Y());
 	temp_container.push_back(temp_vector);
 
-	temp_vector.X(bb.getMax().X()); 	temp_vector.Y(bb.getMax().Y());
+	temp_vector.X(bb.Max().X()); 	temp_vector.Y(bb.Max().Y());
 	temp_container.push_back(temp_vector);
 
 	// emplace_back() makes system stuck completely
@@ -126,9 +126,9 @@ std::vector<double> Inflator::calculateLengthToVertices(const ignition::math::Ve
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModelsClosestPoints(
-		const ignition::math::Pose3d &actor_pose,  const actor::inflation::Box &actor_box,
-		const ignition::math::Pose3d &object_pose, const actor::inflation::Box &object_box,
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findClosestPointsBoxes(
+		const ignition::math::Pose3d &actor_pose,  const actor::inflation::Border &actor_box,
+		const ignition::math::Pose3d &object_pose, const actor::inflation::Border &object_box,
 		const std::string &_object_name /* debug only */ ) const
 {
 
@@ -150,7 +150,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 	// to the `object_pose`'s position or shifted along X/Y axis;
 	// for details see @ref isWithinRangeOfBB
 	ignition::math::Vector3d object_anchor;
-	std::tie(within_bb, object_anchor) = isWithinRangeOfBB(actor_pose.Pos(), object_box);
+	std::tie(within_bb, object_anchor) = isWithinRangeOfBB(actor_pose.Pos(), object_box.getBox());
 	// `within_bb` is TRUE if `object_anchor` is not equal to the `object_box`'s center
 
 	// find object shifted position (intersection)
@@ -366,7 +366,7 @@ std::tuple<bool, ignition::math::Vector3d> Inflator::isWithinRangeOfBB(
 // ------------------------------------------------------------------- //
 
 ignition::math::Vector3d Inflator::calculateBoxIntersection(const ignition::math::Vector3d &object_pos,
-		const actor::inflation::Box &box,
+		const actor::inflation::Border &box,
 		const ignition::math::Vector3d &box_pos) const {
 
 	/* The algorithm of searching the closest points of 2 bounding boxes (presented below)
@@ -424,9 +424,10 @@ ignition::math::Vector3d Inflator::calculateBoxIntersection(const ignition::math
 
 // ------------------------------------------------------------------- //
 
-ignition::math::Vector3d Inflator::findClosestBoundingBoxVertex(const ignition::math::Vector3d &actor_pos, const actor::inflation::Box &object_box) const {
+ignition::math::Vector3d Inflator::findClosestBoundingBoxVertex(const ignition::math::Vector3d &actor_pos,
+		const actor::inflation::Border &object_box) const {
 
-	std::vector<ignition::math::Vector3d> vertices_vector = createVerticesVector(object_box);
+	std::vector<ignition::math::Vector3d> vertices_vector = createVerticesVector(object_box.getBox());
 	std::vector<double> lengths_vector = calculateLengthToVertices(actor_pos, vertices_vector);
 	auto shortest = std::min_element(lengths_vector.begin(), lengths_vector.end());
 
@@ -442,11 +443,11 @@ ignition::math::Vector3d Inflator::findClosestBoundingBoxVertex(const ignition::
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModelsClosestPoints(
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findClosestPointsCircles(
 		const ignition::math::Pose3d &actor_pose,
-		const actor::inflation::Circle &actor_circle,
+		const actor::inflation::Border &actor_circle,
 		const ignition::math::Pose3d &object_pose,
-		const actor::inflation::Circle &object_circle,
+		const actor::inflation::Border &object_circle,
 		const std::string &_object_name /* debug only */) const
 {
 
@@ -473,11 +474,11 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModelsClosestPoints(
+std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findClosestPointsEllipses(
 		const ignition::math::Pose3d &actor_pose,
-		const actor::inflation::Ellipse &actor_ellipse,
+		const actor::inflation::Border &actor_ellipse,
 		const ignition::math::Pose3d &object_pose,
-		const actor::inflation::Ellipse &object_ellipse,
+		const actor::inflation::Border &object_ellipse,
 		const std::string &object_name /* debug only */ ) const
 {
 

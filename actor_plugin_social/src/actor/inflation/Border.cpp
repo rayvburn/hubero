@@ -10,7 +10,13 @@
 namespace actor {
 namespace inflation {
 
-Border::Border() {};
+// default constructor
+Border::Border(): is_box_(false) {};
+
+// non-virtual method
+bool Border::isBox() const {
+	return (is_box_);
+}
 
 // virtual method
 void Border::updatePose(const ignition::math::Pose3d &new_pose) {
@@ -39,6 +45,11 @@ ignition::math::Vector3d Border::getCenter() const {
 // virtual method
 visualization_msgs::Marker Border::getMarkerConversion() const {
 	return (visualization_msgs::Marker());
+}
+
+// virtual method
+ignition::math::Box Border::getBox() const {
+	return (ignition::math::Box());
 }
 
 // virtual method

@@ -153,10 +153,22 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	/* model_vel contains model's velocity (world's object or actor) - for the actor this is set differently
 	 * it was impossible to set actor's linear velocity by setting it by the model's class method */
 	ignition::math::Vector3d model_vel;
-	actor::inflation::Border* model_border_ptr;
 
-	/* below flag is used as a workaround for the problem connected with being unable to set actor's
-	 * velocity and acceleration in the gazebo::physics::WorldPtr */
+	/* Border pointer which will carry cases related to repulsive force calculations
+	 * associated with other actors borders (i.e. box/circle/ellipse) stored
+	 * in the `actor::core::CommonInfo` 'container' class
+	 */
+	actor::inflation::Border* model_border_ptr = nullptr;
+
+	/* The `dynamic_cast` operation does not allow to convert `actor::inflation::Border`
+	 * to the `actor::inflation::Box` class. Because of that, a new instance
+	 * must be created which will carry the Box configuration methods (which are not virtual).
+	 * Default constructor called below.
+	 */
+	actor::inflation::Box model_border_box;
+
+	/* the flag introduced below is used as a workaround for the problem connected with inability
+	 * to set actor velocity and acceleration in the gazebo::physics::WorldPtr */
 	bool is_an_actor = false;
 	ignition::math::Pose3d model_raw_pose;
 	std::string model_name;
@@ -175,14 +187,14 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		// in Gazebo model list
 		if ( isTypicalModel(i, world_ptr->ModelCount()) ) {
 
-			if ( !preprocessTypicalModel(world_ptr, i, ignored_models_v, is_an_actor, actor_info, model_name, model_vel, model_raw_pose, model_border_ptr) ) {
+			if ( !preprocessTypicalModel(world_ptr, i, ignored_models_v, is_an_actor, actor_info, model_name, model_vel, model_raw_pose, model_border_ptr, model_border_box) ) {
 				continue;
 			}
 
 		} else {
 
 			// `wall_num` range: 0-3
-			if ( !preprocessWorldBoundary(world_ptr->ModelCount() + 3 - i, is_an_actor, model_name, model_vel, model_raw_pose, model_border_ptr) ) {
+			if ( !preprocessWorldBoundary(world_ptr->ModelCount() + 3 - i, is_an_actor, model_name, model_vel, model_raw_pose, model_border_ptr, model_border_box) ) {
 				continue;
 			}
 
@@ -203,26 +215,26 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		case(INFLATION_BOX_OTHER_OBJECTS):
 
 				actor_closest_to_model_pose = actor_pose;
-				model_closest_point_pose.Pos() = inflator_.findModelsClosestPoints(actor_pose, model_raw_pose, *(actor::inflation::Box*)model_border_ptr);
+				model_closest_point_pose.Pos() = inflator_.findClosestPointsModelBox(actor_pose, model_raw_pose, *(actor::inflation::Box*)model_border_ptr);
 				break;
 
 		case(INFLATION_BOX_ALL_OBJECTS):
 
 				std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-						inflator_.findModelsClosestPoints(actor_pose, *((actor::inflation::Box*)actor_info.getBorderPtr()),
-														  model_raw_pose, *((actor::inflation::Box*)model_border_ptr), model_name); // FIXME ??
+						inflator_.findClosestPointsBoxes(actor_pose, *(actor_info.getBorderPtr()),
+														  model_raw_pose, *(model_border_ptr), model_name);
 				break;
 
 		case(INFLATION_CIRCLE):
 
 				if ( is_an_actor ) {
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflator_.findModelsClosestPoints(actor_pose, *((actor::inflation::Circle*)actor_info.getBorderPtr()),
-															  model_raw_pose, *((actor::inflation::Circle*)model_border_ptr), model_name );
+							inflator_.findClosestPointsCircles(actor_pose, *(actor_info.getBorderPtr()),
+															  model_raw_pose, *(model_border_ptr), model_name );
 				} else {
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflator_.findModelsClosestPoints(actor_pose, *((actor::inflation::Circle*)actor_info.getBorderPtr()),
-															  model_raw_pose, *(actor::inflation::Box*)model_border_ptr, model_name );
+							inflator_.findClosestPointsActorBox(actor_pose, *(actor_info.getBorderPtr()),
+															  model_raw_pose, *(model_border_ptr), model_name );
 				}
 				break;
 
@@ -230,12 +242,12 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 
 				if ( is_an_actor ) {
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflator_.findModelsClosestPoints(actor_pose, *((actor::inflation::Ellipse*)actor_info.getBorderPtr()),
-															  model_raw_pose, *((actor::inflation::Ellipse*)model_border_ptr), model_name );
+							inflator_.findClosestPointsEllipses(actor_pose, *(actor_info.getBorderPtr()),
+															  model_raw_pose, *(model_border_ptr), model_name );
 				} else {
 					std::tie( actor_closest_to_model_pose, model_closest_point_pose.Pos() ) =
-							inflator_.findModelsClosestPoints(actor_pose, *((actor::inflation::Ellipse*)actor_info.getBorderPtr()),
-															  model_raw_pose, *(actor::inflation::Box*)model_border_ptr, model_name );
+							inflator_.findClosestPointsActorBox(actor_pose, *(actor_info.getBorderPtr()),
+															  model_raw_pose, *(model_border_ptr), model_name );
 
 				}
 				break;
@@ -2012,12 +2024,13 @@ bool SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &w
 		std::string &model_name,
 		ignition::math::Vector3d &model_vel,
 		ignition::math::Pose3d &model_raw_pose,
-		actor::inflation::Border* &model_border_ptr)
+		actor::inflation::Border* &model_border_ptr, // reference is necessary to modify the pointer
+		actor::inflation::Box &model_border_box) // mutable reference (will likely be modified if `is_an_actor` is false
 {
 
 	// save a pointer to the new model
 	gazebo::physics::ModelPtr model_ptr = world_ptr->ModelByIndex(model_num);
-	std::cout << "[preprocessTypicalModel] NAME: " << model_ptr->GetName() << "\tptr: " << model_border_ptr << std::endl;
+	std::cout << "[preprocessTypicalModel1] NAME: " << model_ptr->GetName() << "\tptr: " << model_border_ptr << std::endl;
 
 	// check whether social force calculation is necessary (list given by system parameters)
 	if ( isModelNegligible(model_ptr->GetName()) ) {
@@ -2048,21 +2061,45 @@ bool SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &w
 //		} else if ( inflation_type_ == INFLATION_BOX_ALL_OBJECTS || inflation_type_ == INFLATION_BOX_OTHER_OBJECTS ) {
 //			model_box = actor_decoder_.getData(actor_info.getBoundingBoxesVector());
 //		}
+
 		model_border_ptr = actor_decoder_.getData(actor_info.getBorderPtrsVector());
+		std::cout << "[preprocessTypicalModel2a] NAME: " << model_ptr->GetName() << "\tptr: " << model_border_ptr << std::endl;
+
 
 	} else {
 
 		// ------------
-		return (false);
+//		return (false);
 		// ------------
 
 		model_vel = model_ptr->WorldLinearVel();
 //		((actor::inflation::Box*)model_border_ptr)->setBox(model_ptr->BoundingBox()); // conversion
 
-		/* TEST */
+		/* TEST0 */
+		std::cout << "[preprocessTypicalModel] box ptr: " << &model_border_box << std::endl;
+		model_border_box.setBox(model_ptr->BoundingBox());
+		std::cout << "[preprocessTypicalModel] before ptr assignment " << std::endl;
+		model_border_ptr = &model_border_box;
+		std::cout << "[preprocessTypicalModel] border ptr: " << model_border_ptr << std::endl;
+
+		/* TEST1
+		std::cout << "[preprocessTypicalModel] before 'cast'" << std::endl;
+		actor::inflation::Box* model_border_box_ptr = dynamic_cast<actor::inflation::Box*>(model_border_ptr);
+		if ( model_border_box_ptr != nullptr ) {
+			std::cout << "[preprocessTypicalModel] model_border_box_ptr IS NOT NULLPTR" << std::endl;
+		} else {
+			std::cout << "[preprocessTypicalModel] model_border_box_ptr IS NULLPTR" << std::endl;
+		}
+		return (false);
+		*/
+
+		/* TEST2
 		std::cout << "[preprocessTypicalModel] before 'cast'" << std::endl;
 		actor::inflation::Box* model_border_box_ptr = new actor::inflation::Box();
-		model_border_box_ptr = static_cast<actor::inflation::Box*>(model_border_ptr);
+		model_border_box_ptr->setBox(model_ptr->BoundingBox());
+//		model_border_box_ptr = static_cast<actor::inflation::Box*>(model_border_ptr);
+
+		std::cout << "[preprocessTypicalModel2b] NAME: " << model_ptr->GetName() << "\tBOX ptr: " << model_border_box_ptr << std::endl;
 
 		std::cout << "[preprocessTypicalModel] before 'setBox'" << std::endl;
 		model_border_box_ptr->setBox(model_ptr->BoundingBox()); // conversion
@@ -2072,7 +2109,7 @@ bool SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &w
 			std::cout << "[preprocessTypicalModel] Boxes are NOT EQUAL!" << std::endl;
 		}
 		delete model_border_box_ptr;
-
+		*/
 
 //		model_box.setBox(model_ptr->BoundingBox()); // conversion
 
@@ -2095,7 +2132,9 @@ bool SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &w
 
 bool SocialForceModel::preprocessWorldBoundary(const size_t &wall_num, bool &is_an_actor, std::string &model_name,
 		ignition::math::Vector3d &model_vel, ignition::math::Pose3d &model_raw_pose,
-		actor::inflation::Border* &model_border_ptr) const
+		actor::inflation::Border* &model_border_ptr, // reference is necessary to modify the pointer
+		actor::inflation::Box &model_border_box) // mutable reference (will likely be modified if `is_an_actor` is false
+const
 {
 
 	/* FIXME: model_name returns previously considered model name */
@@ -2107,7 +2146,7 @@ bool SocialForceModel::preprocessWorldBoundary(const size_t &wall_num, bool &is_
 	}
 
 	//-----------------
-	return (false);
+//	return (false);
 	//-----------------
 
 	is_an_actor = false;
@@ -2117,11 +2156,19 @@ bool SocialForceModel::preprocessWorldBoundary(const size_t &wall_num, bool &is_
 
 	model_vel = ignition::math::Vector3d(0.0, 0.0, 0.0);
 
+	/* TEST0 */
+	std::cout << "[preprocessWorldBoundary] box ptr: " << &model_border_box << std::endl;
+	model_border_box.setBox(*boundary_.getBoundingBoxPtr(wall_num));
+	std::cout << "[preprocessWorldBoundary] before ptr assignment " << std::endl;
+	model_border_ptr = &model_border_box;
+	std::cout << "[preprocessWorldBoundary] border ptr: " << model_border_ptr << std::endl;
+
+	/* PREV
 //	((actor::inflation::Box*)model_border_ptr)->setBox(*boundary_.getBoundingBoxPtr(wall_num));
 	actor::inflation::Box* model_border_box_ptr = dynamic_cast<actor::inflation::Box*>(model_border_ptr);
 	model_border_box_ptr->setBox(*boundary_.getBoundingBoxPtr(wall_num)); // conversion
-
 //	model_box.setBox(*boundary_.getBoundingBoxPtr(wall_num));
+	*/
 
 	model_raw_pose.Pos() = ((actor::inflation::Box*)model_border_ptr)->getCenter();
 	model_raw_pose.Pos().Z() = 0.0;

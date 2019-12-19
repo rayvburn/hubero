@@ -12,6 +12,7 @@
 #include <ignition/math/Pose3.hh>
 #include <ignition/math/Line3.hh>
 #include <visualization_msgs/Marker.h>
+#include <ignition/math/Box.hh>
 
 namespace actor {
 namespace inflation {
@@ -28,6 +29,9 @@ public:
 
 	/// \brief Constructor
 	Border();
+
+	/// \brief Returns true if the Border if of a rectangular shape (represents a 3D box)
+	bool isBox() const;
 
 	/// \brief Method which updates a class'es
 	/// internal Box instance's pose
@@ -70,11 +74,22 @@ public:
 	/// instance which is created by Box conversion
 	virtual visualization_msgs::Marker getMarkerConversion() const;
 
+	/// \brief Returns a valid ignition::math::Box instance if the Border is a rectangle
+	/// (i.e. represents a 3D Box --> /isBox == true/) or a default Box instance otherwise.
+	/// \note This method has been created as a workaround for the downcasting problem
+	/// (dynamic_cast produced errors)
+	virtual ignition::math::Box getBox() const;
+
 	/// \brief Destructor
 	virtual ~Border();
 
 	/* DEBUGGING */
 	virtual void test() { std::cout << "BORDER CLASS" << std::endl; }
+
+protected:
+
+	/// \brief Flag used for evaluation whether the Border is a Box (see the derived classes list)
+	bool is_box_;
 
 };
 
