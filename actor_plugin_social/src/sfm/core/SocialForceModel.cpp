@@ -24,9 +24,7 @@ static bool print_info = false;
 
 // ----------------------------------------
 
-
 namespace sfm {
-
 
 // ------------------------------------------------------------------- //
 
@@ -66,9 +64,8 @@ SocialForceModel::SocialForceModel():
 	// fuzzylite check
 //	proc_dbg_.checkFl();
 
-
-
-	/* Algorithm PARAMETERS are:
+	/*
+	 * Algorithm PARAMETERS are:
 	 * - relaxation time must be given here
 	 * - kind of coefficient for attraction artificial potential field (decreases over time)
 	 * - FOV
@@ -322,6 +319,7 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		force_interaction_ += f_alpha_beta;
 
 	} /* for loop ends here (iterates over all world models) */
+
 	// ============================================================================
 
 	// multiply force vector components by parameter values
@@ -2089,7 +2087,6 @@ SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &world_
 		model_vel = model_ptr->WorldLinearVel();
 
 		// `dynamic_cast` does not work in this case, `model_border_box` acts as a helper instance here
-
 		model_box.setBox(model_ptr->BoundingBox());
 		model_border_ptr = &model_box;
 

@@ -64,8 +64,6 @@ public:
 	/// \brief Default destructor
 	virtual ~Circle();
 
-	virtual void test() override { std::cout << "CIRCLE CLASS" << std::endl; };
-
 private:
 
 	/// \brief Stores a radius of a circle

@@ -71,7 +71,6 @@ public:
 	/// instance which class wraps
 	virtual ignition::math::Box getBox() const override;
 
-	// TODO: get rid of these 2 below (either delete completely and modify code or introduce double inheritance :Box)
 	/// \brief Returns a Box'es minimum
 	/// vector coordinates
 	ignition::math::Vector3d getMin() const;

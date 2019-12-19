@@ -75,11 +75,9 @@ public:
 
 	unsigned int							getActorID() const;
 
-	/**
-	 * @brief Returns non-const pointer to allow call of the `setBox` method in case of the
-	 * bounding box object
-	 * @return
-	 */
+	/// \brief Returns non-const pointer to allow call of the `setBox` method in case of the bounding box object
+	/// \return Pointer to the Border instance (which was previously configured by one of the derived classes
+	/// (i.e. the base class uses the virtual methods versions provided by a derived class)
 	actor::inflation::Border*				getBorderPtr() const;
 	ignition::math::Vector3d				getLinearVelocity() const;
 

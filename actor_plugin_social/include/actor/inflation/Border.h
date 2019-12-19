@@ -83,9 +83,6 @@ public:
 	/// \brief Destructor
 	virtual ~Border();
 
-	/* DEBUGGING */
-	virtual void test() { std::cout << "BORDER CLASS" << std::endl; }
-
 protected:
 
 	/// \brief Flag used for evaluation whether the Border is a Box (see the derived classes list)

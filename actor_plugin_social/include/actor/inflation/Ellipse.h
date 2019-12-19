@@ -95,9 +95,6 @@ public:
 	/// \brief Default destructor
 	virtual ~Ellipse();
 
-	/* DEBUGGING */
-	virtual void test() override { std::cout << "ELLIPSE CLASS" << std::endl; };
-
 private:
 
 	/* DEPRECATED */

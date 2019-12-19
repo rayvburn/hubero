@@ -18,11 +18,10 @@ namespace core {
 
 Actor::Actor():
  		bounding_type_(ACTOR_BOUNDING_ELLIPSE),
+		bounding_ptr_(nullptr),
 		stance_(ACTOR_STANCE_STAND),
 		trans_function_ptr(nullptr)
-{
-
-}
+{}
 
 // ------------------------------------------------------------------- //
 
@@ -110,15 +109,6 @@ void Actor::initRosInterface() {
 	connection_ptr_->initServices();
 	connection_ptr_->startCallbackProcessingThread();
 
-	// initialize global plan provider
-	//global_planner_.setNodeHandle(node_.getNodeHandlePtr());
-	//global_planner_.setWaypointGap(10);
-
-	// prev
-//	global_planner_.initialize(node_.getNodeHandlePtr(), 10, actor_ptr_->GetName());
-//	global_plan_ptr_ = std::shared_ptr<actor::ros_interface::GlobalPlan>(node_.getNodeHandlePtr(), 10, actor_ptr_->GetName());
-
-
 }
 
 // ------------------------------------------------------------------- //
@@ -133,13 +123,6 @@ void Actor::initInflator(const double &circle_radius) {
 	bounding_ptr_ = bounding_circle_ptr;
 	common_info_.setBorderPtr(bounding_ptr_);
 
-//	std::cout << "\n[initInflator] Circle class: ";
-//	bounding_circle_ptr->test();
-//	std::cout << "[initInflator] Border class: ";
-//	bounding_ptr_ = bounding_circle_ptr;
-//	bounding_ptr_->test();
-//	std::cout << "\n" << std::endl;
-
 }
 
 // ------------------------------------------------------------------- //
@@ -153,13 +136,6 @@ void Actor::initInflator(const double &box_x_half, const double &box_y_half, con
 	bounding_box_ptr->updatePose(*pose_world_ptr_);
 	bounding_ptr_ = bounding_box_ptr;
 	common_info_.setBorderPtr(bounding_ptr_);
-
-//	std::cout << "\n[initInflator] Box class: ";
-//	bounding_box_ptr->test();
-//	std::cout << "[initInflator] Border class: ";
-//	bounding_ptr_ = bounding_box_ptr;
-//	bounding_ptr_->test();
-//	std::cout << "\n" << std::endl;
 
 }
 
@@ -178,13 +154,6 @@ void Actor::initInflator(const double &semi_major, const double &semi_minor, con
 	bounding_ellipse_ptr->init( semi_major, semi_minor, yaw_world.Radian(), pose_world_ptr_->Pos(), ignition::math::Vector3d(center_offset_x, center_offset_y, 0.0) );
 	bounding_ptr_ = bounding_ellipse_ptr;
 	common_info_.setBorderPtr(bounding_ptr_);
-
-//	std::cout << "\n[initInflator] Ellipse class: ";
-//	bounding_ellipse_ptr->test();
-//	std::cout << "[initInflator] Border class: ";
-//	bounding_ptr_ = bounding_ellipse_ptr;
-//	bounding_ptr_->test();
-//	std::cout << "\n" << std::endl;
 
 }
 

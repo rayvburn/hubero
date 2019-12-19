@@ -281,20 +281,9 @@ private:
     /// \brief Stores type of an actor's bounding for SFM
     actor::ActorBoundingType bounding_type_;
 
-    // FIXME: bounding_ptr
-//    /// \brief Object that acts as a inflation around the actor - box-shaped
-//    /// used by SFM, chosen as a parameter
-//    actor::inflation::Box bounding_box_;
-//
-//    /// \brief Object that acts as a inflation around the actor - circle-shaped
-//    /// used by SFM, chosen as a parameter
-//    actor::inflation::Circle bounding_circle_;
-//
-//    /// \brief Object that acts as a inflation around the actor - circle-shaped
-//    /// used by SFM, chosen as a parameter
-//    actor::inflation::Ellipse bounding_ellipse_;
-
-    /// \brief Actor border instance which abstracts of the actual shape of the border
+    /// \brief Object that acts as a inflation around the actor used by the SFM,
+    /// the type of the border is chosen as a parameter
+    /// \details Actor border instance which abstracts of the actual shape of the border
     actor::inflation::Border* bounding_ptr_;
 
     /// \brief Actor's current stance
