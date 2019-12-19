@@ -417,22 +417,30 @@ private:
 	/// bounding boxes (only if the parameter is not empty, i.e. name is not set to `none`)
 	bool isTypicalModel(const unsigned int &count_curr, const unsigned int &models_total);
 
-	/// \brief Prepares `model_vel`, `model_raw_pose` and inflation shape according
-	/// to the parameters and the Gazebo model setup.
-	/// \return True if preprocessing finished with success
-	/// \note non-const due to `setID` call of actor::core::CommonInfo
-	bool preprocessTypicalModel(const gazebo::physics::WorldPtr &world_ptr, const size_t &model_num, const std::vector<std::string> &ignored_models_v,
-			bool &is_an_actor, const actor::core::CommonInfo &actor_info, std::string &model_name,
-			ignition::math::Vector3d &model_vel, ignition::math::Pose3d &model_raw_pose,
-			actor::inflation::Border* &model_border_ptr, actor::inflation::Box &model_border_box);
+	/// \brief Prepares the data necessary to the interaction force calculation according
+	/// to the parameters and the Gazebo model setup. Method inputs are used as rvalue,
+	/// but only the `model_box` is modified.
+	/// \param world_ptr
+	/// \param model_num
+	/// \param ignored_models_v
+	/// \param actor_info
+	/// \param model_box
+	/// \return Tuple: bool is_negligible, bool is_an_actor, std::string model_name, ignition::math::Pose3d model_raw_pose,
+	/// ignition::math::Vector3d model_vel, actor::inflation::Border* model_border_ptr
+	std::tuple<bool, bool, std::string, ignition::math::Pose3d, ignition::math::Vector3d, actor::inflation::Border*>
+	preprocessTypicalModel(const gazebo::physics::WorldPtr &world_ptr, const size_t &model_num,
+			const std::vector<std::string> &ignored_models_v, const actor::core::CommonInfo &actor_info,
+			actor::inflation::Box &model_box);
 
-	/// \brief Prepares `model_vel`, `model_raw_pose` and inflation rectangle according
-	/// to the `world_dictionary/world_model/*` parameters.
-	/// \return True if preprocessing finished with success
-	bool preprocessWorldBoundary(const size_t &wall_num, bool &is_an_actor, std::string &model_name,
-			ignition::math::Vector3d &model_vel, ignition::math::Pose3d &model_raw_pose,
-			actor::inflation::Border* &model_border_ptr,
-			actor::inflation::Box &model_border_box) const;
+	/// \brief Prepares the data necessary to the interaction force (coming from the walls)
+	/// calculation according to the parameters and the Gazebo model setup. Method inputs
+	/// are used as rvalue, but only the `model_box` is modified.
+	/// \param wall_num
+	/// \param model_box
+	/// \return Tuple: bool is_valid, bool is_an_actor, std::string model_name, ignition::math::Pose3d model_raw_pose,
+	/// ignition::math::Vector3d model_vel, actor::inflation::Border* model_border_ptr
+	std::tuple<bool, bool, std::string, ignition::math::Pose3d, ignition::math::Vector3d, actor::inflation::Border*>
+	preprocessWorldBoundary(const size_t &wall_num, actor::inflation::Box &model_box);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

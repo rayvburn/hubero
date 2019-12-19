@@ -134,7 +134,9 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	// RosService-driven?
 	(SfmGetPrintData()) ? (print_info = true) : (0);
 
-	// compute internal acceleration
+	// -----------------------------------------------------------------------------------------
+	// ------- internal force calculation ------------------------------------------------------
+	// -----------------------------------------------------------------------------------------
 	force_internal_ = computeInternalForce(actor_pose, actor_velocity, actor_target);
 
 	// check whether it is needed to calculate interaction force or only the internal one
@@ -144,6 +146,9 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		return (false);
 	}
 
+	// -----------------------------------------------------------------------------------------
+	// ------ interaction forces calculation (repulsive, attractive) ---------------------------
+	// -----------------------------------------------------------------------------------------
 	// added up to the `force_interaction_`
 	ignition::math::Vector3d f_alpha_beta;
 
@@ -162,7 +167,9 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 
 	/* The `dynamic_cast` operation does not allow to convert `actor::inflation::Border`
 	 * to the `actor::inflation::Box` class. Because of that, a new instance
-	 * must be created which will carry the Box configuration methods (which are not virtual).
+	 * is created which carries the Box configuration methods (which are not virtual).
+	 * It is used only as a helper in the process of assigning a proper pointer
+	 * to the `model_border_ptr` (see @ref preprocessTypicalModel and @ref preprocessWorldBoundary)
 	 * Default constructor called below.
 	 */
 	actor::inflation::Box model_border_box;
@@ -171,36 +178,52 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 	 * to set actor velocity and acceleration in the gazebo::physics::WorldPtr */
 	bool is_an_actor = false;
 	ignition::math::Pose3d model_raw_pose;
-	std::string model_name;
+	std::string model_name; // TODO: can be deleted in the final version
 
-	/* store distance vector (connecting actor's and obstacle's
-	 * `closest` points) and its length */
+	/* store distance vector (connecting actor's and obstacle's `closest` points) and its length */
 	ignition::math::Vector3d distance_v;
 	double distance = 0.0;
 
 	// ============================================================================
+
 	// iterate over all world's objects + 4 walls (at least try)
 	for ( unsigned int i = 0; i < (world_ptr->ModelCount() + 4); i++ ) {
 
-		// evaluate if the object to consider is a valid Gazebo model or only artificial,
+		// ***** preprocessing section - can break the iteration if the model is negligible/invalid *****
+
+		// evaluate if the object to consider is a valid Gazebo model or only the artificial one,
 		// i.e. that is represented by a bounding box and is not recognized
-		// in Gazebo model list
+		// in the Gazebo model list (an artificial boundary generated in the operation of a division
+		// of the 'single model of the world'
 		if ( isTypicalModel(i, world_ptr->ModelCount()) ) {
 
-			if ( !preprocessTypicalModel(world_ptr, i, ignored_models_v, is_an_actor, actor_info, model_name, model_vel, model_raw_pose, model_border_ptr, model_border_box) ) {
+			// flag storing the output of the preprocessing routine
+			bool is_valid = false;
+			std::tie(is_valid, is_an_actor, model_name, model_raw_pose, model_vel, model_border_ptr) =
+					preprocessTypicalModel(world_ptr, i, ignored_models_v, actor_info, model_border_box);
+
+			if ( !is_valid ) {
+				// the current model is negligible, skip the iteration
 				continue;
 			}
 
 		} else {
 
+			// flag storing the output of the preprocessing routine
+			bool is_valid = false;
+
 			// `wall_num` range: 0-3
-			if ( !preprocessWorldBoundary(world_ptr->ModelCount() + 3 - i, is_an_actor, model_name, model_vel, model_raw_pose, model_border_ptr, model_border_box) ) {
+			std::tie(is_valid, is_an_actor, model_name, model_raw_pose, model_vel, model_border_ptr) =
+					preprocessWorldBoundary(world_ptr->ModelCount() + 3 - i, model_border_box);
+
+			if ( !is_valid ) {
+				// the current model (boundary) is invalid, skip the iteration
 				continue;
 			}
 
 		}
 
-		// ============================================================================
+		// ***************** end of the preprocessing section *******************************************
 
 		// check if the obstacle is static or dynamic (force calculation differs)
 		is_dynamic = isDynamicObstacle(model_vel);
@@ -2016,32 +2039,40 @@ bool SocialForceModel::isTypicalModel(const unsigned int &count_curr, const unsi
 
 // ------------------------------------------------------------------- //
 
-bool SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &world_ptr,
+std::tuple<bool, bool, std::string, ignition::math::Pose3d, ignition::math::Vector3d, actor::inflation::Border*>
+SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &world_ptr,
 		const size_t &model_num,
 		const std::vector<std::string> &ignored_models_v,
-		bool &is_an_actor,
 		const actor::core::CommonInfo &actor_info,
-		std::string &model_name,
-		ignition::math::Vector3d &model_vel,
-		ignition::math::Pose3d &model_raw_pose,
-		actor::inflation::Border* &model_border_ptr, // reference is necessary to modify the pointer
-		actor::inflation::Box &model_border_box) // mutable reference (will likely be modified if `is_an_actor` is false
+		actor::inflation::Box &model_box)
 {
 
 	// save a pointer to the new model
 	gazebo::physics::ModelPtr model_ptr = world_ptr->ModelByIndex(model_num);
-	std::cout << "[preprocessTypicalModel1] NAME: " << model_ptr->GetName() << "\tptr: " << model_border_ptr << std::endl;
 
 	// check whether social force calculation is necessary (list given by system parameters)
 	if ( isModelNegligible(model_ptr->GetName()) ) {
-		return (false);
+		// in fact only the first `false` is meaningful here
+		return (std::make_tuple(false, false, std::string(), ignition::math::Pose3d(), ignition::math::Vector3d(), nullptr));
 	}
 
 	// check model name's presence in the dynamic list of negligible objects
 	// (usually the list is not empty only in `following` state)
 	if ( isModelNegligible(model_ptr->GetName(), ignored_models_v) ) {
-		return (false);
+		// in fact only the first `false` is meaningful here
+		return (std::make_tuple(false, false, std::string(), ignition::math::Pose3d(), ignition::math::Vector3d(), nullptr));
 	}
+
+	//////////////////////////////////////////////////////////////////////////
+	/// catch model name - debugging /////////////////////////////////////////
+	SfmDebugSetCurrentObjectName(model_ptr->GetName()); //////////////////////
+	SfmDebugSetCurrentActorName(owner_name_); ////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+
+	// some of the outputs
+	bool is_an_actor = false;
+	ignition::math::Vector3d model_vel;
+	actor::inflation::Border* model_border_ptr = nullptr;
 
 	// decode information if the current model is of `Actor` type
 	if ( (is_an_actor = actor_decoder_.isActor(model_ptr->GetType())) ) {
@@ -2051,130 +2082,42 @@ bool SocialForceModel::preprocessTypicalModel(const gazebo::physics::WorldPtr &w
 
 		// load data from CommonInfo based on actor's id
 		model_vel = actor_decoder_.getData(actor_info.getLinearVelocitiesVector());
-
-		//
-		// select proper inflation model
-//		if ( inflation_type_ == INFLATION_CIRCLE ) {
-//			model_circle  = actor_decoder_.getData(actor_info.getBoundingCirclesVector());
-//		} else if ( inflation_type_ == INFLATION_ELLIPSE ) {
-//			model_ellipse = actor_decoder_.getData(actor_info.getBoundingEllipsesVector());
-//		} else if ( inflation_type_ == INFLATION_BOX_ALL_OBJECTS || inflation_type_ == INFLATION_BOX_OTHER_OBJECTS ) {
-//			model_box = actor_decoder_.getData(actor_info.getBoundingBoxesVector());
-//		}
-
 		model_border_ptr = actor_decoder_.getData(actor_info.getBorderPtrsVector());
-		std::cout << "[preprocessTypicalModel2a] NAME: " << model_ptr->GetName() << "\tptr: " << model_border_ptr << std::endl;
-
 
 	} else {
 
-		// ------------
-//		return (false);
-		// ------------
-
 		model_vel = model_ptr->WorldLinearVel();
-//		((actor::inflation::Box*)model_border_ptr)->setBox(model_ptr->BoundingBox()); // conversion
 
-		/* TEST0 */
-		std::cout << "[preprocessTypicalModel] box ptr: " << &model_border_box << std::endl;
-		model_border_box.setBox(model_ptr->BoundingBox());
-		std::cout << "[preprocessTypicalModel] before ptr assignment " << std::endl;
-		model_border_ptr = &model_border_box;
-		std::cout << "[preprocessTypicalModel] border ptr: " << model_border_ptr << std::endl;
+		// `dynamic_cast` does not work in this case, `model_border_box` acts as a helper instance here
 
-		/* TEST1
-		std::cout << "[preprocessTypicalModel] before 'cast'" << std::endl;
-		actor::inflation::Box* model_border_box_ptr = dynamic_cast<actor::inflation::Box*>(model_border_ptr);
-		if ( model_border_box_ptr != nullptr ) {
-			std::cout << "[preprocessTypicalModel] model_border_box_ptr IS NOT NULLPTR" << std::endl;
-		} else {
-			std::cout << "[preprocessTypicalModel] model_border_box_ptr IS NULLPTR" << std::endl;
-		}
-		return (false);
-		*/
-
-		/* TEST2
-		std::cout << "[preprocessTypicalModel] before 'cast'" << std::endl;
-		actor::inflation::Box* model_border_box_ptr = new actor::inflation::Box();
-		model_border_box_ptr->setBox(model_ptr->BoundingBox());
-//		model_border_box_ptr = static_cast<actor::inflation::Box*>(model_border_ptr);
-
-		std::cout << "[preprocessTypicalModel2b] NAME: " << model_ptr->GetName() << "\tBOX ptr: " << model_border_box_ptr << std::endl;
-
-		std::cout << "[preprocessTypicalModel] before 'setBox'" << std::endl;
-		model_border_box_ptr->setBox(model_ptr->BoundingBox()); // conversion
-		if ( model_border_box_ptr->getBox() == model_ptr->BoundingBox() ) {
-			std::cout << "[preprocessTypicalModel] Boxes are EQUAL!" << std::endl;
-		} else {
-			std::cout << "[preprocessTypicalModel] Boxes are NOT EQUAL!" << std::endl;
-		}
-		delete model_border_box_ptr;
-		*/
-
-//		model_box.setBox(model_ptr->BoundingBox()); // conversion
+		model_box.setBox(model_ptr->BoundingBox());
+		model_border_ptr = &model_box;
 
 	}
 
-	model_raw_pose = model_ptr->WorldPose();
-	model_name = model_ptr->GetName();
+	// rest of the outputs
+	std::string model_name = model_ptr->GetName();
+	ignition::math::Pose3d model_raw_pose = model_ptr->WorldPose();
 
-	//////////////////////////////////////////////////////////////////////////
-	/// catch model name - debugging /////////////////////////////////////////
-	SfmDebugSetCurrentObjectName(model_ptr->GetName()); //////////////////////
-	SfmDebugSetCurrentActorName(owner_name_); ////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	return (true);
+	return (std::make_tuple(true, is_an_actor, model_name, model_raw_pose, model_vel, model_border_ptr));
 
 }
 
+
+
 // ------------------------------------------------------------------- //
 
-bool SocialForceModel::preprocessWorldBoundary(const size_t &wall_num, bool &is_an_actor, std::string &model_name,
-		ignition::math::Vector3d &model_vel, ignition::math::Pose3d &model_raw_pose,
-		actor::inflation::Border* &model_border_ptr, // reference is necessary to modify the pointer
-		actor::inflation::Box &model_border_box) // mutable reference (will likely be modified if `is_an_actor` is false
-const
-{
-
-	/* FIXME: model_name returns previously considered model name */
-	std::cout << "[preprocessWorldBoundary] NAME: " << model_name << "\tptr: " << model_border_ptr << std::endl;
+std::tuple<bool, bool, std::string, ignition::math::Pose3d, ignition::math::Vector3d, actor::inflation::Border*>
+SocialForceModel::preprocessWorldBoundary(const size_t &wall_num, actor::inflation::Box &model_box) {
 
 	// evaluate validity of the boundary box
 	if ( !boundary_.isValid(wall_num) ) {
-		return (false);
+		return (std::make_tuple(false, false, std::string(), ignition::math::Pose3d(), ignition::math::Vector3d(), nullptr));
 	}
 
-	//-----------------
-//	return (false);
-	//-----------------
-
-	is_an_actor = false;
-
-	model_name = "world_boundary_";
+	// model_name stands for the one of the method outputs
+	std::string model_name = "world_boundary_";
 	model_name += std::to_string(wall_num);
-
-	model_vel = ignition::math::Vector3d(0.0, 0.0, 0.0);
-
-	/* TEST0 */
-	std::cout << "[preprocessWorldBoundary] box ptr: " << &model_border_box << std::endl;
-	model_border_box.setBox(*boundary_.getBoundingBoxPtr(wall_num));
-	std::cout << "[preprocessWorldBoundary] before ptr assignment " << std::endl;
-	model_border_ptr = &model_border_box;
-	std::cout << "[preprocessWorldBoundary] border ptr: " << model_border_ptr << std::endl;
-
-	/* PREV
-//	((actor::inflation::Box*)model_border_ptr)->setBox(*boundary_.getBoundingBoxPtr(wall_num));
-	actor::inflation::Box* model_border_box_ptr = dynamic_cast<actor::inflation::Box*>(model_border_ptr);
-	model_border_box_ptr->setBox(*boundary_.getBoundingBoxPtr(wall_num)); // conversion
-//	model_box.setBox(*boundary_.getBoundingBoxPtr(wall_num));
-	*/
-
-	model_raw_pose.Pos() = ((actor::inflation::Box*)model_border_ptr)->getCenter();
-	model_raw_pose.Pos().Z() = 0.0;
-
-	// trivial rotation component
-	model_raw_pose.Rot() = ignition::math::Quaterniond(0.0, 0.0, 0.0);
 
 	//////////////////////////////////////////////////////////////////////////
 	/// catch model ARTIFICIAL name - debugging //////////////////////////////
@@ -2182,7 +2125,24 @@ const
 	SfmDebugSetCurrentActorName(owner_name_);   //////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	return (true);
+	// rest of the outputs
+	bool is_an_actor = false;
+	ignition::math::Vector3d model_vel;
+	actor::inflation::Border* model_border_ptr = nullptr;
+	ignition::math::Pose3d model_raw_pose;
+
+	// processing section
+	model_vel = ignition::math::Vector3d(0.0, 0.0, 0.0);
+
+	model_box.setBox(*boundary_.getBoundingBoxPtr(wall_num));
+	model_border_ptr = &model_box;
+
+	// a trivial rotation component
+	model_raw_pose.Rot() = ignition::math::Quaterniond(0.0, 0.0, 0.0);
+	model_raw_pose.Pos() = model_border_ptr->getCenter();
+//	model_raw_pose.Pos().Z() = 0.0;
+
+	return (std::make_tuple(true, is_an_actor, model_name, model_raw_pose, model_vel, model_border_ptr));
 
 }
 
