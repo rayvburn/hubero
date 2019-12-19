@@ -201,7 +201,7 @@ public:
 		}
 
 		// intersection of the actor's circle
-		std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_bound.getIntersection(object_pos_shifted);
+		std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_bound.doesIntersect(object_pos_shifted);
 		return (std::make_tuple(actor_pose_shifted, object_pos_shifted));
 
 	} /* findModelsClosestPoints() */

@@ -8,9 +8,8 @@
 #ifndef INCLUDE_ACTOR_CORE_COMMONINFO_H_
 #define INCLUDE_ACTOR_CORE_COMMONINFO_H_
 
-#include <actor/inflation/Box.h>
-#include <actor/inflation/Circle.h>
-#include <actor/inflation/Ellipse.h>
+
+#include <actor/inflation/Border.h>
 #include <ignition/math/Vector3.hh>
 
 #include <vector>
@@ -71,22 +70,22 @@ public:
 
 	/// \brief Methods that update appropriate instance
 	/// in a whole vector
-	void setBoundingBox		(const actor::inflation::Box &bb);
-	void setBoundingCircle	(const actor::inflation::Circle &bc);
-	void setBoundingEllipse	(const actor::inflation::Ellipse &be);
+	void setBorderPtr		(actor::inflation::Border* border_ptr);
 	void setLinearVel		(const ignition::math::Vector3d &vel);
 
 	unsigned int							getActorID() const;
-	actor::inflation::Box					getBoundingBox() const;
-	actor::inflation::Circle				getBoundingCircle() const;
-	actor::inflation::Ellipse				getBoundingEllipse() const;
+
+	/**
+	 * @brief Returns non-const pointer to allow call of the `setBox` method in case of the
+	 * bounding box object
+	 * @return
+	 */
+	actor::inflation::Border*				getBorderPtr() const;
 	ignition::math::Vector3d				getLinearVelocity() const;
 
-	std::vector<actor::inflation::Box> 		getBoundingBoxesVector() const;
-	std::vector<actor::inflation::Circle> 	getBoundingCirclesVector() const;
-	std::vector<actor::inflation::Ellipse> 	getBoundingEllipsesVector() const;
-	std::vector<ignition::math::Vector3d>	getLinearVelocitiesVector() const;
-	std::map<std::string, unsigned int>		getNameIDMap() const;
+	std::vector<actor::inflation::Border*> getBorderPtrsVector() const;
+	std::vector<ignition::math::Vector3d>		 getLinearVelocitiesVector() const;
+	std::map<std::string, unsigned int>			 getNameIDMap() const;
 
 	/// \brief Default destructor
 	virtual ~CommonInfo();
@@ -106,10 +105,8 @@ private:
 	/// instances of a given type for whole actors
 	/// population - length of a vector is equal
 	/// actors number in a world
-	static std::vector<actor::inflation::Box> 	  bounding_box_vector_;
-	static std::vector<actor::inflation::Circle>  bounding_circle_vector_;
-	static std::vector<actor::inflation::Ellipse> bounding_ellipse_vector_;
-	static std::vector<ignition::math::Vector3d>  lin_vel_vector_;
+	static std::vector<actor::inflation::Border*> 	bounding_vector_;
+	static std::vector<ignition::math::Vector3d>  	lin_vel_vector_;
 
 	/// \brief A map which stores actors names
 	/// and assigns their corresponding IDs each time

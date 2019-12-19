@@ -62,10 +62,10 @@ void Ellipse::setYaw(const double &yaw_ellipse) {
 
 // ------------------------------------------------------------------- //
 
-void Ellipse::setPosition(const ignition::math::Vector3d &center_point) {
-	center_shifted_ = center_point;
-	updateCenter();
-}
+//void Ellipse::updatePose(const ignition::math::Pose3d &new_pose) {
+//	center_shifted_ = new_pose.Pos();
+//	updateCenter();
+//}
 
 // ------------------------------------------------------------------- //
 
@@ -112,7 +112,7 @@ void Ellipse::updatePose(const ignition::math::Pose3d &pose) {
 /// find point in which line going through ellipse's center and pt_dest intersects the ellipse
 /// determine if pt_dest lies within ellipse's bounds
 
-std::tuple<bool, ignition::math::Vector3d> Ellipse::getIntersection(const ignition::math::Vector3d &pt_dest) const {
+std::tuple<bool, ignition::math::Vector3d> Ellipse::doesIntersect(const ignition::math::Vector3d &pt_dest) const {
 
 //	/*
 //	 * https://en.wikipedia.org/wiki/Ellipse#Shifted_Ellipse
@@ -280,7 +280,7 @@ std::tuple<bool, ignition::math::Vector3d> Ellipse::getIntersection(const igniti
 bool Ellipse::doesContain(const ignition::math::Vector3d &pt) const {
 
 	bool is_within;
-	std::tie(is_within, std::ignore) = getIntersection(pt);
+	std::tie(is_within, std::ignore) = doesIntersect(pt);
 	return (is_within);
 
 }

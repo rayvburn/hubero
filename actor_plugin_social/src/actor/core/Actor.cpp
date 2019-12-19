@@ -126,10 +126,19 @@ void Actor::initRosInterface() {
 void Actor::initInflator(const double &circle_radius) {
 
 	// circle
+	actor::inflation::Circle* bounding_circle_ptr = new actor::inflation::Circle();
 	bounding_type_ = ACTOR_BOUNDING_CIRCLE;
-	bounding_circle_.setRadius(circle_radius);
-	bounding_circle_.setCenter(pose_world_ptr_->Pos());
-	common_info_.setBoundingCircle(bounding_circle_);
+	bounding_circle_ptr->setRadius(circle_radius);
+	bounding_circle_ptr->updatePose(*pose_world_ptr_);
+	bounding_ptr_ = bounding_circle_ptr;
+	common_info_.setBorderPtr(bounding_ptr_);
+
+	std::cout << "\n[initInflator] Circle class: ";
+	bounding_circle_ptr->test();
+	std::cout << "[initInflator] Border class: ";
+	bounding_ptr_ = bounding_circle_ptr;
+	bounding_ptr_->test();
+	std::cout << "\n" << std::endl;
 
 }
 
@@ -138,10 +147,19 @@ void Actor::initInflator(const double &circle_radius) {
 void Actor::initInflator(const double &box_x_half, const double &box_y_half, const double &box_z_half) {
 
 	// box
+	actor::inflation::Box* bounding_box_ptr = new actor::inflation::Box();
 	bounding_type_ = ACTOR_BOUNDING_BOX;
-	bounding_box_.init(box_x_half, box_y_half, box_z_half);
-	bounding_box_.updatePose(*pose_world_ptr_);
-	common_info_.setBoundingBox(bounding_box_);
+	bounding_box_ptr->init(box_x_half, box_y_half, box_z_half);
+	bounding_box_ptr->updatePose(*pose_world_ptr_);
+	bounding_ptr_ = bounding_box_ptr;
+	common_info_.setBorderPtr(bounding_ptr_);
+
+	std::cout << "\n[initInflator] Box class: ";
+	bounding_box_ptr->test();
+	std::cout << "[initInflator] Border class: ";
+	bounding_ptr_ = bounding_box_ptr;
+	bounding_ptr_->test();
+	std::cout << "\n" << std::endl;
 
 }
 
@@ -151,13 +169,22 @@ void Actor::initInflator(const double &semi_major, const double &semi_minor, con
 						 const double &center_offset_y) {
 
 	// ellipse
+	actor::inflation::Ellipse* bounding_ellipse_ptr = new actor::inflation::Ellipse();
 	bounding_type_ = ACTOR_BOUNDING_ELLIPSE;
 
 	// correct yaw angle to make ellipse abstract from Actor coordinate system's orientation
 	ignition::math::Angle yaw_world( pose_world_ptr_->Rot().Yaw() - IGN_PI_2);
 	yaw_world.Normalize();
-	bounding_ellipse_.init( semi_major, semi_minor, yaw_world.Radian(), pose_world_ptr_->Pos(), ignition::math::Vector3d(center_offset_x, center_offset_y, 0.0) );
-	common_info_.setBoundingEllipse(bounding_ellipse_);
+	bounding_ellipse_ptr->init( semi_major, semi_minor, yaw_world.Radian(), pose_world_ptr_->Pos(), ignition::math::Vector3d(center_offset_x, center_offset_y, 0.0) );
+	bounding_ptr_ = bounding_ellipse_ptr;
+	common_info_.setBorderPtr(bounding_ptr_);
+
+	std::cout << "\n[initInflator] Ellipse class: ";
+	bounding_ellipse_ptr->test();
+	std::cout << "[initInflator] Border class: ";
+	bounding_ptr_ = bounding_ellipse_ptr;
+	bounding_ptr_->test();
+	std::cout << "\n" << std::endl;
 
 }
 
@@ -1265,27 +1292,29 @@ void Actor::updateBounding(const ignition::math::Pose3d &pose) {
 	switch ( bounding_type_ ) {
 
 	case(ACTOR_BOUNDING_BOX):
-			bounding_box_.updatePose(pose);
-			common_info_.setBoundingBox(bounding_box_);
+			// ref: https://gradestack.com/Programming-in-C-/Binding-Polymorphisms-/Pointer-To-Base-and/21206-4330-52995-study-wtw
+			((actor::inflation::Box*)bounding_ptr_)->updatePose(pose);
 			break;
 
 	case(ACTOR_BOUNDING_CIRCLE):
-			bounding_circle_.setCenter(pose.Pos());
-			common_info_.setBoundingCircle(bounding_circle_);
+			((actor::inflation::Circle*)bounding_ptr_)->updatePose(pose);
 			break;
 
 	case(ACTOR_BOUNDING_ELLIPSE):
 			// correct yaw angle to make ellipse abstract from Actor coordinate system's orientation
 			ignition::math::Angle yaw_world( pose.Rot().Yaw() - IGN_PI_2);
 			yaw_world.Normalize();
-			bounding_ellipse_.updatePose(ignition::math::Pose3d( pose.Pos(),
+			((actor::inflation::Ellipse*)bounding_ptr_)->updatePose(ignition::math::Pose3d( pose.Pos(),
 																ignition::math::Quaterniond(pose.Rot().Roll(),
 																							pose.Rot().Pitch(),
 																							yaw_world.Radian()) ));
-			common_info_.setBoundingEllipse(bounding_ellipse_);
 			break;
 
 	}
+
+	common_info_.setBorderPtr(bounding_ptr_);
+
+
 
 }
 
@@ -1457,18 +1486,19 @@ void Actor::visualizePositionData() {
 		time_last_tf_pub_ = world_ptr_->SimTime();
 
 		// publish data for visualization
-		// proper bounding object to publish needs to be chosen
-		switch ( bounding_type_ ) {
-		case(ACTOR_BOUNDING_BOX):
-				stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_box_.getMarkerConversion());
-				break;
-		case(ACTOR_BOUNDING_CIRCLE):
-				stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_circle_.getMarkerConversion());
-				break;
-		case(ACTOR_BOUNDING_ELLIPSE):
-				stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_ellipse_.getMarkerConversion());
-				break;
-		}
+//		// proper bounding object to publish needs to be chosen
+//		switch ( bounding_type_ ) {
+//		case(ACTOR_BOUNDING_BOX):
+//				stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, ((actor::inflation::Box*)bounding_ptr_)->getMarkerConversion());
+//				break;
+//		case(ACTOR_BOUNDING_CIRCLE):
+//				stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, ((actor::inflation::Circle*)bounding_ptr_)->getMarkerConversion());
+//				break;
+//		case(ACTOR_BOUNDING_ELLIPSE):
+//				stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, ((actor::inflation::Ellipse*)bounding_ptr_)->getMarkerConversion());
+//				break;
+//		}
+		stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_ptr_->getMarkerConversion());
 
 		stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_);
 		stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getTarget()),

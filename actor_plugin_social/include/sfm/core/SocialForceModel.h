@@ -10,9 +10,10 @@
 
 // Gazebo
 #include <actor/core/CommonInfo.h>
-#include <actor/inflation/Box.h>
-#include <actor/inflation/Circle.h>
-#include <actor/inflation/Ellipse.h>
+#include <actor/inflation/Border.h>
+#include <actor/inflation/Box.h>				// cpp inclusion
+#include <actor/inflation/Circle.h>				// cpp inclusion
+#include <actor/inflation/Ellipse.h>			// cpp inclusion
 #include <actor/ros_interface/ParamLoader.h>	// objects dictionary
 #include <gazebo-8/gazebo/physics/World.hh>
 #include <gazebo-8/gazebo/physics/Model.hh>
@@ -423,15 +424,14 @@ private:
 	bool preprocessTypicalModel(const gazebo::physics::WorldPtr &world_ptr, const size_t &model_num, const std::vector<std::string> &ignored_models_v,
 			bool &is_an_actor, const actor::core::CommonInfo &actor_info, std::string &model_name,
 			ignition::math::Vector3d &model_vel, ignition::math::Pose3d &model_raw_pose,
-			actor::inflation::Circle &model_circle, actor::inflation::Ellipse &model_ellipse,
-			actor::inflation::Box &model_box);
+			actor::inflation::Border* &model_border_ptr);
 
 	/// \brief Prepares `model_vel`, `model_raw_pose` and inflation rectangle according
 	/// to the `world_dictionary/world_model/*` parameters.
 	/// \return True if preprocessing finished with success
 	bool preprocessWorldBoundary(const size_t &wall_num, bool &is_an_actor, std::string &model_name,
 			ignition::math::Vector3d &model_vel, ignition::math::Pose3d &model_raw_pose,
-			actor::inflation::Box &model_box) const;
+			actor::inflation::Border* &model_border_ptr) const;
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

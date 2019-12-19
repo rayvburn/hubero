@@ -8,7 +8,7 @@
 #ifndef SRC_INFLATION_CIRCLE_H_
 #define SRC_INFLATION_CIRCLE_H_
 
-
+#include <actor/inflation/Border.h>
 #include <ignition/math/Vector3.hh>
 #include <visualization_msgs/Marker.h>
 #include <tuple>
@@ -19,7 +19,7 @@ namespace inflation {
 /// \brief A class which creates a circular
 /// `inflation` figure around the actor;
 /// used by SFM
-class Circle {
+class Circle : public Border {
 
 public:
 
@@ -30,12 +30,13 @@ public:
 	void setRadius(const double &radius);
 
 	/// \brief Moves the circle's center to a given point
-	void setCenter(const ignition::math::Vector3d &center_point);
+	/// \note Only the translation component of the `pose` is considered
+	virtual void updatePose(const ignition::math::Pose3d &pose) override;
 
 	/// \brief Method which checks whether a circle
 	/// contains a given point; checks if the point
 	/// lays within circle's bounds
-	bool doesContain(const ignition::math::Vector3d &pt_dest) const;
+	virtual bool doesContain(const ignition::math::Vector3d &pt_dest) const override;
 
 	/// \brief Method which finds an intersection point
 	/// based on the circle's center and a given point
@@ -47,22 +48,23 @@ public:
 	/// a point coordinates in which a line of direction equal
 	/// to the angle intersects the circle box; one solution
 	/// available only
-	std::tuple<bool, ignition::math::Vector3d> getIntersection(const ignition::math::Vector3d &pt_dest) const;
-	// FIXME: it should be named `doesIntersect`?
+	virtual std::tuple<bool, ignition::math::Vector3d> doesIntersect(const ignition::math::Vector3d &pt_dest) const override;
 
 	/// \brief Returns the circle's radius
 	double getRadius() const;
 
 	/// \brief Returns the circle's center point
-	ignition::math::Vector3d getCenter() const;
+	virtual ignition::math::Vector3d getCenter() const override;
 
 	/// \brief Returns a visualization_msgs::Marker
 	/// instance which is created by circle conversion;
 	/// the height of a circle is equal to 1.8 m
-	visualization_msgs::Marker getMarkerConversion() const;
+	virtual visualization_msgs::Marker getMarkerConversion() const override;
 
 	/// \brief Default destructor
 	virtual ~Circle();
+
+	virtual void test() override { std::cout << "CIRCLE CLASS" << std::endl; };
 
 private:
 

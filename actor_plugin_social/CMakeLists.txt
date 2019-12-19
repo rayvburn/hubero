@@ -75,10 +75,12 @@ add_library(actor_frame
 
 add_library(actor_inflation
   
+  include/actor/inflation/Border.h
   include/actor/inflation/Box.h
   include/actor/inflation/Circle.h
   include/actor/inflation/Ellipse.h
 
+  src/actor/inflation/Border.cpp
   src/actor/inflation/Box.cpp
   src/actor/inflation/Circle.cpp
   src/actor/inflation/Ellipse.cpp

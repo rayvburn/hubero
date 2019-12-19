@@ -8,22 +8,22 @@
 #ifndef SRC_INFLATION_BOX_H_
 #define SRC_INFLATION_BOX_H_
 
+#include <actor/inflation/Border.h>
 #include <ignition/math/Vector3.hh>
 #include <ignition/math/Pose3.hh>
 #include <ignition/math/Box.hh>
 #include <ignition/math/Line3.hh>
 #include <tuple>
-#include <visualization_msgs/Marker.h>
 
 namespace actor {
 namespace inflation {
 
-/* This is a WIP - roll and pitch rotations are not supported, only yaw */
+/* This is a WIP - `roll` and `pitch` rotations are not supported, only the `yaw` angle is */
 
 /// \brief A wrapper for a ignition::math::Box class;
 /// creates an `inflation` figure around the actor
 /// used by SFM
-class Box {
+class Box : public Border {
 
 public:
 
@@ -44,12 +44,12 @@ public:
 
 	/// \brief Method which updates a class'es
 	/// internal Box instance's pose
-	void updatePose(const ignition::math::Pose3d &new_pose);
+	virtual void updatePose(const ignition::math::Pose3d &new_pose) override;
 
 	/// \brief Method which checks whether a box
 	/// contains a given point; checks if the point
 	/// lays within box'es bounds
-	bool doesContain(const ignition::math::Vector3d &pt) const;
+	virtual bool doesContain(const ignition::math::Vector3d &pt) const override;
 
 	/// \brief Method which checks whether a given
 	/// line does intersect the box;
@@ -58,10 +58,14 @@ public:
 	/// coordinates in which a line intersects a box;
 	/// it is assumed that a line does not have
 	/// 2 intersection points
-	std::tuple<bool, ignition::math::Vector3d> doesIntersect(const ignition::math::Line3d &line) const;
+	virtual std::tuple<bool, ignition::math::Vector3d> doesIntersect(const ignition::math::Line3d &line) const override;
+
+	/// \brief Returns a visualization_msgs::Marker
+	/// instance which is created by Box conversion
+	virtual visualization_msgs::Marker getMarkerConversion() const override;
 
 	/// \brief Returns a Box'es center coordinates
-	ignition::math::Vector3d getCenter() const;
+	virtual ignition::math::Vector3d getCenter() const override;
 
 	/// \brief Returns a Box'es minimum
 	/// vector coordinates
@@ -75,12 +79,10 @@ public:
 	/// instance which class wraps
 	ignition::math::Box getBox() const;
 
-	/// \brief Returns a visualization_msgs::Marker
-	/// instance which is created by Box conversion
-	visualization_msgs::Marker getMarkerConversion() const;
-
 	/// \brief Default destructor
 	virtual ~Box();
+
+	virtual void test() override { std::cout << "BOX CLASS" << std::endl; };
 
 private:
 

@@ -30,8 +30,8 @@ void Circle::setRadius(const double &radius) {
 
 // ------------------------------------------------------------------- //
 
-void Circle::setCenter(const ignition::math::Vector3d &center_point) {
-	center_ = center_point;
+void Circle::updatePose(const ignition::math::Pose3d &pose) {
+	center_ = pose.Pos();
 }
 
 // ------------------------------------------------------------------- //
@@ -40,7 +40,7 @@ void Circle::setCenter(const ignition::math::Vector3d &center_point) {
  * GetIntersection takes a destination point and calculates the intersection point on the circle which
  * creates a line from circle's center (actor's center) to destination point while passing through the circle
  */
-std::tuple<bool, ignition::math::Vector3d> Circle::getIntersection(const ignition::math::Vector3d &pt_dest) const {
+std::tuple<bool, ignition::math::Vector3d> Circle::doesIntersect(const ignition::math::Vector3d &pt_dest) const {
 
 	/*
 	 * circle equation in parametric form:
@@ -80,7 +80,6 @@ double Circle::getRadius() const {
 
 // ------------------------------------------------------------------- //
 
-// temp - debugging
 ignition::math::Vector3d Circle::getCenter() const {
 	return (center_);
 }

@@ -453,11 +453,11 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 	/* BoundingCircle and BoundingCircle -> 2 actors */
 	// intersection of the 1st actor's circle (currently processed)
 	ignition::math::Pose3d actor_pose_shifted = actor_pose;
-	std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_circle.getIntersection(object_pose.Pos());
+	std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_circle.doesIntersect(object_pose.Pos());
 
 	// intersection of the 2nd actor's circle (another one)
 	ignition::math::Vector3d object_pos_shifted;
-	std::tie(std::ignore, object_pos_shifted) = object_circle.getIntersection(actor_pose.Pos());
+	std::tie(std::ignore, object_pos_shifted) = object_circle.doesIntersect(actor_pose.Pos());
 
 	/* Let's check whether the bounding circles are not intruding each other -
 	 * compare the length of a vector from actor's center to the object's position
@@ -485,13 +485,13 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findModel
 	// intersection of the 1st actor's circle (currently processed)
 	ignition::math::Pose3d actor_pose_shifted = actor_pose;
 
-	std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_ellipse.getIntersection(object_pose.Pos());
+	std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_ellipse.doesIntersect(object_pose.Pos());
 
 	// intersection of the 2nd actor's circle (another one)
 	ignition::math::Vector3d object_pos_shifted;
 
 	// current actor ellipse's shifted center ( = actor's pos) is connected with object ellipse's center; the connector is a line
-	std::tie(std::ignore, object_pos_shifted) = object_ellipse.getIntersection(actor_pose.Pos());
+	std::tie(std::ignore, object_pos_shifted) = object_ellipse.doesIntersect(actor_pose.Pos());
 
 	/* Let's check whether the bounding circles are not intruding each other -
 	 * compare the length of a vector from actor's center to the object's position
