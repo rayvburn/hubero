@@ -404,7 +404,7 @@ bool Target::chooseNewTarget() {
 
 			// check if model's bounding box contains target point
 			if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), new_target) ) {
-				std::cout << "[chooseNewTarget] - selection failed -> temporary `target` position [world frame]: " << new_target.X() << " " << new_target.Y() << "\tmodel containing: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
+				std::cout << "[chooseNewTarget] selection failed -> temporary `target` position [world frame]: " << new_target.X() << " " << new_target.Y() << "\tmodel containing: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
 				new_target = target_; // forces finding another due target to the distance condition
 				force_new_target = true;
 				break; // continue;
@@ -512,8 +512,6 @@ bool Target::generatePathPlan(const ignition::math::Vector3d &start, const ignit
 	// repeat up to 10 times (more than 1 execution will be performed only when planner is busy)
 	while ( tries_num++ <= 10 ) {
 
-		std::cout << "[generatePathPlan] Starting iteration number: " << tries_num << std::endl;
-
 		// try to make a plan
 		status = global_planner_.makePlan(start, target_to_be);;
 
@@ -521,7 +519,7 @@ bool Target::generatePathPlan(const ignition::math::Vector3d &start, const ignit
 		switch (status) {
 
 		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_SUCCESSFUL):
-			std::cout << "[generatePathPlan] Global planning successful!" << std::endl;
+			std::cout << "[generatePathPlan] Global planning successful" << std::endl;
 
 			has_global_plan_ = true;
 			has_new_path_ = true;
@@ -529,21 +527,20 @@ bool Target::generatePathPlan(const ignition::math::Vector3d &start, const ignit
 			break;
 
 		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_FAILED):
-			// TODO: check if within map bounds (solved in pre-processing - proper points selected)
-			std::cout << "[generatePathPlan] Global planning failed" << std::endl;
+			std::cout << "[generatePathPlan] Global planning failed, try number: " << tries_num << std::endl;
 			return (false);
 			break;
 
 		case(actor::ros_interface::GlobalPlan::GLOBAL_PLANNER_BUSY):
 			// TODO: debug this
-			std::cout << "[generatePathPlan] Oops, need to wait for the global planner (busy)..." << std::endl;
+			std::cout << "[generatePathPlan] Oops, need to wait for the global planner (busy), try number: " << tries_num << std::endl;
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			continue;
 			break;
 
 		default:
 			// unexpected behavior
-			std::cout << "[generatePathPlan] UNEXPECTED BEHAVIOUR" << std::endl;
+			std::cout << "[generatePathPlan] UNEXPECTED BEHAVIOUR, try number: " << tries_num << std::endl;
 			return (false);
 			break;
 
@@ -552,7 +549,7 @@ bool Target::generatePathPlan(const ignition::math::Vector3d &start, const ignit
 	}
 
 	// if managed to get there then many tries were performed but planner is still busy
-	std::cout << "[generatePathPlan] PLANNER WAS UNABLE TO PROCESS THE REQUEST" << std::endl;
+	std::cout << "[generatePathPlan] [ERROR] PLANNER WAS UNABLE TO PROCESS THE REQUEST AFTER " << tries_num << " TRIES" << std::endl;
 	return (false);
 
 }

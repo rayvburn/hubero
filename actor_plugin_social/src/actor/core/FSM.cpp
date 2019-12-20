@@ -38,7 +38,7 @@ void FSM::addState(const actor::ActorState &state) {
 
 void FSM::setState(const actor::ActorState &new_state) {
 
-	std::cout << "FSM: set State INTO!" << std::endl;
+//	std::cout << "FSM: set State INTO!" << std::endl;
 	if ( state_curr_ != new_state ) {
 
 		bool is_valid = false;
@@ -46,7 +46,7 @@ void FSM::setState(const actor::ActorState &new_state) {
 		std::tie(is_valid, index) = isStateValid(new_state);
 
 		if ( is_valid ) {
-			std::cout << "FSM: state set is VALID!\t" << new_state << std::endl;
+//			std::cout << "FSM: state set is VALID!\t" << new_state << std::endl;
 			state_prev_ = state_curr_;
 			state_curr_ = states_.at(index);
 			state_changed_flag_ = true;

@@ -115,7 +115,7 @@ void Actor::initRosInterface() {
 
 void Actor::initInflator(const double &circle_radius) {
 
-	// got rid of the smart pointer, ref: https://stackoverflow.com/questions/4665266/creating-shared-ptr-from-raw-pointer
+	// got rid of the raw pointer, ref: https://stackoverflow.com/questions/4665266/creating-shared-ptr-from-raw-pointer
 	// circle
 	std::shared_ptr<actor::inflation::Circle> bounding_circle_ptr = std::make_shared<actor::inflation::Circle>();
 	bounding_type_ = ACTOR_BOUNDING_CIRCLE;
@@ -508,7 +508,8 @@ bool Actor::setStance(const actor::ActorStance &stance_type) {
 
 		if ( skeleton_anims.find(animation) == skeleton_anims.end() ) {
 
-			std::cout << "Skeleton animation " << animation << " not found.\n";
+			// print warning
+			std::cout << "[STANCE] Skeleton animation " << animation << " not found.\n";
 			return (false);
 
 		} else {
@@ -518,6 +519,17 @@ bool Actor::setStance(const actor::ActorStance &stance_type) {
 			trajectory_info_->type = animation;
 			trajectory_info_->duration = 1.0;
 			actor_ptr_->SetCustomTrajectory(trajectory_info_);
+
+			// debug info
+			std::cout << "[STANCE] " << actor_ptr_->GetName() << "'s\tnew stance:\t";
+			if ( stance_ != ACTOR_STANCE_LIE ) {
+				std::cout << animation << std::endl;
+			} else {
+				// `lie` must be handled differently as the `lie` is equal to `stand`
+				// but in a different plane
+				std::cout << "lie" << std::endl;
+			}
+
 			return (true);
 
 		}
@@ -942,13 +954,6 @@ void Actor::applyUpdate(const double &dist_traveled) {
 	// update time
 	time_last_update_ = world_ptr_->SimTime();
 
-	// check whether state was updated
-	// NOTE: this usually makes updateTransitionFunctionPtr
-	// called second time after manual invocation `setState`
-	if ( fsm_.didStateChange() ) {
-		updateTransitionFunctionPtr();
-	}
-
 	// this is useful whatever the state of the actor is
 	visualizePositionData();
 
@@ -1340,50 +1345,53 @@ void Actor::calculateVelocity(const double &dt) {
 
 void Actor::updateTransitionFunctionPtr() {
 
+	// print the name of the actor whose state changes
+	std::cout << "[ FSM ] " << actor_ptr_->GetName() << "'s \tnew state:";
+
 	switch( fsm_.getState() ) {
 
 	case(ACTOR_STATE_ALIGN_TARGET):
-			std::cout << "State: \talignToTarget" << std::endl;
+			std::cout << "\talignToTarget" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerAlignTarget; 		// &this->Actor::stateHandlerAlignTarget;
 			setStance(ACTOR_STANCE_WALK);
 			break;
 	case(ACTOR_STATE_STUCK):
-			std::cout << "State: \tgotStuck" << std::endl;
+			std::cout << "\tgotStuck" << std::endl;
 			// empty
 			break;
 	case(ACTOR_STATE_MOVE_AROUND):
-			std::cout << "State: \tmoveAround" << std::endl;
+			std::cout << "\tmoveAround" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerMoveAround; 		// &this->Actor::stateHandlerMoveAround;
 			setStance(ACTOR_STANCE_WALK);
 			break;
 	case(ACTOR_STATE_TARGET_REACHING):
-			std::cout << "State: \ttargetReaching" << std::endl;
+			std::cout << "\ttargetReaching" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerTargetReaching;
 			setStance(ACTOR_STANCE_WALK);
 			break;
 	case(ACTOR_STATE_LIE_DOWN):
-			std::cout << "State: \tlieDown" << std::endl;
+			std::cout << "\tlieDown" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerLieDown;
 			setStance(ACTOR_STANCE_WALK);
 			break;
 	case(ACTOR_STATE_STOP_AND_STARE):
-			std::cout << "State: \tstopAndStare" << std::endl;
+			std::cout << "\tstopAndStare" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerStopAndStare;
 			setStance(ACTOR_STANCE_STAND);
 			// empty
 			break;
 	case(ACTOR_STATE_FOLLOW_OBJECT):
-			std::cout << "State: \tfollowObject" << std::endl;
+			std::cout << "\tfollowObject" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerFollowObject; 	// &this->Actor::stateHandlerFollowObject;
 			setStance(ACTOR_STANCE_WALK);
 			break;
 	case(ACTOR_STATE_TELEOPERATION):
-			std::cout << "State: \tteleoperation" << std::endl;
+			std::cout << "\tteleoperation" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerTeleoperation;
 			setStance(ACTOR_STANCE_STAND);
 			break;
 	default:
-			std::cout << "State: \tUNKNOWN" << std::endl;
+			std::cout << "\tUNKNOWN" << std::endl;
 			break;
 
 	}
@@ -1399,43 +1407,33 @@ std::string Actor::convertStanceToAnimationName() const {
 	switch( stance_ ) {
 
 	case(ACTOR_STANCE_WALK):
-			std::cout << "Stance: \tWALK" << std::endl;
 			anim_name = "walk";
 			break;
 	case(ACTOR_STANCE_STAND):
-			std::cout << "Stance: \tSTAND" << std::endl;
 			anim_name = "stand";
 			break;
 	case(ACTOR_STANCE_LIE):
-			std::cout << "Stance: \tLIE" << std::endl;
 			anim_name = "stand"; // lie is stand but in different plane
 			break;
 	case(ACTOR_STANCE_SIT_DOWN):
-			std::cout << "Stance: \tSIT_DOWN" << std::endl;
 			anim_name = "sit_down";
 			break;
 	case(ACTOR_STANCE_SITTING):
-			std::cout << "Stance: \tSITTING" << std::endl;
 			anim_name = "sitting";
 			break;
 	case(ACTOR_STANCE_STAND_UP):
-			std::cout << "Stance: \tSTAND_UP" << std::endl;
 			anim_name = "stand_up";
 			break;
 	case(ACTOR_STANCE_RUN):
-			std::cout << "Stance: \tRUN" << std::endl;
 			anim_name = "run";
 			break;
 	case(ACTOR_STANCE_TALK_A):
-			std::cout << "Stance: \tTALK_A" << std::endl;
 			anim_name = "talk_a";
 			break;
 	case(ACTOR_STANCE_TALK_B):
-			std::cout << "Stance: \tTALK_B" << std::endl;
 			anim_name = "talk_b";
 			break;
 	default:
-			std::cout << "Stance: \tUNKNOWN" << std::endl;
 			break;
 
 	}
