@@ -176,17 +176,17 @@ public:
 	bool setState(const actor::ActorState &new_state);
 
 	/// \brief Executes handler for currently set state
-	void executeTransitionFunction(const gazebo::common::UpdateInfo &info);
+	void executeTransitionFunction	();
 
     /// \brief Handlers for each state
     /// TODO: get rid of these UpdateInfos
-    void stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info);
-    void stateHandlerMoveAround		(const gazebo::common::UpdateInfo &info);
-    void stateHandlerTargetReaching (const gazebo::common::UpdateInfo &info);
-    void stateHandlerLieDown		(const gazebo::common::UpdateInfo &info);
-    void stateHandlerStopAndStare	(const gazebo::common::UpdateInfo &info);
-    void stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info);
-    void stateHandlerTeleoperation 	(const gazebo::common::UpdateInfo &info);
+    void stateHandlerAlignTarget	();
+    void stateHandlerMoveAround		();
+    void stateHandlerTargetReaching ();
+    void stateHandlerLieDown		();
+    void stateHandlerStopAndStare	();
+    void stateHandlerFollowObject	();
+    void stateHandlerTeleoperation 	();
 
     /// \brief Default destructor
 	virtual ~Actor();
@@ -272,7 +272,7 @@ private:
     actor::core::FSM fsm_;
 
     /// \brief Stores pointer to a handler of a currently executed state
-    void(Actor::*trans_function_ptr)(const gazebo::common::UpdateInfo &);
+    void(Actor::*trans_function_ptr)();
 
     /// \brief Class that stores all the data needed by SFM that couldn't be saved in WorldPtr
     /// http://answers.gazebosim.org/question/22114/actor-related-information-in-gazebophysicsworldptr-and-collision-of-actors/

@@ -563,13 +563,13 @@ bool Actor::setState(const actor::ActorState &new_state) {
 
 // ------------------------------------------------------------------- //
 
-void Actor::executeTransitionFunction(const gazebo::common::UpdateInfo &info) {
-	(this->*trans_function_ptr)(info);
+void Actor::executeTransitionFunction() {
+	(this->*trans_function_ptr)();
 }
 
 // ------------------------------------------------------------------- //
 
-void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
+void Actor::stateHandlerAlignTarget() {
 
 	// ---------------------------------------------
 
@@ -613,7 +613,7 @@ void Actor::stateHandlerAlignTarget	(const gazebo::common::UpdateInfo &info) {
 
 // ------------------------------------------------------------------- //
 
-void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
+void Actor::stateHandlerMoveAround() {
 
 	// ---------------------------------------------
 
@@ -638,7 +638,7 @@ void Actor::stateHandlerMoveAround	(const gazebo::common::UpdateInfo &info) {
 
 // ------------------------------------------------------------------- //
 
-void Actor::stateHandlerTargetReaching (const gazebo::common::UpdateInfo &info) {
+void Actor::stateHandlerTargetReaching() {
 
 	double dt = prepareForUpdate();
 
@@ -662,7 +662,7 @@ void Actor::stateHandlerTargetReaching (const gazebo::common::UpdateInfo &info) 
 
 // ------------------------------------------------------------------- //
 
-void Actor::stateHandlerLieDown		(const gazebo::common::UpdateInfo &info) {
+void Actor::stateHandlerLieDown() {
 
 	double dt = prepareForUpdate();
 
@@ -725,7 +725,7 @@ void Actor::stateHandlerLieDown		(const gazebo::common::UpdateInfo &info) {
 
 // ------------------------------------------------------------------- //
 
-void Actor::stateHandlerStopAndStare	(const gazebo::common::UpdateInfo &info) {
+void Actor::stateHandlerStopAndStare() {
 
 	double dt = prepareForUpdate();
 
@@ -744,7 +744,7 @@ void Actor::stateHandlerStopAndStare	(const gazebo::common::UpdateInfo &info) {
 
 // ------------------------------------------------------------------- //
 
-void Actor::stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info) {
+void Actor::stateHandlerFollowObject() {
 
 	double dt = prepareForUpdate();
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -765,7 +765,7 @@ void Actor::stateHandlerFollowObject	(const gazebo::common::UpdateInfo &info) {
 
 // ------------------------------------------------------------------- //
 
-void Actor::stateHandlerTeleoperation (const gazebo::common::UpdateInfo &info) {
+void Actor::stateHandlerTeleoperation() {
 
 	double dt = prepareForUpdate();
 

@@ -83,7 +83,7 @@ void gazebo::ActorPlugin::OnUpdate(const gazebo::common::UpdateInfo &_info)
 		return;
 	};
 
-	actor_ptr_->executeTransitionFunction(_info);
+	actor_ptr_->executeTransitionFunction();
 
   	return; // OnUpdate testing
 
