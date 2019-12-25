@@ -230,7 +230,7 @@ ignition::math::Vector3d SocialBehavioursDb::stop() {
 
 	force_beh = setVectorLength(force_beh, magnitude);
 
-//	force_beh = assertForceDirection(force_beh);
+	force_beh = assertForceDirection(force_beh);
 
 	return (force_beh);
 	//return (force_beh - force_);

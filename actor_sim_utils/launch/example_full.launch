@@ -126,14 +126,14 @@
     	<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">2</rosparam>
     	<rosparam param="$(arg actor_params_ns)/inflation/ellipse">[{semi_major: 1.9, semi_minor: 1.2, offset_x: 0.35, offset_y: 0.0}]</rosparam>
     	-->
-    	<!-- Circle -->
+    	<!-- Circle
     	<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
     	<rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.35</rosparam>
-		
-		<!-- Box 
+		 -->
+		<!-- Box -->
 		<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">0</rosparam>
-    	<rosparam param="$(arg actor_params_ns)/inflation/box_size">[{x_half: 0.65, y_half: 0.65, z_half: 1.00}]</rosparam>
-    	-->
+    	<rosparam param="$(arg actor_params_ns)/inflation/box_size">[{x_half: 0.25, y_half: 0.25, z_half: 1.00}]</rosparam>
+    	
         <rosparam param="$(arg actor_params_ns)/general/world_bound_x">[+6.25, -3.50]</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/world_bound_y">[-4.50, +4.50]</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">false</rosparam>

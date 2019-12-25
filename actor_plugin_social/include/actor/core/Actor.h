@@ -179,7 +179,6 @@ public:
 	void executeTransitionFunction	();
 
     /// \brief Handlers for each state
-    /// TODO: get rid of these UpdateInfos
     void stateHandlerAlignTarget	();
     void stateHandlerMoveAround		();
     void stateHandlerTargetReaching ();

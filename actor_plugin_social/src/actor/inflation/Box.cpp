@@ -82,18 +82,19 @@ void Box::updatePose(const ignition::math::Pose3d &new_pose) {
 							new_pose.Pos().Y() + y_total,
 							new_pose.Pos().Z() + bb_z_half_ );
 
-	if ( (bb.Max().X() - bb.Min().X()) < 0.90 || (bb.Max().X() - bb.Min().X()) > 1.272793 ) {
-		std::cout << "\tBB min: " << bb.Min() << "\tmax: " << bb.Max() << std::endl;
-		std::cout << "\t\tcenter: " << bb.Center() << "\tRAW x: " << new_pose.Pos().X() - bb_x_half_ << "\tRAW y: " << new_pose.Pos().Y() + bb_y_half_ << std::endl;
-		std::cout << "\t\tyaw: " << new_pose.Rot().Yaw() << std::endl;
-		std::cout << "\t\txp: " << xp << "\txp_ext: " << xp_ext << "\tx_total: " << x_total << std::endl;
-		std::cout << "\t\typ: " << yp << "\typ_ext: " << yp_ext << "\ty_total: " << y_total << std::endl;
-		std::cout << "\t\tlen: " << bb.Max().X() - bb.Min().X() << std::endl;
-		std::cout << "\t\tWRONG LENGTH\n\n" << std::endl;
-		std::cout << std::endl;
-		std::cout << std::endl;
-		std::cout << std::endl;
-	}
+	// debugging (half -> 0.7?)
+//	if ( (bb.Max().X() - bb.Min().X()) < 0.90 || (bb.Max().X() - bb.Min().X()) > 1.272793 ) {
+//		std::cout << "\tBB min: " << bb.Min() << "\tmax: " << bb.Max() << std::endl;
+//		std::cout << "\t\tcenter: " << bb.Center() << "\tRAW x: " << new_pose.Pos().X() - bb_x_half_ << "\tRAW y: " << new_pose.Pos().Y() + bb_y_half_ << std::endl;
+//		std::cout << "\t\tyaw: " << new_pose.Rot().Yaw() << std::endl;
+//		std::cout << "\t\txp: " << xp << "\txp_ext: " << xp_ext << "\tx_total: " << x_total << std::endl;
+//		std::cout << "\t\typ: " << yp << "\typ_ext: " << yp_ext << "\ty_total: " << y_total << std::endl;
+//		std::cout << "\t\tlen: " << bb.Max().X() - bb.Min().X() << std::endl;
+//		std::cout << "\t\tWRONG LENGTH\n\n" << std::endl;
+//		std::cout << std::endl;
+//		std::cout << std::endl;
+//		std::cout << std::endl;
+//	}
 
 	bb_ = bb;
 
