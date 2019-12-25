@@ -113,6 +113,59 @@ private:
 			const ignition::math::Vector3d &actor_center,
 			const actor::inflation::Box &object_bb) const;
 
+	/// Used for function output representation.
+	/// TODO: Diagrams copy to doc
+	typedef enum {
+		BOX_INTERSECTION_TYPE_PARTIAL_LOWER = 0,//!< BOX_INTERSECTION_TYPE_PARTIAL_LOWER: diagram 3
+		BOX_INTERSECTION_TYPE_PARTIAL_UPPER,    //!< BOX_INTERSECTION_TYPE_PARTIAL_UPPER: diagram 4
+		BOX_INTERSECTION_TYPE_INTERNAL,         //!< BOX_INTERSECTION_TYPE_INTERNAL: diagram 1
+		BOX_INTERSECTION_TYPE_EXTERNAL,         //!< BOX_INTERSECTION_TYPE_EXTERNAL: diagram 5
+		BOX_INTERSECTION_TYPE_NONE_LOWER,       //!< BOX_INTERSECTION_TYPE_NONE_LOWER: diagram 2
+		BOX_INTERSECTION_TYPE_NONE_UPPER,       //!< BOX_INTERSECTION_TYPE_NONE_UPPER: diagram 6
+		BOX_INTERSECTION_TYPE_UNKNOWN			//!< BOX_INTERSECTION_TYPE_UNKNOWN
+	} BoxIntersectionType;
+
+	/// \brief Used in the reasoning block. Determine whether 2 objects share
+	/// some space (BOXES_SURFACE_INTERSECTION_PARTIAL)
+	/// or share only single coordinate (BOXES_SURFACE_INTERSECTION_SPECIAL)
+	/// or no intersection occurs
+	typedef enum {
+		BOXES_SURFACE_INTERSECTION_NONE = 0,//!< BOXES_SURFACE_INTERSECTION_NONE
+		BOXES_SURFACE_INTERSECTION_SPECIAL, //!< BOXES_SURFACE_INTERSECTION_SPECIAL
+		BOXES_SURFACE_INTERSECTION_PARTIAL  //!< BOXES_SURFACE_INTERSECTION_PARTIAL
+	} BoxesSurfaceIntersection;
+
+	// TODO
+	// helper function
+	BoxIntersectionType findIntersectionType(const double &actor_coord_min, const double &actor_coord_max,
+			const double &object_coord_min, const double &object_coord_max) const;
+
+	// TODO
+	/// \brief Finds the type of intersection occurring between 2 boxes (the one associated
+	/// with an actor and the one associated with an obstacle).
+	/// \param actor_bb
+	/// \param object_bb
+	/// \return A tuple:
+	/// Enum variable defining whether the shape surfaces intersect;
+	/// Enum variable defining the special intersection type associated with the X-axis (does not matter if first enum is different than BOXES_SURFACE_INTERSECTION_SPECIAL);
+	/// Enum variable defining the special intersection type associated with the Y-axis (does not matter if first enum is different than BOXES_SURFACE_INTERSECTION_SPECIAL);
+	std::tuple<BoxesSurfaceIntersection, Inflator::BoxIntersectionType, Inflator::BoxIntersectionType>
+	findIntersectionTypeOfBB(const actor::inflation::Box &actor_bb, const actor::inflation::Box &object_bb) const;
+
+	/// \brief
+	/// \param x_intersection: a value of BoxIntersectionType
+	/// \param y_intersection: a value of BoxIntersectionType
+	/// \param actor_bb
+	/// \param object_bb
+	/// \return A tuple:
+	/// Actor point that the shortest vector is generated from
+	/// Obstacle point that the shortest vector is generated from
+	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d>
+	findVectorSpecialIntersectionBB(const Inflator::BoxIntersectionType &x_intersection,
+									const Inflator::BoxIntersectionType &y_intersection,
+									const actor::inflation::Box &actor_bb,
+									const actor::inflation::Box &object_bb) const;
+
 	/// \brief Tries to find an intersection point starting in the `object_pos`,
 	/// ending in the `box`'es center or `box_pos` if given (default value provided).
 	/// The intersection point is calculated via BB'es `Intersect` method
@@ -130,6 +183,17 @@ private:
 	/// \return Vector of the closest vertex coordinates
 	ignition::math::Vector3d findClosestBoundingBoxVertex(const ignition::math::Vector3d &actor_pos,
 			const actor::inflation::Border &object_box) const;
+
+	/// \brief Finds the closest vertices of the 2 boxes. Does not evaluate whether the boxes coordinates intersect
+	/// \param actor_box
+	/// \param object_box
+	/// \return A tuple: start and end points of the vector connecting the closest vertices
+	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> findClosestVerticesIntersectedBoxes(const actor::inflation::Box &actor_box, const actor::inflation::Box &object_box) const;
+
+	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> findShortestVectorIntersectedBoxes(const char &axis, const double &coord_common, const actor::inflation::Box &actor_box, const actor::inflation::Box &object_box) const;
+//	// TODO
+//	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> findClosestVertices(const actor::inflation::Border &actor_box,
+//			const actor::inflation::Border &object_box) const;
 
 public:
 
@@ -201,8 +265,15 @@ public:
 
 		}
 
-		// intersection of the actor's circle
-		std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_bound.doesIntersect(object_pos_shifted);
+		if ( actor_bound.isBox() ) {
+			// body
+//			ignition::math::Line3d line(actor_pose_shifted.Pos(), object_pos_shifted);
+			ignition::math::Line3d line(object_pos_shifted, actor_pose_shifted.Pos()); // ok?
+			std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_bound.doesIntersect(line);
+		} else {
+			// intersection of the actor's circle
+			std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_bound.doesIntersect(object_pos_shifted);
+		}
 		return (std::make_tuple(actor_pose_shifted, object_pos_shifted));
 
 	} /* findModelsClosestPoints() */
