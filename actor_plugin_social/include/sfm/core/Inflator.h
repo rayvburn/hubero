@@ -266,9 +266,8 @@ public:
 		}
 
 		if ( actor_bound.isBox() ) {
-			// body
-//			ignition::math::Line3d line(actor_pose_shifted.Pos(), object_pos_shifted);
-			ignition::math::Line3d line(object_pos_shifted, actor_pose_shifted.Pos()); // ok?
+			// find a point of an intersection of the `line` and actor's box (`actor_bound`)
+			ignition::math::Line3d line(object_pos_shifted, actor_pose_shifted.Pos());
 			std::tie(std::ignore, actor_pose_shifted.Pos()) = actor_bound.doesIntersect(line);
 		} else {
 			// intersection of the actor's circle
