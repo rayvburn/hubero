@@ -133,47 +133,12 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findClose
 		const std::string &_object_name /* debug only */ ) const
 {
 
-	/*
-	// allocate shifted poses/positions, their position components will likely be updated
-	ignition::math::Pose3d actor_pose_shifted = actor_pose;
-	ignition::math::Pose3d object_pose_shifted = object_pose;
-
-	// ----------------------------------------------------
-	// 1st case: actor's center is within object BB's range
-	// (i.e. x_actor <= x_bb_max, x_actor >= x_bb_min,
-	// analogically along the Y-axis)
-	//
-	// 2nd case: actor's center is not within object BB's range
-	// (i.e. x_actor <= x_bb_max, x_actor >= x_bb_min,
-	// analogically along the Y-axis)
-
-	bool within_bb = false;
-	// represents an object's BOX reference point, it can be equal
-	// to the `object_pose`'s position or shifted along X/Y axis;
-	// for details see @ref isWithinRangeOfBB
-	ignition::math::Vector3d object_anchor;
-	std::tie(within_bb, object_anchor) = isWithinRangeOfBB(actor_pose.Pos(), object_box.getBox());
-	// `within_bb` is TRUE if `object_anchor` is not equal to the `object_box`'s center
-
-	// find object shifted position (intersection)
-	object_pose_shifted.Pos() = calculateBoxIntersection(actor_pose.Pos(), object_box, object_anchor);
-
-	// find actor shifted position (intersection);
-	// the line has to be 'inverted' for a second case (see below);
-	actor_pose_shifted.Pos() = calculateBoxIntersection(object_anchor, actor_box);
-
-	return (std::make_tuple(actor_pose_shifted, object_pose_shifted.Pos()));
-	*/
-
-	// V2 TODO: convert Border to Box
-//	findIntersectionRangeOfBB()
-
-	// V3
+	// method used for `d_alpha_beta` calculation
 	BoxesSurfaceIntersection intersection_status = BOXES_SURFACE_INTERSECTION_NONE;
 	BoxIntersectionType x_box_intersection, y_box_intersection = BOX_INTERSECTION_TYPE_UNKNOWN;
 
 	ignition::math::Vector3d pt_actor = actor_pose.Pos();
-	ignition::math::Pose3d pose_actor_new = actor_pose; // FIXME: temp
+	ignition::math::Pose3d pose_actor_new = actor_pose;
 	ignition::math::Vector3d pt_obstacle = object_pose.Pos();
 
 	std::tie(intersection_status, x_box_intersection, y_box_intersection) = findIntersectionTypeOfBB(actor_box.getBox(), object_box.getBox());
@@ -182,39 +147,20 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findClose
 
 	case(BOXES_SURFACE_INTERSECTION_NONE):
 			// choose a vertex that is the closest to the obstacle
-//			return (findClosestVerticesIntersectedBoxes(actor_box.getBox(), object_box.getBox())); // V3d -> P3d
-
-			std::cout << SfmDebugGetCurrentActorName() << " / " << SfmDebugGetCurrentObjectName();
 			std::tie(pt_actor, pt_obstacle) = findClosestVerticesIntersectedBoxes(actor_box.getBox(), object_box.getBox());
-			std::cout << "\tINTERSECTION_NONE\tpt_actor_prev: " << std::setprecision(3) << actor_pose.Pos().X() << " " << actor_pose.Pos().Y() << " new: " << pt_actor.X() << " " << pt_actor.Y() << "\tpt_obstacle_prev: " << object_pose.Pos().X() << " " << object_pose.Pos().Y() << " new: "<< pt_obstacle.X() << " " << pt_obstacle.Y() << std::endl;
 			return (std::make_tuple(ignition::math::Pose3d(pt_actor.X(), pt_actor.Y(), pt_actor.Z(), 0.0, 0.0, 0.0), pt_obstacle));
 			break;
 	case(BOXES_SURFACE_INTERSECTION_PARTIAL):
-			// actor has stepped into the obstacle space
-//			ignition::math::Pose3d act_pose;
-//			ignition::math::Vector3d obj_pos;
-//			std::tie(act_pose, obj_pos) = findClosestPointsActorBox(actor_pose, actor_box, object_pose, object_box, _object_name);
-//			return (std::make_tuple(act_pose.Pos(), obj_pos));
-
-			std::cout << SfmDebugGetCurrentActorName() << " / " << SfmDebugGetCurrentObjectName();
+			// actor has stepped into the obstacle space;
 			// this will find a sub-optimal (in terms of length) vector which connects actor and obstacle centers
 			std::tie(pose_actor_new, pt_obstacle) = findClosestPointsActorBox(actor_pose, actor_box, object_pose, object_box, _object_name);
-			std::cout << "\tINTERSECTION_PARTIAL\tpt_actor_prev: " << std::setprecision(3) << actor_pose.Pos().X() << " " << actor_pose.Pos().Y() << " new: " << pose_actor_new.Pos().X() << " " << pose_actor_new.Pos().Y() << "\tpt_obstacle_prev: " << object_pose.Pos().X() << " " << object_pose.Pos().Y() << " new: "<< pt_obstacle.X() << " " << pt_obstacle.Y() << std::endl;
 			return (std::make_tuple(pose_actor_new, pt_obstacle));
-			// copy
-//			return (findClosestPointsActorBox(actor_pose, actor_box, object_pose, object_box, _object_name));
 			break;
 	case(BOXES_SURFACE_INTERSECTION_SPECIAL):
 			// the case related to the configuration in which the shortest vector
 			// connecting obstacle and actor spaces is not generated from 2 vertices
 			// but rather from 2 points lying somewhere along the border side
-//			return (findVectorSpecialIntersectionBB(x_box_intersection, y_box_intersection, actor_box.getBox(), object_box.getBox()));
-
-			std::cout << SfmDebugGetCurrentActorName() << " / " << SfmDebugGetCurrentObjectName();
 			std::tie(pt_actor, pt_obstacle) = findVectorSpecialIntersectionBB(x_box_intersection, y_box_intersection, actor_box.getBox(), object_box.getBox());
-			std::cout << "\tINTERSECTION_SPECIAL\tpt_actor_prev: " << std::setprecision(3) << actor_pose.Pos().X() << " " << actor_pose.Pos().Y() << " new: " << pt_actor.X() << " " << pt_actor.Y() << "\tpt_obstacle_prev: " << object_pose.Pos().X() << " " << object_pose.Pos().Y() << " new: "<< pt_obstacle.X() << " " << pt_obstacle.Y() << std::endl;
-//			std::cout << "\t\t\t\t\tActorBox | min: " << std::setprecision(3) << actor_box.getBox().Min().X() << " " << actor_box.getBox().Min().Y() << "\t| max: " << actor_box.getBox().Max().X() << " " << actor_box.getBox().Max().Y() << std::endl;
-//			std::cout << "\t\t\t\t\tObstaBox | min: " << std::setprecision(3) << object_box.getBox().Min().X() << " " << object_box.getBox().Min().Y() << "\t| max: " << object_box.getBox().Max().X() << " " << object_box.getBox().Max().Y() << std::endl;
 			return (std::make_tuple(ignition::math::Pose3d(pt_actor.X(), pt_actor.Y(), pt_actor.Z(), 0.0, 0.0, 0.0), pt_obstacle));
 			break;
 
@@ -633,52 +579,44 @@ Inflator::findVectorSpecialIntersectionBB(const Inflator::BoxIntersectionType &x
 
 	if ( x_intersection_type == BOX_INTERSECTION_TYPE_EXTERNAL ) {
 
-		std::cout << " X - BOX_INTERSECTION_TYPE_EXTERNAL ";
 		// take the actor center and corresponding obstacle point (horizontal line)
 		std::tie(pt_actor, pt_obstacle) = findShortestVectorIntersectedBoxes('x', actor_bb.getCenter().X(), actor_bb, object_bb);
 
 	} else if ( x_intersection_type == BOX_INTERSECTION_TYPE_INTERNAL ) {
 
-		std::cout << " X - BOX_INTERSECTION_TYPE_INTERNAL ";
 		// take the obstacle center and corresponding actor point (horizontal line)
 		std::tie(pt_actor, pt_obstacle) = findShortestVectorIntersectedBoxes('x', object_bb.getCenter().X(), actor_bb, object_bb);
 
 	} else if ( x_intersection_type == BOX_INTERSECTION_TYPE_PARTIAL_LOWER ) {
 
-		std::cout << " X - BOX_INTERSECTION_TYPE_PARTIAL_LOWER ";
 		// mean of the `intersection range`
 		double x_mean = (actor_bb.getMin().X() + object_bb.getMax().X()) / 2.0;
 		std::tie(pt_actor, pt_obstacle) = findShortestVectorIntersectedBoxes('x', x_mean, actor_bb, object_bb);
 
 	} else if ( x_intersection_type == BOX_INTERSECTION_TYPE_PARTIAL_UPPER ) {
 
-		std::cout << " X - BOX_INTERSECTION_TYPE_PARTIAL_UPPER ";
 		// mean of the `intersection range`
 		double x_mean = (actor_bb.getMax().X() + object_bb.getMin().X()) / 2.0;
 		std::tie(pt_actor, pt_obstacle) = findShortestVectorIntersectedBoxes('x', x_mean, actor_bb, object_bb);
 
 	} else if ( y_intersection_type == BOX_INTERSECTION_TYPE_EXTERNAL ) {
 
-		std::cout << " Y - BOX_INTERSECTION_TYPE_EXTERNAL ";
 		// take the actor center and corresponding obstacle point (vertical line)
 		std::tie(pt_actor, pt_obstacle) = findShortestVectorIntersectedBoxes('y', actor_bb.getCenter().Y(), actor_bb, object_bb);
 
 	} else if ( y_intersection_type == BOX_INTERSECTION_TYPE_INTERNAL ) {
 
-		std::cout << " Y - BOX_INTERSECTION_TYPE_INTERNAL ";
 		// take the obstacle center and corresponding actor point (vertical line)
 		std::tie(pt_actor, pt_obstacle) = findShortestVectorIntersectedBoxes('y', object_bb.getCenter().Y(), actor_bb, object_bb);
 
 	} else if ( y_intersection_type == BOX_INTERSECTION_TYPE_PARTIAL_LOWER ) {
 
-		std::cout << " Y - BOX_INTERSECTION_TYPE_PARTIAL_LOWER ";
 		// mean of the `intersection range`
 		double y_mean = (object_bb.getMax().Y() + actor_bb.getMin().Y()) / 2.0;
 		std::tie(pt_actor, pt_obstacle) = findShortestVectorIntersectedBoxes('y', y_mean, actor_bb, object_bb);
 
 	} else if ( y_intersection_type == BOX_INTERSECTION_TYPE_PARTIAL_UPPER ) {
 
-		std::cout << " Y - BOX_INTERSECTION_TYPE_PARTIAL_UPPER ";
 		// mean of the `intersection range`
 		double y_mean = (actor_bb.getMax().Y() + object_bb.getMin().Y()) / 2.0;
 		std::tie(pt_actor, pt_obstacle) = findShortestVectorIntersectedBoxes('y', y_mean, actor_bb, object_bb);
@@ -720,13 +658,8 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findSho
 		pt_obstacle.Y(coord_common);
 	}
 
-	// find Y coordinates of the points defined above
+	// find the second coordinate of the points defined above
 	std::tie(pt_temp_actor, pt_temp_obstacle) = findClosestVerticesIntersectedBoxes(actor_box, object_box);
-//	// ADDITIONAL FUNCTION DEPRECATED
-//	// 1) find actor's box vertex that is the closest to the obstacle box center
-//	pt_temp_actor = findClosestBoundingBoxVertex(object_box.getCenter(), actor_box);
-//	// 2) find obstacle's box vertex that is the closest to the `pt_temp_actor`
-//	pt_temp_obstacle = findClosestBoundingBoxVertex(pt_temp_actor, object_box);
 
 	// update the second coordinat
 	if ( axis == 'x' ) {
@@ -741,14 +674,6 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findSho
 
 }
 // ------------------------------------------------------------------- //
-
-//std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findClosestVertices(const actor::inflation::Border &actor_box,
-//		const actor::inflation::Border &object_box) const {
-//
-//	std::vector<ignition::math::Vector3d> actor_vertices  = createVerticesVector(actor_box.getBox());
-//	std::vector<ignition::math::Vector3d> object_vertices = createVerticesVector(object_box.getBox());
-//
-//}
 
 Inflator::BoxIntersectionType Inflator::findIntersectionType(const double &actor_coord_min, const double &actor_coord_max,
 		const double &object_coord_min, const double &object_coord_max) const {

@@ -114,7 +114,7 @@ private:
 			const actor::inflation::Box &object_bb) const;
 
 	/// Used for function output representation.
-	/// TODO: Diagrams copy to doc
+	/// TODO: Copy diagrams to doxygen documentation
 	typedef enum {
 		BOX_INTERSECTION_TYPE_PARTIAL_LOWER = 0,//!< BOX_INTERSECTION_TYPE_PARTIAL_LOWER: diagram 3
 		BOX_INTERSECTION_TYPE_PARTIAL_UPPER,    //!< BOX_INTERSECTION_TYPE_PARTIAL_UPPER: diagram 4
@@ -135,12 +135,15 @@ private:
 		BOXES_SURFACE_INTERSECTION_PARTIAL  //!< BOXES_SURFACE_INTERSECTION_PARTIAL
 	} BoxesSurfaceIntersection;
 
-	// TODO
-	// helper function
+	/// \brief Helper method used for finding the location of the obstacle relative to the actor.
+	/// \param actor_coord_min
+	/// \param actor_coord_max
+	/// \param object_coord_min
+	/// \param object_coord_max
+	/// \return See \ref BoxIntersectionType enum
 	BoxIntersectionType findIntersectionType(const double &actor_coord_min, const double &actor_coord_max,
 			const double &object_coord_min, const double &object_coord_max) const;
 
-	// TODO
 	/// \brief Finds the type of intersection occurring between 2 boxes (the one associated
 	/// with an actor and the one associated with an obstacle).
 	/// \param actor_bb
@@ -190,10 +193,15 @@ private:
 	/// \return A tuple: start and end points of the vector connecting the closest vertices
 	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> findClosestVerticesIntersectedBoxes(const actor::inflation::Box &actor_box, const actor::inflation::Box &object_box) const;
 
+	/// \brief Takes a common (shared) coordinate value and calculates the shortest vector
+	/// connecting 2 boxes (rectangular borders) that share the space in terms of a single
+	/// axis. Requires an `axis` to be specified.
+	/// \param axis
+	/// \param coord_common
+	/// \param actor_box
+	/// \param object_box
+	/// \return A tuple containing a positions of the actor and the obstacle (in that order)
 	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> findShortestVectorIntersectedBoxes(const char &axis, const double &coord_common, const actor::inflation::Box &actor_box, const actor::inflation::Box &object_box) const;
-//	// TODO
-//	std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> findClosestVertices(const actor::inflation::Border &actor_box,
-//			const actor::inflation::Border &object_box) const;
 
 public:
 
