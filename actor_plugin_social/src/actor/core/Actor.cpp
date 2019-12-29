@@ -1627,7 +1627,7 @@ bool Actor::visualizeHeatmap() {
 				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), common_info_, params_ptr_->getSfmVisParams().markers_pub_period, ignored_models_);
 
 				// pass a result to vector of grid forces
-				sfm_vis_heatmap_.addMarker(sfm_vis_heatmap_.create(pose.Pos(), sfm_.getForceCombined().Length()));
+				sfm_vis_heatmap_.addMarker(sfm_vis_heatmap_.create(pose.Pos(), sfm_.getForceInteraction().Length()));
 
 			}
 			return (true);
