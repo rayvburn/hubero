@@ -19,7 +19,10 @@ visualization:
     markers_pub_period: 0.15            # how often a typical visualization markers should be published (in each X seconds)
     publish_grid: true                  # whether to visualize vector field (if set to `false` - other GRID-related parameters have no effect) 
     grid_resolution: 0.65               # side of a grid cell (in meters), the smaller the higher number of SFM iterations needed (could be pretty time consuming)
-    grid_pub_period: 0.25               # how often a grid needs to be updated (note that it anyway won't be update if nobody subcribes it)  (in each X seconds)    
+    grid_pub_period: 0.25               # how often a grid needs to be updated (note that it anyway won't be update if nobody subcribes it)  (in each X seconds)
+    publish_potential: true             # whether to visualize a potential field (note that it is a derivate instance created based on the vector field calculations)
+    potential_resolution: 0.30          # length of a side of a potential field grid cell (the smaller the value is the higher definition of the field will be achieved)
+    # potential_pub_period:             # no need to create a new param, `grid_pub_period` will be used instead
 
 world_dictionary:
 

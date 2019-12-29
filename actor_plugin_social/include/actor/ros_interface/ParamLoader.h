@@ -89,6 +89,8 @@ public:
 		bool				publish_grid				= true;
 		double				grid_resolution				= 0.75;
 		double 				grid_pub_period				= 0.25;
+		bool 				publish_potential 			= true;
+		double				potential_resolution		= 0.03;
 
 	} SfmVisParams;
 

@@ -72,6 +72,8 @@ private:
 	/// in a vector
 	size_t grid_index_;
 
+protected:
+
 	/// \brief An array of Markers
 	visualization_msgs::MarkerArray marker_array_;
 

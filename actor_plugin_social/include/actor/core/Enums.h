@@ -102,7 +102,8 @@ typedef enum {
 /// \brief An visualization_msgs::MarkerArray topics IDs
 typedef enum {
 	ACTOR_MARKER_ARRAY_CLOSEST_POINTS = 100u,//!< ACTOR_MARKER_ARRAY_CLOSEST_POINTS lines created from other objects points connected with actor's bounding
-	ACTOR_MARKER_ARRAY_GRID                  //!< ACTOR_MARKER_ARRAY_GRID an arrow in each grid point indicating a social force
+	ACTOR_MARKER_ARRAY_GRID,                 //!< ACTOR_MARKER_ARRAY_GRID an arrow in each grid point indicating a social force
+	ACTOR_MARKER_ARRAY_POTENTIAL			 //!< ACTOR_MARKER_ARRAY_POTENTIAL a grid cell indicating the social force vector amplitude
 } ActorMarkerArrayType;
 
 // -------------------------

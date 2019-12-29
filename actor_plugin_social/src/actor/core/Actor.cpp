@@ -75,6 +75,21 @@ void Actor::initRosInterface() {
 								 params_ptr_->getSfmVisParams().grid_resolution);
 	}
 
+	if ( params_ptr_->getSfmVisParams().publish_potential ) {
+
+//		sfm::vis::HeatCell sfm_vis_heat_cell_;
+		sfm_vis_heatmap_.init(frame_.getFrame());
+		sfm_vis_heat_cell_.setParameters(params_ptr_->getSfmParams().min_force, params_ptr_->getSfmParams().max_force, params_ptr_->getSfmVisParams().potential_resolution);
+//		sfm_vis_heatmap_.
+		sfm_vis_heatmap_.createGrid(params_ptr_->getActorParams().world_bound_x.at(0) - 3.0, params_ptr_->getActorParams().world_bound_x.at(1) + 3.0,
+								 	params_ptr_->getActorParams().world_bound_y.at(0) - 3.0, params_ptr_->getActorParams().world_bound_y.at(1) + 3.0,
+									params_ptr_->getSfmVisParams().potential_resolution);
+
+//		sfm::vis::HeatCell sfm_vis_heat_cell_;
+//		sfm::vis::Heatmap sfm_vis_heatmap_;
+
+	}
+
 
 	/* initialize ROS interface to allow publishing and receiving messages;
 	 * due to inheritance from `enable_shared_from_this`, this method is created
@@ -95,6 +110,11 @@ void Actor::initRosInterface() {
 	// check if grid usage has been enabled in .YAML file
 	if ( params_ptr_->getSfmVisParams().publish_grid ) {
 		stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID, "force_grid");
+	}
+
+	// check if potential field usage has been enabled in .YAML file
+	if ( params_ptr_->getSfmVisParams().publish_potential ) {
+		stream_.initPublisher<ActorMarkerArrayType, visualization_msgs::MarkerArray>(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_POTENTIAL, "potential_field");
 	}
 
 	// constructor of a Connection object
@@ -1513,7 +1533,7 @@ void Actor::visualizeSfmCalculations() {
 
 	}
 
-	// check if grid publication has been enabled in parameter file
+	// check if grid publication has been enabled in the parameter file
 	if ( params_ptr_->getSfmVisParams().publish_grid ) {
 
 		/* visualize SFM grid if enough time elapsed from last
@@ -1522,6 +1542,13 @@ void Actor::visualizeSfmCalculations() {
 			stream_.publishData( actor::ActorMarkerArrayType::ACTOR_MARKER_ARRAY_GRID, sfm_vis_grid_.getMarkerArray() );
 		}
 
+	}
+
+	// check if potential field publication has been enabled in the parameter file
+	if ( params_ptr_->getSfmVisParams().publish_potential ) {
+		if ( visualizeHeatmap() ) {
+			stream_.publishData( actor::ActorMarkerArrayType::ACTOR_MARKER_ARRAY_POTENTIAL, sfm_vis_heatmap_.getMarkerArray() );
+		}
 	}
 
 }
@@ -1564,6 +1591,57 @@ bool Actor::visualizeVectorField() {
 
 				// pass a result to vector of grid forces
 				sfm_vis_grid_.addMarker( sfm_vis_grid_.create(pose.Pos(), sfm_.getForceCombined()) );
+
+			}
+			return (true);
+
+		} /* getSubscribersNum() */
+
+	} /* if ( time_elapsed ) */
+
+	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Actor::visualizeHeatmap() {
+
+	// do not publish too often
+	if ( (world_ptr_->SimTime() - time_last_vis_potential_pub_).Double() > params_ptr_->getSfmVisParams().grid_pub_period ) {
+
+		/* update the sim time even when grid will not be published
+		 * to avoid calling getSubscribersNum() in each iteration */
+		time_last_vis_potential_pub_ = world_ptr_->SimTime();
+
+		/* creating a grid with high resolution is pretty time-consuming
+		 * check if there is a subscriber and then calculate force vectors
+		 * for a whole grid */
+
+		/* grid generation is orientation-dependent (current orientation
+		 * of an actor is used) */
+		if ( stream_.getSubscribersNum(actor::ActorMarkerArrayType::ACTOR_MARKER_ARRAY_POTENTIAL ) ) {
+
+			ignition::math::Pose3d pose;	// pose where `virtual` actor will be placed in
+
+			// before a start reset a grid index
+			sfm_vis_heatmap_.resetGridIndex();
+
+			while ( !sfm_vis_heatmap_.isWholeGridChecked() ) {
+
+				// set an actor's virtual pose
+				pose = ignition::math::Pose3d( sfm_vis_heatmap_.getNextGridElement(), pose_world_ptr_->Rot() );
+				pose.Rot().Euler(0.0, 0.0, 0.0);
+
+				// update the bounding of an actor
+				updateBounding(pose);
+
+				// calculate social force for actor located in current pose
+				// hard-coded time delta
+				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), common_info_, 0.001, ignored_models_);
+
+				// pass a result to vector of grid forces
+				sfm_vis_heatmap_.addMarker(sfm_vis_heat_cell_.create(pose.Pos(), sfm_.getForceCombined().Length()));
 
 			}
 			return (true);

@@ -148,13 +148,17 @@ add_library(sfm_vis
  include/sfm/vis/Arrow.h
  include/sfm/vis/LineList.h
  include/sfm/vis/Text.h
+ include/sfm/vis/HeatCell.h
  include/sfm/vis/Grid.h
+ include/sfm/vis/Heatmap.h
 
  src/sfm/vis/MarkerBase.cpp
  src/sfm/vis/Arrow.cpp
  src/sfm/vis/LineList.cpp
  src/sfm/vis/Text.cpp
+ src/sfm/vis/HeatCell.cpp
  src/sfm/vis/Grid.cpp
+ src/sfm/vis/Heatmap.cpp
 
 )
 

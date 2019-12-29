@@ -236,6 +236,10 @@ void ParamLoader::loadSfmVisParams (const std::shared_ptr<ros::NodeHandle> nh_pt
 	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "visualization/publish_grid", params_sfm_vis_.publish_grid) ) { }
 	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "visualization/grid_resolution", params_sfm_vis_.grid_resolution) ) { }
 	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "visualization/grid_pub_period", params_sfm_vis_.grid_pub_period) ) { }
+
+	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "visualization/publish_potential", params_sfm_vis_.publish_potential) ) { }
+	if ( nh_ptr->getParam(ns_ + sfm_ns_prefix_ + "visualization/potential_resolution", params_sfm_vis_.potential_resolution) ) { }
+
 }
 
 // ------------------------------------------------------------------- //

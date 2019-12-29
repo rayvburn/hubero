@@ -40,6 +40,8 @@
 #include <sfm/vis/Grid.h>
 #include <sfm/vis/LineList.h>
 #include <sfm/vis/Text.h> // FIXME: path
+#include <sfm/vis/HeatCell.h>
+#include <sfm/vis/Heatmap.h>
 
 // Gazebo
 #include <gazebo-8/gazebo/common/UpdateInfo.hh>
@@ -258,6 +260,16 @@ private:
     /// \return True if MarkerArray is ready to be published
     bool visualizeVectorField();
 
+    /// \brief Helper function to create visualization_msgs::Marker(s)
+	/// for a SFM's visualization. The heatmap abstracts from the
+	/// social force direction but presents only its strength at some
+	/// point of space. This can be thought of as a potential field
+	/// visualization (in a derivate form - generated from social
+	/// vectors (which in turn are created from an artificial potential
+	/// field)).
+	/// \return True if MarkerArray is ready to be published
+	bool visualizeHeatmap();
+
     /// \brief Pointer to the parent actor.
     gazebo::physics::ActorPtr actor_ptr_;
 
@@ -326,8 +338,14 @@ private:
 	/// \brief Actor active behaviour visualization based on SFM-generated data
 	sfm::vis::Text sfm_vis_text_;
 
+	sfm::vis::HeatCell sfm_vis_heat_cell_;
+	sfm::vis::Heatmap sfm_vis_heatmap_;
+
     /// \brief Time of the last force field visualization publication
 	gazebo::common::Time time_last_vis_grid_pub_;
+
+    /// \brief Time of the last potential field visualization publication
+	gazebo::common::Time time_last_vis_potential_pub_;
 
 	/// \brief Time of the last SFM-generated data publication
 	gazebo::common::Time time_last_vis_sfm_pub_;
