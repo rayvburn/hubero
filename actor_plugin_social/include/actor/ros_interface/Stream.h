@@ -29,6 +29,8 @@
 #include <gazebo/common/Time.hh>
 
 // Actor-related
+#include <actor/FrameGlobal.h>
+#include <actor/ros_interface/Conversion.h>
 
 namespace actor {
 namespace ros_interface {
@@ -61,8 +63,7 @@ private:
 	/// ID is an enum NUMBER defined in core/Enums.h
 	std::tuple<bool, ros::Publisher> findPublisherInMap(const unsigned int &id);
 
-	/// \brief Helper function for conversion from
-	/// ignition's Pose to geometry_msgs' TransformStamped
+
 	geometry_msgs::TransformStamped convertPoseToTfStamped(const ignition::math::Pose3d &pose) const;
 
 	/// \brief NodeHandle's shared_ptr
@@ -138,10 +139,10 @@ public:
 			child_frame.append("_checkpoint");
 		}
 
-		geometry_msgs::TransformStamped tf_stamp = convertPoseToTfStamped(pose);
+		geometry_msgs::TransformStamped tf_stamp = actor::ros_interface::Conversion::convertIgnPoseToTfStamped(pose, true);
 		tf_stamp.child_frame_id = child_frame;
 
-		tf_stamp.header.frame_id = "world";
+		tf_stamp.header.frame_id = actor::FrameGlobal::getFrame(); //  "world";
 		tf_stamp.header.stamp = ros::Time::now();
 
 		// NOTE: Gazebo's time does not seem to match ROS (tf_tree is always empty)

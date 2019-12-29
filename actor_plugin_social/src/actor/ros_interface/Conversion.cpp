@@ -94,5 +94,29 @@ ignition::math::Pose3d Conversion::convertPoseStampedToIgnPose (const geometry_m
 
 // ------------------------------------------------------------------- //
 
+/// \brief Helper function for conversion from ignition's Pose to geometry_msgs' TransformStamped
+geometry_msgs::TransformStamped Conversion::convertIgnPoseToTfStamped (const ignition::math::Pose3d &pose, bool zero_height) {
+
+	geometry_msgs::TransformStamped tf_stamp;
+
+	tf_stamp.transform.translation.x = pose.Pos().X();
+	tf_stamp.transform.translation.y = pose.Pos().Y();
+	if ( zero_height ) {
+		tf_stamp.transform.translation.z = 0.0;
+	} else {
+		tf_stamp.transform.translation.z = pose.Pos().Z();
+	}
+
+	tf_stamp.transform.rotation.x = pose.Rot().X();
+	tf_stamp.transform.rotation.y = pose.Rot().Y();
+	tf_stamp.transform.rotation.z = pose.Rot().Z();
+	tf_stamp.transform.rotation.w = pose.Rot().W();
+
+	return (tf_stamp);
+
+}
+
+// ------------------------------------------------------------------- //
+
 } /* namespace ros_interface */
 } /* namespace actor */
