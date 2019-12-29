@@ -76,9 +76,7 @@ visualization_msgs::Marker HeatCell::create(const ignition::math::Vector3d &pos,
 
 // --------------------------------------------------------------
 
-HeatCell::~HeatCell() {
-	// TODO Auto-generated destructor stub
-}
+HeatCell::~HeatCell() {}
 
 // --------------------------------------------------------------
 
