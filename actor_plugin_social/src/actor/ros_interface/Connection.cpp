@@ -22,7 +22,10 @@ incare::communication::RobotCommands Connection::voice_robot_;
 
 // ------------------------------------------------------------------- //
 
-Connection::Connection(): tf_listener_ptr_(NULL) {
+Connection::Connection() {
+
+	// create a TfListener instance
+	tf_listener_ptr_ = std::unique_ptr<tf::TransformListener>(new tf::TransformListener(ros::Duration(5.1)));
 
 	// threading - get std::future object out of std::promise
 //	future_obj_ = exit_signal_.get_future();
@@ -70,17 +73,15 @@ void Connection::initServices() {
 
 	srv_communicate_	= nh_ptr_->advertiseService(namespace_ + "/communicate", 	&Connection::srvCommunicateCallback, this);
 
-	// FIXME: unique ptr
-	tf_listener_ptr_ = new tf::TransformListener(ros::Duration(5.1));
-
-	std::cout << "\n\n\nTESTING\n\n\n";
+	// Verbal interface
+	std::cout << "\n\nVOICE TEST\n\n\n";
 	for (size_t i = 0; i < voice_robot_.getDatabase().size(); i++) {
 		for (size_t j = 0; j < voice_robot_.getDatabase().at(i).size(); j++) {
 			std::cout << voice_robot_.getDatabase().at(i).at(j) << "\t";
 		}
 		std::cout << "\n";
 	}
-	std::cout << "\n\n\nEND\n\n\n";
+	std::cout << "\n\n\nEND\n\n";
 
 }
 
@@ -304,10 +305,7 @@ void Connection::callbackThreadHandler() {
 
 // ------------------------------------------------------------------- //
 
-Connection::~Connection() {
-	// FIXME:
-	delete tf_listener_ptr_;
-}
+Connection::~Connection() {}
 
 // ------------------------------------------------------------------- //
 

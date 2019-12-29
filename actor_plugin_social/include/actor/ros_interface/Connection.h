@@ -10,11 +10,9 @@
 
 // C++ STL
 #include <actor/core/Actor.h>
-#include <actor/core/ActorFwd.h> // must be here due to circular dependency
-#include <memory> 	// std::shared_ptr
+#include <actor/core/ActorFwd.h> 	// must be here due to the circular dependency
+#include <memory> 					// std::shared_ptr, std::unique_ptr
 #include <thread>
-//#include <chrono>	// not needed ATM
-//#include <future>
 #include <string>
 
 // ROS headers
@@ -39,7 +37,6 @@
 
 #include <std_srvs/Trigger.h>	// stopLying, stopFollowing
 #include <std_srvs/SetBool.h>	// switching on/off SFM's debugging info
-
 
 namespace actor {
 namespace ros_interface {
@@ -111,8 +108,9 @@ private:
 	/// nullptr by default
 	std::shared_ptr<ros::NodeHandle> nh_ptr_;
 
-	// TODO
-	tf::TransformListener* tf_listener_ptr_; // looks for a static tf, no need for a longer buffer
+	/// \brief Transform listener, used for the conversion from the goal frame
+	/// to the actor global frame (associated with the Gazebo world center).
+	std::unique_ptr<tf::TransformListener> tf_listener_ptr_;
 
 	/// \brief Namespace in which all services will be available (actor's name)
 	std::string namespace_;
