@@ -50,22 +50,24 @@ void Actor::initRosInterface() {
 
 	// assign the parameter value to the `actor_global_frame_id`;
 	// the parameter is also used by global plan ROS node
-	frame_.setFrame(params_ptr_->getActorParams().global_frame_name);
+	frame_global_.setFrame(params_ptr_->getActorParams().global_frame_name);
 
 	/* initialize SFM visualization instances */
-	sfm_vis_arrow_.init(frame_.getFrame());
+	sfm_vis_arrow_.init(frame_global_.getFrame());
 	sfm_vis_arrow_.setParameters(1.0f, params_ptr_->getSfmParams().max_force);
 
-	sfm_vis_text_.init(frame_.getFrame());
+	sfm_vis_text_.init(frame_global_.getFrame());
 	sfm_vis_text_.setColor(0.9f, 0.9f, 0.9f, 0.95f);
 	sfm_vis_text_.setParameters(0.2f);
 
-	sfm_vis_line_list_.init(frame_.getFrame());
+	sfm_vis_line_list_.init(frame_global_.getFrame());
 	sfm_vis_line_list_.setColor(1.0f, 1.0f, 0.0f, 0.7f);
 
 	if ( params_ptr_->getSfmVisParams().publish_grid ) {
-		sfm_vis_grid_.init(frame_.getFrame());
-		sfm_vis_grid_.setParameters(1.0f, params_ptr_->getSfmParams().max_force);
+		// `sfm_vis_grid_` initializes a new arrow instance (must not be confused with
+		// the `sfm_vis_arrow_`) due to the inheritance
+		sfm_vis_grid_.init(frame_global_.getFrame());
+		sfm_vis_grid_.setParameters(params_ptr_->getSfmVisParams().grid_resolution, params_ptr_->getSfmParams().max_force);
 		sfm_vis_grid_.setColor(0.2f, 1.0f, 0.0f, 0.7f);
 		/* make grid artificially bigger than a world's bounds;
 		 * it makes random targets to be located further from
@@ -76,17 +78,13 @@ void Actor::initRosInterface() {
 	}
 
 	if ( params_ptr_->getSfmVisParams().publish_potential ) {
-
-//		sfm::vis::HeatCell sfm_vis_heat_cell_;
-		sfm_vis_heatmap_.init(frame_.getFrame());
-		sfm_vis_heat_cell_.setParameters(params_ptr_->getSfmParams().min_force, params_ptr_->getSfmParams().max_force, params_ptr_->getSfmVisParams().potential_resolution);
-//		sfm_vis_heatmap_.
+		sfm_vis_heatmap_.init(frame_global_.getFrame());
+		sfm_vis_heatmap_.setParameters(params_ptr_->getSfmParams().min_force,
+									   params_ptr_->getSfmParams().max_force,
+									   params_ptr_->getSfmVisParams().potential_resolution);
 		sfm_vis_heatmap_.createGrid(params_ptr_->getActorParams().world_bound_x.at(0) - 3.0, params_ptr_->getActorParams().world_bound_x.at(1) + 3.0,
 								 	params_ptr_->getActorParams().world_bound_y.at(0) - 3.0, params_ptr_->getActorParams().world_bound_y.at(1) + 3.0,
 									params_ptr_->getSfmVisParams().potential_resolution);
-
-//		sfm::vis::HeatCell sfm_vis_heat_cell_;
-//		sfm::vis::Heatmap sfm_vis_heatmap_;
 
 	}
 
@@ -926,7 +924,7 @@ double Actor::prepareForUpdate() {
 
 	common_info_.setLinearVel(velocity_lin_);
 
-	// DELETE - below just doesn't work - WorldPtr doesnt get updated
+	// DELETE - the method used below just doesn't do anything - WorldPtr doesnt get updated
 	// actor_ptr_->SetLinearVel(velocity_lin_);
 
 	// update bounding model's pose
@@ -1473,18 +1471,6 @@ void Actor::visualizePositionData() {
 		time_last_tf_pub_ = world_ptr_->SimTime();
 
 		// publish data for visualization
-//		// proper bounding object to publish needs to be chosen
-//		switch ( bounding_type_ ) {
-//		case(ACTOR_BOUNDING_BOX):
-//				stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, ((actor::inflation::Box*)bounding_ptr_)->getMarkerConversion());
-//				break;
-//		case(ACTOR_BOUNDING_CIRCLE):
-//				stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, ((actor::inflation::Circle*)bounding_ptr_)->getMarkerConversion());
-//				break;
-//		case(ACTOR_BOUNDING_ELLIPSE):
-//				stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, ((actor::inflation::Ellipse*)bounding_ptr_)->getMarkerConversion());
-//				break;
-//		}
 		stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_ptr_->getMarkerConversion());
 
 		stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_);
@@ -1638,10 +1624,10 @@ bool Actor::visualizeHeatmap() {
 
 				// calculate social force for actor located in current pose
 				// hard-coded time delta
-				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), common_info_, 0.001, ignored_models_);
+				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), common_info_, params_ptr_->getSfmVisParams().markers_pub_period, ignored_models_);
 
 				// pass a result to vector of grid forces
-				sfm_vis_heatmap_.addMarker(sfm_vis_heat_cell_.create(pose.Pos(), sfm_.getForceCombined().Length()));
+				sfm_vis_heatmap_.addMarker(sfm_vis_heatmap_.create(pose.Pos(), sfm_.getForceCombined().Length()));
 
 			}
 			return (true);

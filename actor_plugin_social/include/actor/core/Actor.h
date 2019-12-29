@@ -37,10 +37,9 @@
 
 // Visualization
 #include <sfm/vis/Arrow.h>
-#include <sfm/vis/Grid.h>
+#include <sfm/vis/GridForce.h>
 #include <sfm/vis/LineList.h>
 #include <sfm/vis/Text.h> // FIXME: path
-#include <sfm/vis/HeatCell.h>
 #include <sfm/vis/Heatmap.h>
 
 // Gazebo
@@ -326,19 +325,26 @@ private:
     /// \brief Social Force Model interface object
     sfm::SocialForceModel sfm_;
 
-    /// \brief Social Force Model arrows visualization
+    /// \brief Social Force Model arrows visualization;
+    /// An object which `arrow` markers are created from
+    /// so it is crucial to set the color, the frame etc.
+    /// correctly.
+    /// \note This is closely related to the social forces
+    /// markers so the maximum length of the arrow must be
+    /// mapped onto the maximum allowable force generated
+    /// by SFM.
 	sfm::vis::Arrow sfm_vis_arrow_;
 
 	/// \brief Social Force Model arrows visualization
 	sfm::vis::LineList sfm_vis_line_list_;
 
     /// \brief Social Force Model grid visualization
-	sfm::vis::Grid sfm_vis_grid_;
+	sfm::vis::GridForce sfm_vis_grid_;
 
 	/// \brief Actor active behaviour visualization based on SFM-generated data
 	sfm::vis::Text sfm_vis_text_;
 
-	sfm::vis::HeatCell sfm_vis_heat_cell_;
+	/// \brief Heatmap instance for Grid and MarkerBase objects management
 	sfm::vis::Heatmap sfm_vis_heatmap_;
 
     /// \brief Time of the last force field visualization publication
@@ -396,7 +402,7 @@ private:
     Path path_storage_{0.05}; // resolution
 
     /// \brief Stores name of the global frame of Gazebo world
-    actor::FrameGlobal frame_;
+    actor::FrameGlobal frame_global_;
 
 public:
 

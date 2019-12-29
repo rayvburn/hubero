@@ -150,6 +150,7 @@ add_library(sfm_vis
  include/sfm/vis/Text.h
  include/sfm/vis/HeatCell.h
  include/sfm/vis/Grid.h
+ include/sfm/vis/GridForce.h
  include/sfm/vis/Heatmap.h
 
  src/sfm/vis/MarkerBase.cpp
@@ -158,6 +159,7 @@ add_library(sfm_vis
  src/sfm/vis/Text.cpp
  src/sfm/vis/HeatCell.cpp
  src/sfm/vis/Grid.cpp
+ src/sfm/vis/GridForce.cpp
  src/sfm/vis/Heatmap.cpp
 
 )

@@ -15,7 +15,6 @@
 // ROS libraries
 #include <visualization_msgs/MarkerArray.h>
 
-
 namespace sfm {
 namespace vis {
 
@@ -23,7 +22,7 @@ namespace vis {
 /// visualization; generates a grid of points and calculates
 /// a social force in each of them (treats each position as
 /// if an actor would in fact be located there)
-class Grid : public Arrow {
+class Grid {
 
 public:
 
@@ -32,7 +31,9 @@ public:
 
 	/// \brief Creates a grid (std::vector
 	/// of an ignition::math::Vector3d instances)
-	void createGrid(const float &x_start, const float &x_end, const float &y_start, const float &y_end, const float &resolution);
+	/// \note Method made virtual to allow derived classes
+	/// to perform some `initialization` operations
+	virtual void createGrid(const float &x_start, const float &x_end, const float &y_start, const float &y_end, const float &resolution);
 
 	/// \brief Add a given marker to locally stored
 	/// MarkerArray; creates a copy of a marker to
