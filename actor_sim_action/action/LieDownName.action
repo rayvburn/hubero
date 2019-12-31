@@ -1,0 +1,9 @@
+#goal definition
+string object_name
+float64 lying_height
+float64 rotation
+---
+#result definition
+bool flag
+---
+#feedback

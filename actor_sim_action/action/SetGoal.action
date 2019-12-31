@@ -1,0 +1,9 @@
+#goal definition
+float64 x_pos
+float64 y_pos
+string frame
+---
+#result definition
+bool flag
+---
+#feedback

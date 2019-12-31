@@ -244,7 +244,6 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 		updateTransitionFunctionPtr();
 	}
 
-
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// target manager initialization section
 	pose_world_ptr_ = std::make_shared<ignition::math::Pose3d>();
@@ -508,6 +507,12 @@ std::array<double, 3> Actor::getVelocity() const {
 	array.at(2) = velocity_ang_.Z();
 	return (array);
 
+}
+
+// ------------------------------------------------------------------- //
+
+actor::core::Action::ActionStatus Actor::getActionStatus() const {
+	return (action_info_.getStatus());
 }
 
 // ------------------------------------------------------------------- //
@@ -1005,6 +1010,7 @@ bool Actor::manageTargetMovingAround() {
 			new_target = true;
 		} else {
 			setState(actor::ACTOR_STATE_STOP_AND_STARE);
+			action_info_.setStatus(actor::core::Action::FAILED);
 		}
 	}
 
@@ -1032,12 +1038,15 @@ bool Actor::manageTargetMovingAround() {
 	// check closeness to the target/checkpoint
 	if ( target_manager_.isTargetReached() ) {
 
+		action_info_.setStatus(actor::core::Action::FINISHED);
+
 		// object tracking not active
 		if ( target_manager_.changeTarget() ) {
 			// after setting a new target, firstly let's rotate to its direction
 			new_target = true;
 		} else {
 			setState(actor::ACTOR_STATE_STOP_AND_STARE);
+			action_info_.setStatus(actor::core::Action::FAILED);
 		}
 
 	} else if ( target_manager_.isCheckpointReached() ) {
@@ -1066,6 +1075,7 @@ bool Actor::manageTargetMovingAround() {
 		// new target was not found
 		if ( !target_changed ) {
 			setState(actor::ACTOR_STATE_STOP_AND_STARE);
+			action_info_.setStatus(actor::core::Action::FAILED);
 			return (false);
 		}
 
@@ -1075,9 +1085,11 @@ bool Actor::manageTargetMovingAround() {
 	if ( new_target ) {
 		// after selection of a new target, firstly let's rotate to its direction
 		setState(actor::ACTOR_STATE_ALIGN_TARGET);
+		action_info_.setStatus(actor::core::Action::PREPARING);
 		return (false);
 	}
 
+	action_info_.setStatus(actor::core::Action::APPROACHING);
 	return (true);
 
 }

@@ -8,6 +8,7 @@ include_directories($ENV{HOME}/libraries/fuzzylite/fuzzylite) # include fuzzylit
 find_package(roscpp REQUIRED)
 find_package(actor_sim_utils REQUIRED)
 find_package(actor_sim_srv REQUIRED)
+find_package(actor_sim_action REQUIRED)
 find_package(catkin REQUIRED COMPONENTS incare_human_robot_communication)
 find_package(actor_global_plan REQUIRED)
 find_package(catkin REQUIRED COMPONENTS visualization_msgs)
@@ -19,6 +20,7 @@ find_package(std_srvs REQUIRED)
 include_directories(${roscpp_INCLUDE_DIRS})
 include_directories(${actor_sim_utils_INCLUDE_DIRS})
 include_directories(${actor_sim_srv_INCLUDE_DIRS})
+include_directories(${actor_sim_action_INCLUDE_DIRS})
 include_directories(${incare_human_robot_communication_INCLUDE_DIRS})
 include_directories(${actor_global_plan_INCLUDE_DIRS})
 
@@ -57,6 +59,7 @@ add_library(actor_core
   include/actor/core/LieDownHelper.h
   include/actor/core/Path.h
   include/actor/core/Voice.h
+  include/actor/core/Action.h
 
   src/actor/core/Actor.cpp 
   src/actor/core/CommonInfo.cpp 
@@ -65,6 +68,7 @@ add_library(actor_core
   src/actor/core/LieDownHelper.cpp
   src/actor/core/Path.cpp
   src/actor/core/Voice.cpp
+  src/actor/core/Action.cpp
 
 )
 

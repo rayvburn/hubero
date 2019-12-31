@@ -21,7 +21,7 @@
 #include <ros/callback_queue.h>
 #include <tf/transform_listener.h>	// ROS Kinetic
 
-// Actor
+// Actor services
 #include <actor_sim_srv/FollowObject.h>
 #include <actor_sim_srv/SetGoal.h>
 #include <actor_sim_srv/SetGoalName.h>
@@ -37,6 +37,15 @@
 
 #include <std_srvs/Trigger.h>	// stopLying, stopFollowing
 #include <std_srvs/SetBool.h>	// switching on/off SFM's debugging info
+
+// Actor actions
+#include <actionlib/server/simple_action_server.h>
+#include <actionlib_msgs/GoalStatus.h>
+#include <actor_sim_action/FollowObjectAction.h>
+#include <actor_sim_action/SetGoalAction.h>
+#include <actor_sim_action/SetGoalNameAction.h>
+#include <actor_sim_action/LieDownAction.h>
+#include <actor_sim_action/LieDownNameAction.h>
 
 namespace actor {
 namespace ros_interface {
@@ -124,7 +133,7 @@ private:
 	ros::CallbackQueue cb_queue_;
 
 	/// \brief Separate thread to provide a fast response to a service call
-	std::thread callback_thread_;
+	std::thread callback_srv_thread_;
 
 //	// Reference: https://thispointer.com/c11-how-to-stop-or-terminate-a-thread/
 //	/// \brief Object used as a helper to terminate a thread
@@ -152,6 +161,14 @@ private:
 
 	/// \brief Database for 'voice'-alike commands recognition
 	static incare::communication::RobotCommands voice_robot_;
+
+	/// \section Actions
+	/// \brief
+	/// \note See http://wiki.ros.org/actionlib_tutorials/Tutorials/SimpleActionServer%28ExecuteCallbackMethod%29#The_Code
+	/// "NodeHandle instance must be created before this line. Otherwise strange error occurs." - thus a pointer created
+	actionlib::SimpleActionServer<actor_sim_action::FollowObjectAction>* action_follow_object_ptr_;
+
+	void actionFollowObjectCallback(const actor_sim_action::FollowObjectGoalConstPtr &goal);
 
 };
 

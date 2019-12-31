@@ -12,6 +12,11 @@
 #include <sfm/core/SFMDebug.h>
 #include <actor/FrameGlobal.h>
 
+#include <boost/bind.hpp>
+#include <boost/phoenix/bind/bind_member_function.hpp>
+
+#include <chrono>
+
 // - - - - - - - - - - - - - - - -
 
 namespace actor {
@@ -26,6 +31,8 @@ Connection::Connection() {
 
 	// create a TfListener instance
 	tf_listener_ptr_ = std::unique_ptr<tf::TransformListener>(new tf::TransformListener(ros::Duration(5.1)));
+
+	action_follow_object_ptr_ = nullptr;
 
 	// threading - get std::future object out of std::promise
 //	future_obj_ = exit_signal_.get_future();
@@ -83,6 +90,13 @@ void Connection::initServices() {
 	}
 	std::cout << "\n\n\nEND\n\n";
 
+	// ---------------
+	// actions section
+	action_follow_object_ptr_ = new actionlib::SimpleActionServer<actor_sim_action::FollowObjectAction>(
+			*nh_ptr_, namespace_ + "/action/follow_object", boost::bind(&Connection::actionFollowObjectCallback, this, _1), false);
+	action_follow_object_ptr_->start();
+	// ---------------
+
 }
 
 // ------------------------------------------------------------------- //
@@ -96,7 +110,7 @@ void Connection::startCallbackProcessingThread() {
 	}
 
 	nh_ptr_->setCallbackQueue(&cb_queue_);
-	callback_thread_ = std::thread( std::bind(&Connection::callbackThreadHandler, this) );
+	callback_srv_thread_ = std::thread( std::bind(&Connection::callbackThreadHandler, this) );
 
 }
 
@@ -300,6 +314,33 @@ void Connection::callbackThreadHandler() {
 		cb_queue_.callAvailable(); //  ros::WallDuration(0.001)
 
 	}
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Connection::actionFollowObjectCallback(const actor_sim_action::FollowObjectGoalConstPtr &goal) {
+
+	std::cout << "\nactionFollowObjectCallback()" << "\t" << namespace_ << "\n" << std::endl;
+
+	// take ownership of the Actor shared_ptr
+	if ( !actor_ptr_.lock()->followObject(goal->object_name) ) {
+		std::cout << "FollowObject request cannot be processed" << std::endl;
+	}
+
+	int i = 10;
+	while(i--) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		std::cout << "ALIVE" << std::endl;
+	}
+	// NEW THREAD UPDATING THE STATUS EACH SECOND
+
+	// FINISH
+	actor_sim_action::FollowObjectResult result;
+	result.flag = true;
+	action_follow_object_ptr_->setSucceeded(result, "RESULT TEXT");
+
+	std::cout << "\nactionFollowObjectCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
 
 }
 

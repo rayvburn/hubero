@@ -17,10 +17,12 @@
   <build_depend>rospy</build_depend>
   <build_depend>actor_sim_utils</build_depend>
   <build_depend>actor_sim_srv</build_depend>
+  <build_depend>actor_sim_action</build_depend>
 
   <exec_depend>roscpp</exec_depend>
   <exec_depend>actor_sim_utils</exec_depend>
   <exec_depend>actor_sim_srv</exec_depend>
+  <exec_depend>actor_sim_action</exec_depend>
 
   <depend>actor_global_plan</depend>
   <depend>std_srvs</depend>

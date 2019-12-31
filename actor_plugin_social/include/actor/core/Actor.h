@@ -22,6 +22,7 @@
 #include <actor/core/LieDownHelper.h>
 #include <actor/core/Path.h>
 #include <actor/core/Target.h>
+#include <actor/core/Action.h>
 #include <actor/inflation/Box.h>
 #include <actor/inflation/Circle.h>
 #include <actor/inflation/Ellipse.h>
@@ -131,6 +132,7 @@ public:
 	/* SCROLL DOWN for a `setNewTarget()` template */
 
 	/// \brief Calls `target_manager_` method to evaluate the `target_reached` flag.
+	/// DEPRECATED
 	bool isTargetReached();
 
 	/// \brief Method to set new target for actor - object's name
@@ -167,6 +169,9 @@ public:
 
 	/// \brief Get velocity vector (linear x, linear y and angular `yaw`)
 	std::array<double, 3> getVelocity() const;
+
+	/// \brief Returns status of the current action
+	actor::core::Action::ActionStatus getActionStatus() const;
 
 	/// \brief Set actor's new stance type (first see which are allowed)
 	/// \return True if stance is valid
@@ -403,6 +408,9 @@ private:
 
     /// \brief Stores name of the global frame of Gazebo world
     actor::FrameGlobal frame_global_;
+
+    /// \brief Stores a status of the current action
+    Action action_info_;
 
 public:
 
