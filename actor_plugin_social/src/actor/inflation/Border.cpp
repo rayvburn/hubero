@@ -11,16 +11,15 @@ namespace actor {
 namespace inflation {
 
 // default constructor
-Border::Border(): is_box_(false) {};
+Border::Border(): type_(BORDER_NONE) {};
 
 // copy constructor
 Border::Border(const Border &obj) {
-	is_box_ = obj.is_box_;
+	type_ = obj.type_;
 }
 
-// non-virtual method
-bool Border::isBox() const {
-	return (is_box_);
+BorderType Border::getType() const {
+	return (type_);
 }
 
 // virtual method

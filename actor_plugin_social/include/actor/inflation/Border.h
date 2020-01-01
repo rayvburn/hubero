@@ -17,6 +17,14 @@
 namespace actor {
 namespace inflation {
 
+/// \brief Constants describing the shape of a border
+typedef enum {
+	BORDER_NONE = 0u,//!< BORDER_NONE
+	BORDER_RECTANGLE,//!< BORDER_RECTANGLE
+	BORDER_CIRCLE,   //!< BORDER_CIRCLE
+	BORDER_ELLIPSE   //!< BORDER_ELLIPSE
+} BorderType;
+
 /// \brief A base class for different border instances (rectangle, circle, ellipse).
 /// Provides ability to call derived classes functions without a need to store
 /// 3 instances of rectangular, circular and elliptical borders in memory at once.
@@ -33,8 +41,8 @@ public:
 	/// \brief Copy constructor
 	Border(const Border &obj);
 
-	/// \brief Returns true if the Border if of a rectangular shape (represents a 3D box)
-	bool isBox() const;
+	/// \brief Returns the type of the Border, \ref BorderType
+	BorderType getType() const;
 
 	/// \brief Method which updates a class'es
 	/// internal Box instance's pose
@@ -88,8 +96,8 @@ public:
 
 protected:
 
-	/// \brief Flag used for evaluation whether the Border is a Box (see the derived classes list)
-	bool is_box_;
+	/// \brief Represents the type of the Border instance
+	BorderType type_;
 
 };
 

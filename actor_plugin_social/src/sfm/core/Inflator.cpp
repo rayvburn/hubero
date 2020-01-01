@@ -19,7 +19,7 @@ Inflator::Inflator() { }
 // ------------------------------------------------------------------- //
 
 ignition::math::Vector3d Inflator::findClosestPointsModelBox(const ignition::math::Pose3d &actor_pose,
-		const ignition::math::Pose3d &object_pose, const actor::inflation::Border &bb) const
+		const ignition::math::Pose3d &object_pose, const actor::inflation::Border &bb)
 {
 
 	// TODO: check operation
@@ -82,8 +82,8 @@ ignition::math::Vector3d Inflator::findClosestPointsModelBox(const ignition::mat
 
 // ------------------------------------------------------------------- //
 
-std::vector<ignition::math::Vector3d> Inflator::createVerticesVector(const ignition::math::Box &bb) const
-{
+std::vector<ignition::math::Vector3d> Inflator::createVerticesVector(const ignition::math::Box &bb) {
+
 	// 4 vertices only (planar)
 	std::vector<ignition::math::Vector3d> temp_container;
 	ignition::math::Vector3d temp_vector;
@@ -112,7 +112,7 @@ std::vector<ignition::math::Vector3d> Inflator::createVerticesVector(const ignit
 // ------------------------------------------------------------------- //
 
 std::vector<double> Inflator::calculateLengthToVertices(const ignition::math::Vector3d &actor_pos,
-		const std::vector<ignition::math::Vector3d> &vertices_pts) const
+		const std::vector<ignition::math::Vector3d> &vertices_pts)
 {
 
 	std::vector<double> temp_containter;
@@ -130,7 +130,7 @@ std::vector<double> Inflator::calculateLengthToVertices(const ignition::math::Ve
 std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findClosestPointsBoxes(
 		const ignition::math::Pose3d &actor_pose,  const actor::inflation::Border &actor_box,
 		const ignition::math::Pose3d &object_pose, const actor::inflation::Border &object_box,
-		const std::string &_object_name /* debug only */ ) const
+		const std::string &_object_name /* debug only */ )
 {
 
 	// method used for `d_alpha_beta` calculation
@@ -173,7 +173,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findClose
 
 std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findIntersectedModelsClosestPoints(
 		const ignition::math::Vector3d &actor_pos, const ignition::math::Vector3d &pt_intersect,
-		const IntersectionType &type) const
+		const IntersectionType &type)
 {
 
 	/*
@@ -333,7 +333,7 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findInt
 
 std::tuple<bool, ignition::math::Vector3d> Inflator::isWithinRangeOfBB(
 		const ignition::math::Vector3d &actor_center,
-		const actor::inflation::Box &object_bb) const
+		const actor::inflation::Box &object_bb)
 {
 
 	/* Using the fact that in Gazebo, the Bounding Box is axis-aligned
@@ -372,7 +372,7 @@ std::tuple<bool, ignition::math::Vector3d> Inflator::isWithinRangeOfBB(
 
 ignition::math::Vector3d Inflator::calculateBoxIntersection(const ignition::math::Vector3d &object_pos,
 		const actor::inflation::Border &box,
-		const ignition::math::Vector3d &box_pos) const {
+		const ignition::math::Vector3d &box_pos) {
 
 	/* The algorithm of searching the closest points of 2 bounding boxes (presented below)
 	 * consists of creation of a line starting in the 1st bounding box's center,
@@ -430,7 +430,7 @@ ignition::math::Vector3d Inflator::calculateBoxIntersection(const ignition::math
 // ------------------------------------------------------------------- //
 
 ignition::math::Vector3d Inflator::findClosestBoundingBoxVertex(const ignition::math::Vector3d &actor_pos,
-		const actor::inflation::Border &object_box) const {
+		const actor::inflation::Border &object_box) {
 
 	std::vector<ignition::math::Vector3d> vertices_vector = createVerticesVector(object_box.getBox());
 	std::vector<double> lengths_vector = calculateLengthToVertices(actor_pos, vertices_vector);
@@ -453,7 +453,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findClose
 		const actor::inflation::Border &actor_circle,
 		const ignition::math::Pose3d &object_pose,
 		const actor::inflation::Border &object_circle,
-		const std::string &_object_name /* debug only */) const
+		const std::string &_object_name /* debug only */)
 {
 
 	/* BoundingCircle and BoundingCircle -> 2 actors */
@@ -484,7 +484,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findClose
 		const actor::inflation::Border &actor_ellipse,
 		const ignition::math::Pose3d &object_pose,
 		const actor::inflation::Border &object_ellipse,
-		const std::string &object_name /* debug only */ ) const
+		const std::string &object_name /* debug only */ )
 {
 
 	/* BoundingEllipse and BoundingEllipse -> 2 actors */
@@ -517,7 +517,7 @@ std::tuple<ignition::math::Pose3d, ignition::math::Vector3d> Inflator::findClose
 std::tuple<Inflator::BoxesSurfaceIntersection, Inflator::BoxIntersectionType, Inflator::BoxIntersectionType>
 Inflator::findIntersectionTypeOfBB(
 		const actor::inflation::Box &actor_bb,
-		const actor::inflation::Box &object_bb) const
+		const actor::inflation::Box &object_bb)
 {
 
 	// note: remake of the `isWithinRangeOfBB` method
@@ -571,7 +571,7 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d>
 Inflator::findVectorSpecialIntersectionBB(const Inflator::BoxIntersectionType &x_intersection_type,
 								const Inflator::BoxIntersectionType &y_intersection_type,
 								const actor::inflation::Box &actor_bb,
-								const actor::inflation::Box &object_bb) const
+								const actor::inflation::Box &object_bb)
 {
 
 	// routine related to the `BOXES_SURFACE_INTERSECTION_SPECIAL` case
@@ -628,7 +628,7 @@ Inflator::findVectorSpecialIntersectionBB(const Inflator::BoxIntersectionType &x
 
 // ------------------------------------------------------------------- //
 
-std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findClosestVerticesIntersectedBoxes(const actor::inflation::Box &actor_box, const actor::inflation::Box &object_box) const {
+std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findClosestVerticesIntersectedBoxes(const actor::inflation::Box &actor_box, const actor::inflation::Box &object_box) {
 
 	ignition::math::Vector3d pt_actor, pt_obstacle, pt_temp_actor, pt_temp_obstacle;
 
@@ -645,7 +645,7 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findClo
 
 std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findShortestVectorIntersectedBoxes(
 		const char &axis, const double &coord_common, const actor::inflation::Box &actor_box,
-		const actor::inflation::Box &object_box) const
+		const actor::inflation::Box &object_box)
 {
 
 	ignition::math::Vector3d pt_actor, pt_obstacle, pt_temp_actor, pt_temp_obstacle;
@@ -676,7 +676,7 @@ std::tuple<ignition::math::Vector3d, ignition::math::Vector3d> Inflator::findSho
 // ------------------------------------------------------------------- //
 
 Inflator::BoxIntersectionType Inflator::findIntersectionType(const double &actor_coord_min, const double &actor_coord_max,
-		const double &object_coord_min, const double &object_coord_max) const {
+		const double &object_coord_min, const double &object_coord_max) {
 
 	// TODO: add some reference (picture)
 //	// configuration							diagram number

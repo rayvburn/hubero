@@ -17,7 +17,9 @@ namespace inflation {
 
 // ------------------------------------------------------------------- //
 
-Ellipse::Ellipse(): a_major_(1.2), b_minor_(0.5), yaw_ellipse_(0.0), yaw_offset_(0.0) { }
+Ellipse::Ellipse(): a_major_(1.2), b_minor_(0.5), yaw_ellipse_(0.0), yaw_offset_(0.0) {
+	this->type_ = BORDER_ELLIPSE;
+}
 
 // ------------------------------------------------------------------- //
 
