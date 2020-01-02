@@ -846,7 +846,9 @@ nav_msgs::Path Target::getPath() const {
 	return (global_planner_.getPath());
 }
 // ------------------------------------------------------------------- //
-
+ignition::math::Pose3d Target::getPose() const {
+	return (*pose_world_ptr_);
+}
 
 // ------------------------------------------------------------------- //
 // --- static, public methods section -------------------------------- //

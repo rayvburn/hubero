@@ -260,6 +260,9 @@ public:
 	 */
 	nav_msgs::Path getPath() const;
 
+	// FIXME:
+	ignition::math::Pose3d getPose() const;
+
 	/**
 	 * @brief Helper, static method that checks if a given object is listed in a ignored_model vector passed in .YAML
 	 * @param object_name

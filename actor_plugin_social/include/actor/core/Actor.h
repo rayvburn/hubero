@@ -19,10 +19,8 @@
 #include <actor/core/CommonInfo.h>
 #include <actor/core/Enums.h>
 #include <actor/core/FSM.h>
-#include <actor/core/LieDownHelper.h>
 #include <actor/core/Path.h>
 #include <actor/core/Target.h>
-#include <actor/core/Action.h>
 #include <actor/inflation/Box.h>
 #include <actor/inflation/Circle.h>
 #include <actor/inflation/Ellipse.h>
@@ -35,6 +33,10 @@
 #include <fuzz/Processor.h>
 #include <fuzz/SocialConductor.h>
 #include <actor/FrameGlobal.h>
+
+// state handlers
+#include <actor/core/LieDownHelper.h>
+#include <actor/core/FollowObject.h>
 
 // Visualization
 #include <sfm/vis/Arrow.h>
@@ -171,7 +173,8 @@ public:
 	std::array<double, 3> getVelocity() const;
 
 	/// \brief Returns status of the current action
-	actor::core::Action::ActionStatus getActionStatus() const;
+	const actor::core::Action getActionInfo() const;
+	const actor::core::Action* getActionInfoPtr() const { return(action_info_ptr_); }
 
 	/// \brief Set actor's new stance type (first see which are allowed)
 	/// \return True if stance is valid
@@ -322,6 +325,7 @@ private:
     std::array<ignition::math::Vector3d, 50> velocities_lin_to_avg_;
 
     /// \brief Object that should be followed by actor
+    /// FIXME: DEPRECATED
     std::string object_to_follow_;
 
     /// \brief Dynamic list of models to ignore. Used by SFM
@@ -390,7 +394,7 @@ private:
     /// internally has a GlobalPlan class which is viable of
     /// calling ROS global_planner server asking for a global
     /// plan to be generated to a newly chosen target.
-    Target target_manager_;
+    std::shared_ptr<Target> target_manager_ptr_;
 
     /// \brief Helper class to handle LIE_DOWN state
     LieDownHelper lie_down_;
@@ -411,6 +415,9 @@ private:
 
     /// \brief Stores a status of the current action
     Action action_info_;
+    Action* action_info_ptr_;
+
+    FollowObject follow_object_handler_;
 
 public:
 
@@ -422,7 +429,7 @@ public:
 	template <typename T>
 	bool setNewTarget(const T &target) {
 
-		bool status = target_manager_.setNewTargetPriority(target, true);
+		bool status = target_manager_ptr_->setNewTargetPriority(target, true);
 
 		// if new-desired target is achievable then change the state (align firstly)
 		if ( status ) {

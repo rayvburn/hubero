@@ -10,15 +10,19 @@
 namespace actor {
 namespace core {
 
-Action::Action(): status_(UNKNOWN) {}
+Action::Action(): status_(UNKNOWN), status_int_(0) {}
 
 void Action::setStatus(ActionStatus status, const std::string &description) {
 	status_ = status;
 	text_ = description;
 }
 
-Action::ActionStatus Action::getStatus() const {
-	return (status_);
+//Action::ActionStatus Action::getStatus() const {
+//	return (status_);
+//}
+
+int Action::getStatus() const {
+	return (status_int_);
 }
 
 std::string Action::getStatusDescription() const {

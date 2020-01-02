@@ -20,7 +20,9 @@ Actor::Actor():
  		bounding_type_(ACTOR_BOUNDING_ELLIPSE),
 		bounding_ptr_(nullptr),
 		stance_(ACTOR_STANCE_STAND),
-		trans_function_ptr(nullptr)
+		trans_function_ptr(nullptr),
+		// FIXME
+		action_info_ptr_(nullptr)
 {}
 
 // ------------------------------------------------------------------- //
@@ -248,10 +250,13 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// target manager initialization section
 	pose_world_ptr_ = std::make_shared<ignition::math::Pose3d>();
-	target_manager_ = Target(world_ptr_, pose_world_ptr_, params_ptr_);
-	target_manager_.initializeGlobalPlan(node_.getNodeHandlePtr(), 40, actor_ptr_->GetName());
-	target_manager_.initializeCommonInfo(common_info_ptr_);
+	target_manager_ptr_ = std::make_shared<Target>(world_ptr_, pose_world_ptr_, params_ptr_);
+	target_manager_ptr_->initializeGlobalPlan(node_.getNodeHandlePtr(), 40, actor_ptr_->GetName());
+	target_manager_ptr_->initializeCommonInfo(common_info_ptr_);
 
+	// - -
+	follow_object_handler_.initializeTargetManager(target_manager_ptr_);
+	// - -
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// initial stance setup section
@@ -315,7 +320,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	if ( params_ptr_->getActorParams().init_target.size() == 3 ) {
 
 		// set target according to .YAML
-		target_manager_.setNewTarget(ignition::math::Vector3d( params_ptr_->getActorParams().init_target.at(0),
+		target_manager_ptr_->setNewTarget(ignition::math::Vector3d( params_ptr_->getActorParams().init_target.at(0),
 															   params_ptr_->getActorParams().init_target.at(1),
 															   params_ptr_->getActorParams().init_target.at(2) ));
 
@@ -327,7 +332,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 			// readability
 			ignition::math::Vector3d pt = target_elem->Get<ignition::math::Vector3d>();
 			// add straight to the queue
-			target_manager_.setNewTarget(pt, true);
+			target_manager_ptr_->setNewTarget(pt, true);
 			// try to get next element of the list
 			target_elem = target_elem->GetNextElement("point");
 		}
@@ -376,14 +381,18 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 // ------------------------------------------------------------------- //
 
 bool Actor::isTargetReached() {
-	return (target_manager_.isTargetReached());
+	return (target_manager_ptr_->isTargetReached());
 }
 
 // ------------------------------------------------------------------- //
 
 bool Actor::followObject(const std::string &object_name) {
 
-	if ( target_manager_.followObject(object_name) ) {
+	if ( target_manager_ptr_->followObject(object_name) ) {
+
+		follow_object_handler_.start();
+		action_info_ptr_ = &follow_object_handler_;
+
 		ignored_models_.push_back(object_name);
 		// NOTE: to make actor face the target first,
 		// there must be an order of calls as below:
@@ -396,8 +405,12 @@ bool Actor::followObject(const std::string &object_name) {
 		// setStance after setState because setState updates default
 		// stance for a given state
 		setStance(ActorStance::ACTOR_STANCE_WALK);
+
+		action_info_.setStatus(actor::core::Action::PREPARING);
 		return (true);
 	}
+
+	action_info_.setStatus(actor::core::Action::FAILED);
 	return (false);
 
 }
@@ -406,12 +419,12 @@ bool Actor::followObject(const std::string &object_name) {
 
 bool Actor::followObjectStop() {
 
-	if ( !target_manager_.isFollowing() ) {
+	if ( !target_manager_ptr_->isFollowing() ) {
 		return (false);
 	}
 
-	target_manager_.abandonTarget();
-	target_manager_.stopFollowing();
+	target_manager_ptr_->abandonTarget();
+	target_manager_ptr_->stopFollowing();
 
 	if ( ignored_models_.size() > 0 ) {
 		ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
@@ -440,14 +453,14 @@ bool Actor::lieDown(const std::string &object_name, const double &height, const 
 	// `isModelValid` - in fact this operation is executed 2 times..
 	bool valid = false;
 	gazebo::physics::ModelPtr model_p = nullptr;
-	std::tie(valid, model_p) = target_manager_.isModelValid(object_name);
+	std::tie(valid, model_p) = target_manager_ptr_->isModelValid(object_name);
 	if ( !valid ) {
 		return (false);
 	}
 	lie_down_.setLyingPose(model_p->WorldPose());
 
 	// NOTE: clears the current queue - hard-coded (`false` below)
-	bool status = target_manager_.setNewTargetPriority(object_name, false);
+	bool status = target_manager_ptr_->setNewTargetPriority(object_name, false);
 
 	// if new-desired target is achievable then change the state (align firstly)
 	if ( status ) {
@@ -476,7 +489,7 @@ bool Actor::lieDown(const double &x_pos, const double &y_pos, const double &z_po
 												  IGN_PI_2, 0.0, 0.0)); // orientation: hard-coded STAND/WALK configuration
 
 	// NOTE: clears the current queue - hard-coded (`false` below)
-	bool status = target_manager_.setNewTargetPriority(ignition::math::Vector3d(x_pos, y_pos, 0.0), false);
+	bool status = target_manager_ptr_->setNewTargetPriority(ignition::math::Vector3d(x_pos, y_pos, 0.0), false);
 
 	// if new-desired target is achievable then change the state (align firstly)
 	if ( status ) {
@@ -513,8 +526,8 @@ std::array<double, 3> Actor::getVelocity() const {
 
 // ------------------------------------------------------------------- //
 
-actor::core::Action::ActionStatus Actor::getActionStatus() const {
-	return (action_info_.getStatus());
+const actor::core::Action Actor::getActionInfo() const {
+	return (action_info_);
 }
 
 // ------------------------------------------------------------------- //
@@ -670,7 +683,7 @@ void Actor::stateHandlerTargetReaching() {
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 	if ( !manageTargetSingleReachment() ) {
-		target_manager_.abandonTarget();
+		target_manager_ptr_->abandonTarget();
 		setState(actor::ACTOR_STATE_STOP_AND_STARE);
 		sfm_.reset(); // clear SFM markers
 		return;
@@ -696,11 +709,11 @@ void Actor::stateHandlerLieDown() {
 	double dist_traveled = 0.001; // default (determines speed of animation)
 
 	// move until a calculated position is reached
-	if ( target_manager_.isTargetChosen() ) {
+	if ( target_manager_ptr_->isTargetChosen() ) {
 
 		if ( !manageTargetSingleReachment() ) {
 			// executes only once
-			target_manager_.abandonTarget();
+			target_manager_ptr_->abandonTarget();
 		}
 		dist_traveled = move(dt);
 		visualizeSfmCalculations();
@@ -774,9 +787,42 @@ void Actor::stateHandlerFollowObject() {
 	double dt = prepareForUpdate();
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	// update position of the tracked object and generate global plan every few seconds
-	if ( !manageTargetTracking() ) {
-		return;
+//	// update position of the tracked object and generate global plan every few seconds
+//	if ( !manageTargetTracking() ) {
+//		return;
+//	}
+
+	follow_object_handler_.execute(world_ptr_->SimTime());
+
+	switch ( follow_object_handler_.getStatus() ) {
+
+		case(actor::core::FollowObject::UNABLE_TO_FIND_PLAN):
+		case(actor::core::FollowObject::NOT_REACHABLE):
+
+			ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
+			setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
+			sfm_.reset(); // clear SFM markers
+			return;
+			break;
+
+		case(actor::core::FollowObject::ROTATE_TOWARDS_OBJECT):
+
+			setStance(ActorStance::ACTOR_STANCE_WALK);
+			setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
+			return;
+			break;
+
+		case(actor::core::FollowObject::WAIT_FOR_MOVEMENT):
+
+			setStance(ActorStance::ACTOR_STANCE_STAND);
+			updateStanceOrientation(*pose_world_ptr_);
+			applyUpdate(0.001);
+			return;
+			break;
+
+		default:
+			break;
+
 	}
 
 	double dist_traveled = move(dt);
@@ -853,7 +899,7 @@ bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 	// NOTE: Calculations considered in the world coordinate system
 
 	// calculate `to_target_vector` which connects actor current position with current checkpoint
-	ignition::math::Vector3d to_target_vector = target_manager_.getCheckpoint() - pose_world_ptr_->Pos();
+	ignition::math::Vector3d to_target_vector = target_manager_ptr_->getCheckpoint() - pose_world_ptr_->Pos();
 
 	// calculate `to_target_direction` expressed as an angle that depends on current ideal TO_TARGET vector
 	ignition::math::Angle to_target_direction(std::atan2(to_target_vector.Y(), to_target_vector.X()));
@@ -998,7 +1044,7 @@ void Actor::applyUpdate(const double &dist_traveled) {
 bool Actor::manageTargetMovingAround() {
 
 	// check if call is executed for a proper mode
-	if ( target_manager_.isFollowing() ) {
+	if ( target_manager_ptr_->isFollowing() ) {
 		// this should not happen
 		return (false);
 	}
@@ -1007,19 +1053,20 @@ bool Actor::manageTargetMovingAround() {
 	bool new_target = false;
 
 	// check whether a target exists
-	if ( !target_manager_.isTargetChosen() ) {
-		if ( target_manager_.changeTarget() ) {
+	if ( !target_manager_ptr_->isTargetChosen() ) {
+		if ( target_manager_ptr_->changeTarget() ) {
 			new_target = true;
+			action_info_.setStatus(actor::core::Action::PREPARING, "a new target was selected");
 		} else {
 			setState(actor::ACTOR_STATE_STOP_AND_STARE);
-			action_info_.setStatus(actor::core::Action::FAILED);
+			action_info_.setStatus(actor::core::Action::FAILED, "a new target cannot be set");
 		}
 	}
 
 	// check whether a target has plan generated
-	if ( !target_manager_.isPlanGenerated() ) {
-		if ( !target_manager_.generatePathPlan(pose_world_ptr_->Pos(), target_manager_.getTarget()) ) {
-			target_manager_.abandonTarget();
+	if ( !target_manager_ptr_->isPlanGenerated() ) {
+		if ( !target_manager_ptr_->generatePathPlan(pose_world_ptr_->Pos(), target_manager_ptr_->getTarget()) ) {
+			target_manager_ptr_->abandonTarget();
 			// do not change the `new_target` flag as the new one was not chosen;
 			// what follows here is:
 			// 1) 	this Gazebo Update event is omitted (no further action)
@@ -1030,54 +1077,57 @@ bool Actor::manageTargetMovingAround() {
 			// 		and a new global plan generation is started
 			// 5) 	if global plan cannot be generated - move on to the 1) again
 		}
+		action_info_.setStatus(actor::core::Action::IN_PROGRESS, "a plan for the new target was generated");
 	}
 
 	// check whether a current checkpoint is abandonable
-	if ( target_manager_.isCheckpointAbandonable() ) {
-		target_manager_.updateCheckpoint();
+	if ( target_manager_ptr_->isCheckpointAbandonable() ) {
+		target_manager_ptr_->updateCheckpoint();
 	}
 
 	// check closeness to the target/checkpoint
-	if ( target_manager_.isTargetReached() ) {
+	if ( target_manager_ptr_->isTargetReached() ) {
 
 		action_info_.setStatus(actor::core::Action::FINISHED);
 
 		// object tracking not active
-		if ( target_manager_.changeTarget() ) {
+		if ( target_manager_ptr_->changeTarget() ) {
 			// after setting a new target, firstly let's rotate to its direction
 			new_target = true;
+			action_info_.setStatus(actor::core::Action::PREPARING, "a new target was selected, the old one was reached");
 		} else {
 			setState(actor::ACTOR_STATE_STOP_AND_STARE);
-			action_info_.setStatus(actor::core::Action::FAILED);
+			action_info_.setStatus(actor::core::Action::FAILED, "a new target cannot be set, the old one was reached");
 		}
 
-	} else if ( target_manager_.isCheckpointReached() ) {
+	} else if ( target_manager_ptr_->isCheckpointReached() ) {
 
 		// take next checkpoint from vector (path)
-		target_manager_.updateCheckpoint();
+		target_manager_ptr_->updateCheckpoint();
 
 	}
 
 	// reachability test 1: check if there has been some obstacle put into world since last target selection
 	// reachability test 2: check if actor is stuck
-	if ( !target_manager_.isTargetStillReachable() || target_manager_.isTargetNotReachedForTooLong() ) {
+	if ( !target_manager_ptr_->isTargetStillReachable() || target_manager_ptr_->isTargetNotReachedForTooLong() ) {
 
-		target_manager_.abandonTarget();
+		target_manager_ptr_->abandonTarget();
 		bool target_changed = false;
 		// try a few times
 		for ( size_t i = 0; i < 10; i++ ) {
-			if ( target_manager_.changeTarget() ) {
+			if ( target_manager_ptr_->changeTarget() ) {
 				// after setting new target, first let's rotate to its direction
 				// state will be changed in the next iteration
 				new_target = true;
 				target_changed = true;
+				action_info_.setStatus(actor::core::Action::PREPARING, "the old target became unreachable or was not reached for too long, but a new one was selected");
 				break;
 			}
 		}
 		// new target was not found
 		if ( !target_changed ) {
 			setState(actor::ACTOR_STATE_STOP_AND_STARE);
-			action_info_.setStatus(actor::core::Action::FAILED);
+			action_info_.setStatus(actor::core::Action::FAILED, "the old target became unreachable or was not reached for too long - the new one cannot be selected");
 			return (false);
 		}
 
@@ -1087,11 +1137,9 @@ bool Actor::manageTargetMovingAround() {
 	if ( new_target ) {
 		// after selection of a new target, firstly let's rotate to its direction
 		setState(actor::ACTOR_STATE_ALIGN_TARGET);
-		action_info_.setStatus(actor::core::Action::PREPARING);
 		return (false);
 	}
 
-	action_info_.setStatus(actor::core::Action::APPROACHING);
 	return (true);
 
 }
@@ -1101,7 +1149,7 @@ bool Actor::manageTargetMovingAround() {
 bool Actor::manageTargetTracking() {
 
 	// check if call is executed for a proper mode
-	if ( !target_manager_.isFollowing() ) {
+	if ( !target_manager_ptr_->isFollowing() ) {
 		return (false);
 	}
 
@@ -1111,7 +1159,7 @@ bool Actor::manageTargetTracking() {
 	// flags helping in evaluation whether the tracked object started moving away again
 	bool target_dir_alignment = false;	// whether to change the state to `ALIGN_WITH_TARGET_DIR`
 	bool object_prev_reached = false; 	// by default the tracked object moves away
-	if ( target_manager_.isFollowedObjectReached() ) {
+	if ( target_manager_ptr_->isFollowedObjectReached() ) {
 		// let's save the previous status before performing any further
 		// evaluations (for example `isTargetReached()`)
 		object_prev_reached = true; // tracked object has been stopped so far
@@ -1119,15 +1167,16 @@ bool Actor::manageTargetTracking() {
 
 	// try to update a global path leading the actor towards the dynamic object;
 	// this also checks whether an object to follow is selected
-	if ( !target_manager_.updateFollowedTarget() ) {
+	if ( !target_manager_ptr_->updateFollowedTarget() ) {
 		// recently followed object is not reachable anymore (object deleted
 		// from the simulation or global plan cannot be found)
 		// TODO: change internal state? try again few times (internally)?
 		stop_tracking = true;
+		action_info_.setStatus(actor::core::Action::FAILED, "tracked object is not reachable anymore (has been deleted from the world or a global plan cannot be generated)");
 	}
 
 	// check closeness to the target/checkpoint
-	if ( target_manager_.isTargetReached() ) {
+	if ( target_manager_ptr_->isTargetReached() ) {
 		// actor is close enough to the tracked object (it may not be moving for some time);
 		// do not call stopFollowing etc and do not change the state,
 		// just do not try to go further at the moment
@@ -1135,25 +1184,30 @@ bool Actor::manageTargetTracking() {
 		// detects change of the `is_followed_object_reached_`
 		// flag (i.e. tracked object started moving again)
 		target_dir_alignment = true;
-	} else if ( target_manager_.isCheckpointReached() ) {
+		action_info_.setStatus(actor::core::Action::PREPARING, "tracked object was static but started moving again, actor will rotate towards the object");
+	} else if ( target_manager_ptr_->isCheckpointReached() ) {
 		// take next checkpoint from vector (path)
-		target_manager_.updateCheckpoint();
+		target_manager_ptr_->updateCheckpoint();
 	}
+//	else {
+//		action_info_.setStatus(actor::core::Action::FOLLOWING, "tracking");
+//	}
 
 	// check whether a current checkpoint is abandonable (angle-related)
-	if ( target_manager_.isCheckpointAbandonable() ) {
-		target_manager_.updateCheckpoint();
+	if ( target_manager_ptr_->isCheckpointAbandonable() ) {
+		target_manager_ptr_->updateCheckpoint();
 	}
 
 	// check if the tracked object still exists in the world since last target selection
-	if ( !target_manager_.isTargetStillReachable() ) {
+	if ( !target_manager_ptr_->isTargetStillReachable() ) {
 		stop_tracking = true;
+		action_info_.setStatus(actor::core::Action::OBJECT_NON_REACHABLE, "tracked object became unreachable");
 	}
 
 	// change FSM state if needed
 	if ( stop_tracking ) {
-		target_manager_.abandonTarget();
-		target_manager_.stopFollowing();
+		target_manager_ptr_->abandonTarget();
+		target_manager_ptr_->stopFollowing();
 		ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
 		setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
 		sfm_.reset(); // clear SFM markers
@@ -1161,13 +1215,14 @@ bool Actor::manageTargetTracking() {
 	}
 
 	// dynamic target has been reached, do not change the state, just change stance
-	if ( target_manager_.isFollowedObjectReached() ) {
+	if ( target_manager_ptr_->isFollowedObjectReached() ) {
 		// make actor stop;
 		// when tracked object will start moving again, then stance will be changed
 		setStance(ActorStance::ACTOR_STANCE_STAND);
 		// update the pose (stance only) because the update event will be broken (stopped)
 		updateStanceOrientation(*pose_world_ptr_);
 		applyUpdate(0.001);
+		action_info_.setStatus(actor::core::Action::OBJECT_REACHED, "tracked object is within 'reachment' tolerance range");
 		return (false);
 	}
 
@@ -1188,7 +1243,7 @@ bool Actor::manageTargetTracking() {
 bool Actor::manageTargetSingleReachment() {
 
 	// check if call is executed for a proper mode
-	if ( target_manager_.isFollowing() ) {
+	if ( target_manager_ptr_->isFollowing() ) {
 		return (false);
 	}
 
@@ -1196,46 +1251,46 @@ bool Actor::manageTargetSingleReachment() {
 	bool abandon = false;
 
 	// check whether a target exists
-	if ( !target_manager_.isTargetChosen() ) {
+	if ( !target_manager_ptr_->isTargetChosen() ) {
 		//return (false);
 		abandon = true;
 	}
 
 	// check whether a target has plan generated
-	if ( !target_manager_.isPlanGenerated() ) {
-		if ( !target_manager_.generatePathPlan(pose_world_ptr_->Pos(), target_manager_.getTarget()) ) {
+	if ( !target_manager_ptr_->isPlanGenerated() ) {
+		if ( !target_manager_ptr_->generatePathPlan(pose_world_ptr_->Pos(), target_manager_ptr_->getTarget()) ) {
 			abandon = true;
 		}
 	}
 
 	// check whether a current checkpoint is abandonable
-	if ( target_manager_.isCheckpointAbandonable() ) {
-		target_manager_.updateCheckpoint();
+	if ( target_manager_ptr_->isCheckpointAbandonable() ) {
+		target_manager_ptr_->updateCheckpoint();
 	}
 
 	// check closeness to the target/checkpoint
-	if ( target_manager_.isTargetReached() ) {
+	if ( target_manager_ptr_->isTargetReached() ) {
 		abandon = true;
-	} else if ( target_manager_.isCheckpointReached() ) {
+	} else if ( target_manager_ptr_->isCheckpointReached() ) {
 		// take next checkpoint from vector (path)
-		target_manager_.updateCheckpoint();
+		target_manager_ptr_->updateCheckpoint();
 	}
 
 	// reachability test 1:
 	// check if there has been some obstacle put into world since last target selection
-	if ( !target_manager_.isTargetStillReachable() ) {
+	if ( !target_manager_ptr_->isTargetStillReachable() ) {
 		abandon = true;
 	}
 
 	// reachability test 2:
 	// check if actor is stuck
-	if ( target_manager_.isTargetNotReachedForTooLong() ) {
+	if ( target_manager_ptr_->isTargetNotReachedForTooLong() ) {
 		abandon = true;
 	}
 
 	// do abandon the current target? either reached or non-reachable anymore
 	if ( abandon ) {
-//		target_manager_.abandonTarget();
+//		target_manager_ptr_->abandonTarget();
 //		setState(actor::ACTOR_STATE_STOP_AND_STARE);
 		return (false);
 	}
@@ -1250,7 +1305,7 @@ double Actor::move(const double &dt) {
 
 	// calculate `social` force (i.e. `internal` and `interaction` components)
 	sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_lin_,
-						    target_manager_.getCheckpoint(),
+						    target_manager_ptr_->getCheckpoint(),
 						    *common_info_ptr_.get(), dt, ignored_models_);
 
 	// actual `social` vector
@@ -1276,7 +1331,7 @@ double Actor::move(const double &dt) {
     // according to the force, calculate a new pose
 	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_lin_,
 														  sfm_.getForceCombined() + human_action_force,
-														  target_manager_.getCheckpoint(), dt);
+														  target_manager_ptr_->getCheckpoint(), dt);
 
 	// object info update
 	double dist_traveled = (new_pose.Pos() - actor_ptr_->WorldPose().Pos()).Length();
@@ -1485,16 +1540,16 @@ void Actor::visualizePositionData() {
 		stream_.publishData(ActorMarkerType::ACTOR_MARKER_BOUNDING, bounding_ptr_->getMarkerConversion());
 
 		stream_.publishData(ActorTfType::ACTOR_TF_SELF, *pose_world_ptr_);
-		stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getTarget()),
+		stream_.publishData(ActorTfType::ACTOR_TF_TARGET, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_ptr_->getTarget()),
 																				 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
-		stream_.publishData(ActorTfType::ACTOR_TF_CHECKPOINT, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_.getCheckpoint()),
+		stream_.publishData(ActorTfType::ACTOR_TF_CHECKPOINT, ignition::math::Pose3d(ignition::math::Vector3d(target_manager_ptr_->getCheckpoint()),
 																				 ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)));
 
 	}
 
 	// publish path if a new one has just been generated
-	if ( target_manager_.isPathNew() ) {
-		stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH_GLOBAL, target_manager_.getPath());
+	if ( target_manager_ptr_->isPathNew() ) {
+		stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH_GLOBAL, target_manager_ptr_->getPath());
 	}
 
 }
@@ -1584,7 +1639,7 @@ bool Actor::visualizeVectorField() {
 
 				// calculate social force for actor located in current pose
 				// hard-coded time delta
-				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), *common_info_ptr_.get(), 0.001, ignored_models_);
+				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_ptr_->getCheckpoint(), *common_info_ptr_.get(), 0.001, ignored_models_);
 
 				// pass a result to vector of grid forces
 				sfm_vis_grid_.addMarker( sfm_vis_grid_.create(pose.Pos(), sfm_.getForceCombined()) );
@@ -1635,7 +1690,7 @@ bool Actor::visualizeHeatmap() {
 
 				// calculate social force for actor located in current pose
 				// hard-coded time delta
-				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), *common_info_ptr_.get(), params_ptr_->getSfmVisParams().markers_pub_period, ignored_models_);
+				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_ptr_->getCheckpoint(), *common_info_ptr_.get(), params_ptr_->getSfmVisParams().markers_pub_period, ignored_models_);
 
 				// pass a result to vector of grid forces
 				sfm_vis_heatmap_.addMarker(sfm_vis_heatmap_.create(pose.Pos(), sfm_.getForceInteraction().Length()));

@@ -16,6 +16,7 @@
 #include <boost/phoenix/bind/bind_member_function.hpp>
 
 #include <chrono>
+#include <actor/core/Action.h>
 
 // - - - - - - - - - - - - - - - -
 
@@ -323,23 +324,32 @@ void Connection::actionFollowObjectCallback(const actor_sim_action::FollowObject
 
 	std::cout << "\nactionFollowObjectCallback()" << "\t" << namespace_ << "\n" << std::endl;
 
+	actor_sim_action::FollowObjectFeedback feedback;
+	actor_sim_action::FollowObjectResult result;
+
 	// take ownership of the Actor shared_ptr
 	if ( !actor_ptr_.lock()->followObject(goal->object_name) ) {
 		std::cout << "FollowObject request cannot be processed" << std::endl;
+		result.status = 0; // actor::core::Action::FAILED
+		result.text = "'FollowObject' action request cannot be processed";
 	}
 
-	int i = 10;
-	while(i--) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		std::cout << "ALIVE" << std::endl;
+//	while( actor_ptr_.lock()->getActionInfo().getStatus() != actor::core::Action::FAILED ) {
+//	while(1){
+	while( actor_ptr_.lock()->getActionInfoPtr()->getStatus() != 3 ||
+		   actor_ptr_.lock()->getActionInfoPtr()->getStatus() != 7 )
+	{
+		feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfoPtr()->getStatus());
+		feedback.text = actor_ptr_.lock()->getActionInfoPtr()->getStatusDescription();
+		action_follow_object_ptr_->publishFeedback(feedback);
+		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 	}
-	// NEW THREAD UPDATING THE STATUS EACH SECOND
+
+	feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+	feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
 
 	// FINISH
-	actor_sim_action::FollowObjectResult result;
-	result.flag = true;
 	action_follow_object_ptr_->setSucceeded(result, "RESULT TEXT");
-
 	std::cout << "\nactionFollowObjectCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
 
 }

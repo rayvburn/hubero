@@ -44,7 +44,8 @@ public:
 	void setStatus(ActionStatus status, const std::string &description = "");
 
 	/// \brief Returns the current status
-	ActionStatus getStatus() const;
+//	ActionStatus getStatus() const;
+	int getStatus() const;
 
 	/// \brief Returns the status description
 	std::string getStatusDescription() const;
@@ -52,13 +53,15 @@ public:
 	/// \brief Destructor
 	virtual ~Action();
 
-private:
+protected:
 
 	/// \brief Stores the current status of the action
 	ActionStatus status_;
 
 	/// \brief Stores a potentially useful in debugging status description
 	std::string text_;
+
+	int status_int_;
 
 };
 
