@@ -792,14 +792,19 @@ void Actor::stateHandlerFollowObject() {
 //		return;
 //	}
 
+	// execute
 	follow_object_handler_.execute(world_ptr_->SimTime());
 
+	// check status of the FollowObject partial transition function
 	switch ( follow_object_handler_.getStatus() ) {
 
 		case(actor::core::FollowObject::UNABLE_TO_FIND_PLAN):
 		case(actor::core::FollowObject::NOT_REACHABLE):
+		case(actor::core::FollowObject::NOT_FOLLOWING):
 
-			ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
+			// FIXME: the below method won't work as expected if ignored_models
+			// stores elements other than followed object name
+			ignored_models_.pop_back();
 			setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
 			sfm_.reset(); // clear SFM markers
 			return;
@@ -814,7 +819,9 @@ void Actor::stateHandlerFollowObject() {
 
 		case(actor::core::FollowObject::WAIT_FOR_MOVEMENT):
 
+			// make actor stop; when the tracked object will start moving again, then stance will be changed
 			setStance(ActorStance::ACTOR_STANCE_STAND);
+			// update the pose (stance only) because the update event will be broken (stopped)
 			updateStanceOrientation(*pose_world_ptr_);
 			applyUpdate(0.001);
 			return;

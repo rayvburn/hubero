@@ -12,12 +12,18 @@
 namespace actor {
 namespace core {
 
+// ------------------------------------------------------------------- //
+
 FollowObject::FollowObject(): path_calc_tries_num_(10) {}
+
+// ------------------------------------------------------------------- //
 
 void FollowObject::start() {
 	PTF::start();
 	path_calc_tries_num_ = 10;
 }
+
+// ------------------------------------------------------------------- //
 
 void FollowObject::execute(const gazebo::common::Time &curr_time) {
 
@@ -34,6 +40,7 @@ void FollowObject::execute(const gazebo::common::Time &curr_time) {
 	// flags helping in evaluation whether the tracked object started moving away again
 	bool target_dir_alignment = false;	// whether to change the state to `ALIGN_WITH_TARGET_DIR`
 	bool object_prev_reached = false; 	// by default the tracked object moves away
+
 	if ( this->target_manager_ptr_->isFollowedObjectReached() ) {
 		// let's save the previous status before performing any further
 		// evaluations (for example `isTargetReached()`)
@@ -56,6 +63,8 @@ void FollowObject::execute(const gazebo::common::Time &curr_time) {
 
 		} else {
 
+			// a number of tries were performed with no luck - follow object
+			// state will be terminated
 			stop_tracking = true;
 			this->status_int_ = UNABLE_TO_FIND_PLAN;
 			this->text_ = "tracked object is not reachable anymore (has been deleted from the world or a global plan cannot be generated)";
@@ -66,6 +75,7 @@ void FollowObject::execute(const gazebo::common::Time &curr_time) {
 
 	} else {
 
+		// global path was updated successfully
 		this->status_int_ = TRACKING;
 		this->text_ = "tracking";
 
@@ -76,12 +86,11 @@ void FollowObject::execute(const gazebo::common::Time &curr_time) {
 		// actor is close enough to the tracked object (it may not be moving for some time);
 		// do not call stopFollowing etc and do not change the state,
 		// just do not try to go further at the moment
-		this->status_int_ = TARGET_REACHED;
+		this->status_int_ = OBJECT_REACHED;
 	} else if ( object_prev_reached ) {
 		// detects change of the `is_followed_object_reached_`
 		// flag (i.e. tracked object started moving again)
 		target_dir_alignment = true;
-//		action_info_.setStatus(actor::core::Action::PREPARING, "tracked object was static but started moving again, actor will rotate towards the object");
 	} else if ( this->target_manager_ptr_->isCheckpointReached() ) {
 		// take next checkpoint from vector (path)
 		this->target_manager_ptr_->updateCheckpoint();
@@ -99,47 +108,39 @@ void FollowObject::execute(const gazebo::common::Time &curr_time) {
 	if ( !this->target_manager_ptr_->isTargetStillReachable() ) {
 		stop_tracking = true;
 		this->status_int_ = NOT_REACHABLE;
-//		action_info_.setStatus(actor::core::Action::OBJECT_NON_REACHABLE, "tracked object became unreachable");
+		this->text_ = "the tracked object became unreachable";
 	}
 
 	// change FSM state if needed
 	if ( stop_tracking ) {
+		// status has already been changed
 		this->target_manager_ptr_->abandonTarget();
 		this->target_manager_ptr_->stopFollowing();
-//		ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
-//		setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
-//		sfm_.reset(); // clear SFM markers
 		this->terminal_flag_ = true;
 		return;
 	}
 
 	// dynamic target has been reached, do not change the state, just change stance
 	if ( this->target_manager_ptr_->isFollowedObjectReached() ) {
-		// make actor stop;
-		// when tracked object will start moving again, then stance will be changed
 		this->status_int_ = WAIT_FOR_MOVEMENT;
-//		setStance(ActorStance::ACTOR_STANCE_STAND);
-//		// update the pose (stance only) because the update event will be broken (stopped)
-//		updateStanceOrientation(*pose_world_ptr_);
-//		applyUpdate(0.001);
-//		action_info_.setStatus(actor::core::Action::OBJECT_REACHED, "tracked object is within 'reachment' tolerance range");
-//		this->terminal_flag_ = true; // PREVIOUSLY WHY ???????????????
+		this->text_ = "tracked object is within 'reachment' tolerance range";
 	}
 
 	// target previously was reached but started moving again - let's align
 	// with direction to its center
 	if ( target_dir_alignment ) {
 		this->status_int_ = ROTATE_TOWARDS_OBJECT;
-//		setStance(ActorStance::ACTOR_STANCE_WALK);
-//		setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
+		this->text_ = "aligning actor face direction with the direction to a center of the tracked object";
 		this->terminal_flag_ = true;
 	}
 
-//	this->terminal_flag_ = false;
-
 }
 
+// ------------------------------------------------------------------- //
+
 FollowObject::~FollowObject() {}
+
+// ------------------------------------------------------------------- //
 
 bool FollowObject::doWait(const gazebo::common::Time &curr_time) {
 
@@ -158,6 +159,8 @@ bool FollowObject::doWait(const gazebo::common::Time &curr_time) {
 	}
 
 }
+
+// ------------------------------------------------------------------- //
 
 } /* namespace core */
 } /* namespace actor */
