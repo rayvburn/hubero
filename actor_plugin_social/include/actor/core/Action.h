@@ -8,6 +8,8 @@
 #ifndef INCLUDE_ACTOR_CORE_ACTION_H_
 #define INCLUDE_ACTOR_CORE_ACTION_H_
 
+#include <string>
+
 namespace actor {
 namespace core {
 
@@ -39,10 +41,13 @@ public:
 	Action();
 
 	/// \brief Updates the status
-	void setStatus(ActionStatus status);
+	void setStatus(ActionStatus status, const std::string &description = "");
 
 	/// \brief Returns the current status
 	ActionStatus getStatus() const;
+
+	/// \brief Returns the status description
+	std::string getStatusDescription() const;
 
 	/// \brief Destructor
 	virtual ~Action();
@@ -51,6 +56,9 @@ private:
 
 	/// \brief Stores the current status of the action
 	ActionStatus status_;
+
+	/// \brief Stores a potentially useful in debugging status description
+	std::string text_;
 
 };
 

@@ -12,12 +12,17 @@ namespace core {
 
 Action::Action(): status_(UNKNOWN) {}
 
-void Action::setStatus(ActionStatus status) {
+void Action::setStatus(ActionStatus status, const std::string &description) {
 	status_ = status;
+	text_ = description;
 }
 
 Action::ActionStatus Action::getStatus() const {
 	return (status_);
+}
+
+std::string Action::getStatusDescription() const {
+	return (text_);
 }
 
 Action::~Action() {}
