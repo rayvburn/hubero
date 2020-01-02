@@ -2,6 +2,9 @@
 string object_name
 ---
 #result definition
-bool flag
+int32 status
+string text
 ---
 #feedback
+int32 status
+string text

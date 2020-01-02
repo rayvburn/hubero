@@ -6,6 +6,9 @@ float64 rotation
 string frame
 ---
 #result definition
-bool flag
+int32 status
+string text
 ---
 #feedback
+int32 status
+string text

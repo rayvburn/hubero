@@ -4,6 +4,9 @@ float64 lying_height
 float64 rotation
 ---
 #result definition
-bool flag
+int32 status
+string text
 ---
 #feedback
+int32 status
+string text
