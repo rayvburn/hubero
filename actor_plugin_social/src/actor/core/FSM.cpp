@@ -54,7 +54,7 @@ void FSM::setState(const actor::ActorState &new_state) {
 		return;
 
 	}
-	std::cout << "FSM: state set is INVALID!" << std::endl;
+	std::cout << "FSM: state '" << new_state << "' is INVALID!" << std::endl;
 
 }
 
