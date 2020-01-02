@@ -56,14 +56,13 @@ public:
 	/// \section 2 versions of `doesIntersect` method are provided as a workaround
 	/// for being unable to create a virtual template method. It can also be done
 	/// via moving the template to a class level (\ref https://stackoverflow.com/a/27506503).
-	/// \brief Method which checks whether a given
-	/// line does intersect the box;
+	/// \note After all, each of derived classes has `doesIntersect` method implemented.
+	/// \brief Method which checks whether a given line does intersect the border
 	/// \return A tuple consisting of bool flag which
 	/// is true when line intersects a box and a point
-	/// coordinates in which a line intersects a box;
+	/// coordinates in which a line intersects a border;
 	/// it is assumed that a line does not have
-	/// 2 intersection points
-	/// \note Related to the rectangular border
+	/// 2 intersection points with the border
 	virtual std::tuple<bool, ignition::math::Vector3d> doesIntersect(const ignition::math::Line3d &line) const;
 	/// \brief Method which finds an intersection point
 	/// based on the ellipse's center and a given point.
@@ -74,7 +73,8 @@ public:
 	/// \return A tuple consisting of bool flag,
 	/// and an intersection point coordinates;
 	/// one solution out of 2 is chosen
-	/// \note Related to circular and elliptical borders
+	/// \note Related to circular and elliptical borders,
+	/// not usable with a rectangular border
 	virtual std::tuple<bool, ignition::math::Vector3d> doesIntersect(const ignition::math::Vector3d &pt_dest) const;
 
 	/// \section Getters

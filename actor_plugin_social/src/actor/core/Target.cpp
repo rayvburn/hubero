@@ -55,6 +55,12 @@ void Target::initializeGlobalPlan(std::shared_ptr<ros::NodeHandle> nh_ptr, const
 
 // ------------------------------------------------------------------- //
 
+void Target::initializeCommonInfo(const std::shared_ptr<actor::core::CommonInfo> common_info_ptr) {
+	common_info_ptr_ = common_info_ptr;
+}
+
+// ------------------------------------------------------------------- //
+
 bool Target::followObject(const std::string &object_name) {
 
 	// temp model ptr in case of a situation when 1 object is already followed
@@ -82,7 +88,7 @@ bool Target::followObject(const std::string &object_name) {
 	// will not allow following objects from the areas
 	// with high cost (in terms of costmap) or just static
 	// obstacles that are already marked on the actor costmap
-	std::tie(ok, pt_intersection, std::ignore) = findBoxPoint(model_ptr_temp);
+	std::tie(ok, pt_intersection, std::ignore) = findBorderPoint(model_ptr_temp);
 	if ( !ok ) {
 		return (false);
 	}
@@ -154,7 +160,7 @@ bool Target::updateFollowedTarget() {
 		// try to find line-box intersection point
 		bool found = false;
 		ignition::math::Vector3d pt_target;
-		std::tie(found, pt_target, std::ignore) = findBoxPoint(followed_model_ptr_);
+		std::tie(found, pt_target, std::ignore) = findBorderPoint(followed_model_ptr_);
 
 		// generate path plan
 		if ( found ) {
@@ -278,7 +284,7 @@ bool Target::setNewTarget(const std::string &object_name) {
 	// try to find line-box intersection point
 	ignition::math::Vector3d pt_target;
 	ignition::math::Vector3d dir;
-	std::tie(std::ignore, pt_target, dir) = findBoxPoint(model); // `found` will be false for sure - object's edge (cost > 250)
+	std::tie(std::ignore, pt_target, dir) = findBorderPoint(model); // `found` will be false for sure - object's edge (cost > 250)
 
 	// try to find a safe point near the target object whose
 	// cost (according to the global planner is small enough)
@@ -1050,14 +1056,48 @@ bool Target::tryToApplyTarget(const ignition::math::Vector3d &pt) {
 // ------------------------------------------------------------------- //
 
 // non-const due to `getCost` call
-std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::findBoxPoint(const gazebo::physics::ModelPtr model_ptr) {
+std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::findBorderPoint(const gazebo::physics::ModelPtr model_ptr) {
 
-	// evaluate if bounding box is valid
-	if ( model_ptr->BoundingBox().Size().Length() == 0.0 ||
-		 std::isinf(model_ptr->BoundingBox().Size().Length()) ||
-		 std::isnan(model_ptr->BoundingBox().Size().Length()) )
-	{
-		return (std::make_tuple(false, ignition::math::Vector3d(), ignition::math::Vector3d()));
+	// a bounding instance associated with the current actor (i.e. this Target class instance owner)
+	actor::inflation::Border* border_actor_ptr = common_info_ptr_->getBorderPtr().get();
+	// a bounding instance associated with the investigated model (model_ptr)
+	actor::inflation::Border* border_model_ptr;
+	// points to a possibly allocated memory and must be deleted
+	// at the end of the function execution
+	std::shared_ptr<actor::inflation::Box> box_model_ptr;
+
+	// check if the model is the actor so the proper bounding box
+	// (i.e. the one from ActorInfo container) can be selected
+	if ( model_ptr->GetType() == actor::ACTOR_MODEL_TYPE_ID ) {
+
+		common_info_decoder_.setID(model_ptr->GetName(), common_info_ptr_->getNameIDMap());
+		border_model_ptr = common_info_decoder_.getData(common_info_ptr_->getBorderPtrsVector()).get();
+
+	} else {
+
+		box_model_ptr = std::make_shared<actor::inflation::Box>(model_ptr->BoundingBox());
+		border_model_ptr = box_model_ptr.get();
+
+	}
+
+	// evaluate if bounding box is valid (if it is a box actually)
+	if ( border_model_ptr->getType() == actor::inflation::BORDER_RECTANGLE ) {
+		if ( border_model_ptr->getBox().Size().Length() == 0.0 ||
+			 std::isinf(border_model_ptr->getBox().Size().Length()) ||
+			 std::isnan(border_model_ptr->getBox().Size().Length()) )
+		{
+			return (std::make_tuple(false, ignition::math::Vector3d(), ignition::math::Vector3d()));
+		}
+	}
+
+	// evaluate rectangular actor border too
+	if ( border_actor_ptr->getType() == actor::inflation::BORDER_RECTANGLE ) {
+		if ( border_actor_ptr->getBox().Size().Length() == 0.0 ||
+			 std::isinf(border_actor_ptr->getBox().Size().Length()) ||
+			 std::isnan(border_actor_ptr->getBox().Size().Length()) )
+		{
+			return (std::make_tuple(false, ignition::math::Vector3d(), ignition::math::Vector3d()));
+		}
 	}
 
 	// ========================================================================
@@ -1082,9 +1122,12 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 
 		if ( i == 0 ) {
 
+			// save the point
+			pt_helper = border_model_ptr->getCenter();
+
 			// line_angle expressed from the actor to an object
-			line.Set(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), model_ptr->BoundingBox().Center().Z(),
-					 model_ptr->BoundingBox().Center().X(), model_ptr->BoundingBox().Center().Y(), model_ptr->BoundingBox().Center().Z());
+			line.Set(border_actor_ptr->getCenter().X(), border_actor_ptr->getCenter().Y(), border_actor_ptr->getCenter().Z(),
+					 pt_helper.X(), pt_helper.Y(), pt_helper.Z());
 
 		} else if ( i == 1 ) {
 
@@ -1096,10 +1139,11 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 			// (or is nearly the closest, no optimization here)
 			pt_helper.X(pt_intersection.X() + 30.0 * line.Direction().X());
 			pt_helper.Y(pt_intersection.Y() + 30.0 * line.Direction().Y());
+			pt_helper.Z(border_model_ptr->getCenter().Z());
 
 			// update line points, maintain line direction!
-			line.Set(model_ptr->BoundingBox().Center().X(), model_ptr->BoundingBox().Center().Y(), model_ptr->BoundingBox().Center().Z(),
-					 pt_helper.X(), pt_helper.Y(), model_ptr->BoundingBox().Center().Z());
+			line.Set(border_model_ptr->getCenter().X(), border_model_ptr->getCenter().Y(), border_model_ptr->getCenter().Z(),
+					 pt_helper.X(), pt_helper.Y(), pt_helper.Z());
 
 		}
 
@@ -1108,10 +1152,10 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 		 * with commented version line_angle is expressed from object to actor,
 		 * but for some reason Box always return pt of intersection equal
 		 * to BoundingBox'es center (also, all 0.05 signs have to be inverted
-		 * in below `if` conditions) */
+		 * in the `if` conditions shown below) */
 
 		// evaluate intersection point (line and bounding box)
-		std::tie(does_intersect, std::ignore, pt_intersection) = model_ptr->BoundingBox().Intersect(line);
+		std::tie(does_intersect, pt_intersection) = border_model_ptr->doesIntersect(line);
 		pt_intersection.Z(0.0);
 
 		if ( !does_intersect ) {

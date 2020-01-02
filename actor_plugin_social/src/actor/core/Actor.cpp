@@ -33,7 +33,8 @@ void Actor::initGazeboInterface(const gazebo::physics::ActorPtr &actor, const ga
 
 	/* add an instance to common info class (missing velocity,
 	 * bounding box of Actor in WorldPtr) */
-	common_info_.addActor(actor_ptr_->GetName());
+	common_info_ptr_ = std::make_shared<actor::core::CommonInfo>();
+	common_info_ptr_->addActor(actor_ptr_->GetName());
 
 }
 
@@ -140,7 +141,7 @@ void Actor::initInflator(const double &circle_radius) {
 	bounding_circle_ptr->setRadius(circle_radius);
 	bounding_circle_ptr->updatePose(*pose_world_ptr_);
 	bounding_ptr_ = bounding_circle_ptr;
-	common_info_.setBorderPtr(bounding_ptr_);
+	common_info_ptr_->setBorderPtr(bounding_ptr_);
 
 }
 
@@ -154,7 +155,7 @@ void Actor::initInflator(const double &box_x_half, const double &box_y_half, con
 	bounding_box_ptr->init(box_x_half, box_y_half, box_z_half);
 	bounding_box_ptr->updatePose(*pose_world_ptr_);
 	bounding_ptr_ = bounding_box_ptr;
-	common_info_.setBorderPtr(bounding_ptr_);
+	common_info_ptr_->setBorderPtr(bounding_ptr_);
 
 }
 
@@ -172,7 +173,7 @@ void Actor::initInflator(const double &semi_major, const double &semi_minor, con
 	yaw_world.Normalize();
 	bounding_ellipse_ptr->init( semi_major, semi_minor, yaw_world.Radian(), pose_world_ptr_->Pos(), ignition::math::Vector3d(center_offset_x, center_offset_y, 0.0) );
 	bounding_ptr_ = bounding_ellipse_ptr;
-	common_info_.setBorderPtr(bounding_ptr_);
+	common_info_ptr_->setBorderPtr(bounding_ptr_);
 
 }
 
@@ -249,6 +250,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	pose_world_ptr_ = std::make_shared<ignition::math::Pose3d>();
 	target_manager_ = Target(world_ptr_, pose_world_ptr_, params_ptr_);
 	target_manager_.initializeGlobalPlan(node_.getNodeHandlePtr(), 40, actor_ptr_->GetName());
+	target_manager_.initializeCommonInfo(common_info_ptr_);
 
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -927,7 +929,7 @@ double Actor::prepareForUpdate() {
 	double dt = (world_ptr_->SimTime() - time_last_update_).Double();
 	calculateVelocity(dt);
 
-	common_info_.setLinearVel(velocity_lin_);
+	common_info_ptr_->setLinearVel(velocity_lin_);
 
 	// DELETE - the method used below just doesn't do anything - WorldPtr doesnt get updated
 	// actor_ptr_->SetLinearVel(velocity_lin_);
@@ -1125,7 +1127,6 @@ bool Actor::manageTargetTracking() {
 	}
 
 	// check closeness to the target/checkpoint
-	std::cout << "\n" << actor_ptr_->GetName() << "\n" << std::endl;
 	if ( target_manager_.isTargetReached() ) {
 		// actor is close enough to the tracked object (it may not be moving for some time);
 		// do not call stopFollowing etc and do not change the state,
@@ -1250,7 +1251,7 @@ double Actor::move(const double &dt) {
 	// calculate `social` force (i.e. `internal` and `interaction` components)
 	sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_lin_,
 						    target_manager_.getCheckpoint(),
-						    common_info_, dt, ignored_models_);
+						    *common_info_ptr_.get(), dt, ignored_models_);
 
 	// actual `social` vector
 	ignition::math::Vector3d human_action_force(0.0, 0.0, 0.0);
@@ -1317,8 +1318,6 @@ void Actor::updateBounding(const ignition::math::Pose3d &pose) {
 			break;
 
 	}
-
-	common_info_.setBorderPtr(bounding_ptr_);
 
 }
 
@@ -1585,7 +1584,7 @@ bool Actor::visualizeVectorField() {
 
 				// calculate social force for actor located in current pose
 				// hard-coded time delta
-				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), common_info_, 0.001, ignored_models_);
+				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), *common_info_ptr_.get(), 0.001, ignored_models_);
 
 				// pass a result to vector of grid forces
 				sfm_vis_grid_.addMarker( sfm_vis_grid_.create(pose.Pos(), sfm_.getForceCombined()) );
@@ -1636,7 +1635,7 @@ bool Actor::visualizeHeatmap() {
 
 				// calculate social force for actor located in current pose
 				// hard-coded time delta
-				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), common_info_, params_ptr_->getSfmVisParams().markers_pub_period, ignored_models_);
+				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), *common_info_ptr_.get(), params_ptr_->getSfmVisParams().markers_pub_period, ignored_models_);
 
 				// pass a result to vector of grid forces
 				sfm_vis_heatmap_.addMarker(sfm_vis_heatmap_.create(pose.Pos(), sfm_.getForceInteraction().Length()));

@@ -291,7 +291,7 @@ private:
 
     /// \brief Class that stores all the data needed by SFM that couldn't be saved in WorldPtr
     /// http://answers.gazebosim.org/question/22114/actor-related-information-in-gazebophysicsworldptr-and-collision-of-actors/
-    actor::core::CommonInfo common_info_;
+    std::shared_ptr<actor::core::CommonInfo> common_info_ptr_;
 
     /// \brief Stores type of an actor's bounding for SFM
     actor::ActorBoundingType bounding_type_;

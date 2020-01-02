@@ -75,6 +75,22 @@ std::tuple<bool, ignition::math::Vector3d> Circle::doesIntersect(const ignition:
 
 // ------------------------------------------------------------------- //
 
+std::tuple<bool, ignition::math::Vector3d> Circle::doesIntersect(const ignition::math::Line3d &line) const {
+
+	// find the circle-line intersection point only if 1 of line points is located
+	// within the circle and the other one lays outside the circle
+	if ( !doesContain(line[0]) && doesContain(line[1]) ) {
+		return (doesIntersect(line[0]));
+	} else if ( doesContain(line[0]) && !doesContain(line[1]) ) {
+		return (doesIntersect(line[1]));
+	} else {
+		return (std::make_tuple(false, ignition::math::Vector3d()));
+	}
+
+}
+
+// ------------------------------------------------------------------- //
+
 double Circle::getRadius() const {
 	return (radius_);
 }

@@ -279,6 +279,22 @@ std::tuple<bool, ignition::math::Vector3d> Ellipse::doesIntersect(const ignition
 
 // ------------------------------------------------------------------- //
 
+std::tuple<bool, ignition::math::Vector3d> Ellipse::doesIntersect(const ignition::math::Line3d &line) const {
+
+	// find the ellipse-line intersection point only if 1 of line points is located
+	// within the ellipse and the other one lays outside the ellipse
+	if ( !doesContain(line[0]) && doesContain(line[1]) ) {
+		return (doesIntersect(line[0]));
+	} else if ( doesContain(line[0]) && !doesContain(line[1]) ) {
+		return (doesIntersect(line[1]));
+	} else {
+		return (std::make_tuple(false, ignition::math::Vector3d()));
+	}
+
+}
+
+// ------------------------------------------------------------------- //
+
 bool Ellipse::doesContain(const ignition::math::Vector3d &pt) const {
 
 	bool is_within;

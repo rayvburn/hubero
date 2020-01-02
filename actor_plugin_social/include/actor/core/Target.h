@@ -18,6 +18,9 @@
 #include <gazebo/common/Time.hh>
 #include <memory> // shared_ptr
 
+#include <actor/inflation/Border.h>
+#include <actor/core/CommonInfo.h>
+#include <sfm/core/ActorInfoDecoder.h>
 
 namespace actor {
 namespace core {
@@ -56,6 +59,13 @@ public:
 	 * @param frame_id
 	 */
 	void initializeGlobalPlan(std::shared_ptr<ros::NodeHandle> nh_ptr, const size_t &gap, const std::string &frame_id);
+
+	/**
+	 * @brief Creates an internal copy of the CommonInfo instance
+	 * which is used for triggering and maintaining the `follow object`
+	 * state operation.
+	 */
+	void initializeCommonInfo(const std::shared_ptr<actor::core::CommonInfo> common_info_ptr);
 
 	/**
 	 * @brief Method to set new target for the actor. Tracked model is accessed via its name.
@@ -309,13 +319,13 @@ private:
 
 	/**
 	 * @brief Finds the closest (according to a straight line) point connecting actor's
-	 * position with model's bounding box
+	 * position with model's bounding
 	 * @param model_ptr: a ModelPtr to an object whose edge is searched
 	 * @return Tuple: bool (True if found), Vector3 (intersection point coordinates), Vector3 (line direction - slope)
 	 * @note Similar to sfm::core::Inflator components
 	 * @note Non-const because of getCost service call
 	 */
-	std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> findBoxPoint(const gazebo::physics::ModelPtr model_ptr);
+	std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> findBorderPoint(const gazebo::physics::ModelPtr model_ptr);
 
 	/**
 	 * @brief Helper function which checks whether a given point (moved away along a certain
@@ -390,6 +400,13 @@ private:
 
     /// @brief Time of the last generation of a global plan for object tracking mode.
 	gazebo::common::Time time_last_follow_plan_;
+
+	/// @brief Stores the actor-related info which cannot be updated
+	/// via gazebo's WorldPtr
+	std::shared_ptr<actor::core::CommonInfo> common_info_ptr_;
+
+	/// @brief Decoder of information stored in the CommonInfo class (container)
+	sfm::ActorInfoDecoder common_info_decoder_;
 
 public:
 

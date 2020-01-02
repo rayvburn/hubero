@@ -50,6 +50,11 @@ public:
 	/// available only
 	virtual std::tuple<bool, ignition::math::Vector3d> doesIntersect(const ignition::math::Vector3d &pt_dest) const override;
 
+	/// \brief Calculates a point of intersection of the border with the `line`.
+	/// Requires the line to have at most 1 intersection point with the border.
+	/// \note See the point-based \ref doesIntersect method
+	virtual std::tuple<bool, ignition::math::Vector3d> doesIntersect(const ignition::math::Line3d &line) const override;
+
 	/// \brief Returns the circle's radius
 	double getRadius() const;
 

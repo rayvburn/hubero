@@ -53,6 +53,7 @@ private:
 
 	/// \brief ID of an actor, changes as SFM is computed
 	/// for consecutive actors
+	/// \note Modified by `setID` call
 	unsigned int id_actor_;
 
 public:
