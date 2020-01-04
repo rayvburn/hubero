@@ -15,6 +15,15 @@ Velocity::Velocity() {
 
 }
 
+void Velocity::configure(const std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr,
+			   const std::shared_ptr<const ignition::math::Pose3d> pose_world_prev_ptr)
+{
+
+	pose_world_ptr_ = pose_world_ptr;
+	pose_world_prev_ptr_ = pose_world_prev_ptr;
+
+}
+
 void Velocity::calculate(const double &dt) {
 
 	// =============== linear velocity

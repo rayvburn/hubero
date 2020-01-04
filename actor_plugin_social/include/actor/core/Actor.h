@@ -23,6 +23,7 @@
 #include <actor/core/Path.h>
 #include <actor/core/Target.h>
 #include <actor/core/Action.h>
+#include <actor/core/Velocity.h>
 #include <actor/inflation/Box.h>
 #include <actor/inflation/Circle.h>
 #include <actor/inflation/Ellipse.h>
@@ -171,7 +172,10 @@ public:
 	std::array<double, 3> getVelocity() const;
 
 	/// \brief Returns status of the current action
-	actor::core::Action::ActionStatus getActionStatus() const;
+	/// DEPRECATED: delete
+	int getActionStatus() const;
+	// FIXME:
+	const Action getActionInfo() const { return (action_info_); }
 
 	/// \brief Set actor's new stance type (first see which are allowed)
 	/// \return True if stance is valid
@@ -234,10 +238,6 @@ private:
     /// \param dt: delta of time since last update event (in seconds)
     /// \return Traveled distance in meters
     double move(const double &dt);
-
-    /// \brief Helper function to calculate the actor's velocity as it could not be set
-    /// in WorldPtr - this is just a workaround for a Gazebo/ActorPlugin bug
-    void calculateVelocity(const double &dt);
 
     /// \brief Helper function to set proper state handler according to current state
     void updateTransitionFunctionPtr();
@@ -309,17 +309,10 @@ private:
     std::shared_ptr<ignition::math::Pose3d> pose_world_ptr_;
 
     /// \brief Previous actor_ptr_'s pose
-    ignition::math::Pose3d pose_world_prev_;
+    std::shared_ptr<ignition::math::Pose3d> pose_world_prev_ptr_;
 
-    /// \brief Actual linear velocity_ of the actor
-    ignition::math::Vector3d velocity_lin_;
-
-    /// \brief Actual linear velocity_ of the actor
-    ignition::math::Vector3d velocity_ang_;
-
-    /// \brief An array that stores last 50 velocities -
-    /// average velocity is calculated to provide smoother SFM operation
-    std::array<ignition::math::Vector3d, 50> velocities_lin_to_avg_;
+    /// \brief An instace of the class that manages the actor velocities
+    Velocity velocity_;
 
     /// \brief Object that should be followed by actor
     std::string object_to_follow_;
@@ -411,6 +404,19 @@ private:
 
     /// \brief Stores a status of the current action
     Action action_info_;
+
+    // -------------------------------------------------------
+    // target tracking helpers
+    /// \brief Stores the time of the last global path calculation while
+    /// waiting for the tracked object to became achievable again
+    gazebo::common::Time foll_obj_time_last_path_calculation_;
+    /// \brief Counts number of tries of the global path calculation
+    int foll_obj_path_calc_tries_num_;
+    /// \brief Evaluates whether to skip the current iteration and wait
+    /// for the tracked object to became available
+    bool followObjectDoWait();
+
+    // -------------------------------------------------------
 
 public:
 

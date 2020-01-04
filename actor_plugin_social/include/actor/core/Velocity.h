@@ -21,8 +21,11 @@ public:
 
 	Velocity();
 
-	void configure(const std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr_,
-				   const std::shared_ptr<const ignition::math::Pose3d> pose_world_prev_ptr_);
+	void configure(const std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr,
+				   const std::shared_ptr<const ignition::math::Pose3d> pose_world_prev_ptr);
+
+	/// \brief Helper function to calculate the actor's velocity as it could not be set
+	/// in WorldPtr - this is just a workaround for a Gazebo/ActorPlugin bug
 	void calculate(const double &dt);
 
 	ignition::math::Vector3d getLinear() const;
@@ -44,10 +47,10 @@ private:
 
     /// \brief Actor's world pose - note: the coordinate system of an actor
 	/// is rotated 90 deg CCW around world coordinate system's Z axis
-	const std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr_;
+	std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr_;
 
     /// \brief Previous actor_ptr_'s pose
-    const std::shared_ptr<const ignition::math::Pose3d> pose_world_prev_ptr_;
+    std::shared_ptr<const ignition::math::Pose3d> pose_world_prev_ptr_;
 
 };
 

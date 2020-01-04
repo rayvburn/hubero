@@ -283,10 +283,15 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	actor_ptr_->SetWorldPose(init_pose);
 
 	// set previous pose to prevent velocity overshoot
-	pose_world_prev_ = actor_ptr_->WorldPose();
+	pose_world_prev_ptr_ = std::make_shared<ignition::math::Pose3d>();
+	*pose_world_prev_ptr_ = actor_ptr_->WorldPose();
 
 	// set initial pose (reference point for global plan generation)
 	*pose_world_ptr_ = actor_ptr_->WorldPose();
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+	// velocity setup
+	velocity_.configure(pose_world_ptr_, pose_world_prev_ptr_);
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// bounding setup section
@@ -384,6 +389,11 @@ bool Actor::isTargetReached() {
 bool Actor::followObject(const std::string &object_name) {
 
 	if ( target_manager_.followObject(object_name) ) {
+
+		action_info_.start(actor::core::Action::ROTATE_TOWARDS_OBJECT);
+		// FIXME:
+		foll_obj_path_calc_tries_num_ = 10;
+
 		ignored_models_.push_back(object_name);
 		// NOTE: to make actor face the target first,
 		// there must be an order of calls as below:
@@ -397,6 +407,7 @@ bool Actor::followObject(const std::string &object_name) {
 		// stance for a given state
 		setStance(ActorStance::ACTOR_STANCE_WALK);
 		return (true);
+
 	}
 	return (false);
 
@@ -504,16 +515,16 @@ bool Actor::lieDownStop() {
 std::array<double, 3> Actor::getVelocity() const {
 
 	std::array<double, 3> array;
-	array.at(0) = velocity_lin_.X();
-	array.at(1) = velocity_lin_.Y();
-	array.at(2) = velocity_ang_.Z();
+	array.at(0) = velocity_.getLinear().X();
+	array.at(1) = velocity_.getLinear().Y();
+	array.at(2) = velocity_.getLinear().Z();
 	return (array);
 
 }
 
 // ------------------------------------------------------------------- //
 
-actor::core::Action::ActionStatus Actor::getActionStatus() const {
+int Actor::getActionStatus() const {
 	return (action_info_.getStatus());
 }
 
@@ -728,7 +739,7 @@ void Actor::stateHandlerLieDown() {
 
 		// process stop lying call
 		*pose_world_ptr_ = lie_down_.computePoseFinishedLying();
-		pose_world_prev_ = *pose_world_ptr_;
+		*pose_world_prev_ptr_ = *pose_world_ptr_;
 
 		// no need to reset SFM here
 		setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
@@ -927,9 +938,9 @@ double Actor::prepareForUpdate() {
 	updateStanceOrientation(*pose_world_ptr_);
 
 	double dt = (world_ptr_->SimTime() - time_last_update_).Double();
-	calculateVelocity(dt);
+	velocity_.calculate(dt);
 
-	common_info_ptr_->setLinearVel(velocity_lin_);
+	common_info_ptr_->setLinearVel(velocity_.getLinear());
 
 	// DELETE - the method used below just doesn't do anything - WorldPtr doesnt get updated
 	// actor_ptr_->SetLinearVel(velocity_lin_);
@@ -947,7 +958,7 @@ double Actor::prepareForUpdate() {
 void Actor::applyUpdate(const double &dist_traveled) {
 
   	// save last position to calculate velocity
-	pose_world_prev_ = actor_ptr_->WorldPose();
+	*pose_world_prev_ptr_ = actor_ptr_->WorldPose();
 
 	// make sure the actor won't go out of bounds
 	if ( params_ptr_->getActorParams().limit_actors_workspace ) {
@@ -1102,6 +1113,7 @@ bool Actor::manageTargetTracking() {
 
 	// check if call is executed for a proper mode
 	if ( !target_manager_.isFollowing() ) {
+		action_info_.setStatus(actor::core::Action::NOT_FOLLOWING, "got into target tracking state but object following has not been enabled");
 		return (false);
 	}
 
@@ -1122,8 +1134,17 @@ bool Actor::manageTargetTracking() {
 	if ( !target_manager_.updateFollowedTarget() ) {
 		// recently followed object is not reachable anymore (object deleted
 		// from the simulation or global plan cannot be found)
-		// TODO: change internal state? try again few times (internally)?
-		stop_tracking = true;
+		if ( followObjectDoWait() ) {
+			action_info_.setStatus(actor::core::Action::WAIT_FOR_MOVEMENT, "tracked object is not reachable now, waiting...");
+		} else {
+			// a number of tries were performed with no luck - follow object
+			// state will be terminated
+			stop_tracking = true;
+			action_info_.setStatus(actor::core::Action::UNABLE_TO_FIND_PLAN, "tracked object is not reachable anymore (has been deleted from the world or a global plan cannot be generated)");
+		}
+	} else if ( !object_prev_reached ) {
+		// global path was updated successfully
+		action_info_.setStatus(actor::core::Action::TRACKING, "tracking");
 	}
 
 	// check closeness to the target/checkpoint
@@ -1131,6 +1152,7 @@ bool Actor::manageTargetTracking() {
 		// actor is close enough to the tracked object (it may not be moving for some time);
 		// do not call stopFollowing etc and do not change the state,
 		// just do not try to go further at the moment
+		action_info_.setStatus(actor::core::Action::OBJECT_REACHED, "target reached");
 	} else if ( object_prev_reached ) {
 		// detects change of the `is_followed_object_reached_`
 		// flag (i.e. tracked object started moving again)
@@ -1138,20 +1160,24 @@ bool Actor::manageTargetTracking() {
 	} else if ( target_manager_.isCheckpointReached() ) {
 		// take next checkpoint from vector (path)
 		target_manager_.updateCheckpoint();
+		action_info_.setStatus(actor::core::Action::TRACKING, "tracking");
 	}
 
 	// check whether a current checkpoint is abandonable (angle-related)
 	if ( target_manager_.isCheckpointAbandonable() ) {
 		target_manager_.updateCheckpoint();
+		action_info_.setStatus(actor::core::Action::TRACKING, "tracking");
 	}
 
 	// check if the tracked object still exists in the world since last target selection
 	if ( !target_manager_.isTargetStillReachable() ) {
 		stop_tracking = true;
+		action_info_.setStatus(actor::core::Action::NOT_REACHABLE, "the tracked object became unreachable");
 	}
 
 	// change FSM state if needed
 	if ( stop_tracking ) {
+		action_info_.forceTermination();
 		target_manager_.abandonTarget();
 		target_manager_.stopFollowing();
 		ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
@@ -1161,7 +1187,14 @@ bool Actor::manageTargetTracking() {
 	}
 
 	// dynamic target has been reached, do not change the state, just change stance
-	if ( target_manager_.isFollowedObjectReached() ) {
+	if ( target_manager_.isFollowedObjectReached() ||
+		(action_info_.getStatus() == actor::core::Action::WAIT_FOR_MOVEMENT) )
+	{
+		// TODO: the best would be to separate these 2 conditions as for ObjectReached there should
+		// such debug info: "tracked object is within 'reachment' tolerance range"
+		// whereas for WAIT FOR MOVEMENT:
+		// "tracked object is not reachable now, waiting...")
+
 		// make actor stop;
 		// when tracked object will start moving again, then stance will be changed
 		setStance(ActorStance::ACTOR_STANCE_STAND);
@@ -1174,6 +1207,7 @@ bool Actor::manageTargetTracking() {
 	// target previously was reached but started moving again - let's align
 	// with direction to its center
 	if ( target_dir_alignment ) {
+		action_info_.setStatus(actor::core::Action::ROTATE_TOWARDS_OBJECT, "aligning actor face direction with the direction to a center of the tracked object");
 		setStance(ActorStance::ACTOR_STANCE_WALK);
 		setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
 		return (false);
@@ -1249,7 +1283,7 @@ bool Actor::manageTargetSingleReachment() {
 double Actor::move(const double &dt) {
 
 	// calculate `social` force (i.e. `internal` and `interaction` components)
-	sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_lin_,
+	sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_.getLinear(),
 						    target_manager_.getCheckpoint(),
 						    *common_info_ptr_.get(), dt, ignored_models_);
 
@@ -1274,7 +1308,7 @@ double Actor::move(const double &dt) {
 	}
 
     // according to the force, calculate a new pose
-	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_lin_,
+	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_.getLinear(),
 														  sfm_.getForceCombined() + human_action_force,
 														  target_manager_.getCheckpoint(), dt);
 
@@ -1318,55 +1352,6 @@ void Actor::updateBounding(const ignition::math::Pose3d &pose) {
 			break;
 
 	}
-
-}
-
-// ------------------------------------------------------------------- //
-
-void Actor::calculateVelocity(const double &dt) {
-
-	// =============== linear velocity
-
-	ignition::math::Vector3d new_velocity;
-	new_velocity.X( (pose_world_ptr_->Pos().X() - pose_world_prev_.Pos().X()) / dt );
-	new_velocity.Y( (pose_world_ptr_->Pos().Y() - pose_world_prev_.Pos().Y()) / dt );
-	new_velocity.Z( (pose_world_ptr_->Pos().Z() - pose_world_prev_.Pos().Z()) / dt );
-
-	/* Velocity Averaging Block -
-	 * used there to prevent some kind of oscillations in
-	 * social force algorithm execution - the main reason of such behavior were changes
-	 * in speed which cause relative velocity fluctuations which on turn affects final
-	 * result a lot */
-	std::rotate( velocities_lin_to_avg_.begin(), velocities_lin_to_avg_.begin()+1, velocities_lin_to_avg_.end() );
-	velocities_lin_to_avg_.at(velocities_lin_to_avg_.size()-1) = new_velocity;
-
-	// sum up - at the moment no Z-velocities are taken into consideration
-	double vel[3] = {0.0, 0.0, 0.0};
-	for ( size_t i = 0; i < velocities_lin_to_avg_.size(); i++ ) {
-		vel[0] += velocities_lin_to_avg_.at(i).X();
-		vel[1] += velocities_lin_to_avg_.at(i).Y();
-		// vel[2] += velocities_to_avg.at(i).Z();
-	}
-
-	vel[0] = vel[0] / static_cast<double>(velocities_lin_to_avg_.size());
-	vel[1] = vel[1] / static_cast<double>(velocities_lin_to_avg_.size());
-	// vel[2] = vel[2] / static_cast<double>(velocities_to_avg.size()); // always 0
-
-	new_velocity.X(vel[0]);
-	new_velocity.Y(vel[1]);
-	new_velocity.Z(vel[2]);
-
-	velocity_lin_ = new_velocity;
-
-	// =============== angular velocity
-	new_velocity.X( (pose_world_ptr_->Rot().Roll()  - pose_world_prev_.Rot().Roll()  ) / dt );
-	new_velocity.Y( (pose_world_ptr_->Rot().Pitch() - pose_world_prev_.Rot().Pitch() ) / dt );
-	new_velocity.Z( (pose_world_ptr_->Rot().Yaw()   - pose_world_prev_.Rot().Yaw()   ) / dt );
-
-	// averaging block is not needed as angular velocity is not used by SFM
-	velocity_ang_.X( new_velocity.X() );
-	velocity_ang_.Y( new_velocity.Y() );
-	velocity_ang_.Z( new_velocity.Z() );
 
 }
 
@@ -1584,7 +1569,7 @@ bool Actor::visualizeVectorField() {
 
 				// calculate social force for actor located in current pose
 				// hard-coded time delta
-				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), *common_info_ptr_.get(), 0.001, ignored_models_);
+				sfm_.computeSocialForce(world_ptr_, pose, velocity_.getLinear(), target_manager_.getCheckpoint(), *common_info_ptr_.get(), 0.001, ignored_models_);
 
 				// pass a result to vector of grid forces
 				sfm_vis_grid_.addMarker( sfm_vis_grid_.create(pose.Pos(), sfm_.getForceCombined()) );
@@ -1635,7 +1620,7 @@ bool Actor::visualizeHeatmap() {
 
 				// calculate social force for actor located in current pose
 				// hard-coded time delta
-				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_.getCheckpoint(), *common_info_ptr_.get(), params_ptr_->getSfmVisParams().markers_pub_period, ignored_models_);
+				sfm_.computeSocialForce(world_ptr_, pose, velocity_.getLinear(), target_manager_.getCheckpoint(), *common_info_ptr_.get(), params_ptr_->getSfmVisParams().markers_pub_period, ignored_models_);
 
 				// pass a result to vector of grid forces
 				sfm_vis_heatmap_.addMarker(sfm_vis_heatmap_.create(pose.Pos(), sfm_.getForceInteraction().Length()));
@@ -1648,6 +1633,25 @@ bool Actor::visualizeHeatmap() {
 	} /* if ( time_elapsed ) */
 
 	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Actor::followObjectDoWait() {
+	if ( (world_ptr_->SimTime() - foll_obj_time_last_path_calculation_).Double() < 2.0 ) {
+		return (true);
+	}
+
+	// time update
+	foll_obj_time_last_path_calculation_ = world_ptr_->SimTime();
+
+	if ( foll_obj_path_calc_tries_num_-- ) {
+		return (true);
+	} else {
+		// enough...
+		return (false);
+	}
 
 }
 
