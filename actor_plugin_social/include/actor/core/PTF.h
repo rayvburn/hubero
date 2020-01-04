@@ -20,7 +20,6 @@ class PTF : public Action {
 
 public:
 
-
 	PTF();
 
 	PTF(std::shared_ptr<actor::core::Target> target_manager_ptr);
@@ -38,6 +37,7 @@ public:
 protected:
 
 	std::shared_ptr<actor::core::Target> target_manager_ptr_;
+
 	bool terminal_flag_;
 
 };

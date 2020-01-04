@@ -62,6 +62,8 @@ add_library(actor_core
   include/actor/core/Action.h
   include/actor/core/PTF.h
   include/actor/core/FollowObject.h
+  include/actor/core/Move.h
+  include/actor/core/Velocity.h
 
   src/actor/core/Actor.cpp 
   src/actor/core/CommonInfo.cpp 
@@ -73,6 +75,8 @@ add_library(actor_core
   src/actor/core/Action.cpp
   src/actor/core/PTF.cpp
   src/actor/core/FollowObject.cpp
+  src/actor/core/Move.cpp
+  src/actor/core/Velocity.cpp
 
 )
 

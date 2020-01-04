@@ -25,7 +25,7 @@ Target::Target(gazebo::physics::WorldPtr world_ptr, std::shared_ptr<const igniti
 					  is_following_(false), is_followed_object_reached_(false), followed_model_ptr_(nullptr) {
 
 	world_ptr_ = world_ptr;
-	pose_world_ptr_ = pose_world_ptr;
+//	pose_world_ptr_ = pose_world_ptr;  // FIXME:
 	params_ptr_ = params_ptr;
 
 }
@@ -41,7 +41,7 @@ Target::Target(const Target &obj) {
 	is_following_ = obj.is_following_;
 	is_followed_object_reached_ = obj.is_followed_object_reached_;
 
-	pose_world_ptr_ = obj.pose_world_ptr_;
+//	pose_world_ptr_ = obj.pose_world_ptr_; // FIXME:
 	params_ptr_ = obj.params_ptr_;
 	world_ptr_ = obj.world_ptr_;
 
@@ -846,7 +846,7 @@ nav_msgs::Path Target::getPath() const {
 	return (global_planner_.getPath());
 }
 // ------------------------------------------------------------------- //
-ignition::math::Pose3d Target::getPose() const {
+ignition::math::Pose3d& Target::getPose() {
 	return (*pose_world_ptr_);
 }
 

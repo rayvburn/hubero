@@ -136,7 +136,7 @@ void Actor::initRosInterface() {
 
 void Actor::initInflator(const double &circle_radius) {
 
-	// got rid of the raw pointer, ref: https://stackoverflow.com/questions/4665266/creating-shared-ptr-from-raw-pointer
+	// got rid of the raw pointer, Ref: https://stackoverflow.com/questions/4665266/creating-shared-ptr-from-raw-pointer
 	// circle
 	std::shared_ptr<actor::inflation::Circle> bounding_circle_ptr = std::make_shared<actor::inflation::Circle>();
 	bounding_type_ = ACTOR_BOUNDING_CIRCLE;
@@ -223,7 +223,9 @@ void Actor::initSFM() {
 	}
 
 	// initialize SFM parameters
-	sfm_.init(params_ptr_, sfm_inflation, actor_ptr_->GetName(), world_ptr_);
+//	sfm_.init(params_ptr_, sfm_inflation, actor_ptr_->GetName(), world_ptr_);
+	sfm_ptr_ = std::make_shared<sfm::SocialForceModel>();
+	sfm_ptr_->init(params_ptr_, sfm_inflation, actor_ptr_->GetName(), world_ptr_);
 	
 }
 
@@ -255,7 +257,16 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	target_manager_ptr_->initializeCommonInfo(common_info_ptr_);
 
 	// - -
-	follow_object_handler_.initializeTargetManager(target_manager_ptr_);
+	ptf_follow_object_handler_.initializeTargetManager(target_manager_ptr_);
+
+	// *******
+	// prep
+	path_storage_ptr_ = std::make_shared<actor::core::Path>(0.05); // resolution)
+	ignored_models_ptr_ = std::make_shared<std::vector<std::string>>();
+	velocity_ptr_ = std::make_shared<actor::core::Velocity>();
+	// *******
+
+
 	// - -
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -288,10 +299,15 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	actor_ptr_->SetWorldPose(init_pose);
 
 	// set previous pose to prevent velocity overshoot
-	pose_world_prev_ = actor_ptr_->WorldPose();
+//	pose_world_prev_ = actor_ptr_->WorldPose();
+	pose_world_prev_ptr_ = std::make_shared<ignition::math::Pose3d>();
+	*pose_world_prev_ptr_ = actor_ptr_->WorldPose();
 
 	// set initial pose (reference point for global plan generation)
 	*pose_world_ptr_ = actor_ptr_->WorldPose();
+
+
+
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// bounding setup section
@@ -373,8 +389,19 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	initSFM();
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
-	// initialize SocialConductor with loaded set of parameters
-	social_conductor_.configure(params_ptr_->getBehaviourParams());
+//	 initialize SocialConductor with loaded set of parameters
+//	social_conductor_.configure(params_ptr_->getBehaviourParams());
+	// FIXME: see Move class
+
+	// --------------------------------------------
+	ptf_move_handler_.configure(path_storage_ptr_);
+	ptf_move_handler_.configure(sfm_ptr_);
+	ptf_move_handler_.configure(world_ptr_);
+	ptf_move_handler_.configure(common_info_ptr_);
+	ptf_move_handler_.configure(params_ptr_);
+	ptf_move_handler_.configure(velocity_ptr_);
+	ptf_move_handler_.configure(ignored_models_ptr_);
+	// --------------------------------------------
 
 }
 
@@ -390,10 +417,10 @@ bool Actor::followObject(const std::string &object_name) {
 
 	if ( target_manager_ptr_->followObject(object_name) ) {
 
-		follow_object_handler_.start();
-		action_info_ptr_ = &follow_object_handler_;
+		ptf_follow_object_handler_.start();
+		action_info_ptr_ = &ptf_follow_object_handler_;
 
-		ignored_models_.push_back(object_name);
+		ignored_models_ptr_->push_back(object_name);
 		// NOTE: to make actor face the target first,
 		// there must be an order of calls as below:
 		setState(ActorState::ACTOR_STATE_FOLLOW_OBJECT);
@@ -426,12 +453,13 @@ bool Actor::followObjectStop() {
 	target_manager_ptr_->abandonTarget();
 	target_manager_ptr_->stopFollowing();
 
-	if ( ignored_models_.size() > 0 ) {
-		ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
+	if ( ignored_models_ptr_->size() > 0 ) {
+		ignored_models_ptr_->pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
 	}
 
 	setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
-	sfm_.reset(); // clear SFM markers
+//	sfm_.reset(); // clear SFM markers
+	sfm_ptr_->reset();
 
 	return (true);
 
@@ -517,9 +545,12 @@ bool Actor::lieDownStop() {
 std::array<double, 3> Actor::getVelocity() const {
 
 	std::array<double, 3> array;
-	array.at(0) = velocity_lin_.X();
-	array.at(1) = velocity_lin_.Y();
-	array.at(2) = velocity_ang_.Z();
+//	array.at(0) = velocity_lin_.X();
+//	array.at(1) = velocity_lin_.Y();
+//	array.at(2) = velocity_ang_.Z();
+	array.at(0) = velocity_ptr_->getLinear().X();
+	array.at(1) = velocity_ptr_->getLinear().Y();
+	array.at(2) = velocity_ptr_->getAngular().Z();
 	return (array);
 
 }
@@ -633,7 +664,7 @@ void Actor::stateHandlerAlignTarget() {
 			// select experimentally
 			setState(actor::ACTOR_STATE_MOVE_AROUND);
 		}
-		path_storage_.reset();
+		path_storage_ptr_->reset();
 
 	}
 
@@ -665,12 +696,14 @@ void Actor::stateHandlerMoveAround() {
 		return;
 	}
 
-	double dist_traveled = move(dt);
+//	double dist_traveled = move(dt);
+	ptf_move_handler_.execute(dt);
 	visualizeSfmCalculations();
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	applyUpdate(dist_traveled);
+//	applyUpdate(dist_traveled);
+	applyUpdate(ptf_move_handler_.getDisplacement());
 
 }
 
@@ -685,7 +718,8 @@ void Actor::stateHandlerTargetReaching() {
 	if ( !manageTargetSingleReachment() ) {
 		target_manager_ptr_->abandonTarget();
 		setState(actor::ACTOR_STATE_STOP_AND_STARE);
-		sfm_.reset(); // clear SFM markers
+//		sfm_.reset(); // clear SFM markers
+		sfm_ptr_->reset();
 		return;
 	}
 
@@ -731,7 +765,8 @@ void Actor::stateHandlerLieDown() {
 		lie_down_.setPoseBeforeLying(*pose_world_ptr_); // will be restored
 		*pose_world_ptr_ = lie_down_.getPoseLying();	// move to the desired point
 
-		sfm_.reset();	// clear SFM markers
+//		sfm_.reset();	// clear SFM markers
+		sfm_ptr_->reset();
 		// now, wait for interruption
 
 	} else if ( lie_down_.doStopLying() ){
@@ -741,7 +776,8 @@ void Actor::stateHandlerLieDown() {
 
 		// process stop lying call
 		*pose_world_ptr_ = lie_down_.computePoseFinishedLying();
-		pose_world_prev_ = *pose_world_ptr_;
+//		pose_world_prev_ = *pose_world_ptr_;
+		*pose_world_prev_ptr_ = *pose_world_ptr_;
 
 		// no need to reset SFM here
 		setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
@@ -793,10 +829,10 @@ void Actor::stateHandlerFollowObject() {
 //	}
 
 	// execute
-	follow_object_handler_.execute(world_ptr_->SimTime());
+	ptf_follow_object_handler_.execute(world_ptr_->SimTime());
 
 	// check status of the FollowObject partial transition function
-	switch ( follow_object_handler_.getStatus() ) {
+	switch ( ptf_follow_object_handler_.getStatus() ) {
 
 		case(actor::core::FollowObject::UNABLE_TO_FIND_PLAN):
 		case(actor::core::FollowObject::NOT_REACHABLE):
@@ -804,9 +840,10 @@ void Actor::stateHandlerFollowObject() {
 
 			// FIXME: the below method won't work as expected if ignored_models
 			// stores elements other than followed object name
-			ignored_models_.pop_back();
+			ignored_models_ptr_->pop_back();
 			setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
-			sfm_.reset(); // clear SFM markers
+//			sfm_.reset(); // clear SFM markers
+			sfm_ptr_->reset();
 			return;
 			break;
 
@@ -832,12 +869,15 @@ void Actor::stateHandlerFollowObject() {
 
 	}
 
-	double dist_traveled = move(dt);
+//	double dist_traveled = move(dt);
+	ptf_move_handler_.execute(dt);
+
 	visualizeSfmCalculations();
 
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-	applyUpdate(dist_traveled);
+//	applyUpdate(dist_traveled);
+	applyUpdate(ptf_move_handler_.getDisplacement());
 
 }
 
@@ -982,7 +1022,8 @@ double Actor::prepareForUpdate() {
 	double dt = (world_ptr_->SimTime() - time_last_update_).Double();
 	calculateVelocity(dt);
 
-	common_info_ptr_->setLinearVel(velocity_lin_);
+//	common_info_ptr_->setLinearVel(velocity_lin_);
+	common_info_ptr_->setLinearVel(velocity_ptr_->getLinear());
 
 	// DELETE - the method used below just doesn't do anything - WorldPtr doesnt get updated
 	// actor_ptr_->SetLinearVel(velocity_lin_);
@@ -1000,7 +1041,8 @@ double Actor::prepareForUpdate() {
 void Actor::applyUpdate(const double &dist_traveled) {
 
   	// save last position to calculate velocity
-	pose_world_prev_ = actor_ptr_->WorldPose();
+//	pose_world_prev_ = actor_ptr_->WorldPose();
+	*pose_world_prev_ptr_ = actor_ptr_->WorldPose();
 
 	// make sure the actor won't go out of bounds
 	if ( params_ptr_->getActorParams().limit_actors_workspace ) {
@@ -1035,13 +1077,13 @@ void Actor::applyUpdate(const double &dist_traveled) {
 	// this is useful whatever the state of the actor is
 	visualizePositionData();
 
-	if ( path_storage_.isUpdated() ) {
+	if ( path_storage_ptr_->isUpdated() ) {
 		// publish closest distance
 		std_msgs::Float32 msg;
-		msg.data = path_storage_.getDistance();
+		msg.data = path_storage_ptr_->getDistance();
 		stream_.publishData(ActorObstacleMsgType::ACTOR_OBSTACLE_DIST_CLOSEST, msg);
 		// publish real path
-		stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH_REAL, path_storage_.getPath());
+		stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH_REAL, path_storage_ptr_->getPath());
 	}
 
 }
@@ -1154,7 +1196,7 @@ bool Actor::manageTargetMovingAround() {
 // ------------------------------------------------------------------- //
 
 bool Actor::manageTargetTracking() {
-
+/*
 	// check if call is executed for a proper mode
 	if ( !target_manager_ptr_->isFollowing() ) {
 		return (false);
@@ -1242,7 +1284,8 @@ bool Actor::manageTargetTracking() {
 	}
 
 	return (true);
-
+*/
+	return (true);
 }
 
 // ------------------------------------------------------------------- //
@@ -1309,7 +1352,7 @@ bool Actor::manageTargetSingleReachment() {
 // ------------------------------------------------------------------- //
 
 double Actor::move(const double &dt) {
-
+/*
 	// calculate `social` force (i.e. `internal` and `interaction` components)
 	sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_lin_,
 						    target_manager_ptr_->getCheckpoint(),
@@ -1350,7 +1393,8 @@ double Actor::move(const double &dt) {
 	path_storage_.collect(pose_world_ptr_->Pos(), sfm_.getDistanceClosestStaticObstacle());
 
 	return (dist_traveled);
-
+*/
+	return (0.001);
 }
 
 // ------------------------------------------------------------------- //
@@ -1386,7 +1430,7 @@ void Actor::updateBounding(const ignition::math::Pose3d &pose) {
 // ------------------------------------------------------------------- //
 
 void Actor::calculateVelocity(const double &dt) {
-
+/*
 	// =============== linear velocity
 
 	ignition::math::Vector3d new_velocity;
@@ -1394,11 +1438,11 @@ void Actor::calculateVelocity(const double &dt) {
 	new_velocity.Y( (pose_world_ptr_->Pos().Y() - pose_world_prev_.Pos().Y()) / dt );
 	new_velocity.Z( (pose_world_ptr_->Pos().Z() - pose_world_prev_.Pos().Z()) / dt );
 
-	/* Velocity Averaging Block -
-	 * used there to prevent some kind of oscillations in
-	 * social force algorithm execution - the main reason of such behavior were changes
-	 * in speed which cause relative velocity fluctuations which on turn affects final
-	 * result a lot */
+//	 * Velocity Averaging Block -
+//	 * used there to prevent some kind of oscillations in
+//	 * social force algorithm execution - the main reason of such behavior were changes
+//	 * in speed which cause relative velocity fluctuations which on turn affects final
+//	 * result a lot *
 	std::rotate( velocities_lin_to_avg_.begin(), velocities_lin_to_avg_.begin()+1, velocities_lin_to_avg_.end() );
 	velocities_lin_to_avg_.at(velocities_lin_to_avg_.size()-1) = new_velocity;
 
@@ -1429,6 +1473,7 @@ void Actor::calculateVelocity(const double &dt) {
 	velocity_ang_.X( new_velocity.X() );
 	velocity_ang_.Y( new_velocity.Y() );
 	velocity_ang_.Z( new_velocity.Z() );
+*/
 
 }
 
@@ -1573,22 +1618,22 @@ void Actor::visualizeSfmCalculations() {
 
 		// combined vector - red
 		sfm_vis_arrow_.setColor(1.0f, 0.0f, 0.0f, 1.0f);
-		stream_.publishData(ActorMarkerType::ACTOR_MARKER_COMBINED_VECTOR, 			 sfm_vis_arrow_.create(ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.0), sfm_.getForceCombined()) );
+		stream_.publishData(ActorMarkerType::ACTOR_MARKER_COMBINED_VECTOR, 			 sfm_vis_arrow_.create(ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.0), sfm_ptr_->getForceCombined()) );
 
 		// internal force vector - green
 		sfm_vis_arrow_.setColor(0.0f, 1.0f, 0.0f, 1.0f);
-		stream_.publishData(ActorMarkerType::ACTOR_MARKER_INTERNAL_VECTOR, 			 sfm_vis_arrow_.create(ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.2), sfm_.getForceInternal()) );
+		stream_.publishData(ActorMarkerType::ACTOR_MARKER_INTERNAL_VECTOR, 			 sfm_vis_arrow_.create(ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.2), sfm_ptr_->getForceInternal()) );
 
 		// interaction force vector - cyan
 		sfm_vis_arrow_.setColor(0.0f, 0.8f, 1.0f, 1.0f);
-		stream_.publishData(ActorMarkerType::ACTOR_MARKER_INTERACTION_VECTOR, 		 sfm_vis_arrow_.create(ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.4), sfm_.getForceInteraction()) );
+		stream_.publishData(ActorMarkerType::ACTOR_MARKER_INTERACTION_VECTOR, 		 sfm_vis_arrow_.create(ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.4), sfm_ptr_->getForceInteraction()) );
 
 		// social force vector - orange
 		sfm_vis_arrow_.setColor(1.0f, 0.6f, 0.0f, 1.0f);
-		stream_.publishData(ActorMarkerType::ACTOR_MARKER_SOCIAL_VECTOR, 			 sfm_vis_arrow_.create(ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.6), social_conductor_.getSocialVector()) );
+		stream_.publishData(ActorMarkerType::ACTOR_MARKER_SOCIAL_VECTOR, 			 sfm_vis_arrow_.create(ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 0.6), ptf_move_handler_.getSocialVector()) ); 		// social_conductor_.getSocialVector()) );
 
-		stream_.publishData(ActorMarkerTextType::ACTOR_MARKER_TEXT_BEH, 			 sfm_vis_text_.create( ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 1.0), social_conductor_.getBehaviourActive()) );
-		stream_.publishData(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, sfm_vis_line_list_.createArray(sfm_.getClosestPointsVector()) );
+		stream_.publishData(ActorMarkerTextType::ACTOR_MARKER_TEXT_BEH, 			 sfm_vis_text_.create( ignition::math::Vector3d(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y(), 1.0), ptf_move_handler_.getBehaviourActive()) ); 	// social_conductor_.getBehaviourActive()) );
+		stream_.publishData(ActorMarkerArrayType::ACTOR_MARKER_ARRAY_CLOSEST_POINTS, sfm_vis_line_list_.createArray(sfm_ptr_->getClosestPointsVector()) );
 
 	}
 
@@ -1646,10 +1691,10 @@ bool Actor::visualizeVectorField() {
 
 				// calculate social force for actor located in current pose
 				// hard-coded time delta
-				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_ptr_->getCheckpoint(), *common_info_ptr_.get(), 0.001, ignored_models_);
+				sfm_ptr_->computeSocialForce(world_ptr_, pose, velocity_ptr_->getLinear(), target_manager_ptr_->getCheckpoint(), *common_info_ptr_.get(), 0.001, *ignored_models_ptr_);
 
 				// pass a result to vector of grid forces
-				sfm_vis_grid_.addMarker( sfm_vis_grid_.create(pose.Pos(), sfm_.getForceCombined()) );
+				sfm_vis_grid_.addMarker( sfm_vis_grid_.create(pose.Pos(), sfm_ptr_->getForceCombined()) );
 
 			}
 			return (true);
@@ -1697,10 +1742,10 @@ bool Actor::visualizeHeatmap() {
 
 				// calculate social force for actor located in current pose
 				// hard-coded time delta
-				sfm_.computeSocialForce(world_ptr_, pose, velocity_lin_, target_manager_ptr_->getCheckpoint(), *common_info_ptr_.get(), params_ptr_->getSfmVisParams().markers_pub_period, ignored_models_);
+				sfm_ptr_->computeSocialForce(world_ptr_, pose, velocity_ptr_->getLinear(), target_manager_ptr_->getCheckpoint(), *common_info_ptr_.get(), params_ptr_->getSfmVisParams().markers_pub_period, *ignored_models_ptr_);
 
 				// pass a result to vector of grid forces
-				sfm_vis_heatmap_.addMarker(sfm_vis_heatmap_.create(pose.Pos(), sfm_.getForceInteraction().Length()));
+				sfm_vis_heatmap_.addMarker(sfm_vis_heatmap_.create(pose.Pos(), sfm_ptr_->getForceInteraction().Length()));
 
 			}
 			return (true);

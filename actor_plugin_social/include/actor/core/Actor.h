@@ -21,6 +21,7 @@
 #include <actor/core/FSM.h>
 #include <actor/core/Path.h>
 #include <actor/core/Target.h>
+#include <actor/core/Velocity.h>
 #include <actor/inflation/Box.h>
 #include <actor/inflation/Circle.h>
 #include <actor/inflation/Ellipse.h>
@@ -37,6 +38,7 @@
 // state handlers
 #include <actor/core/LieDownHelper.h>
 #include <actor/core/FollowObject.h>
+#include <actor/core/Move.h>
 
 // Visualization
 #include <sfm/vis/Arrow.h>
@@ -312,28 +314,19 @@ private:
     std::shared_ptr<ignition::math::Pose3d> pose_world_ptr_;
 
     /// \brief Previous actor_ptr_'s pose
-    ignition::math::Pose3d pose_world_prev_;
+    std::shared_ptr<ignition::math::Pose3d> pose_world_prev_ptr_;
 
-    /// \brief Actual linear velocity_ of the actor
-    ignition::math::Vector3d velocity_lin_;
-
-    /// \brief Actual linear velocity_ of the actor
-    ignition::math::Vector3d velocity_ang_;
-
-    /// \brief An array that stores last 50 velocities -
-    /// average velocity is calculated to provide smoother SFM operation
-    std::array<ignition::math::Vector3d, 50> velocities_lin_to_avg_;
-
-    /// \brief Object that should be followed by actor
-    /// FIXME: DEPRECATED
-    std::string object_to_follow_;
+    /// \brief An instace of the class that manages the actor velocities
+    std::shared_ptr<actor::core::Velocity> velocity_ptr_;
 
     /// \brief Dynamic list of models to ignore. Used by SFM
-    std::vector<std::string> ignored_models_;
+    std::shared_ptr<std::vector<std::string> > ignored_models_ptr_;
 
     /// \brief Social Force Model interface object
-    sfm::SocialForceModel sfm_;
+    std::shared_ptr<sfm::SocialForceModel> sfm_ptr_;
 
+    // ---------------------------------------------------
+    // TODO Wrapper
     /// \brief Social Force Model arrows visualization;
     /// An object which `arrow` markers are created from
     /// so it is crucial to set the color, the frame etc.
@@ -370,6 +363,7 @@ private:
 
     /// \brief Custom trajectory info
     gazebo::physics::TrajectoryInfoPtr trajectory_info_;
+    // ------------------------------------------------------------------
 
     /// \brief Node for ROS Interface
     actor::ros_interface::Node node_;
@@ -399,16 +393,12 @@ private:
     /// \brief Helper class to handle LIE_DOWN state
     LieDownHelper lie_down_;
 
-    /// \brief Based on actors parameters computes fuzzy
-    /// output representing social behaviour
-    fuzz::Processor fuzzy_processor_;
-
-    /// \brief Social behaviour-based force generator
-    fuzz::SocialConductor social_conductor_;
-
     /// \brief Helper class storing actor's path
     /// and distance to the closest obstacle
-    Path path_storage_{0.05}; // resolution
+    /// \note Not moved completely into the `Move` PTF because
+    /// it is more related to the data streaming (used more often than
+    /// in the Move PTF (`collect` only))
+    std::shared_ptr<Path> path_storage_ptr_;
 
     /// \brief Stores name of the global frame of Gazebo world
     actor::FrameGlobal frame_global_;
@@ -417,7 +407,8 @@ private:
     Action action_info_;
     Action* action_info_ptr_;
 
-    FollowObject follow_object_handler_;
+    FollowObject ptf_follow_object_handler_;
+    Move ptf_move_handler_;
 
 public:
 

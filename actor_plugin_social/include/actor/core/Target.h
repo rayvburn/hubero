@@ -261,7 +261,7 @@ public:
 	nav_msgs::Path getPath() const;
 
 	// FIXME:
-	ignition::math::Pose3d getPose() const;
+	ignition::math::Pose3d& getPose();
 
 	/**
 	 * @brief Helper, static method that checks if a given object is listed in a ignored_model vector passed in .YAML
@@ -380,7 +380,7 @@ private:
 
 	/// @brief Shared pointer to `pose_world` object from actor::core::Actor class.
 	/// This is set in constructor.
-	std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr_;
+	const std::shared_ptr<ignition::math::Pose3d> pose_world_ptr_;
 
 	/// @brief Shared pointer to ParamLoader class. This is set in constructor.
 	std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr_;
