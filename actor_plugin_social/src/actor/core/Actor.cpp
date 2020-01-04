@@ -126,6 +126,7 @@ void Actor::initRosInterface() {
 
 	// initialize services for Actor control
 	connection_ptr_->initServices();
+	connection_ptr_->initActions();
 	connection_ptr_->startCallbackProcessingThread();
 
 }
