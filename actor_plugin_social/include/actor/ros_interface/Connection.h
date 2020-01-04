@@ -93,6 +93,9 @@ public:
 
 private:
 
+	// TODO
+	ignition::math::Pose3d transformPoint(const double &x_pos, const double &y_pos, const std::string &frame);
+
 	/// \brief Callbacks for each service, service callback must return bool
 	bool srvSetGoalCallback			(actor_sim_srv::SetGoal::Request		&req,	actor_sim_srv::SetGoal::Response		&resp);
 	bool srvSetGoalNameCallback		(actor_sim_srv::SetGoalName::Request 	&req,	actor_sim_srv::SetGoalName::Response 	&resp);
@@ -167,8 +170,24 @@ private:
 	/// \note See http://wiki.ros.org/actionlib_tutorials/Tutorials/SimpleActionServer%28ExecuteCallbackMethod%29#The_Code
 	/// "NodeHandle instance must be created before this line. Otherwise strange error occurs." - thus a pointer created
 	actionlib::SimpleActionServer<actor_sim_action::FollowObjectAction>* action_follow_object_ptr_;
+	actionlib::SimpleActionServer<actor_sim_action::SetGoalAction>* action_set_goal_ptr_;
+	actionlib::SimpleActionServer<actor_sim_action::SetGoalNameAction>* action_set_goal_name_ptr_;
 
 	void actionFollowObjectCallback(const actor_sim_action::FollowObjectGoalConstPtr &goal);
+	void actionSetGoalCallback(const actor_sim_action::SetGoalGoalConstPtr &goal);
+	void actionSetGoalNameCallback(const actor_sim_action::SetGoalNameGoalConstPtr &goal);
+
+//	template <typename T1, typename T2>
+//	void processFeedback(T1* action_server_ptr, T2& feedback) {
+//
+//		while ( !actor_ptr_.lock()->getActionInfo().isTerminated() ) {
+//			feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+//			feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+//			action_server_ptr->publishFeedback(feedback);
+//			std::this_thread::sleep_for(std::chrono::milliseconds(200));
+//		}
+//
+//	}
 
 };
 

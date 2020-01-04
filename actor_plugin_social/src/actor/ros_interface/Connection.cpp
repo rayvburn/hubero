@@ -96,6 +96,14 @@ void Connection::initServices() {
 	action_follow_object_ptr_ = new actionlib::SimpleActionServer<actor_sim_action::FollowObjectAction>(
 			*nh_ptr_, namespace_ + "/action/follow_object", boost::bind(&Connection::actionFollowObjectCallback, this, _1), false);
 	action_follow_object_ptr_->start();
+
+	action_set_goal_ptr_ = new actionlib::SimpleActionServer<actor_sim_action::SetGoalAction>(
+			*nh_ptr_, namespace_ + "/action/set_goal", boost::bind(&Connection::actionSetGoalCallback, this, _1), false);
+	action_set_goal_ptr_->start();
+
+	action_set_goal_name_ptr_ = new actionlib::SimpleActionServer<actor_sim_action::SetGoalNameAction>(
+			*nh_ptr_, namespace_ + "/action/set_goal_name", boost::bind(&Connection::actionSetGoalNameCallback, this, _1), false);
+	action_set_goal_name_ptr_->start();
 	// ---------------
 
 }
@@ -144,19 +152,10 @@ bool Connection::srvSetGoalCallback(actor_sim_srv::SetGoal::Request &req, actor_
 	// into ACTOR_GLOBAL_FRAME_ID.
 	// NOTE: all internal containers (path, target) use the ACTOR_GLOBAL_FRAME_ID
 	// as a reference (i.e. store points expressed in ACTOR_GLOBAL_FRAME_ID).
-	geometry_msgs::PoseStamped pose_global;
-
-	// this is not necessary if point is defined in the actor global frame
-	tf_listener_ptr_->transformPose(actor::FrameGlobal::getFrame(),
-									actor::ros_interface::Conversion::convertIgnVectorToPoseStamped(ignition::math::Vector3d(req.x_pos, req.y_pos, 0.0), req.frame),
-									pose_global);
-
-	ignition::math::Pose3d pose;
-	pose.Pos().X() = static_cast<double>(pose_global.pose.position.x);
-	pose.Pos().Y() = static_cast<double>(pose_global.pose.position.y);
+	// 'transformPoint'
 
 	// take ownership of the Actor shared_ptr
-	resp.flag = actor_ptr_.lock()->setNewTarget(pose);
+	resp.flag = actor_ptr_.lock()->setNewTarget(transformPoint(req.x_pos, req.y_pos, req.frame));
 
 	return (true);
 
@@ -350,6 +349,93 @@ void Connection::actionFollowObjectCallback(const actor_sim_action::FollowObject
 	action_follow_object_ptr_->setSucceeded(result, "RESULT TEST");
 
 	std::cout << "\nactionFollowObjectCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Connection::actionSetGoalCallback(const actor_sim_action::SetGoalGoalConstPtr &goal) {
+
+	std::cout << "\nactionSetGoalCallback()" << "\t" << namespace_ << "\n" << std::endl;
+
+	actor_sim_action::SetGoalFeedback feedback;
+	actor_sim_action::SetGoalResult result;
+
+	if ( !actor_ptr_.lock()->setNewTarget(transformPoint(goal->x_pos, goal->y_pos, goal->frame)) ) {
+		std::cout << "SetGoal request cannot be processed" << std::endl;
+		result.status = 0; // actor::core::Action::FAILED
+		result.text = "'SetGoal' action request cannot be processed";
+		action_set_goal_ptr_->setAborted(result, "RESULT ABORTED");
+		return;
+	}
+
+	while ( !actor_ptr_.lock()->getActionInfo().isTerminated() ) {
+		feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+		feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+		action_set_goal_ptr_->publishFeedback(feedback);
+		std::this_thread::sleep_for(std::chrono::milliseconds(200));
+	}
+
+	// FINISH
+	result.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+	result.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+
+	action_set_goal_ptr_->setSucceeded(result, "RESULT TEST");
+
+	std::cout << "\nactionSetGoalCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
+
+}
+
+// ------------------------------------------------------------------- //
+
+void Connection::actionSetGoalNameCallback(const actor_sim_action::SetGoalNameGoalConstPtr &goal) {
+
+	std::cout << "\nactionSetGoalNameCallback()" << "\t" << namespace_ << "\n" << std::endl;
+
+	actor_sim_action::SetGoalNameFeedback feedback;
+	actor_sim_action::SetGoalNameResult result;
+
+	if ( !actor_ptr_.lock()->setNewTarget(goal->object_name) ) {
+		std::cout << "SetGoalName request cannot be processed" << std::endl;
+		result.status = 0; // actor::core::Action::FAILED
+		result.text = "'SetGoalName' action request cannot be processed";
+		action_set_goal_name_ptr_->setAborted(result, "RESULT ABORTED");
+		return;
+	}
+
+	while ( !actor_ptr_.lock()->getActionInfo().isTerminated() ) {
+		feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+		feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+		action_set_goal_name_ptr_->publishFeedback(feedback);
+		std::this_thread::sleep_for(std::chrono::milliseconds(200));
+	}
+
+	// FINISH
+	result.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+	result.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+
+	action_set_goal_name_ptr_->setSucceeded(result, "RESULT TEST");
+
+	std::cout << "\nactionSetGoalNameCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
+
+}
+
+// ------------------------------------------------------------------- //
+
+ignition::math::Pose3d Connection::transformPoint(const double &x_pos, const double &y_pos, const std::string &frame) {
+
+	geometry_msgs::PoseStamped pose_global;
+
+	// this is not necessary if point is defined in the actor global frame
+	tf_listener_ptr_->transformPose(actor::FrameGlobal::getFrame(),
+									actor::ros_interface::Conversion::convertIgnVectorToPoseStamped(ignition::math::Vector3d(x_pos, y_pos, 0.0), frame),
+									pose_global);
+
+	ignition::math::Pose3d pose;
+	pose.Pos().X() = static_cast<double>(pose_global.pose.position.x);
+	pose.Pos().Y() = static_cast<double>(pose_global.pose.position.y);
+
+	return (pose);
 
 }
 
