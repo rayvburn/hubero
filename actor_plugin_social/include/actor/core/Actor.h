@@ -136,6 +136,9 @@ public:
 	/// DEPRECATED
 	bool isTargetReached();
 
+	/// TODO:
+	bool moveAround();
+
 	/// \brief Method to set new target for actor - object's name
 	/// \note Object tracking will not run properly when a static
 	/// obstacle (the one marked on the actor global costmap) is selected
@@ -435,6 +438,11 @@ public:
 			setState(ActorState::ACTOR_STATE_TARGET_REACHING); // will be restored
 			setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
 			setStance(ActorStance::ACTOR_STANCE_WALK);
+			action_info_.start();
+			action_info_.setStatus(actor::core::Action::ROTATE_TOWARDS_OBJECT, "rotation towards object direction");
+		} else {
+			action_info_.setStatus(actor::core::Action::NOT_REACHABLE, "a valid global path plan cannot be found");
+			action_info_.forceTermination();
 		}
 
 		return (status);

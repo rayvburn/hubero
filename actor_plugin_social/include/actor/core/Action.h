@@ -28,7 +28,7 @@ public:
 		PREPARING,           //!< PREPARING: associated with alignToTargetDirection `state`; may be used by many tasks
 		APPROACHING,         //!< APPROACHING: associated with the movement to the goal direction (\ref actor::core::Actor::manageTargetSingleReachment); may be used by many tasks
 
-		FOLLOWING,           //!< FOLLOWING: related to the `object tracking` state when the actor is actually following an object (i.e. the object is moving)
+//		FOLLOWING,           //!< FOLLOWING: related to the `object tracking` state when the actor is actually following an object (i.e. the object is moving)
 		OBJECT_NON_REACHABLE,//!< OBJECT_NON_REACHABLE: used in the `object tracking` state when the followed object is located in the place considered as a lethal obstacle on the actor costmap
 //		OBJECT_REACHED,      //!< OBJECT_REACHED: used in the `object tracking` state when the followed object is close enough to the actor and the object is static
 
@@ -49,6 +49,17 @@ public:
 		NOT_REACHABLE,        //!< NOT_REACHABLE: the followed object is located in the place considered as a lethal obstacle on the actor costmap
 		WAIT_FOR_MOVEMENT,    //!< WAIT_FOR_MOVEMENT
 	} FollowObjectStatus;
+
+	/// TODO
+	typedef enum {
+		FOLLOWING = 0,
+		// APPROACHING
+		// ROTATE_TOWARDS_OBJECT
+		GOAL_NOT_SELECTED,
+		GOAL_REACHED,
+		// NOT_REACHABLE
+
+	} SetGoalStatus;
 
 	/// \brief Default constructor
 	Action(int status_terminal = FINISHED);

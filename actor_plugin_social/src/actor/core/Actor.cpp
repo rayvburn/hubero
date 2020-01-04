@@ -386,11 +386,19 @@ bool Actor::isTargetReached() {
 
 // ------------------------------------------------------------------- //
 
+bool Actor::moveAround() {
+	// FIXME:
+	return (false);
+}
+
+// ------------------------------------------------------------------- //
+
 bool Actor::followObject(const std::string &object_name) {
 
 	if ( target_manager_.followObject(object_name) ) {
 
-		action_info_.start(actor::core::Action::ROTATE_TOWARDS_OBJECT);
+		action_info_.start();
+		action_info_.setStatus(actor::core::Action::ROTATE_TOWARDS_OBJECT, "rotation towards object direction");
 		// FIXME:
 		foll_obj_path_calc_tries_num_ = 10;
 
@@ -1135,20 +1143,29 @@ bool Actor::manageTargetTracking() {
 		// recently followed object is not reachable anymore (object deleted
 		// from the simulation or global plan cannot be found)
 		if ( followObjectDoWait() ) {
+
 			action_info_.setStatus(actor::core::Action::WAIT_FOR_MOVEMENT, "tracked object is not reachable now, waiting...");
+			// make actor stop;
+			// when tracked object will start moving again, then stance will be changed
+			setStance(ActorStance::ACTOR_STANCE_STAND);
+			// update the pose (stance only) because the update event will be broken (stopped)
+			updateStanceOrientation(*pose_world_ptr_);
+			applyUpdate(0.001);
+			return (false);
+
 		} else {
 			// a number of tries were performed with no luck - follow object
 			// state will be terminated
 			stop_tracking = true;
 			action_info_.setStatus(actor::core::Action::UNABLE_TO_FIND_PLAN, "tracked object is not reachable anymore (has been deleted from the world or a global plan cannot be generated)");
 		}
-	} else if ( !object_prev_reached ) {
+	} else if ( !object_prev_reached && (action_info_.getStatus() != actor::core::Action::WAIT_FOR_MOVEMENT) ) {
 		// global path was updated successfully
 		action_info_.setStatus(actor::core::Action::TRACKING, "tracking");
 	}
 
 	// check closeness to the target/checkpoint
-	if ( target_manager_.isTargetReached() ) {
+	if ( target_manager_.isTargetReached() && (action_info_.getStatus() != actor::core::Action::WAIT_FOR_MOVEMENT) ) {
 		// actor is close enough to the tracked object (it may not be moving for some time);
 		// do not call stopFollowing etc and do not change the state,
 		// just do not try to go further at the moment
@@ -1187,13 +1204,15 @@ bool Actor::manageTargetTracking() {
 	}
 
 	// dynamic target has been reached, do not change the state, just change stance
-	if ( target_manager_.isFollowedObjectReached() ||
-		(action_info_.getStatus() == actor::core::Action::WAIT_FOR_MOVEMENT) )
+	if ( target_manager_.isFollowedObjectReached() // ||
+		//(action_info_.getStatus() == actor::core::Action::WAIT_FOR_MOVEMENT)
+		)
 	{
 		// TODO: the best would be to separate these 2 conditions as for ObjectReached there should
 		// such debug info: "tracked object is within 'reachment' tolerance range"
 		// whereas for WAIT FOR MOVEMENT:
 		// "tracked object is not reachable now, waiting...")
+		// NOT VALID ATM since the part shown below was copied below the 'followObjectDoWait' call
 
 		// make actor stop;
 		// when tracked object will start moving again, then stance will be changed
@@ -1223,6 +1242,7 @@ bool Actor::manageTargetSingleReachment() {
 
 	// check if call is executed for a proper mode
 	if ( target_manager_.isFollowing() ) {
+		action_info_.setStatus(actor::core::Action::SetGoalStatus::FOLLOWING, "wrong state handler, finishing");
 		return (false);
 	}
 
@@ -1233,37 +1253,44 @@ bool Actor::manageTargetSingleReachment() {
 	if ( !target_manager_.isTargetChosen() ) {
 		//return (false);
 		abandon = true;
+		action_info_.setStatus(actor::core::Action::SetGoalStatus::GOAL_NOT_SELECTED, "target manager has no target chosen");
 	}
 
 	// check whether a target has plan generated
 	if ( !target_manager_.isPlanGenerated() ) {
 		if ( !target_manager_.generatePathPlan(pose_world_ptr_->Pos(), target_manager_.getTarget()) ) {
 			abandon = true;
+			action_info_.setStatus(actor::core::Action::NOT_REACHABLE, "the selected goal is not reachable");
 		}
 	}
 
 	// check whether a current checkpoint is abandonable
 	if ( target_manager_.isCheckpointAbandonable() ) {
 		target_manager_.updateCheckpoint();
+		action_info_.setStatus(actor::core::Action::APPROACHING, "approaching to the goal");
 	}
 
 	// check closeness to the target/checkpoint
 	if ( target_manager_.isTargetReached() ) {
+		action_info_.setStatus(actor::core::Action::GOAL_REACHED, "goal has been reached successfully!");
 		abandon = true;
 	} else if ( target_manager_.isCheckpointReached() ) {
 		// take next checkpoint from vector (path)
 		target_manager_.updateCheckpoint();
+		action_info_.setStatus(actor::core::Action::APPROACHING, "approaching to the goal");
 	}
 
 	// reachability test 1:
 	// check if there has been some obstacle put into world since last target selection
 	if ( !target_manager_.isTargetStillReachable() ) {
+		action_info_.setStatus(actor::core::Action::NOT_REACHABLE, "target became unreachable");
 		abandon = true;
 	}
 
 	// reachability test 2:
 	// check if actor is stuck
 	if ( target_manager_.isTargetNotReachedForTooLong() ) {
+		action_info_.setStatus(actor::core::Action::NOT_REACHABLE, "actor struggles to reach the goal for too long, terminating...");
 		abandon = true;
 	}
 
@@ -1271,6 +1298,7 @@ bool Actor::manageTargetSingleReachment() {
 	if ( abandon ) {
 //		target_manager_.abandonTarget();
 //		setState(actor::ACTOR_STATE_STOP_AND_STARE);
+		action_info_.forceTermination();
 		return (false);
 	}
 
