@@ -17,6 +17,7 @@ class Action {
 
 public:
 
+	/// \section Scoped enumerations
 	/// \brief Enum constants related to one or multiple tasks
 	typedef enum {
 
@@ -61,18 +62,29 @@ public:
 
 	} SetGoalStatus;
 
+	enum class LieDownStatus {
+
+		WRONG_STATE = 0, 		// FOLLOWING, for example
+		OBJECT_NON_REACHABLE,
+		ROTATE_TOWARDS_OBJECT,
+		APPROACHING,
+		LYING,
+		STANDING_UP,
+		FINISHED
+
+	};
+
 	/// \brief Default constructor
 	Action(int status_terminal = FINISHED);
 
 	// TODO
 	void start(int status_initial = IN_PROGRESS);
 
-	/// \brief Updates the status
-	void setStatus(ActionStatus status, const std::string &description = "");
-	void setStatus(int status, const std::string &description = "");
+	/// \brief Updates the status and the description
+	/// \ref setStatus, see the template method placed below
 
 	// TODO:
-	void forceTermination();
+	void terminate();
 
 	/// \brief Returns the current status
 	int getStatus() const;
@@ -100,6 +112,15 @@ private:
 
 	/// \brief Stores a potentially useful in debugging status description
 	std::string text_;
+
+public:
+
+	/// \brief Updates the status and the description
+	template <typename T>
+	void setStatus(T status, const std::string &description = "") {
+		status_int_ = static_cast<int>(status);
+		text_ = description;
+	}
 
 };
 

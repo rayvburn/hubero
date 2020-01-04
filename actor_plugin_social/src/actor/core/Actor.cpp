@@ -471,9 +471,14 @@ bool Actor::lieDown(const std::string &object_name, const double &height, const 
 
 	// if new-desired target is achievable then change the state (align firstly)
 	if ( status ) {
+
+		action_info_.start();
+		action_info_.setStatus(Action::LieDownStatus::ROTATE_TOWARDS_OBJECT, "rotation");
+
 		setState(ActorState::ACTOR_STATE_LIE_DOWN); // will be restored by FSM
 		setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
 		setStance(ActorStance::ACTOR_STANCE_WALK);
+
 	}
 
 	return (status);
@@ -500,9 +505,14 @@ bool Actor::lieDown(const double &x_pos, const double &y_pos, const double &z_po
 
 	// if new-desired target is achievable then change the state (align firstly)
 	if ( status ) {
+
+		action_info_.start();
+		action_info_.setStatus(Action::LieDownStatus::ROTATE_TOWARDS_OBJECT, "rotation");
+
 		setState(ActorState::ACTOR_STATE_LIE_DOWN); // will be restored by FSM
 		setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
 		setStance(ActorStance::ACTOR_STANCE_WALK);
+
 	}
 
 	return (status);
@@ -693,6 +703,11 @@ void Actor::stateHandlerTargetReaching() {
 		target_manager_.abandonTarget();
 		setState(actor::ACTOR_STATE_STOP_AND_STARE);
 		sfm_.reset(); // clear SFM markers
+		// state termination request moved away from
+		// the `manageTargetSingleReachment`
+		// to allow reuse of the PTF in other
+		// transition functions
+		action_info_.terminate();
 		return;
 	}
 
@@ -715,7 +730,8 @@ void Actor::stateHandlerLieDown() {
 
 	double dist_traveled = 0.001; // default (determines speed of animation)
 
-	// move until a calculated position is reached
+	// move until a calculated position is reached,
+	// i.e. no new target is chosen
 	if ( target_manager_.isTargetChosen() ) {
 
 		if ( !manageTargetSingleReachment() ) {
@@ -726,6 +742,8 @@ void Actor::stateHandlerLieDown() {
 		visualizeSfmCalculations();
 
 	} else if ( !lie_down_.isLyingDown() ) {
+
+		action_info_.setStatus(Action::LieDownStatus::LYING, "lying");
 
 		// actor arrived to the target point;
 		// let's lie down
@@ -743,6 +761,8 @@ void Actor::stateHandlerLieDown() {
 
 	} else if ( lie_down_.doStopLying() ){
 
+		action_info_.setStatus(Action::LieDownStatus::STANDING_UP, "standing up");
+
 		// reset internal state
 		lie_down_.setLying(false);
 
@@ -752,12 +772,13 @@ void Actor::stateHandlerLieDown() {
 
 		// no need to reset SFM here
 		setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
+		action_info_.terminate();
 
 	} else {
 
 		// LieDown - idle
 		visualizeSfmCalculations();
-		std::cout << "LIE DOWN IDLE" << std::endl;
+//		std::cout << "LIE DOWN IDLE" << std::endl;
 
 	}
 
@@ -1195,7 +1216,7 @@ bool Actor::manageTargetTracking() {
 
 	// change FSM state if needed
 	if ( stop_tracking ) {
-		action_info_.forceTermination();
+		action_info_.terminate();
 		target_manager_.abandonTarget();
 		target_manager_.stopFollowing();
 		ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
@@ -1299,7 +1320,6 @@ bool Actor::manageTargetSingleReachment() {
 	if ( abandon ) {
 //		target_manager_.abandonTarget();
 //		setState(actor::ACTOR_STATE_STOP_AND_STARE);
-		action_info_.forceTermination();
 		return (false);
 	}
 

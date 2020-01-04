@@ -19,16 +19,7 @@ void Action::start(int status_initial) {
 	termination_brutal_ = false;
 }
 
-void Action::setStatus(ActionStatus status, const std::string &description) {
-	status_ = status;
-	text_ = description;
-}
-void Action::setStatus(int status, const std::string &description) {
-	status_int_ = status;
-	text_ = description;
-}
-
-void Action::forceTermination() {
+void Action::terminate() {
 	termination_brutal_ = true;
 }
 

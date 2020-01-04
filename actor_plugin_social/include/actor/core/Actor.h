@@ -442,7 +442,7 @@ public:
 			action_info_.setStatus(actor::core::Action::ROTATE_TOWARDS_OBJECT, "rotation towards object direction");
 		} else {
 			action_info_.setStatus(actor::core::Action::NOT_REACHABLE, "a valid global path plan cannot be found");
-			action_info_.forceTermination();
+			action_info_.terminate();
 		}
 
 		return (status);
