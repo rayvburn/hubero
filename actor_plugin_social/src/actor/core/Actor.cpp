@@ -460,9 +460,7 @@ bool Actor::moveAroundStop() {
 	setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
 	setStance(ActorStance::ACTOR_STANCE_STAND);
 
-	sfm_.reset();
-	path_storage_.reset();
-	target_manager_.resetPath();
+	resetVisualization();
 
 	return (true);
 }
@@ -514,7 +512,7 @@ bool Actor::followObjectStop() {
 
 	setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
 
-	action_info_.terminate();
+	action_info_.setStatus(Action::FINISHED, "finished operation");
 	resetVisualization();
 
 	return (true);
@@ -604,7 +602,7 @@ bool Actor::lieDownStop() {
 		return (false);
 	}
 	lie_down_.stopLying();
-	action_info_.terminate();
+	action_info_.setStatus(Action::FINISHED, "finished operation");
 	// no need to reset internal state (configuration variables: poses etc)
 	return (true);
 
@@ -856,7 +854,7 @@ void Actor::stateHandlerLieDown() {
 		// is active during lying and after stand up also (different
 		// orientation)
 		setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
-		action_info_.terminate();
+		action_info_.setStatus(Action::FINISHED, "finished operation");
 
 	} else {
 
