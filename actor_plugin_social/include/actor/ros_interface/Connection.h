@@ -182,7 +182,7 @@ private:
 	actionlib::SimpleActionServer<actor_sim_action::SetGoalNameAction>* action_set_goal_name_ptr_;
 	actionlib::SimpleActionServer<actor_sim_action::LieDownAction>* action_lie_down_ptr_;
 	actionlib::SimpleActionServer<actor_sim_action::LieDownNameAction>* action_lie_down_name_ptr_;
-
+	/// \brief Callbacks for each action
 	void actionFollowObjectCallback(const actor_sim_action::FollowObjectGoalConstPtr &goal);
 	void actionSetGoalCallback(const actor_sim_action::SetGoalGoalConstPtr &goal);
 	void actionSetGoalNameCallback(const actor_sim_action::SetGoalNameGoalConstPtr &goal);

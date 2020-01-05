@@ -112,6 +112,14 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Pose3d &st
 
 // ------------------------------------------------------------------- //
 
+void GlobalPlan::resetPath() {
+	waypoint_curr_ = 0;
+	target_reached_ = true;
+	path_.clear();
+}
+
+// ------------------------------------------------------------------- //
+
 bool GlobalPlan::isTargetReached() const {
 	return (target_reached_);
 }

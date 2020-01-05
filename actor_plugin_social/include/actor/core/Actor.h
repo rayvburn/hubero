@@ -278,6 +278,10 @@ private:
 	/// \return True if MarkerArray is ready to be published
 	bool visualizeHeatmap();
 
+	/// \brief Helper method which deletes all SFM markers along with
+	/// the global path plan and the real path of the actor
+	void resetVisualization(bool reset_global_path = true);
+
     /// \brief Pointer to the parent actor.
     gazebo::physics::ActorPtr actor_ptr_;
 

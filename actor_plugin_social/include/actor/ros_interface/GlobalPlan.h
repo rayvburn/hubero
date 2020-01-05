@@ -98,6 +98,11 @@ public:
 	MakePlanStatus makePlan(const ignition::math::Pose3d &start, const ignition::math::Vector3d &goal);
 
 	/**
+	 * @brief Clears the components of the poses vector standing for the global plan checkpoints
+	 */
+	void resetPath();
+
+	/**
 	 * Indicates whether a full poses vector has already been checked via getWaypoint() calls
 	 * If first call after finding a valid plan reaches maximum index of poses vector then
 	 * `target_reached_` flag is set `true`

@@ -49,12 +49,21 @@ void Path::reset() {
 	dists_.clear();
 	last_valid_pos_ = ignition::math::Vector3d();
 	updated_ = false; // to prevent trying to get element from empty vector
+	resetted_ = true;
 }
 
 // ------------------------------------------------------------------- //
 
 bool Path::isUpdated() const {
 	return (updated_);
+}
+
+// ------------------------------------------------------------------- //
+
+bool Path::isResetted() {
+	bool temp = resetted_;
+	resetted_ = false;
+	return (temp);
 }
 
 // ------------------------------------------------------------------- //

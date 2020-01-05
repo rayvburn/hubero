@@ -462,6 +462,7 @@ bool Actor::moveAroundStop() {
 
 	sfm_.reset();
 	path_storage_.reset();
+	target_manager_.resetPath();
 
 	return (true);
 }
@@ -513,6 +514,7 @@ bool Actor::followObjectStop() {
 
 	setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
 	sfm_.reset(); // clear SFM markers
+	target_manager_.resetPath();
 
 	return (true);
 
@@ -724,7 +726,7 @@ void Actor::stateHandlerAlignTarget() {
 			// select experimentally
 			setState(actor::ACTOR_STATE_MOVE_AROUND);
 		}
-		path_storage_.reset();
+		resetVisualization(false);
 
 	}
 
@@ -776,7 +778,7 @@ void Actor::stateHandlerTargetReaching() {
 	if ( !manageTargetSingleReachment() ) {
 		target_manager_.abandonTarget();
 		setState(actor::ACTOR_STATE_STOP_AND_STARE);
-		sfm_.reset(); // clear SFM markers
+		resetVisualization();
 		// state termination request moved away from
 		// the `manageTargetSingleReachment`
 		// to allow reuse of the PTF in other
@@ -830,7 +832,7 @@ void Actor::stateHandlerLieDown() {
 		lie_down_.setPoseBeforeLying(*pose_world_ptr_); // will be restored
 		*pose_world_ptr_ = lie_down_.getPoseLying();	// move to the desired point
 
-		sfm_.reset();	// clear SFM markers
+		resetVisualization();
 		// now, wait for interruption
 
 	} else if ( lie_down_.doStopLying() ){
@@ -1100,14 +1102,23 @@ void Actor::applyUpdate(const double &dist_traveled) {
 	// this is useful whatever the state of the actor is
 	visualizePositionData();
 
+	// evaluate whether a status of the actual path container has changed
 	if ( path_storage_.isUpdated() ) {
+
 		// publish closest distance
 		std_msgs::Float32 msg;
 		msg.data = path_storage_.getDistance();
 		stream_.publishData(ActorObstacleMsgType::ACTOR_OBSTACLE_DIST_CLOSEST, msg);
 		// publish real path
 		stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH_REAL, path_storage_.getPath());
+
+	} else if ( path_storage_.isResetted() ) {
+
+		// publish an empty path
+		stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH_REAL, path_storage_.getPath());
+
 	}
+
 
 }
 
@@ -1298,7 +1309,7 @@ bool Actor::manageTargetTracking() {
 		target_manager_.stopFollowing();
 		ignored_models_.pop_back(); // FIXME: it won't work if ignored_models stores other elements than followed object's name
 		setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
-		sfm_.reset(); // clear SFM markers
+		resetVisualization();
 		return (false);
 	}
 
@@ -1760,6 +1771,16 @@ bool Actor::visualizeHeatmap() {
 
 	return (false);
 
+}
+
+// ------------------------------------------------------------------- //
+
+void Actor::resetVisualization(bool reset_global_path) {
+	if ( reset_global_path ) {
+		target_manager_.resetPath();
+	}
+	sfm_.reset(); // clear SFM markers
+	path_storage_.reset();
 }
 
 // ------------------------------------------------------------------- //

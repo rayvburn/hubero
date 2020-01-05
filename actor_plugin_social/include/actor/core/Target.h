@@ -174,6 +174,11 @@ public:
 	 */
     void updateCheckpoint();
 
+    /**
+     * @brief Clears the components of the poses vector standing for the global plan checkpoints
+     */
+    void resetPath();
+
 	/**
 	 * @brief Checks whether costmap is initialized. Calls ROS Service Client.
 	 * @return True if costmap is initialized

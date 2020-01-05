@@ -574,6 +574,14 @@ void Target::updateCheckpoint() {
 }
 
 // ------------------------------------------------------------------- //
+void Target::resetPath() {
+	global_planner_.resetPath();
+	has_target_ = false;
+	has_global_plan_ = false;
+	has_new_path_ = true;
+}
+
+// ------------------------------------------------------------------- //
 bool Target::isCostmapInitialized() {
 	return (global_planner_.isCostmapInitialized());
 }

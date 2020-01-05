@@ -40,6 +40,10 @@ public:
 	/// @brief Returns True if internal vectors have just been updated
 	bool isUpdated() const;
 
+	/// @brief Returns True if the path has just been cleared via @ref reset call
+	/// @note Immediately clears the @ref resetted_ flag if it is true
+	bool isResetted();
+
 	/// @brief Returns path
 	/// @return Vector of positions
 	nav_msgs::Path getPath() const;
@@ -74,6 +78,10 @@ private:
 	/// @brief Flag storing information whether internal vectors
 	/// have just been updated
 	bool updated_;
+
+	/// @brief Flag storing information whether the path elements
+	/// have just been cleared
+	bool resetted_;
 
 };
 
