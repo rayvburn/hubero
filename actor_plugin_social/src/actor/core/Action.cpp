@@ -10,17 +10,20 @@
 namespace actor {
 namespace core {
 
-Action::Action(int status_terminal): status_(UNKNOWN), status_int_(0), status_terminal_(status_terminal),
-		termination_brutal_(false) {}
+Action::Action(int status_terminal)
+	: status_int_(UNKNOWN),
+	  status_terminal_(status_terminal),
+	  terminate_(false)
+{}
 
 void Action::start(int status_initial) {
 	status_int_ = status_initial;
 	text_ = "";
-	termination_brutal_ = false;
+	terminate_ = false;
 }
 
 void Action::terminate() {
-	termination_brutal_ = true;
+	terminate_ = true;
 }
 
 int Action::getStatus() const {
@@ -32,7 +35,7 @@ std::string Action::getStatusDescription() const {
 }
 
 bool Action::isTerminated() const {
-	if ( termination_brutal_ || (status_int_ == status_terminal_) ) {
+	if ( terminate_ || (status_int_ == status_terminal_) ) {
 		return (true);
 	}
 	return (false);

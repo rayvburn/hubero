@@ -24,54 +24,58 @@ public:
 		UNKNOWN = 9999u,	 //!< UNKNOWN: initial state
 		IN_PROGRESS = 9998u, //!< IN_PROGRESS: a universal state for actions that consist of an atomic task (that are `non-dividable`)
 		FINISHED = 9997u,    //!< FINISHED: used by all tasks
+		WRONG_STATE = 9996u
 
-		FAILED = 0u,         //!< FAILED: used by all tasks
-		PREPARING,           //!< PREPARING: associated with alignToTargetDirection `state`; may be used by many tasks
-		APPROACHING,         //!< APPROACHING: associated with the movement to the goal direction (\ref actor::core::Actor::manageTargetSingleReachment); may be used by many tasks
-
+//		FAILED = 0u,         //!< FAILED: used by all tasks
+//		PREPARING,           //!< PREPARING: associated with alignToTargetDirection `state`; may be used by many tasks
+//		APPROACHING,         //!< APPROACHING: associated with the movement to the goal direction (\ref actor::core::Actor::manageTargetSingleReachment); may be used by many tasks
+//
 //		FOLLOWING,           //!< FOLLOWING: related to the `object tracking` state when the actor is actually following an object (i.e. the object is moving)
-		OBJECT_NON_REACHABLE,//!< OBJECT_NON_REACHABLE: used in the `object tracking` state when the followed object is located in the place considered as a lethal obstacle on the actor costmap
+//		OBJECT_NON_REACHABLE,//!< OBJECT_NON_REACHABLE: used in the `object tracking` state when the followed object is located in the place considered as a lethal obstacle on the actor costmap
 //		OBJECT_REACHED,      //!< OBJECT_REACHED: used in the `object tracking` state when the followed object is close enough to the actor and the object is static
+//
+//		LYING,               //!< LYING: used in the `lie_down` state, associated with the internal `idle` state
+//		STANDING_UP,         //!< STANDING_UP: used in the `lie_down` state, enabled after state termination request
 
-		LYING,               //!< LYING: used in the `lie_down` state, associated with the internal `idle` state
-		STANDING_UP,         //!< STANDING_UP: used in the `lie_down` state, enabled after state termination request
-
-	} ActionStatus;
+	} SharedStatuses;
 
 	/// \brief FollowObject PTF statuses. A proper status number will be set as a status ID
 	/// by the FollowObject ROS Action Server
-	typedef enum {
-//		UNKNOWN = 0,          //!< UNKNOWN
-		NOT_FOLLOWING,        //!< NOT_FOLLOWING
+	enum class FollowObjectStatus {
 		UNABLE_TO_FIND_PLAN,  //!< UNABLE_TO_FIND_PLAN
 		TRACKING,             //!< TRACKING: the actor is actually following an object (i.e. the object is moving)
 		OBJECT_REACHED,       //!< TARGET_REACHED: the followed object is close enough to the actor and the object is static
 		ROTATE_TOWARDS_OBJECT,//!< ROTATE_TOWARDS_OBJECT
 		NOT_REACHABLE,        //!< NOT_REACHABLE: the followed object is located in the place considered as a lethal obstacle on the actor costmap
 		WAIT_FOR_MOVEMENT,    //!< WAIT_FOR_MOVEMENT
-	} FollowObjectStatus;
+	};
 
-	/// TODO
-	typedef enum {
-		FOLLOWING = 0,
-		// APPROACHING
-		// ROTATE_TOWARDS_OBJECT
+	// TODO
+	enum class SetGoalStatus {
+		FOLLOWING,
+		APPROACHING,
+		ROTATE_TOWARDS_OBJECT,
 		GOAL_NOT_SELECTED,
 		GOAL_REACHED,
-		// NOT_REACHABLE
+		NOT_REACHABLE
+	};
 
-	} SetGoalStatus;
-
+	// TODO
 	enum class LieDownStatus {
-
-		WRONG_STATE = 0, 		// FOLLOWING, for example
 		OBJECT_NON_REACHABLE,
 		ROTATE_TOWARDS_OBJECT,
 		APPROACHING,
 		LYING,
 		STANDING_UP,
 		FINISHED
+	};
 
+	// TODO
+	enum class MovingAroundStatus {
+		APPROACHING,
+		ROTATE_TOWARDS_OBJECT,
+		GOAL_REACHED,
+		FAILED
 	};
 
 	/// \brief Default constructor
@@ -101,14 +105,11 @@ public:
 private:
 
 	/// \brief Stores the current status of the action
-	ActionStatus status_;
-
-	/// TODO:
 	int status_int_;
 	/// TODO:
 	int status_terminal_;
 
-	bool termination_brutal_;
+	bool terminate_;
 
 	/// \brief Stores a potentially useful in debugging status description
 	std::string text_;

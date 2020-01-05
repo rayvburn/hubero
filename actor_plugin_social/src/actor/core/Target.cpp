@@ -1049,6 +1049,7 @@ bool Target::tryToApplyTarget(const ignition::math::Vector3d &pt) {
 		return (true);
 
 	}
+	std::cout << "[FAIL] Target::tryToApplyTarget - plan generation failed | actor: x = " << pose_world_ptr_->Pos().X() << " y: " << pose_world_ptr_->Pos().Y() << "\ttarget: x = " << pt.X() << " y: " << pt.Y() << std::endl;
 	return (false);
 
 }

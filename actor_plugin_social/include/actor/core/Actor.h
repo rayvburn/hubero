@@ -439,9 +439,9 @@ public:
 			setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
 			setStance(ActorStance::ACTOR_STANCE_WALK);
 			action_info_.start();
-			action_info_.setStatus(actor::core::Action::ROTATE_TOWARDS_OBJECT, "rotation towards object direction");
+			action_info_.setStatus(Action::SetGoalStatus::ROTATE_TOWARDS_OBJECT, "rotation towards object direction");
 		} else {
-			action_info_.setStatus(actor::core::Action::NOT_REACHABLE, "a valid global path plan cannot be found");
+			action_info_.setStatus(Action::SetGoalStatus::NOT_REACHABLE, "a valid global path plan cannot be found");
 			action_info_.terminate();
 		}
 
