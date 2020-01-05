@@ -1299,7 +1299,7 @@ bool Actor::manageTargetTracking() {
 	// check if the tracked object still exists in the world since last target selection
 	if ( !target_manager_.isTargetStillReachable() ) {
 		stop_tracking = true;
-		action_info_.setStatus(Action::FollowObjectStatus::NOT_REACHABLE, "the tracked object became unreachable");
+		action_info_.setStatus(Action::FollowObjectStatus::NON_REACHABLE, "the tracked object became unreachable");
 	}
 
 	// change FSM state if needed
@@ -1370,7 +1370,7 @@ bool Actor::manageTargetSingleReachment() {
 	if ( !target_manager_.isPlanGenerated() ) {
 		if ( !target_manager_.generatePathPlan(pose_world_ptr_->Pos(), target_manager_.getTarget()) ) {
 			abandon = true;
-			action_info_.setStatus(Action::SetGoalStatus::NOT_REACHABLE, "the selected goal is not reachable");
+			action_info_.setStatus(Action::SetGoalStatus::NON_REACHABLE, "the selected goal is not reachable");
 		}
 	}
 
@@ -1393,14 +1393,14 @@ bool Actor::manageTargetSingleReachment() {
 	// reachability test 1:
 	// check if there has been some obstacle put into world since last target selection
 	if ( !target_manager_.isTargetStillReachable() ) {
-		action_info_.setStatus(Action::SetGoalStatus::NOT_REACHABLE, "target became unreachable");
+		action_info_.setStatus(Action::SetGoalStatus::NON_REACHABLE, "target became unreachable");
 		abandon = true;
 	}
 
 	// reachability test 2:
 	// check if actor is stuck
 	if ( target_manager_.isTargetNotReachedForTooLong() ) {
-		action_info_.setStatus(Action::SetGoalStatus::NOT_REACHABLE, "actor struggles to reach the goal for too long, terminating...");
+		action_info_.setStatus(Action::SetGoalStatus::NON_REACHABLE, "actor struggles to reach the goal for too long, terminating...");
 		abandon = true;
 	}
 

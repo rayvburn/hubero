@@ -10,38 +10,54 @@
 namespace actor {
 namespace core {
 
+// ------------------------------------------------------------------- //
+
 Action::Action(int status_terminal)
-	: status_int_(UNKNOWN),
+	: status_(UNKNOWN),
 	  status_terminal_(status_terminal),
 	  terminate_(false)
 {}
 
+// ------------------------------------------------------------------- //
+
 void Action::start(int status_initial) {
-	status_int_ = status_initial;
+	status_ = status_initial;
 	text_ = "";
 	terminate_ = false;
 }
+
+// ------------------------------------------------------------------- //
 
 void Action::terminate() {
 	terminate_ = true;
 }
 
+// ------------------------------------------------------------------- //
+
 int Action::getStatus() const {
-	return (status_int_);
+	return (status_);
 }
+
+// ------------------------------------------------------------------- //
 
 std::string Action::getStatusDescription() const {
 	return (text_);
 }
 
+// ------------------------------------------------------------------- //
+
 bool Action::isTerminated() const {
-	if ( terminate_ || (status_int_ == status_terminal_) ) {
+	if ( terminate_ || (status_ == status_terminal_) ) {
 		return (true);
 	}
 	return (false);
 }
 
+// ------------------------------------------------------------------- //
+
 Action::~Action() {}
+
+// ------------------------------------------------------------------- //
 
 } /* namespace core */
 } /* namespace actor */
