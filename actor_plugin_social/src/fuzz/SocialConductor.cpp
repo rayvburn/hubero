@@ -107,6 +107,13 @@ void SocialConductor::apply(const ignition::math::Vector3d &force_combined,	cons
 
 // ------------------------------------------------------------------- //
 
+void SocialConductor::reset() {
+	behaviour_active_str_ = "idle";
+	sf_result_ = ignition::math::Vector3d();
+}
+
+// ------------------------------------------------------------------- //
+
 ignition::math::Vector3d SocialConductor::getSocialVector() const {
 	return (sf_result_);
 }

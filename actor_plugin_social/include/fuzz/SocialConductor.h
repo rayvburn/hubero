@@ -35,6 +35,9 @@ public:
 	void apply(	const ignition::math::Vector3d &force_combined,	const double &dir_alpha,
 				const std::vector<double> &dist_v, const std::vector<std::tuple<std::string, double> > &fuzz_output_v);
 
+	/// \brief Sets social vector and active behaviour to default values
+	void reset();
+
 	/// \brief Returns the superposed social force vector.
 	/// \return Superposed social force vector
 	ignition::math::Vector3d getSocialVector() const;
