@@ -189,6 +189,28 @@ private:
 	void actionLieDownCallback(const actor_sim_action::LieDownGoalConstPtr &goal);
 	void actionLieDownNameCallback(const actor_sim_action::LieDownNameGoalConstPtr &goal);
 
+	/// \note The template method cannot be created - `invalid use of incomplete type`
+	/// \section FollowObjectAction
+	void publishAbort(actionlib::SimpleActionServer<actor_sim_action::FollowObjectAction>* as_ptr);
+	void publishFeedback(actionlib::SimpleActionServer<actor_sim_action::FollowObjectAction>* as_ptr);
+	void publishResult(actionlib::SimpleActionServer<actor_sim_action::FollowObjectAction>* as_ptr);
+	/// \section SetGoal
+	void publishAbort(actionlib::SimpleActionServer<actor_sim_action::SetGoalAction>* as_ptr);
+	void publishFeedback(actionlib::SimpleActionServer<actor_sim_action::SetGoalAction>* as_ptr);
+	void publishResult(actionlib::SimpleActionServer<actor_sim_action::SetGoalAction>* as_ptr);
+	/// \section SetGoalName
+	void publishAbort(actionlib::SimpleActionServer<actor_sim_action::SetGoalNameAction>* as_ptr);
+	void publishFeedback(actionlib::SimpleActionServer<actor_sim_action::SetGoalNameAction>* as_ptr);
+	void publishResult(actionlib::SimpleActionServer<actor_sim_action::SetGoalNameAction>* as_ptr);
+	/// \section LieDown
+	void publishAbort(actionlib::SimpleActionServer<actor_sim_action::LieDownAction>* as_ptr);
+	void publishFeedback(actionlib::SimpleActionServer<actor_sim_action::LieDownAction>* as_ptr);
+	void publishResult(actionlib::SimpleActionServer<actor_sim_action::LieDownAction>* as_ptr);
+	/// \section LieDownName
+	void publishAbort(actionlib::SimpleActionServer<actor_sim_action::LieDownNameAction>* as_ptr);
+	void publishFeedback(actionlib::SimpleActionServer<actor_sim_action::LieDownNameAction>* as_ptr);
+	void publishResult(actionlib::SimpleActionServer<actor_sim_action::LieDownNameAction>* as_ptr);
+
 };
 
 } /* namespace ros_interface */

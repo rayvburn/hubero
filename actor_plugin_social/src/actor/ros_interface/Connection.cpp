@@ -28,12 +28,16 @@ incare::communication::RobotCommands Connection::voice_robot_;
 
 // ------------------------------------------------------------------- //
 
-Connection::Connection() {
+Connection::Connection()
+	:	action_follow_object_ptr_(nullptr),
+		action_set_goal_ptr_(nullptr),
+		action_set_goal_name_ptr_(nullptr),
+		action_lie_down_ptr_(nullptr),
+		action_lie_down_name_ptr_(nullptr)
+{
 
 	// create a TfListener instance
 	tf_listener_ptr_ = std::unique_ptr<tf::TransformListener>(new tf::TransformListener(ros::Duration(5.1)));
-
-	action_follow_object_ptr_ = nullptr;
 
 	// threading - get std::future object out of std::promise
 //	future_obj_ = exit_signal_.get_future();
@@ -370,29 +374,17 @@ void Connection::actionFollowObjectCallback(const actor_sim_action::FollowObject
 
 	// take ownership of the Actor shared_ptr
 	if ( !actor_ptr_.lock()->followObject(goal->object_name) ) {
-		std::cout << "FollowObject request cannot be processed" << std::endl;
-		result.status = actor::core::Action::ABORTED;
-		result.text = "'FollowObject' action request cannot be processed";
-		action_follow_object_ptr_->setAborted(result, "action aborted");
+		publishAbort(action_follow_object_ptr_);
 		return;
 	}
 
 	while ( !actor_ptr_.lock()->getActionInfo().isTerminated() ) {
-		feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-		feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-		action_follow_object_ptr_->publishFeedback(feedback);
+		publishFeedback(action_follow_object_ptr_);
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 	}
 
-	feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-	feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-	action_follow_object_ptr_->publishFeedback(feedback);
-
-	// FINISH
-	result.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-	result.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-
-	action_follow_object_ptr_->setSucceeded(result, "finished");
+	publishFeedback(action_follow_object_ptr_);
+	publishResult(action_follow_object_ptr_);
 
 	std::cout << "\nactionFollowObjectCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
 
@@ -409,29 +401,18 @@ void Connection::actionSetGoalCallback(const actor_sim_action::SetGoalGoalConstP
 
 	if ( !actor_ptr_.lock()->setNewTarget(transformPoint(goal->frame, goal->x_pos, goal->y_pos)) ) {
 		std::cout << "SetGoal request cannot be processed" << std::endl;
-		result.status = actor::core::Action::ABORTED;
-		result.text = "'SetGoal' action request cannot be processed";
-		action_set_goal_ptr_->setAborted(result, "action aborted");
+		publishAbort(action_set_goal_ptr_);
 		return;
 	}
 
 	while ( !actor_ptr_.lock()->getActionInfo().isTerminated() ) {
-		feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-		feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-		action_set_goal_ptr_->publishFeedback(feedback);
+		publishFeedback(action_set_goal_ptr_);
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 	}
 
 	// publish the 'result' as a feedback too
-	feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-	feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-	action_set_goal_ptr_->publishFeedback(feedback);
-
-	// FINISH
-	result.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-	result.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-
-	action_set_goal_ptr_->setSucceeded(result, "finished");
+	publishFeedback(action_set_goal_ptr_);
+	publishResult(action_set_goal_ptr_);
 
 	std::cout << "\nactionSetGoalCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
 
@@ -448,28 +429,17 @@ void Connection::actionSetGoalNameCallback(const actor_sim_action::SetGoalNameGo
 
 	if ( !actor_ptr_.lock()->setNewTarget(goal->object_name) ) {
 		std::cout << "SetGoalName request cannot be processed" << std::endl;
-		result.status = actor::core::Action::ABORTED;
-		result.text = "'SetGoalName' action request cannot be processed";
-		action_set_goal_name_ptr_->setAborted(result, "action aborted");
+		publishAbort(action_set_goal_name_ptr_);
 		return;
 	}
 
 	while ( !actor_ptr_.lock()->getActionInfo().isTerminated() ) {
-		feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-		feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-		action_set_goal_name_ptr_->publishFeedback(feedback);
+		publishFeedback(action_set_goal_name_ptr_);
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 	}
 
-	feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-	feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-	action_set_goal_name_ptr_->publishFeedback(feedback);
-
-	// FINISH
-	result.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-	result.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-
-	action_set_goal_name_ptr_->setSucceeded(result, "finished");
+	publishFeedback(action_set_goal_name_ptr_);
+	publishResult(action_set_goal_name_ptr_);
 
 	std::cout << "\nactionSetGoalNameCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
 
@@ -487,28 +457,17 @@ void Connection::actionLieDownCallback(const actor_sim_action::LieDownGoalConstP
 	ignition::math::Pose3d pose_world = transformPoint(goal->frame, goal->x_pos, goal->y_pos, goal->z_pos);
 	if ( !actor_ptr_.lock()->lieDown(pose_world.Pos().X(), pose_world.Pos().Y(), pose_world.Pos().Z(), goal->rotation) ) {
 		std::cout << "LieDown request cannot be processed" << std::endl;
-		result.status = actor::core::Action::ABORTED;
-		result.text = "'LieDown' action request cannot be processed";
-		action_lie_down_ptr_->setAborted(result, "action aborted");
+		publishAbort(action_lie_down_ptr_);
 		return;
 	}
 
 	while ( !actor_ptr_.lock()->getActionInfo().isTerminated() ) {
-		feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-		feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-		action_lie_down_ptr_->publishFeedback(feedback);
+		publishFeedback(action_lie_down_ptr_);
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 	}
 
-	feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-	feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-	action_lie_down_ptr_->publishFeedback(feedback);
-
-	// FINISH
-	result.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-	result.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-
-	action_lie_down_ptr_->setSucceeded(result, "finished");
+	publishFeedback(action_lie_down_ptr_);
+	publishResult(action_lie_down_ptr_);
 
 	std::cout << "\nactionLieDownCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
 
@@ -520,33 +479,19 @@ void Connection::actionLieDownNameCallback(const actor_sim_action::LieDownNameGo
 
 	std::cout << "\nactionLieDownNameCallback()" << "\t" << namespace_ << "\n" << std::endl;
 
-	actor_sim_action::LieDownNameFeedback feedback;
-	actor_sim_action::LieDownNameResult result;
-
 	if ( !actor_ptr_.lock()->lieDown(goal->object_name, goal->lying_height, goal->rotation) ) {
 		std::cout << "LieDownName request cannot be processed" << std::endl;
-		result.status = actor::core::Action::ABORTED;
-		result.text = "'LieDownName' action request cannot be processed";
-		action_lie_down_name_ptr_->setAborted(result, "action aborted");
+		publishAbort(action_lie_down_name_ptr_);
 		return;
 	}
 
 	while ( !actor_ptr_.lock()->getActionInfo().isTerminated() ) {
-		feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-		feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-		action_lie_down_name_ptr_->publishFeedback(feedback);
+		publishFeedback(action_lie_down_name_ptr_);
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 	}
 
-	feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-	feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-	action_lie_down_name_ptr_->publishFeedback(feedback);
-
-	// FINISH
-	result.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
-	result.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
-
-	action_lie_down_name_ptr_->setSucceeded(result, "finished");
+	publishFeedback(action_lie_down_name_ptr_);
+	publishResult(action_lie_down_name_ptr_);
 
 	std::cout << "\nactionLieDownNameCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
 
@@ -574,7 +519,124 @@ ignition::math::Pose3d Connection::transformPoint(const std::string &frame, cons
 
 // ------------------------------------------------------------------- //
 
-Connection::~Connection() {}
+Connection::~Connection() {
+	delete action_follow_object_ptr_;
+	delete action_set_goal_ptr_;
+	delete action_set_goal_name_ptr_;
+	delete action_lie_down_ptr_;
+	delete action_lie_down_name_ptr_;
+}
+
+// ------------------------------------------------------------------- //
+
+/// \section FollowObjectAction
+void Connection::publishAbort(actionlib::SimpleActionServer<actor_sim_action::FollowObjectAction>* as_ptr) {
+	actor_sim_action::FollowObjectResult result;
+	result.status = actor::core::Action::ABORTED;
+	result.text = "'FollowObject' action request cannot be processed";
+	as_ptr->setAborted(result, "action aborted");
+}
+
+void Connection::publishFeedback(actionlib::SimpleActionServer<actor_sim_action::FollowObjectAction>* as_ptr) {
+	actor_sim_action::FollowObjectFeedback feedback;
+	feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+	feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+	as_ptr->publishFeedback(feedback);
+}
+void Connection::publishResult(actionlib::SimpleActionServer<actor_sim_action::FollowObjectAction>* as_ptr) {
+	actor_sim_action::FollowObjectResult result;
+	result.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+	result.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+	as_ptr->setSucceeded(result, "finished");
+}
+
+// ------------------------------------------------------------------- //
+
+/// \section SetGoal
+void Connection::publishAbort(actionlib::SimpleActionServer<actor_sim_action::SetGoalAction>* as_ptr) {
+	actor_sim_action::SetGoalResult result;
+	result.status = actor::core::Action::ABORTED;
+	result.text = "'SetGoal' action request cannot be processed";
+	as_ptr->setAborted(result, "action aborted");
+}
+void Connection::publishFeedback(actionlib::SimpleActionServer<actor_sim_action::SetGoalAction>* as_ptr) {
+	actor_sim_action::SetGoalFeedback feedback;
+	feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+	feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+	as_ptr->publishFeedback(feedback);
+}
+void Connection::publishResult(actionlib::SimpleActionServer<actor_sim_action::SetGoalAction>* as_ptr) {
+	actor_sim_action::SetGoalResult result;
+	result.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+	result.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+	as_ptr->setSucceeded(result, "finished");
+}
+
+// ------------------------------------------------------------------- //
+
+/// \section SetGoalName
+void Connection::publishAbort(actionlib::SimpleActionServer<actor_sim_action::SetGoalNameAction>* as_ptr) {
+	actor_sim_action::SetGoalNameResult result;
+	result.status = actor::core::Action::ABORTED;
+	result.text = "'SetGoalName' action request cannot be processed";
+	as_ptr->setAborted(result, "action aborted");
+}
+void Connection::publishFeedback(actionlib::SimpleActionServer<actor_sim_action::SetGoalNameAction>* as_ptr) {
+	actor_sim_action::SetGoalNameFeedback feedback;
+	feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+	feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+	as_ptr->publishFeedback(feedback);
+}
+void Connection::publishResult(actionlib::SimpleActionServer<actor_sim_action::SetGoalNameAction>* as_ptr) {
+	actor_sim_action::SetGoalNameResult result;
+	result.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+	result.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+	as_ptr->setSucceeded(result, "finished");
+}
+
+// ------------------------------------------------------------------- //
+
+/// \section LieDown
+void Connection::publishAbort(actionlib::SimpleActionServer<actor_sim_action::LieDownAction>* as_ptr) {
+	actor_sim_action::LieDownResult result;
+	result.status = actor::core::Action::ABORTED;
+	result.text = "'LieDown' action request cannot be processed";
+	as_ptr->setAborted(result, "action aborted");
+}
+void Connection::publishFeedback(actionlib::SimpleActionServer<actor_sim_action::LieDownAction>* as_ptr) {
+	actor_sim_action::LieDownFeedback feedback;
+	feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+	feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+	as_ptr->publishFeedback(feedback);
+}
+void Connection::publishResult(actionlib::SimpleActionServer<actor_sim_action::LieDownAction>* as_ptr) {
+	actor_sim_action::LieDownResult result;
+	result.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+	result.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+	as_ptr->setSucceeded(result, "finished");
+}
+
+// ------------------------------------------------------------------- //
+
+/// \section LieDownName
+void Connection::publishAbort(actionlib::SimpleActionServer<actor_sim_action::LieDownNameAction>* as_ptr) {
+	actor_sim_action::LieDownNameResult result;
+	result.status = actor::core::Action::ABORTED;
+	result.text = "'LieDownName' action request cannot be processed";
+	as_ptr->setAborted(result, "action aborted");
+}
+void Connection::publishFeedback(actionlib::SimpleActionServer<actor_sim_action::LieDownNameAction>* as_ptr) {
+	actor_sim_action::LieDownNameFeedback feedback;
+	feedback.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+	feedback.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+	as_ptr->publishFeedback(feedback);
+}
+void Connection::publishResult(actionlib::SimpleActionServer<actor_sim_action::LieDownNameAction>* as_ptr) {
+	actor_sim_action::LieDownNameResult result;
+	result.status = static_cast<int>(actor_ptr_.lock()->getActionInfo().getStatus());
+	result.text = actor_ptr_.lock()->getActionInfo().getStatusDescription();
+	as_ptr->setSucceeded(result, "finished");
+}
 
 // ------------------------------------------------------------------- //
 
