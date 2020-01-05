@@ -24,7 +24,8 @@ public:
 		UNKNOWN = 9999u,	 //!< UNKNOWN: initial state
 		IN_PROGRESS = 9998u, //!< IN_PROGRESS: a universal state for actions that consist of an atomic task (that are `non-dividable`)
 		FINISHED = 9997u,    //!< FINISHED: used by all tasks
-		WRONG_STATE = 9996u
+		WRONG_STATE = 9996u,
+		ABORTED = 9995u
 
 //		FAILED = 0u,         //!< FAILED: used by all tasks
 //		PREPARING,           //!< PREPARING: associated with alignToTargetDirection `state`; may be used by many tasks

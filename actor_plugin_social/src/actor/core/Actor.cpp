@@ -388,8 +388,82 @@ bool Actor::isTargetReached() {
 // ------------------------------------------------------------------- //
 
 bool Actor::moveAround() {
-	// FIXME:
-	return (false);
+
+	// FIXME: evaluate the current state correctly
+	if ( fsm_.getState() == ActorState::ACTOR_STATE_MOVE_AROUND ||
+		 fsm_.getState() == ActorState::ACTOR_STATE_ALIGN_TARGET ) // valid just after switching to move around
+	{
+		return (false);
+	} else if ( fsm_.getState() == ActorState::ACTOR_STATE_TARGET_REACHING ) {
+		return (false);
+	}
+
+	// NOTE: at the moment switching directly from
+	// the "FollowObject" state to the "MoveAround"
+	// state is not allowed -
+	// an explicit "stop_following" service call
+	// must be executed
+	if ( target_manager_.isFollowing() ) {
+		// NOTE: uncommenting allows direct switch (described above)
+		//target_manager_.stopFollowing();
+		return (false);
+	}
+
+	// reset the current target
+	if ( target_manager_.isTargetChosen() ) {
+		target_manager_.abandonTarget();
+	}
+
+	// clear the target queue
+	while ( !target_manager_.isTargetQueueEmpty() ) {
+		target_manager_.setNewTarget(); 	// pull out a target from the queue
+		target_manager_.abandonTarget();	// abandon it
+	}
+
+	action_info_.start();
+	action_info_.setStatus(Action::MovingAroundStatus::ROTATE_TOWARDS_OBJECT, "rotation towards object direction");
+
+	// NOTE: to make actor face the target first,
+	// there must be an order of calls as below:
+	setState(ActorState::ACTOR_STATE_MOVE_AROUND);
+	setState(ActorState::ACTOR_STATE_ALIGN_TARGET);
+	// this forces FSM to back to follow object state after
+	// successful alignment (previous state is equal to
+	// `follow_object` after alignment)
+	//
+	// setStance after setState because setState updates default
+	// stance for a given state
+	setStance(ActorStance::ACTOR_STANCE_WALK);
+
+	return (true);
+}
+
+// ------------------------------------------------------------------- //
+
+bool Actor::moveAroundStop() {
+
+	// evaluate if the Actor actually operates in "MoveAround" state
+	if ( fsm_.getState() != ActorState::ACTOR_STATE_MOVE_AROUND &&
+		 fsm_.getState() != ActorState::ACTOR_STATE_ALIGN_TARGET ) // valid just after switching to move around
+	{
+		return (false);
+	}
+
+	// reset the current target
+	if ( target_manager_.isTargetChosen() ) {
+		target_manager_.abandonTarget();
+	}
+
+	action_info_.setStatus(Action::FINISHED, "finished operation");
+
+	// update the FSM state and the stance
+	setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
+	setStance(ActorStance::ACTOR_STANCE_STAND);
+
+	sfm_.reset();
+	path_storage_.reset();
+
+	return (true);
 }
 
 // ------------------------------------------------------------------- //
@@ -770,7 +844,10 @@ void Actor::stateHandlerLieDown() {
 		*pose_world_ptr_ = lie_down_.computePoseFinishedLying();
 		*pose_world_prev_ptr_ = *pose_world_ptr_;
 
-		// no need to reset SFM here
+		// no need to reset SFM here,
+		// `setStance` is not needed either because STAND stance
+		// is active during lying and after stand up also (different
+		// orientation)
 		setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
 		action_info_.terminate();
 

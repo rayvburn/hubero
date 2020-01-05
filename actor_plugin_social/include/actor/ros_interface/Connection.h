@@ -110,6 +110,8 @@ private:
 	bool srvLieDownCallback			(actor_sim_srv::LieDown::Request		&req,	actor_sim_srv::LieDown::Response 		&resp);
 	bool srvLieDownNameCallback		(actor_sim_srv::LieDownName::Request	&req,	actor_sim_srv::LieDownName::Response 	&resp);
 	bool srvLieDownStopCallback		(std_srvs::Trigger::Request				&req,	std_srvs::Trigger::Response 			&resp);
+	bool srvMoveAroundCallback		(std_srvs::Trigger::Request 			&req, 	std_srvs::Trigger::Response 			&resp);
+	bool srvMoveAroundStopCallback	(std_srvs::Trigger::Request 			&req, 	std_srvs::Trigger::Response 			&resp);
 
 	/// \brief Switcher of a debug info printing
 	bool srvSetDebugSFMCallback		(std_srvs::SetBool::Request				&req,	std_srvs::SetBool::Response 			&resp);
@@ -159,6 +161,8 @@ private:
 	ros::ServiceServer srv_lie_down_;
 	ros::ServiceServer srv_lie_down_name_;
 	ros::ServiceServer srv_lie_down_stop_;
+	ros::ServiceServer srv_move_around_;
+	ros::ServiceServer srv_move_around_stop_;
 
 	/// \brief Only for debugging purposes
 	ros::ServiceServer srv_switch_debug_sfm_;

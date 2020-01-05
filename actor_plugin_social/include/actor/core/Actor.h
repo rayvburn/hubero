@@ -138,6 +138,7 @@ public:
 
 	/// TODO:
 	bool moveAround();
+	bool moveAroundStop();
 
 	/// \brief Method to set new target for actor - object's name
 	/// \note Object tracking will not run properly when a static
