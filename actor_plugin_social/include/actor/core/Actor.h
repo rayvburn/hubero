@@ -20,6 +20,7 @@
 #include <actor/core/Enums.h>
 #include <actor/core/FSM.h>
 #include <actor/core/LieDownHelper.h>
+#include <actor/core/FollowObjectHelper.h>
 #include <actor/core/Path.h>
 #include <actor/core/Target.h>
 #include <actor/core/Action.h>
@@ -393,8 +394,11 @@ private:
     /// plan to be generated to a newly chosen target.
     Target target_manager_;
 
-    /// \brief Helper class to handle LIE_DOWN state
+    /// \brief Helper class to handle `LieDown` state
     LieDownHelper lie_down_;
+
+    /// \brief Helper class to handle `FollowObject` state
+    FollowObjectHelper follow_object_;
 
     /// \brief Based on actors parameters computes fuzzy
     /// output representing social behaviour
@@ -412,19 +416,6 @@ private:
 
     /// \brief Stores a status of the current action
     Action action_info_;
-
-    // -------------------------------------------------------
-    // target tracking helpers
-    /// \brief Stores the time of the last global path calculation while
-    /// waiting for the tracked object to became achievable again
-    gazebo::common::Time foll_obj_time_last_path_calculation_;
-    /// \brief Counts number of tries of the global path calculation
-    int foll_obj_path_calc_tries_num_;
-    /// \brief Evaluates whether to skip the current iteration and wait
-    /// for the tracked object to became available
-    bool followObjectDoWait();
-
-    // -------------------------------------------------------
 
 public:
 
@@ -446,7 +437,7 @@ public:
 			action_info_.start();
 			action_info_.setStatus(Action::SetGoalStatus::ROTATE_TOWARDS_OBJECT, "rotation towards object direction");
 		} else {
-			action_info_.setStatus(Action::SetGoalStatus::NOT_REACHABLE, "a valid global path plan cannot be found");
+			action_info_.setStatus(Action::SetGoalStatus::NON_REACHABLE, "a valid global path plan cannot be found");
 			action_info_.terminate();
 		}
 

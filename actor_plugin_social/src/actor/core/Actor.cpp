@@ -475,8 +475,8 @@ bool Actor::followObject(const std::string &object_name) {
 
 		action_info_.start();
 		action_info_.setStatus(Action::FollowObjectStatus::ROTATE_TOWARDS_OBJECT, "rotation towards object direction");
-		// FIXME:
-		foll_obj_path_calc_tries_num_ = 10;
+
+		follow_object_.start();
 
 		ignored_models_.push_back(object_name);
 		// NOTE: to make actor face the target first,
@@ -513,8 +513,9 @@ bool Actor::followObjectStop() {
 	}
 
 	setState(ActorState::ACTOR_STATE_STOP_AND_STARE);
-	sfm_.reset(); // clear SFM markers
-	target_manager_.resetPath();
+
+	action_info_.terminate();
+	resetVisualization();
 
 	return (true);
 
@@ -599,7 +600,11 @@ bool Actor::lieDown(const double &x_pos, const double &y_pos, const double &z_po
 
 bool Actor::lieDownStop() {
 
+	if ( !lie_down_.isLyingDown() ) {
+		return (false);
+	}
 	lie_down_.stopLying();
+	action_info_.terminate();
 	// no need to reset internal state (configuration variables: poses etc)
 	return (true);
 
@@ -1252,7 +1257,7 @@ bool Actor::manageTargetTracking() {
 	if ( !target_manager_.updateFollowedTarget() ) {
 		// recently followed object is not reachable anymore (object deleted
 		// from the simulation or global plan cannot be found)
-		if ( followObjectDoWait() ) {
+		if ( follow_object_.doWait(world_ptr_->SimTime()) ) {
 
 			action_info_.setStatus(Action::FollowObjectStatus::WAIT_FOR_MOVEMENT, "tracked object is not reachable now, waiting...");
 			// make actor stop;
@@ -1781,25 +1786,6 @@ void Actor::resetVisualization(bool reset_global_path) {
 	}
 	sfm_.reset(); // clear SFM markers
 	path_storage_.reset();
-}
-
-// ------------------------------------------------------------------- //
-
-bool Actor::followObjectDoWait() {
-	if ( (world_ptr_->SimTime() - foll_obj_time_last_path_calculation_).Double() < 2.0 ) {
-		return (true);
-	}
-
-	// time update
-	foll_obj_time_last_path_calculation_ = world_ptr_->SimTime();
-
-	if ( foll_obj_path_calc_tries_num_-- ) {
-		return (true);
-	} else {
-		// enough...
-		return (false);
-	}
-
 }
 
 // ------------------------------------------------------------------- //
