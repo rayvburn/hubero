@@ -42,7 +42,7 @@
 #include <sfm/vis/Arrow.h>
 #include <sfm/vis/GridForce.h>
 #include <sfm/vis/LineList.h>
-#include <sfm/vis/Text.h> // FIXME: path
+#include <sfm/vis/Text.h>
 #include <sfm/vis/Heatmap.h>
 
 // Gazebo
@@ -60,13 +60,6 @@
 // Extra
 #include <sfm/core/SFMDebug.h>
 #include <sfm/core/SocialForceModel.h>
-
-
-// Processor - checking fuzzylite behavior
-// TODO: change folder
-
-// ROS interface
-//#include "ActorROSInterface.h" // FIXME: old
 
 // -------------------------
 
@@ -121,7 +114,7 @@ public:
 	/// 		   ellipse's center towards Actor's right-hand side
 	void initInflator(const double &semi_major, const double &semi_minor, const double &center_offset_x, const double &center_offset_y);
 
-	/// TODO:
+	/// \brief Initializes the Social Force Model instance
 	void initSFM();
 
 	/// \brief Configure actor's initial pose, stance,
@@ -133,12 +126,10 @@ public:
 
 	/* SCROLL DOWN for a `setNewTarget()` template */
 
-	/// \brief Calls `target_manager_` method to evaluate the `target_reached` flag.
-	/// DEPRECATED
-	bool isTargetReached();
-
-	/// TODO:
+	/// \brief Starts `MoveAround` state operation
 	bool moveAround();
+
+	/// \brief Finishes `MoveAround` state operation
 	bool moveAroundStop();
 
 	/// \brief Method to set new target for actor - object's name
@@ -176,10 +167,8 @@ public:
 	/// \brief Get velocity vector (linear x, linear y and angular `yaw`)
 	std::array<double, 3> getVelocity() const;
 
-	/// \brief Returns status of the current action
-	/// DEPRECATED: delete
-	int getActionStatus() const;
-	// FIXME:
+	/// \brief Returns the Action instance to allow
+	/// the current status evaluation
 	const Action getActionInfo() const { return (action_info_); }
 
 	/// \brief Set actor's new stance type (first see which are allowed)

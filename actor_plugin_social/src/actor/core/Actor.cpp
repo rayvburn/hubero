@@ -381,12 +381,6 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 
 // ------------------------------------------------------------------- //
 
-bool Actor::isTargetReached() {
-	return (target_manager_.isTargetReached());
-}
-
-// ------------------------------------------------------------------- //
-
 bool Actor::moveAround() {
 
 	// FIXME: evaluate the current state correctly
@@ -622,8 +616,8 @@ std::array<double, 3> Actor::getVelocity() const {
 
 // ------------------------------------------------------------------- //
 
-int Actor::getActionStatus() const {
-	return (action_info_.getStatus());
+const Action Actor::getActionInfo() const {
+	return (action_info_);
 }
 
 // ------------------------------------------------------------------- //
