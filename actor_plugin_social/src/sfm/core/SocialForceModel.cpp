@@ -1880,6 +1880,15 @@ void SocialForceModel::applyNonlinearOperations(const double &dist_closest_stati
 	// truncate the force value to max to prevent strange speedup of an actor
 	double force_combined_magnitude_init = force_combined_.Length();
 
+	// TODO: additional factor which weakens internal component when there is
+	// an obstacle close to the actor
+	// FIXME: experimental
+	double internal_weakening_factor = std::exp(0.75 * dist_closest) - 1.0;
+	if ( internal_weakening_factor > 1.0 ) {
+		internal_weakening_factor = 1.0;
+	}
+	force_internal_ *= internal_weakening_factor;
+
 	// evaluate force magnitude
 	if ( force_combined_magnitude_init >= force_max_ ) {
 
