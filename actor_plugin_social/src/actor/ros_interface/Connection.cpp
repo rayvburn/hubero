@@ -355,14 +355,31 @@ bool Connection::srvMoveAroundStopCallback(std_srvs::Trigger::Request &req, std_
 bool Connection::srvGetPoseCallback(actor_sim_srv::GetPose::Request &req, actor_sim_srv::GetPose::Response &resp) {
 
 	std::cout << "\nsrvGetPoseCallback()" << "\t" << namespace_ << "\n" << std::endl;
+
 	// take ownership of the Actor shared_ptr
 	std::array<double, 6> pose = actor_ptr_.lock()->getPose();
-	resp.x 		= pose.at(0);
-	resp.y 		= pose.at(1);
-	resp.z 		= pose.at(2);
-	resp.roll 	= pose.at(3);
-	resp.pitch 	= pose.at(4);
-	resp.yaw 	= pose.at(5);
+
+	// this is not necessary if the pose must be expressed in the actor global frame;
+	// transformPose throws an exception if the `req.frame` not exists
+	geometry_msgs::PoseStamped pose_frame;
+	tf_listener_ptr_->transformPose(req.frame,
+									actor::ros_interface::Conversion::convertIgnPoseToPoseStamped(ignition::math::Pose3d(pose.at(0), pose.at(1), pose.at(2), pose.at(3), pose.at(4), pose.at(5))),
+									pose_frame);
+
+	// convert to RPY
+	ignition::math::Quaterniond quat(pose_frame.pose.orientation.w,
+									 pose_frame.pose.orientation.x,
+									 pose_frame.pose.orientation.y,
+									 pose_frame.pose.orientation.z);
+
+	// fill the `resp` structure
+	resp.x 		= pose_frame.pose.position.x;
+	resp.y 		= pose_frame.pose.position.y;
+	resp.z 		= pose_frame.pose.position.z;
+	resp.roll 	= quat.Roll();
+	resp.pitch 	= quat.Pitch();
+	resp.yaw 	= quat.Yaw();
+
 	return (true);
 
 }
