@@ -169,7 +169,7 @@ public:
 
 	/// \brief Returns the Action instance to allow
 	/// the current status evaluation
-	const Action getActionInfo() const { return (action_info_); }
+	const Action getActionInfo() const;
 
 	/// \brief Set actor's new stance type (first see which are allowed)
 	/// \return True if stance is valid
