@@ -82,6 +82,7 @@ void Connection::initServices() {
 	srv_lie_down_stop_	= nh_ptr_->advertiseService(namespace_ + "/lie_down_stop",	&Connection::srvLieDownStopCallback, this);
 	srv_move_around_	= nh_ptr_->advertiseService(namespace_ + "/move_around",	&Connection::srvMoveAroundCallback, this);
 	srv_move_around_stop_= nh_ptr_->advertiseService(namespace_ + "/move_around_stop",	&Connection::srvMoveAroundStopCallback, this);
+	srv_get_pose_		= nh_ptr_->advertiseService(namespace_ + "/get_pose", 		&Connection::srvGetPoseCallback, this);
 
 	srv_switch_debug_sfm_= nh_ptr_->advertiseService(namespace_ + "/debug_sfm", 	&Connection::srvSetDebugSFMCallback, this);
 
@@ -345,6 +346,23 @@ bool Connection::srvMoveAroundStopCallback(std_srvs::Trigger::Request &req, std_
 	std::cout << "\nsrvMoveAroundStopCallback()" << "\t" << namespace_ << "\n" << std::endl;
 	// take ownership of the Actor shared_ptr
 	resp.success = actor_ptr_.lock()->moveAroundStop();
+	return (true);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Connection::srvGetPoseCallback(actor_sim_srv::GetPose::Request &req, actor_sim_srv::GetPose::Response &resp) {
+
+	std::cout << "\nsrvGetPoseCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	// take ownership of the Actor shared_ptr
+	std::array<double, 6> pose = actor_ptr_.lock()->getPose();
+	resp.x 		= pose.at(0);
+	resp.y 		= pose.at(1);
+	resp.z 		= pose.at(2);
+	resp.roll 	= pose.at(3);
+	resp.pitch 	= pose.at(4);
+	resp.yaw 	= pose.at(5);
 	return (true);
 
 }

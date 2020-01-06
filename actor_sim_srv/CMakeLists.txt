@@ -65,6 +65,7 @@ add_service_files(
   SetStance.srv
   LieDown.srv
   LieDownName.srv
+  GetPose.srv
 )
 
 ## Generate actions in the 'action' folder

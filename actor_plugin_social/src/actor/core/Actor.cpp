@@ -616,6 +616,26 @@ std::array<double, 3> Actor::getVelocity() const {
 
 // ------------------------------------------------------------------- //
 
+std::array<double, 6> Actor::getPose() const {
+
+	std::array<double, 6> array;
+	array.at(0) = pose_world_ptr_->Pos().X();
+	array.at(1) = pose_world_ptr_->Pos().Y();
+	array.at(2) = pose_world_ptr_->Pos().Z();
+	array.at(3) = pose_world_ptr_->Rot().Roll();
+	array.at(4) = pose_world_ptr_->Rot().Pitch();
+
+	// transform actor orientation to world coordinate system
+	ignition::math::Angle yaw_actor_w(pose_world_ptr_->Rot().Yaw() - IGN_PI_2);
+	yaw_actor_w.Normalize();
+	array.at(5) = yaw_actor_w.Radian();
+
+	return (array);
+
+}
+
+// ------------------------------------------------------------------- //
+
 const Action Actor::getActionInfo() const {
 	return (action_info_);
 }

@@ -167,6 +167,12 @@ public:
 	/// \brief Get velocity vector (linear x, linear y and angular `yaw`)
 	std::array<double, 3> getVelocity() const;
 
+	/// \brief Returns pose vector (3 translation components
+	/// and 3 rotation components (roll, pitch and yaw) expressed
+	/// in the world coordinate system (which is rotated relative
+	/// to the actor coordinate system)
+	std::array<double, 6> getPose() const;
+
 	/// \brief Returns the Action instance to allow
 	/// the current status evaluation
 	const Action getActionInfo() const;
