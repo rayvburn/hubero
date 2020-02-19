@@ -97,7 +97,7 @@ private:
 
 	/// \brief Trapezoidal term related to the case when `beta` object's
 	/// direction points outwards relative to the `alpha` direction
-	TrapezoidLocDep trapezoid_out_{"outwards", 10};
+	TrapezoidLocDep trapezoid_out_{"outwards", 10}; 	// `intersection`
 
 	/// \brief Trapezoidal term related to the case when `beta` object's
 	/// direction crosses in front of the `alpha` center
@@ -109,7 +109,7 @@ private:
 
 	/// \brief Trapezoidal term related to the case when `beta` object's
 	/// direction points in the same direction as the `alpha`'s
-	TrapezoidLocIndep trapezoid_eq_{"equal", 10, 20};
+	TrapezoidLocIndep trapezoid_eq_{"equal", 10, 20}; 	// `intersection`, `interval`
 
 	/// \brief Trapezoidal term related to the case when `beta` object's
 	/// direction points in the opposite direction as the `alpha`'s

@@ -468,7 +468,8 @@ void Connection::actionSetGoalNameCallback(const actor_sim_action::SetGoalNameGo
 		return;
 	}
 
-	while ( !actor_ptr_.lock()->getActionInfo().isTerminated() ) {
+	while ( !actor_ptr_.lock()->getActionInfo().isTerminated() &&
+			 action_set_goal_name_ptr_->isActive() ) {
 		publishFeedback(action_set_goal_name_ptr_);
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 	}

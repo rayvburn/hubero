@@ -1120,18 +1120,13 @@ void Actor::applyUpdate(const double &dist_traveled) {
 	visualizePositionData();
 
 	// evaluate whether a status of the actual path container has changed
-	if ( path_storage_.isUpdated() ) {
+	if ( path_storage_.isUpdated() || path_storage_.isResetted() ) {
 
 		// publish closest distance
 		std_msgs::Float32 msg;
 		msg.data = path_storage_.getDistance();
 		stream_.publishData(ActorObstacleMsgType::ACTOR_OBSTACLE_DIST_CLOSEST, msg);
 		// publish real path
-		stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH_REAL, path_storage_.getPath());
-
-	} else if ( path_storage_.isResetted() ) {
-
-		// publish an empty path
 		stream_.publishData(ActorNavMsgType::ACTOR_NAV_PATH_REAL, path_storage_.getPath());
 
 	}
@@ -1163,6 +1158,15 @@ bool Actor::manageTargetMovingAround() {
 	}
 
 	// check whether a target has plan generated
+	// NOTE: in the specification there is no such partial predicate
+	// because isPlanGenerated condition is check only because the fact
+	// that Gazebo and ROS do not start simultaneously and initial
+	// targets must be set `in advance` (without a plan generation
+	// because the costmap is not running yet). Although the plan
+	// for the first target after startup is calculated during the first
+	// `moveAround` state execution.
+	// to make things short - this is just a hack for a implementation
+	// specific problem and is not explicitly presented in the specification
 	if ( !target_manager_.isPlanGenerated() ) {
 		if ( !target_manager_.generatePathPlan(pose_world_ptr_->Pos(), target_manager_.getTarget()) ) {
 			target_manager_.abandonTarget();
@@ -1440,6 +1444,8 @@ double Actor::move(const double &dt) {
 	sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_.getLinear(),
 						    target_manager_.getCheckpoint(),
 						    *common_info_ptr_.get(), dt, ignored_models_);
+	// TODO: evaluate actors behaviour while using the interaction model
+	// prepared for static obstacles
 
 	// actual `social` vector
 	ignition::math::Vector3d human_action_force(0.0, 0.0, 0.0);
