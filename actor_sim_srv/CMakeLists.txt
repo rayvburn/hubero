@@ -10,6 +10,7 @@ project(actor_sim_srv)
 find_package(catkin REQUIRED COMPONENTS
     roscpp
     rospy
+    std_srvs
     std_msgs
     message_generation
     )
@@ -113,7 +114,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES actor_services
-#  CATKIN_DEPENDS other_catkin_pkg
+  CATKIN_DEPENDS std_msgs std_srvs
 #  DEPENDS system_lib
 )
 
