@@ -24,12 +24,15 @@ public:
 		sub_feedback_ = nh_ptr->subscribe(actor_ns_action_name + "/feedback", 10, &ActionClientExtended::callbackFeedback, this);
 		feedback_status_ = 0;
 
-//		if ( !waitForServer(ros::Duration(10.0)) ) {
-//			 // FIXME: error
-//		}
+        // Wait for server to be online
+        while ( !this->waitForServer(ros::Duration(5.0)) ) {
+            ROS_INFO("%s: Waiting for the action server to come up: ", actor_ns_action_name.c_str());
+        }
+        ROS_INFO("%s: Action server started: ", actor_ns_action_name.c_str());
 
 	}
 
+	// types are hard-coded in the action files
 	int32_t getFeedbackStatus() { return (feedback_status_); }
 	std::string getFeedbackText() {	return (feedback_txt_); }
 

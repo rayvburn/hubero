@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     rospy
     actionlib
+    actionlib_msgs
     actor_sim_srv
     actor_sim_action
     )
@@ -107,7 +108,7 @@ include_directories(${catkin_INCLUDE_DIRS})
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES actor_sim_api
-  CATKIN_DEPENDS roscpp actionlib actor_sim_srv actor_sim_action
+  CATKIN_DEPENDS roscpp actionlib actionlib_msgs actor_sim_srv actor_sim_action
 #  DEPENDS system_lib
 )
 
@@ -129,6 +130,7 @@ add_library(${PROJECT_NAME} SHARED
 
   include/actor_sim_api/ActorAPI.h 
   include/actor_sim_api/ActorAction.h 
+  include/actor_sim_api/ActionClientExtended.h
 
   src/actor_sim_api/ActorAPI.cpp 
   src/actor_sim_api/ActorAction.cpp 
@@ -162,6 +164,7 @@ add_library(${PROJECT_NAME} SHARED
 
 target_link_libraries(${PROJECT_NAME} 
 
+  ${actionlib_LIBRARIES}
   ${GAZEBO_LIBRARIES}  
   ${roscpp_LIBRARIES} 
   ${tf_LIBRARIES}

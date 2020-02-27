@@ -30,12 +30,12 @@ public:
 	void setGoal(const double &x, const double &y, const std::string &frame = "world");
 	void setGoalName(const std::string &name_object);
 
-	// tuple components' types are hard-coded in the action files
-	std::tuple<int32_t, std::string> getFeedbackFollowObject();
-	std::tuple<int32_t, std::string> getFeedbackLieDown();
-	std::tuple<int32_t, std::string> getFeedbackLieDownName();
-	std::tuple<int32_t, std::string> getFeedbackSetGoal();
-	std::tuple<int32_t, std::string> getFeedbackSetGoalName();
+	// statuses reading etc.
+	ActionClientExtended<actor_sim_action::FollowObjectAction, actor_sim_action::FollowObjectActionFeedbackConstPtr>* 	getClientPtrFollowObject();
+	ActionClientExtended<actor_sim_action::LieDownAction, actor_sim_action::LieDownActionFeedbackConstPtr>* 			getClientPtrLieDown();
+	ActionClientExtended<actor_sim_action::LieDownNameAction, actor_sim_action::LieDownNameActionFeedbackConstPtr>* 	getClientPtrLieDownName();
+	ActionClientExtended<actor_sim_action::SetGoalAction, actor_sim_action::SetGoalActionFeedbackConstPtr>* 			getClientPtrSetGoal();
+	ActionClientExtended<actor_sim_action::SetGoalNameAction, actor_sim_action::SetGoalNameActionFeedbackConstPtr>* 	getClientPtrSetGoalName();
 
 	// it would be the best if feedback can be achieved via a single
 	// method for every simple action client;

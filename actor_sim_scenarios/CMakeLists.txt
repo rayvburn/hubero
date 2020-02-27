@@ -13,9 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
     actor_sim_api
     )
 
-# "fatal error: ros/ros.h: No such file or directory"
-include_directories(${catkin_INCLUDE_DIRS})
-
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -118,6 +115,10 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 
+# "fatal error: ros/ros.h: No such file or directory"
+#include_directories(${catkin_INCLUDE_DIRS})
+include_directories(${catkin_INCLUDE_DIRS} ${actor_sim_api_INCLUDE_DIRS})
+
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/actor_services.cpp
@@ -150,9 +151,11 @@ add_executable(living_room_node src/living_room_node.cpp)
 #   ${catkin_LIBRARIES}
 # )
 target_link_libraries(living_room_node
+
 	${actor_sim_api_LIBRARIES}
 	${roscpp_LIBRARIES} 
 	${catkin_LIBRARIES}
+
 )
 
 #############

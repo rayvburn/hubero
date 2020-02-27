@@ -5,7 +5,6 @@
  *      Author: rayvburn
  */
 
-//#include "../../include/actor_sim_api/ActorAction.h"
 #include <actor_sim_api/ActorAction.h>
 
 // ---------------------------------------------------------------------------------
@@ -57,7 +56,6 @@ void ActorAction::lieDownName(const std::string &name_object, const double &lyin
 	goal.lying_height = lying_height;
 	goal.rotation = rotation;
 	ac_lie_down_name_ptr_->sendGoal(goal);
-
 }
 
 // ---------------------------------------------------------------------------------
@@ -83,35 +81,28 @@ void ActorAction::setGoalName(const std::string &name_object) {
 }
 
 // ---------------------------------------------------------------------------------
-std::tuple<int32_t, std::string> ActorAction::getFeedbackFollowObject() {
-	return (std::make_tuple(ac_follow_object_ptr_->getFeedbackStatus(), ac_follow_object_ptr_->getFeedbackText()));
-}
+ActionClientExtended<actor_sim_action::FollowObjectAction, actor_sim_action::FollowObjectActionFeedbackConstPtr>*
+ActorAction::getClientPtrFollowObject()	{ return (ac_follow_object_ptr_); }
 // ---------------------------------------------------------------------------------
-std::tuple<int32_t, std::string> ActorAction::getFeedbackLieDown() {
-	return (std::make_tuple(ac_lie_down_ptr_->getFeedbackStatus(), ac_lie_down_ptr_->getFeedbackText()));
-}
+ActionClientExtended<actor_sim_action::LieDownAction, actor_sim_action::LieDownActionFeedbackConstPtr>*
+ActorAction::getClientPtrLieDown() 		{ return (ac_lie_down_ptr_); }
 // ---------------------------------------------------------------------------------
-std::tuple<int32_t, std::string> ActorAction::getFeedbackLieDownName() {
-	return (std::make_tuple(ac_lie_down_name_ptr_->getFeedbackStatus(), ac_lie_down_name_ptr_->getFeedbackText()));
-}
+ActionClientExtended<actor_sim_action::LieDownNameAction, actor_sim_action::LieDownNameActionFeedbackConstPtr>*
+ActorAction::getClientPtrLieDownName() 	{ return (ac_lie_down_name_ptr_); }
 // ---------------------------------------------------------------------------------
-std::tuple<int32_t, std::string> ActorAction::getFeedbackSetGoal() {
-	return (std::make_tuple(ac_set_goal_ptr_->getFeedbackStatus(), ac_set_goal_ptr_->getFeedbackText()));
-}
+ActionClientExtended<actor_sim_action::SetGoalAction, actor_sim_action::SetGoalActionFeedbackConstPtr>*
+ActorAction::getClientPtrSetGoal() 		{ return (ac_set_goal_ptr_); }
 // ---------------------------------------------------------------------------------
-std::tuple<int32_t, std::string> ActorAction::getFeedbackSetGoalName() {
-	return (std::make_tuple(ac_set_goal_name_ptr_->getFeedbackStatus(), ac_set_goal_name_ptr_->getFeedbackText()));
-}
+ActionClientExtended<actor_sim_action::SetGoalNameAction, actor_sim_action::SetGoalNameActionFeedbackConstPtr>*
+ActorAction::getClientPtrSetGoalName() 	{ return (ac_set_goal_name_ptr_); }
 // ---------------------------------------------------------------------------------
 
 ActorAction::~ActorAction() {
-
 	delete(ac_follow_object_ptr_);
 	delete(ac_lie_down_ptr_);
 	delete(ac_lie_down_name_ptr_);
 	delete(ac_set_goal_ptr_);
 	delete(ac_set_goal_name_ptr_);
-
 }
 
 // ---------------------------------------------------------------------------------
