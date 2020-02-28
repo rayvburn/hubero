@@ -1804,7 +1804,7 @@ void Actor::resetVisualization(bool reset_global_path) {
 	}
 	sfm_.reset(); // clear SFM markers
 	social_conductor_.reset();
-	path_storage_.reset();
+//	path_storage_.reset();
 }
 
 // ------------------------------------------------------------------- //

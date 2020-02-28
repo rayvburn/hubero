@@ -35,7 +35,7 @@ typedef enum {
 } ActorState;
 
 /// \brief Actor's initial state
-static const ActorState ACTOR_STATE_INITIAL = ACTOR_STATE_MOVE_AROUND;
+static const ActorState ACTOR_STATE_INITIAL = ACTOR_STATE_TARGET_REACHING; // ACTOR_STATE_MOVE_AROUND; // ACTOR_STATE_STOP_AND_STARE
 
 // -------------------------
 

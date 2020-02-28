@@ -14,7 +14,7 @@ namespace core {
 
 // ------------------------------------------------------------------- //
 
-Path::Path(const double &path_resolution): resolution_(path_resolution), updated_(false) {}
+Path::Path(const double &path_resolution): resolution_(path_resolution), updated_(false), resetted_(false) {}
 
 // ------------------------------------------------------------------- //
 

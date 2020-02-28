@@ -37,6 +37,10 @@ int main(int argc, char** argv) {
 	while ( !(actor1.getClientPtrSetGoal()->getState() == State::SUCCEEDED &&
 			  actor2.getClientPtrSetGoal()->getState() == State::SUCCEEDED) )
 	{
+		if ( ros::ok() ) {
+			ROS_INFO("Node stopped!");
+			return (0);
+		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 	ROS_INFO("1st synchronization!");
@@ -50,6 +54,10 @@ int main(int argc, char** argv) {
 	while ( !(actor1.getClientPtrSetGoal()->getState() == State::SUCCEEDED &&
 			  actor2.getClientPtrSetGoal()->getState() == State::SUCCEEDED) )
 	{
+		if ( ros::ok() ) {
+			ROS_INFO("Node stopped!");
+			return (0);
+		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 	ROS_INFO("2nd synchronization!");
@@ -63,6 +71,10 @@ int main(int argc, char** argv) {
 	while ( !(actor1.getClientPtrSetGoal()->getState() == State::SUCCEEDED &&
 			  actor2.getClientPtrSetGoal()->getState() == State::SUCCEEDED) )
 	{
+		if ( ros::ok() ) {
+			ROS_INFO("Node stopped!");
+			return (0);
+		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 	ROS_INFO("3rd synchronization!");
