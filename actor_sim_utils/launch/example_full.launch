@@ -115,7 +115,7 @@
 
     </group>
 
-    <group if="$(eval world == 'living_room_vid_friendly')">
+    <group if="$(eval world == 'living_room')">
 
 
         <!-- ======================== load global planner node ================================= -->

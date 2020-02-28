@@ -1,0 +1,118 @@
+<?xml version="1.0"?>
+
+<!-- NOTE: based on `example_full.launch`, created 27.02.2020 -->
+
+<launch>
+    
+    <!-- <env name="GAZEBO_PLUGIN_PATH" value="$(find actor_plugin_social)/lib:$(optenv GAZEBO_PLUGIN_PATH)"/> -->
+    <!-- during restructurization this was removed: :$(find social_force_vis)/lib -->
+    
+    <env name="GAZEBO_PLUGIN_PATH" value="$(find actor_plugin_social)/lib:$(optenv GAZEBO_PLUGIN_PATH)"/>
+
+    <!-- ====================== default values for parameters ================================== -->
+    <arg name="world"       default="cafe_example"/>
+    <arg name="world_file"  default="$(find actor_sim_utils)/worlds/$(arg world).world"/>
+    <arg name="map_file"    default="$(find actor_sim_utils)/maps/$(arg world).yaml"/>
+    <arg name="gui"         default="true"/>
+    <arg name="rviz"        default="true"/>
+    <arg name="gdb"         default="false"/>
+
+    <arg name="actor_params_ns" default="/gazebo/actor_plugin_ros_interface/actor"/>
+    <arg name="sfm_params_ns"   default="/gazebo/actor_plugin_ros_interface/sfm"/>
+    <arg name="beh_params_ns"   default="/gazebo/actor_plugin_ros_interface/beh"/>
+
+    <!-- ========================= launch world (Gazebo server and GUI) ========================================= -->
+
+    <!-- normal operation without debugger -->
+    <group unless="$(arg gdb)">
+        <include file="$(find gazebo_ros)/launch/empty_world.launch">
+            <arg name="world_name" value="$(arg world_file)"/>
+            <arg name="paused" value="false"/>
+            <arg name="use_sim_time" value="true"/>
+            <arg name="gui" value="true"/>
+            <arg name="headless" value="false"/>
+            <arg name="debug" value="false"/>
+            <arg name="verbose" value="true"/>
+        </include>
+    </group>
+    
+    <!-- execute when gzserver started by Eclipse IDE -->
+    <group if="$(arg gdb)">
+
+        <!-- set use_sim_time flag
+        **** NOTE: THIS PARAMETER IS BY DEFAULT SET IN empty_world.launch BUT CAUSES MAP_SERVER/COSTMAP TO CRASH when GDB is true ****
+        <param name="/use_sim_time" value="true"/> -->
+
+        <!-- start gazebo client -->
+        <group if="$(arg gui)">
+            <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" respawn="false" output="screen" args="--verbose"/>
+        </group> 
+
+    </group>
+
+    <!-- =============================== start rViz ============================================ -->
+    <group if="$(arg rviz)"> 
+    	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find actor_sim_utils)/rviz/kkr_scenario_$(arg world).rviz"/>
+    </group> 
+
+	<!-- ========================= load parameters ========================================= -->
+    <rosparam file="$(find actor_sim_utils)/config/actor_param.yaml" command="load" ns="$(arg actor_params_ns)"/>
+    <rosparam file="$(find actor_sim_utils)/config/sfm_param.yaml"   command="load" ns="$(arg sfm_params_ns)"/> 
+    <rosparam file="$(find actor_sim_utils)/config/beh_param.yaml"   command="load" ns="$(arg beh_params_ns)"/> 
+
+    <!-- ============================== load map =========================================== -->
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" output="screen" /> 
+
+
+    
+    <!-- ========================= change parameters based on chosen world ================= -->
+    <!-- inflation/bounding_type -> Box - 0, Circle - 1, Ellipse - 2, NoBounding - 3 -->
+
+    <group if="$(eval world == 'living_room')">
+
+
+        <!-- ======================== load global planner node ================================= -->
+        <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
+
+
+    	<!-- Ellipse
+    	<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">2</rosparam>
+    	<rosparam param="$(arg actor_params_ns)/inflation/ellipse">[{semi_major: 1.9, semi_minor: 1.2, offset_x: 0.35, offset_y: 0.0}]</rosparam>
+    	-->
+    	<!-- Circle  -->
+    	<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
+    	<rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.35</rosparam>
+		
+		<!-- Box 
+		<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">0</rosparam>
+    	<rosparam param="$(arg actor_params_ns)/inflation/box_size">[{x_half: 0.25, y_half: 0.25, z_half: 1.00}]</rosparam>
+    	-->
+        <rosparam param="$(arg actor_params_ns)/general/world_bound_x">[+6.25, -3.50]</rosparam>
+        <rosparam param="$(arg actor_params_ns)/general/world_bound_y">[-4.50, +4.50]</rosparam>
+        <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">false</rosparam>
+
+        <rosparam param="$(arg sfm_params_ns)/world_dictionary/ignored_models">[ground_plane, sun, figurine_3, clock_digital, lamp_table_metal]</rosparam>
+        <rosparam param="$(arg sfm_params_ns)/algorithm/internal_force_factor">500.0</rosparam>
+        <rosparam param="$(arg sfm_params_ns)/algorithm/interaction_force_factor">1000.0</rosparam>
+
+
+    </group>
+
+
+    <group if="$(eval world == 'parking')">
+
+        <!-- ======================== load global planner node ================================= -->
+        <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
+
+
+    	<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
+    	<rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.35</rosparam>
+        <rosparam param="$(arg actor_params_ns)/general/world_bound_x">[+20.5, -5.5]</rosparam>
+        <rosparam param="$(arg actor_params_ns)/general/world_bound_y">[-6.0, +20.0]</rosparam>
+        <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">false</rosparam>
+        <rosparam param="$(arg sfm_params_ns)/world_dictionary/ignored_models">[ground_plane, sun]</rosparam>
+        <rosparam param="$(arg sfm_params_ns)/algorithm/min_force">700.0</rosparam> <!-- to force a faster movement (lack of objects in space makes people walking slowly) -->
+
+    </group>
+
+</launch>
