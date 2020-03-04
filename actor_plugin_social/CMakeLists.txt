@@ -56,6 +56,7 @@ add_library(actor_core
   include/actor/core/CommonInfo.h 
   include/actor/core/FSM.h 
   include/actor/core/Target.h
+  include/actor/core/TargetLot.h
   include/actor/core/LieDownHelper.h
   include/actor/core/Path.h
   include/actor/core/Voice.h

@@ -118,5 +118,16 @@ geometry_msgs::TransformStamped Conversion::convertIgnPoseToTfStamped (const ign
 
 // ------------------------------------------------------------------- //
 
+ignition::math::Pose3d Conversion::convertIgnVectorToPose(const ignition::math::Vector3d &pos, const ignition::math::Quaterniond &quat) {
+
+	ignition::math::Pose3d pose;
+	pose.Pos() = pos;
+	pose.Rot() = quat;
+	return (pose);
+
+}
+
+// ------------------------------------------------------------------- //
+
 } /* namespace ros_interface */
 } /* namespace actor */

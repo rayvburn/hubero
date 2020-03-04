@@ -8874,8 +8874,8 @@
 
     <!-- Actors -->
     <actor name='actor1'>
-      <!-- <pose frame=''>3.8 -5.3 1.0 0 -0 3.1415</pose> -->
-      <pose frame=''>3.8 -4.7 1.0 0 -0 3.1415</pose>
+      <pose frame=''>3.8 -5.3 1.0 0 -0 3.1415</pose> 
+      <!-- <pose frame=''>3.8 -4.7 1.0 0 -0 3.1415</pose> -->
       <skin>
         <filename>walk.dae</filename>
         <scale>1</scale>
@@ -8945,8 +8945,8 @@
     </actor>
 
     <actor name="actor2">
-      <!-- <pose>7.0 -0.6 1.00 0 0 -1.5707</pose> -->
-      <pose>5.5 -0.0 1.00 0 0 -1.5707</pose>
+      <pose>7.0 -0.6 1.00 0 0 -1.5707</pose> 
+      <!-- <pose>5.5 -0.0 1.00 0 0 -1.5707</pose> -->
       <skin>
         <!-- <filename>walk.dae</filename>  -->
         <filename>walk.dae</filename>

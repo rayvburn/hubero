@@ -14,16 +14,21 @@
 namespace actor {
 namespace core {
 
+const int16_t Target::COST_THRESHOLD = 100;
+
 // ------------------------------------------------------------------- //
-Target::Target(): has_target_(false), has_global_plan_(false), has_new_path_(true), is_following_(false),
+Target::Target(): /*COST_THRESHOLD(100),*/ has_target_(false), has_global_plan_(false), has_new_path_(true), is_following_(false),
 		is_followed_object_reached_(false), followed_model_ptr_(nullptr) { }
 // ------------------------------------------------------------------- //
 
 Target::Target(gazebo::physics::WorldPtr world_ptr, std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr,
 			   std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr)
+			   /*
 					: has_target_(false), has_global_plan_(false), has_new_path_(false),
 					  is_following_(false), is_followed_object_reached_(false), followed_model_ptr_(nullptr) {
-
+			   */
+		: Target()
+{
 	world_ptr_ = world_ptr;
 	pose_world_ptr_ = pose_world_ptr;
 	params_ptr_ = params_ptr;
@@ -32,7 +37,7 @@ Target::Target(gazebo::physics::WorldPtr world_ptr, std::shared_ptr<const igniti
 
 // ------------------------------------------------------------------- //
 
-Target::Target(const Target &obj) {
+Target::Target(const Target &obj): Target() {
 
 	// copy ctor
 	has_target_ = obj.has_target_;
@@ -140,7 +145,7 @@ bool Target::updateFollowedTarget() {
 
 	// V2: periodically update the tracked object's position if it does move
 	if ( (world_ptr_->SimTime() - time_last_follow_plan_).Double() >= 2.0 &&
-		 (target_ - followed_model_ptr_->WorldPose().Pos()).Length() > (0.25 * params_ptr_->getActorParams().target_tolerance)) {
+		 (target_.getRaw() - followed_model_ptr_->WorldPose().Pos()).Length() > (0.25 * params_ptr_->getActorParams().target_tolerance)) {
 
 		// debugging model oscillations:
 		// FIXME: about 0.22 m for a completely static object? is that normal? ODE?
@@ -203,26 +208,54 @@ bool Target::stopFollowing() {
 // `force_queue` false by default
 bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_queue) {
 
-	if ( force_queue ) {
-
-		// add the target to the queue
-		target_queue_.push(position);
-		return (true);
-
-	}
-
 	// check validity of the position
 	if ( std::isinf(position.X()) ||  std::isnan(position.X()) ||
 		 std::isinf(position.Y()) ||  std::isnan(position.Y()) ) {
 		return (false);
 	}
 
-	// check reachability - threshold selected experimentally
-	// based on section 6. at `http://wiki.ros.org/costmap_2d`;
-	// NOTE: costmap must be accessible to check whether
-	// a certain cell is free (i.e. ROS must be running)
-	if ( global_planner_.getCost(position.X(), position.Y()) > 100 ) {
-		return (false);
+	// push straight to the queue or proceed with the provided data
+	if ( force_queue ) {
+		// add the target to the queue
+		target_queue_.push(TargetLotV3d(position));
+		return (true);
+	}
+
+	// potentially calculate a `modified` start and goal positions;
+	// NOTE: `start` will not be saved now as the goal can be queue'd
+	ignition::math::Vector3d start(pose_world_ptr_->Pos());
+	TargetLotV3d lot(position); // (raw, /safe/) - FIXME: by default the `position` is considered as `safe`
+	// it can be modified though; the default value, if not valid, is not be used for calculations
+
+	// save status of the `findEmptyPositionAlongLine`
+	bool found = false;
+	ignition::math::Vector3d position_shifted;
+	// check reachability - threshold selected experimentally based on section 6. at `http://wiki.ros.org/costmap_2d`;
+	// NOTE: costmap must be accessible to check whether a certain cell is free (i.e. ROS must be running)
+//	if ( global_planner_.getCost(position.X(), position.Y()) > COST_THRESHOLD ) {
+	int cost = getCostMean(position.X(), position.Y());
+	if ( cost > COST_THRESHOLD ) {
+		// find further point, which has a low cost (i.e. is safe)
+		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), position);
+		if ( !found ) {
+			return (false);
+		}
+		lot.setSafe(position_shifted);
+	}
+
+	// evaluate whether the Actor has a target selected - do calculate safe start position
+	// only if he has not (see condition below)
+	if ( !has_target_ ) {
+//		if ( global_planner_.getCost(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y()) > COST_THRESHOLD ) {
+		cost = getCostMean(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y());
+		if ( cost > COST_THRESHOLD ) {
+			// find further point, which has a low cost (i.e. is safe)
+			std::tie(found, position_shifted) = findSafePositionAlongLine(position, pose_world_ptr_->Pos());
+			if ( !found ) {
+				return (false);
+			}
+			start = position_shifted;
+		}
 	}
 
 	// Check if `has_target_` flag is set. If no target is selected
@@ -232,7 +265,7 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 
 	if ( !has_target_ ) {
 
-		return (tryToApplyTarget(position));
+		return (tryToApplyTarget(lot, start));
 
 	} else {
 
@@ -242,7 +275,106 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 		// will be the first in the queue
 
 		// add the target to the queue
-		target_queue_.push(position);
+		target_queue_.push(lot);
+
+	}
+
+	return (true);
+
+}
+
+// ------------------------------------------------------------------- //
+
+// `force_queue` false by default
+/// @brief Similar to the version of setNewTarget overload method, which takes Vector3d and bool args.
+/// @note For more detailed description, look for @ref setNewTarget mentioned in the @brief
+/// @note This is usually used for target queue elements retrieval
+bool Target::setNewTarget(TargetLotV3d &target, bool force_queue) {
+
+	if ( force_queue ) {
+		// add the target to the queue
+		target_queue_.push(target);
+		return (true);
+	}
+
+	// NOTE: validity of the position must have been evaluated before if the TargetLotV3d was passed here
+
+	// safe goal position calculation
+	bool is_target_safe = false;
+//	ignition::math::Vector3d target_forbidden; // value used as a helper for `safe` value evaluation
+	if ( !target.isSafeDefined() ) {
+
+		// let's check whether the `raw` version has a low cost
+		if ( getCostMean(target.getRaw().X(), target.getRaw().Y()) > COST_THRESHOLD ) {
+			is_target_safe = false; // for clarity only
+		} else {
+			// the raw value is OK
+			target.setSafe(target.getRaw());
+			is_target_safe = true;
+		}
+
+	} else {
+
+		// let's check whether the `safe` version has a low cost
+		if ( getCostMean(target.getSafe().X(), target.getSafe().Y()) > COST_THRESHOLD ) {
+			is_target_safe = false; // for clarity only
+		} else {
+			// valid safe value already assigned
+			is_target_safe = true;
+		}
+
+	}
+
+	// try to shift the target so it is valid in terms of a costmap
+	if ( !is_target_safe ) {
+
+		bool found = false;
+		ignition::math::Vector3d target_shifted;
+		// find further point, which has a low cost (i.e. is safe)
+		std::tie(found, target_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), target.getRaw());
+		if ( !found ) {
+			return (false);
+		}
+		target.setSafe(target_shifted);
+
+	}
+
+
+	// potentially calculate a `modified` start position;
+	// NOTE: `start` will not be saved now as the goal can be queue'd
+	ignition::math::Vector3d start(pose_world_ptr_->Pos());
+
+	// safe output of the `findSafePositionAlongLine`
+	bool found = false;
+	ignition::math::Vector3d position_shifted;
+
+	// evaluate whether the Actor has a target selected - do calculate safe start position
+	// only if he has not (see condition below);
+	// NOTE: use `Raw` position here
+	if ( !has_target_ ) {
+		if ( getCostMean(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y()) > COST_THRESHOLD ) {
+			// find further point, which has a low cost (i.e. is safe)
+			std::tie(found, position_shifted) = findSafePositionAlongLine(target.getRaw(), pose_world_ptr_->Pos());
+			if ( found ) {
+				start = position_shifted;
+			}
+			return (false);
+		}
+	}
+
+	// Check if `has_target_` flag is set. If no target is selected
+	// then try to generate a path plan for a given position (`position` input).
+	// If a valid plan could be generated, then save the point coordinates
+	// as a target and update class' internal state.
+
+	if ( !has_target_ ) {
+
+		return (tryToApplyTarget(target, start));
+
+	} else {
+
+		// add the target to the queue
+		target_queue_.push(target);
 
 	}
 
@@ -286,12 +418,16 @@ bool Target::setNewTarget(const std::string &object_name) {
 	ignition::math::Vector3d dir;
 	std::tie(std::ignore, pt_target, dir) = findBorderPoint(model); // `found` will be false for sure - object's edge (cost > 250)
 
+	// save the object edge point, if it is found, as it is known that actor has a `target_tolerance` parameter
+	// so he should not try to reach the goal (the edge here) accurately
+	TargetLotV3d target_lot(pt_target);
+
 	// try to find a safe point near the target object whose
 	// cost (according to the global planner is small enough)
 	int tries_num = 10; // along with 0.5 factor below - maximum move-away from the intersection point is 5 m
 	while (tries_num--) {
 
-		if ( global_planner_.getCost(pt_target.X(), pt_target.Y()) > 100 ) {
+		if ( getCostMean(pt_target.X(), pt_target.Y()) > COST_THRESHOLD ) {
 			// move the point a little further according to line direction;
 			// move in the opposite direction (towards actor going from
 			// the obstacle)
@@ -300,7 +436,8 @@ bool Target::setNewTarget(const std::string &object_name) {
 			continue;
 		}
 
-		return (setNewTarget(pt_target));
+		target_lot.setSafe(pt_target);
+		return (setNewTarget(target_lot));
 
 	}
 
@@ -347,11 +484,11 @@ bool Target::chooseNewTarget() {
 	// 	o 	254 (lethal obstacle).
 	bool extend_safe = false;
 	ignition::math::Vector3d start_safe = pose_world_ptr_->Pos();
-	if ( global_planner_.getCost(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y()) != 0 ) { // >0 or -1
+	if ( getCostMean(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y()) != 0 ) { // >0 or -1
 		extend_safe = true;
 	}
 
-	ignition::math::Vector3d new_target(target_);
+	ignition::math::Vector3d new_target(target_.getRaw()); // TODO: raw or safe?
 	bool reachable_gp = false; // whether global planner found a valid plan
 	bool force_new_target = false;
 
@@ -362,7 +499,7 @@ bool Target::chooseNewTarget() {
 	// Target selection conditions:
 	// 1) look for target that is located at least 2 x TARGET_TOLERANCE [m] from the current one
 	// 2) look for target that is reachable (global plan can be found)
-	while ( !((new_target - target_).Length() >= (2.0 * params_ptr_->getActorParams().target_tolerance) && reachable_gp) && (iteration < MAX_TRIES_NUM) ) {
+	while ( !((new_target - target_.getRaw()).Length() >= (2.0 * params_ptr_->getActorParams().target_tolerance) && reachable_gp) && (iteration < MAX_TRIES_NUM) ) {
 
 		// reset flags
 		reachable_gp = false;
@@ -411,7 +548,7 @@ bool Target::chooseNewTarget() {
 			// check if model's bounding box contains target point
 			if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), new_target) ) {
 				std::cout << "[chooseNewTarget] selection failed -> temporary `target` position [world frame]: " << new_target.X() << " " << new_target.Y() << "\tmodel containing: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
-				new_target = target_; // forces finding another due target to the distance condition
+				new_target = target_.getRaw(); // FIXME: new_target = target_; // forces finding another due target to the distance condition
 				force_new_target = true;
 				break; // continue;
 			}
@@ -631,10 +768,10 @@ bool Target::isTargetStillReachable() {
 				}
 
 				// check if model's bounding box contains target point
-				if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), target_) ) {
+				if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), target_.getRaw()) ) {
 
 					std::cout << "isTargetStillReachable() - NO!" << std::endl;
-					std::cout << "\ttarget: " << target_ << "\tmodel containing: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
+					std::cout << "\ttarget: " << target_.getRaw() << "\tmodel containing: " << world_ptr_->ModelByIndex(i)->GetName() << std::endl;
 					std::cout << std::endl;
 					std::cout << std::endl;
 					std::cout << std::endl;
@@ -712,7 +849,7 @@ bool Target::isTargetReached() {
 	}
 
 	// calculate a distance to a target
-	double distance_to_target = (target_ - pose_world_ptr_->Pos()).Length();
+	double distance_to_target = (target_.getRaw() - pose_world_ptr_->Pos()).Length();
 
 	/* NOTE: there is a problem related to the oscillations of the animation position
 	 * while an actor is standing and not moving. This issue is negligible
@@ -843,7 +980,7 @@ bool Target::isPathNew() {
 
 // ------------------------------------------------------------------- //
 ignition::math::Vector3d Target::getTarget() const {
-	return (target_);
+	return (target_.getRaw());
 }
 // ------------------------------------------------------------------- //
 ignition::math::Vector3d Target::getCheckpoint() const {
@@ -999,14 +1136,8 @@ std::tuple<bool, ignition::math::Vector3d> Target::findSafePositionAlongLine(con
 	int tries_num = 10; // along with 0.5 factor below - maximum move-away from the intersection point is 5 m
 	while (tries_num--) {
 
-		// for some reason the getCost method returns unstable results (for the same point
-		// it shows 253 in first check and 0 in the next (actually invalid))
-		int16_t surrounding[4];
-		surrounding[0] = global_planner_.getCost(start_shifted.X()-0.01, start_shifted.Y()-0.01);
-		surrounding[1] = global_planner_.getCost(start_shifted.X()-0.01, start_shifted.Y()+0.01);
-		surrounding[2] = global_planner_.getCost(start_shifted.X()+0.01, start_shifted.Y()-0.01);
-		surrounding[3] = global_planner_.getCost(start_shifted.X()+0.01, start_shifted.Y()+0.01);
-		int16_t cost_superpose = *std::max_element(surrounding, surrounding+4);
+		// FIXME
+		int16_t cost_superpose = getCostMean(start_shifted.X(), start_shifted.Y());
 
 		if ( cost_superpose > 0 ) {
 			// move the point a little further according to line direction;
@@ -1031,13 +1162,112 @@ std::tuple<bool, ignition::math::Vector3d> Target::findSafePositionAlongLine(con
 
 // ------------------------------------------------------------------- //
 
-bool Target::tryToApplyTarget(const ignition::math::Vector3d &pt) {
+/// @brief Similar to @ref findSafePositionAlongLine
+std::tuple<bool, ignition::math::Vector3d> Target::findEmptyPositionAlongLine(const ignition::math::Vector3d &start,
+		const ignition::math::Vector3d &end) const {
+
+	ignition::math::Line3d line;
+	line.Set(start.X(), start.Y(), 0.0, end.X(), end.Y(), 0.0);
+	ignition::math::Vector3d line_dir = line.Direction();
+	ignition::math::Vector3d start_shifted = start;
+
+	// try to find a safe point near the target object whose
+	// cost (according to the global planner is small enough)
+	int tries_num = 10; // along with 0.5 factor below - maximum move-away from the intersection point is 5 m
+	bool found = false;
+	while (tries_num-- && !found) {
+
+		// NOTE: similar procedure implemented inside the @ref chooseNewTarget;
+		// evaluate `new_target` reachability based on world objects information
+		for (unsigned int i = 0; i < world_ptr_->ModelCount(); ++i) {
+
+			// ignore model of world in combined form
+			if ( isCombinedWorldModel( world_ptr_->ModelByIndex(i)->GetName(),
+									   params_ptr_->getSfmDictionary().world_model.name) )
+			{
+				continue;
+			}
+
+			/* bounding-box-based target selection - safer for big obstacles,
+			 * accounting some tolerance for a target accomplishment - an actor should
+			 * not step into an object;
+			 * also, check if current model is not marked as negligible */
+			if ( isModelNegligible(world_ptr_->ModelByIndex(i)->GetName(), params_ptr_->getSfmDictionary().ignored_models_) ) {
+				// no need to check if current model BB contains the `new_target` (as the model is negligible)
+				continue;
+			}
+
+			// check if model's bounding box contains target point
+			if ( doesBoundingBoxContainPoint(world_ptr_->ModelByIndex(i)->BoundingBox(), start_shifted) ) {
+				// move the point a little further according to line direction;
+				// move in the opposite direction (towards obstacle starting from
+				// the actor)
+				start_shifted.X(start_shifted.X() + 0.5 * line_dir.X());
+				start_shifted.Y(start_shifted.Y() + 0.5 * line_dir.Y());
+				break;
+			}
+
+			// check how far from the end point the shifted `start` point is located
+			if ( (end - start_shifted).Length() > (1.1 * params_ptr_->getActorParams().target_tolerance) ) {
+				return (std::make_tuple(false, start_shifted));
+			}
+
+			// update flag and break the loop
+			found = true;
+			break;
+
+		} // for (ModelCount)
+
+	} // while (tries_num-- && !found)
+
+	return (std::make_tuple(found, start_shifted));
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool Target::tryToApplyTarget(const TargetLotV3d& target_lot) {
+	return (tryToApplyTarget(target_lot, pose_world_ptr_->Pos()));
+}
+
+// ------------------------------------------------------------------- //
+
+/// @param goal_safe: a goal that is reachable in terms of global planner and costmap
+/// @param goal: a goal that was the actually selected one
+/// @param allow_obstacle_near
+/// @return
+bool Target::tryToApplyTarget(const TargetLotV3d& target_lot, const ignition::math::Vector3d &start)
+{
+
+	// check whether the `start` should be shifted (`goal` has already been handled)
+	bool found = false;
+	ignition::math::Vector3d start_shifted;
+	if ( getCostMean(start.X(), start.Y()) > COST_THRESHOLD ) {
+		std::tie(found, start_shifted) = findSafePositionAlongLine(target_lot.getRaw(), start);
+		if ( !found ) {
+			return (false);
+		}
+	}
 
 	// try to generate global path plan
-	if ( generatePathPlan(pose_world_ptr_->Pos(), pt) ) {
+	if ( generatePathPlan(start, target_lot.getSafe() ) ) {
 
-		// plan has been generated
-		target_ = pt;
+		// plan has been generated;
+		// the safe point will be useful for sure
+		target_ = target_lot.getSafe();
+
+		// if `target_lot` contents are not equal then add an additional point to the plan
+		if ( !target_lot.areEqual() ) {
+			// in turn, add an additional end point
+			global_planner_.addPoint(actor::ros_interface::Conversion::convertIgnVectorToPose(target_lot.getRaw()), false);
+		}
+
+		// similarly, check whether the `start` has been shifted
+		if ( !start.Equal(pose_world_ptr_->Pos()) ) {
+			global_planner_.addPoint(actor::ros_interface::Conversion::convertIgnVectorToPose(start), true);
+		}
+
+		// ?
 		target_checkpoint_ = global_planner_.getWaypoint().Pos();
 
 		// Update checkpoint. After choosing a new target, the first checkpoint
@@ -1057,7 +1287,13 @@ bool Target::tryToApplyTarget(const ignition::math::Vector3d &pt) {
 		return (true);
 
 	}
-	std::cout << "[FAIL] Target::tryToApplyTarget - plan generation failed | actor: x = " << pose_world_ptr_->Pos().X() << " y: " << pose_world_ptr_->Pos().Y() << "\ttarget: x = " << pt.X() << " y: " << pt.Y() << std::endl;
+
+	std::cout << "[FAIL] Target::tryToApplyTarget - plan generation failed | actor: x = " <<
+			pose_world_ptr_->Pos().X() << " y: " << pose_world_ptr_->Pos().Y() <<
+			"\tgoal_raw: x = " << target_lot.getRaw().X() << " y: " << target_lot.getRaw().Y() <<
+			"\tgoal_safe: x = " << target_lot.getSafe().X() << " y: " << target_lot.getSafe().Y() <<
+			"\tstart: x = " << start.X() << " y: " << start.Y() << std::endl;
+
 	return (false);
 
 }
@@ -1177,8 +1413,8 @@ std::tuple<bool, ignition::math::Vector3d, ignition::math::Vector3d> Target::fin
 		}
 
 		// verify whether the point is reachable in terms of costmap
-		int16_t cost = global_planner_.getCost(pt_intersection.X(), pt_intersection.Y());
-		if ( cost < 100 && cost >= 0 ) {
+		int16_t cost = getCostMean(pt_intersection.X(), pt_intersection.Y());
+		if ( cost < COST_THRESHOLD && cost >= 0 ) {
 			return (std::make_tuple(true, pt_intersection, line.Direction()));
 			break;
 		} else {
@@ -1204,6 +1440,23 @@ void Target::resetTimestamps() {
 	time_last_reachability_ = world_ptr_->SimTime();
 //	time_last_abandonability_ = world_ptr_->SimTime();
 	time_last_follow_plan_ = world_ptr_->SimTime();
+
+}
+
+// ------------------------------------------------------------------- //
+
+int16_t Target::getCostMean(const double &pos_x, const double &pos_y) {
+
+	// for some reason the getCost method returns unstable results (for the same point
+	// it shows 253 in first check and 0 in the next (actually invalid))
+	int16_t surrounding[4];
+	surrounding[0] = global_planner_.getCost(pos_x - 0.01, pos_y - 0.01);
+	surrounding[1] = global_planner_.getCost(pos_x - 0.01, pos_y + 0.01);
+	surrounding[2] = global_planner_.getCost(pos_x + 0.01, pos_y - 0.01);
+	surrounding[3] = global_planner_.getCost(pos_x + 0.01, pos_y + 0.01);
+	int16_t cost_superpose = *std::max_element(surrounding, surrounding+4);
+
+	return (cost_superpose);
 
 }
 

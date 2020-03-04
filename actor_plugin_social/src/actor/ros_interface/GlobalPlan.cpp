@@ -112,6 +112,21 @@ GlobalPlan::MakePlanStatus GlobalPlan::makePlan(const ignition::math::Pose3d &st
 
 // ------------------------------------------------------------------- //
 
+void GlobalPlan::addPoint(const ignition::math::Pose3d &pose, bool start) {
+
+	geometry_msgs::PoseStamped pose_new = actor::ros_interface::Conversion::convertIgnPoseToPoseStamped(pose, actor::FrameGlobal::getFrame(), 1);
+	if ( start ) {
+		std::vector<geometry_msgs::PoseStamped>::const_iterator it = path_.begin();
+		it = path_.insert (it , pose_new);
+		// TODO: error handling
+	} else {
+		path_.push_back(pose_new);
+	}
+
+}
+
+// ------------------------------------------------------------------- //
+
 void GlobalPlan::resetPath() {
 	waypoint_curr_ = 0;
 	target_reached_ = true;

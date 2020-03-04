@@ -27,6 +27,7 @@ static geometry_msgs::PoseStamped 	convertIgnPoseToPoseStamped		(const ignition:
 static ignition::math::Vector3d 	convertPoseStampedToIgnVector	(const geometry_msgs::PoseStamped 	&pose);
 static ignition::math::Pose3d 		convertPoseStampedToIgnPose		(const geometry_msgs::PoseStamped 	&pose);
 static geometry_msgs::TransformStamped convertIgnPoseToTfStamped	(const ignition::math::Pose3d 		&pose, 	bool zero_height = false);
+static ignition::math::Pose3d 		convertIgnVectorToPose			(const ignition::math::Vector3d 	&pos,	const ignition::math::Quaterniond &quat = ignition::math::Quaterniond(0.0, 0.0, 0.0));
 // -------------------------------------------------------------------------------------------
 
 };

@@ -29,7 +29,9 @@ int main(int argc, char** argv) {
 	ActorAction actor2("/gazebo/actor_plugin_ros_interface/actor2", &nh);
 
 	// =================== 1st stage ========================================
+//	actor1.setGoal(+0.0, +2.0);
 	actor1.setGoal(+1.0, +1.0);
+//	actor2.setGoal(-1.0, +2.5);
 	actor2.setGoal(+4.0, +3.0);
 
 	ROS_INFO("Waiting for the 1st synchronization!");
@@ -37,7 +39,7 @@ int main(int argc, char** argv) {
 	while ( !(actor1.getClientPtrSetGoal()->getState() == State::SUCCEEDED &&
 			  actor2.getClientPtrSetGoal()->getState() == State::SUCCEEDED) )
 	{
-		if ( ros::ok() ) {
+		if ( !ros::ok() ) {
 			ROS_INFO("Node stopped!");
 			return (0);
 		}
@@ -54,7 +56,7 @@ int main(int argc, char** argv) {
 	while ( !(actor1.getClientPtrSetGoal()->getState() == State::SUCCEEDED &&
 			  actor2.getClientPtrSetGoal()->getState() == State::SUCCEEDED) )
 	{
-		if ( ros::ok() ) {
+		if ( !ros::ok() ) {
 			ROS_INFO("Node stopped!");
 			return (0);
 		}
@@ -71,7 +73,7 @@ int main(int argc, char** argv) {
 	while ( !(actor1.getClientPtrSetGoal()->getState() == State::SUCCEEDED &&
 			  actor2.getClientPtrSetGoal()->getState() == State::SUCCEEDED) )
 	{
-		if ( ros::ok() ) {
+		if ( !ros::ok() ) {
 			ROS_INFO("Node stopped!");
 			return (0);
 		}

@@ -98,6 +98,13 @@ public:
 	MakePlanStatus makePlan(const ignition::math::Pose3d &start, const ignition::math::Vector3d &goal);
 
 	/**
+	 * @brief Adds a manually selected point to the path (vector of poses)
+	 * @param pose: a pose
+	 * @param start: whether the point has to be added at the start (TRUE) or at the end (FALSE) of the path
+	 */
+	void addPoint(const ignition::math::Pose3d &pose, bool start);
+
+	/**
 	 * @brief Clears the components of the poses vector standing for the global plan checkpoints
 	 */
 	void resetPath();

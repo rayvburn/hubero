@@ -195,11 +195,17 @@ static bool CostmapStatusSrv(std_srvs::Trigger::Request& req, std_srvs::Trigger:
 // ----------------------------------------------------------------------------------------------------
 static bool GetCostSrv(actor_global_plan::GetCost::Request& req, actor_global_plan::GetCost::Response& resp) {
 
+	std::cout << "[GetCostSrv] " << costmap_global_ptr_->getBaseFrameID() << "'s request: x = " << req.point.x << "  y = " << req.point.y << "  ";
+
 	// transform point
 	geometry_msgs::PoseStamped map_point = transformPointToMap(req.point.x, req.point.y);
 
+	std::cout << "\ttransformed: x = " << map_point.pose.position.x << "  y = " << map_point.pose.position.y << std::endl;
+
 	// frames transformation
 	resp.cost = static_cast<int16_t>(costmap_global_ptr_->getCost(map_point.pose.position.x, map_point.pose.position.y));
+
+	std::cout << "\t\tcost = " << resp.cost << std::endl;
 
 	// evaluate cost
 	if ( resp.cost == 255 ) {
@@ -313,7 +319,8 @@ static void SetInflationRadius(ros::NodeHandle &nh, const std::string &srv_ns) {
 
 	// update parameter if `getParam()` was successful
 	nh.setParam(*node_name_ + "/gcm/inflation_layer/inflation_radius", inflation);
-	nh.setParam(*node_name_ + "/gcm/robot_radius", inflation);
+	nh.setParam(*node_name_ + "/gcm/robot_radius", inflation); // TODO: use /footprint for more sophisticated shapes
+	// INFO: http://wiki.ros.org/costmap_2d/flat#Robot_description_parameters
 
 }
 
