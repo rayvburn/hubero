@@ -376,11 +376,6 @@ private:
 	int16_t getCostMean(const double &pos_x, const double &pos_y);
 	int16_t getCostMean(const ignition::math::Vector3d &pos);
 
-	// DEPRECATED
-	// src is a helper point to create a line and its direction
-	// line is created from src to dest (following increments are moving the result point TOWARDS the dest
-//	bool calculateClosestCostmapEmptyPoint(TargetLotV3d &lot, const ignition::math::Vector3d &pt_dest, const ignition::math::Vector3d &pt_src, const double &max_shift = 2.0);
-
     /// @brief Start location of the current movement (not necessarily `valid` in terms of costmap)
 	ignition::math::Vector3d start_;
 

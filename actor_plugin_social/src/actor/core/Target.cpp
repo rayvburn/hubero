@@ -288,7 +288,6 @@ bool Target::setNewTarget(TargetLotV3d &target, bool force_queue) {
 
 	// safe goal position calculation
 	bool is_target_safe = false;
-//	ignition::math::Vector3d target_forbidden; // value used as a helper for `safe` value evaluation
 	if ( !target.isSafeDefined() ) {
 
 		// let's check whether the `raw` version has a low cost
@@ -1441,26 +1440,12 @@ int16_t Target::getCostMean(const double &pos_x, const double &pos_y) {
 	return (cost_superpose);
 
 }
-int16_t Target::getCostMean(const ignition::math::Vector3d &pos) {
-	return (getCostMean(pos.X(), pos.Y()));
-}
 
 // ------------------------------------------------------------------- //
 
-//bool Target::calculateClosestCostmapEmptyPoint(TargetLotV3d &lot, const ignition::math::Vector3d &pt_from,
-//		const ignition::math::Vector3d &pt_towards, const double &max_shift)
-//{
-//
-//	bool found = false;
-//	ignition::math::Vector3d position_shifted;
-//
-//	std::tie(found, position_shifted) = findSafePositionAlongLine(pt_from, pt_towards, max_shift);
-//
-//	if ( found ) {
-//		lot.setSafe(position_shifted);
-//	}
-//
-//}
+int16_t Target::getCostMean(const ignition::math::Vector3d &pos) {
+	return (getCostMean(pos.X(), pos.Y()));
+}
 
 // ------------------------------------------------------------------- //
 
