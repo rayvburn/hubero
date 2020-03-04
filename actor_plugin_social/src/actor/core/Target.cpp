@@ -221,76 +221,38 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 		return (true);
 	}
 
-	// potentially calculate a `modified` start and goal positions;
-	// NOTE: `start` will not be saved now as the goal can be queue'd
-	ignition::math::Vector3d start(pose_world_ptr_->Pos());
-	TargetLotV3d lot(position); // (raw, /safe/) - FIXME: by default the `position` is considered as `safe`
-	// it can be modified though; the default value, if not valid, is not be used for calculations
-
-	// save status of the `findEmptyPositionAlongLine`
-	bool found = false;
-	ignition::math::Vector3d position_shifted;
+	// ------- section -------- /beg
 	// check reachability - threshold selected experimentally based on section 6. at `http://wiki.ros.org/costmap_2d`;
 	// NOTE: costmap must be accessible to check whether a certain cell is free (i.e. ROS must be running)
-	/*
-//	if ( global_planner_.getCost(position.X(), position.Y()) > COST_THRESHOLD ) {
-	int cost = getCostMean(position.X(), position.Y());
-	if ( cost > COST_THRESHOLD ) {
-		// find further point, which has a low cost (i.e. is safe)
-		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), position);
-		if ( !found ) {
-			return (false);
-		}
-		lot.setSafe(position_shifted);
-	}
-	*/
+	//
+	// potentially calculate a `modified` TARGET position;
+	TargetLotV3d lot(position); // (target raw position)
+
+	// save output of the `findSafePositionAlongLine`
+	bool found = false;
+	ignition::math::Vector3d position_shifted;
+
+	// potentially SHIFT the TARGET position to make it reachable for global planner
 	std::tie(found, position_shifted) = findSafePositionAlongLine(position, pose_world_ptr_->Pos());
 	if ( !found ) {
 		return (false);
 	}
 	lot.setSafe(position_shifted);
-
-
-	// evaluate whether the Actor has a target selected - do calculate safe start position
-	// only if he has not (see condition below)
-	/*
-	if ( !has_target_ ) {
-//		if ( global_planner_.getCost(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y()) > COST_THRESHOLD ) {
-		cost = getCostMean(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y());
-		if ( cost > COST_THRESHOLD ) {
-			// find further point, which has a low cost (i.e. is safe)
-			std::tie(found, position_shifted) = findSafePositionAlongLine(position, pose_world_ptr_->Pos());
-			if ( !found ) {
-				return (false);
-			}
-			start = position_shifted;
-		}
-	}
-	*/
-	if ( !isTargetChosen() ) {
-		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), position);
-		if ( !found ) {
-			return (false);
-		}
-		start = position_shifted;
-		std::cout << "[Target::setNewTarget] start point modification" << std::endl;
-		std::cout << "\t\tSTART / initial: x = " << pose_world_ptr_->Pos().X() << " y = " << pose_world_ptr_->Pos().Y() << " \tmodded: x = " << start.X() << " y = " << start.Y() << std::endl;
-		std::cout << "\t\tEND   / x = " << position.X() << " y = " << position.Y() << std::endl;
-		// V2
-		std::tie(found, position_shifted) = findSafePositionAlongLine(position, pose_world_ptr_->Pos());
-		std::cout << "[V2]" << std::endl;
-		std::cout << "\t\tSTART / initial: x = " << position.X() << " y = " << position.Y() << " \tmodded? " << found << " / x = " << position_shifted.X() << " y = " << position_shifted.Y() << std::endl;
-		std::cout << "\t\tEND   / x = " << pose_world_ptr_->Pos().X() << " y = " << pose_world_ptr_->Pos().Y() << std::endl << std::endl;
-	}
+	// ------- section -------- /end
 
 	// Check if `has_target_` flag is set. If no target is selected
 	// then try to generate a path plan for a given position (`position` input).
 	// If a valid plan could be generated, then save the point coordinates
 	// as a target and update class' internal state.
 
-	if ( !has_target_ ) {
+	if ( !isTargetChosen() ) {
 
-		return (tryToApplyTarget(lot, start));
+		// potentially SHIFT the START position to make it reachable for global planner
+		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), position);
+		if ( !found ) {
+			return (false);
+		}
+		return (tryToApplyTarget(lot, position_shifted));
 
 	} else {
 
@@ -350,41 +312,20 @@ bool Target::setNewTarget(TargetLotV3d &target, bool force_queue) {
 
 	}
 
-	// try to shift the target so it is valid in terms of a costmap
-	if ( !is_target_safe ) {
-
-		bool found = false;
-		ignition::math::Vector3d target_shifted;
-		// find further point, which has a low cost (i.e. is safe)
-		std::tie(found, target_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), target.getRaw());
-		if ( !found ) {
-			return (false);
-		}
-		target.setSafe(target_shifted);
-
-	}
-
-
-	// potentially calculate a `modified` start position;
-	// NOTE: `start` will not be saved now as the goal can be queue'd
-	ignition::math::Vector3d start(pose_world_ptr_->Pos());
-
 	// safe output of the `findSafePositionAlongLine`
 	bool found = false;
 	ignition::math::Vector3d position_shifted;
 
-	// evaluate whether the Actor has a target selected - do calculate safe start position
-	// only if he has not (see condition below);
-	// NOTE: use `Raw` position here
-	if ( !has_target_ ) {
-		if ( getCostMean(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y()) > COST_THRESHOLD ) {
-			// find further point, which has a low cost (i.e. is safe)
-			std::tie(found, position_shifted) = findSafePositionAlongLine(target.getRaw(), pose_world_ptr_->Pos());
-			if ( found ) {
-				start = position_shifted;
-			}
+	// try to shift the TARGET so it is valid in terms of a costmap
+	if ( !is_target_safe ) {
+
+		// find further point, which has a low cost (i.e. is safe)
+		std::tie(found, position_shifted) = findSafePositionAlongLine(target.getRaw(), pose_world_ptr_->Pos());
+		if ( !found ) {
 			return (false);
 		}
+		target.setSafe(position_shifted); // i.e. `target_shifted`
+
 	}
 
 	// Check if `has_target_` flag is set. If no target is selected
@@ -394,7 +335,11 @@ bool Target::setNewTarget(TargetLotV3d &target, bool force_queue) {
 
 	if ( !has_target_ ) {
 
-		return (tryToApplyTarget(target, start));
+		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), target.getRaw());
+		if ( !found ) {
+			return (false);
+		}
+		return (tryToApplyTarget(target, position_shifted));
 
 	} else {
 
@@ -1263,39 +1208,41 @@ bool Target::tryToApplyTarget(const TargetLotV3d& target_lot) {
 bool Target::tryToApplyTarget(const TargetLotV3d& target_lot, const ignition::math::Vector3d &start)
 {
 
-	// check whether the `start` should be shifted (`goal` has already been handled)
-	bool found = false;
-	ignition::math::Vector3d start_shifted;
-	if ( getCostMean(start.X(), start.Y()) > COST_THRESHOLD ) {
-		std::tie(found, start_shifted) = findSafePositionAlongLine(target_lot.getRaw(), start);
-		if ( !found ) {
-			return (false);
-		}
-	}
+	// NOTE: `tryToApplyTarget` calls are preceded with calculation of `safe`
+	// START and TARGET points, i.e. the plan will likely be generated even
+	// if the actor is in the high-cost region
 
-	std::cout << "[Target::tryToApplyTarget] before generatePathPlan | TargetLot: raw - x = " << target_lot.getRaw().X() << " y = " << target_lot.getRaw().Y() << " \tsafe - x = " << target_lot.getSafe().X() << " y = " << target_lot.getSafe().Y() << std::endl;
+	/* plan preparation debugging
+	std::cout << "[Target::tryToApplyTarget] before generatePathPlan" << std::endl;
+	std::cout << "\t\tTargetLot: raw - x = " << target_lot.getRaw().X() << " y = " << target_lot.getRaw().Y() << " \tsafe - x = " << target_lot.getSafe().X() << " y = " << target_lot.getSafe().Y() << std::endl;
+	std::cout << "\t\tStart:           x = " << start.X() << " y = " << start.Y() << std::endl;
+	*/
 
 	// try to generate global path plan
 	if ( generatePathPlan(start, target_lot.getSafe() ) ) {
 
-		// plan has been generated;
-		// the safe point will be useful for sure
-		target_ = target_lot.getRaw(); // target_lot.getSafe();
+		// plan has been generated successfully!
+		//
+		// will be useful for further use
+		target_ = target_lot;
 
-//		// if `target_lot` contents are not equal then add an additional point to the plan
-//		if ( !target_lot.areEqual() ) {
-//			// in turn, add an additional end point
-//			global_planner_.addPoint(actor::ros_interface::Conversion::convertIgnVectorToPose(target_lot.getRaw()), false);
-//		}
-//
-//		// similarly, check whether the `start` has been shifted
-//		if ( !start.Equal(pose_world_ptr_->Pos()) ) {
-//			global_planner_.addPoint(actor::ros_interface::Conversion::convertIgnVectorToPose(start), true);
-//		}
+		// if `target_lot` contents are not equal then add an additional point to the plan
+		if ( !target_lot.areEqual() ) {
+			// in turn, add an additional end point
+			// IMPORTANT: TARGET point is placed at the END of the vector!
+			global_planner_.addPoint(actor::ros_interface::Conversion::convertIgnVectorToPose(target_lot.getRaw()), false);
+		}
+		//
+		// similarly, check whether the `start` has been shifted
+		if ( !start.Equal(pose_world_ptr_->Pos()) ) {
+			// IMPORTANT: START point is placed at the BEGINNING of the vector!
+			global_planner_.addPoint(actor::ros_interface::Conversion::convertIgnVectorToPose(pose_world_ptr_->Pos()), true);
+		}
 
-		// ?
+		// update checkpoint
 		target_checkpoint_ = global_planner_.getWaypoint().Pos();
 
+		/* plan debugging
 		std::cout << "[Target::tryToApplyTarget] path length: " << global_planner_.getPoses().size() << std::endl;
 		for ( uint32_t i = 0; i < global_planner_.getPoses().size(); i++ ) {
 			std::cout << "\t" << i << ":\tx = " << global_planner_.getPoses().at(i).pose.position.x << " \t y = " << global_planner_.getPoses().at(i).pose.position.y << std::endl;
@@ -1303,6 +1250,7 @@ bool Target::tryToApplyTarget(const TargetLotV3d& target_lot, const ignition::ma
 				i += 25;
 			}
 		}
+		*/
 
 		// Update checkpoint. After choosing a new target, the first checkpoint
 		// is equal (nearly) to the current position. This may generate a problem
