@@ -195,12 +195,12 @@ static bool CostmapStatusSrv(std_srvs::Trigger::Request& req, std_srvs::Trigger:
 // ----------------------------------------------------------------------------------------------------
 static bool GetCostSrv(actor_global_plan::GetCost::Request& req, actor_global_plan::GetCost::Response& resp) {
 
-	std::cout << "[GetCostSrv] " << costmap_global_ptr_->getBaseFrameID() << "'s request: x = " << req.point.x << "  y = " << req.point.y << "  ";
+	std::cout << "[GetCostSrv] x = " << req.point.x << "  y = " << req.point.y << "  ";
 
 	// transform point
 	geometry_msgs::PoseStamped map_point = transformPointToMap(req.point.x, req.point.y);
 
-	std::cout << "\ttransformed: x = " << map_point.pose.position.x << "  y = " << map_point.pose.position.y << std::endl;
+	std::cout << "\ttransformed: x = " << map_point.pose.position.x << "  y = " << map_point.pose.position.y;
 
 	// frames transformation
 	resp.cost = static_cast<int16_t>(costmap_global_ptr_->getCost(map_point.pose.position.x, map_point.pose.position.y));

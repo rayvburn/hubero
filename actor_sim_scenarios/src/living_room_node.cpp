@@ -31,6 +31,7 @@ int main(int argc, char** argv) {
 	// =================== 1st stage ========================================
 //	actor1.setGoal(+0.0, +2.0);
 	actor1.setGoal(+1.0, +1.0);
+	std::this_thread::sleep_for(std::chrono::milliseconds(50)); // free the global planner resource
 //	actor2.setGoal(-1.0, +2.5);
 	actor2.setGoal(+4.0, +3.0);
 
@@ -49,6 +50,7 @@ int main(int argc, char** argv) {
 
 	// =================== 2nd stage ========================================
 	actor1.setGoal(-1.0, -1.0);
+	std::this_thread::sleep_for(std::chrono::milliseconds(50)); // free the global planner resource
 	actor2.setGoal(+4.0, -1.0);
 
 	ROS_INFO("Waiting for the 2nd synchronization!");
@@ -66,6 +68,7 @@ int main(int argc, char** argv) {
 
 	// =================== 3rd stage ========================================
 	actor1.setGoal(+3.0, -2.0);
+	std::this_thread::sleep_for(std::chrono::milliseconds(50)); // free the global planner resource
 	actor2.setGoal(-3.0, -2.0);
 
 	ROS_INFO("Waiting for the 3rd synchronization!");

@@ -17,8 +17,8 @@ namespace core {
 const int16_t Target::COST_THRESHOLD = 100;
 
 // ------------------------------------------------------------------- //
-Target::Target(): /*COST_THRESHOLD(100),*/ has_target_(false), has_global_plan_(false), has_new_path_(true), is_following_(false),
-		is_followed_object_reached_(false), followed_model_ptr_(nullptr) { }
+Target::Target(): /*COST_THRESHOLD(100),*/ has_target_(false), has_global_plan_(false), /*has_new_path_(true),*/ has_new_path_(false),
+		is_following_(false), is_followed_object_reached_(false), followed_model_ptr_(nullptr) { }
 // ------------------------------------------------------------------- //
 
 Target::Target(gazebo::physics::WorldPtr world_ptr, std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr,
@@ -232,6 +232,7 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 	ignition::math::Vector3d position_shifted;
 	// check reachability - threshold selected experimentally based on section 6. at `http://wiki.ros.org/costmap_2d`;
 	// NOTE: costmap must be accessible to check whether a certain cell is free (i.e. ROS must be running)
+	/*
 //	if ( global_planner_.getCost(position.X(), position.Y()) > COST_THRESHOLD ) {
 	int cost = getCostMean(position.X(), position.Y());
 	if ( cost > COST_THRESHOLD ) {
@@ -242,9 +243,17 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 		}
 		lot.setSafe(position_shifted);
 	}
+	*/
+	std::tie(found, position_shifted) = findSafePositionAlongLine(position, pose_world_ptr_->Pos());
+	if ( !found ) {
+		return (false);
+	}
+	lot.setSafe(position_shifted);
+
 
 	// evaluate whether the Actor has a target selected - do calculate safe start position
 	// only if he has not (see condition below)
+	/*
 	if ( !has_target_ ) {
 //		if ( global_planner_.getCost(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y()) > COST_THRESHOLD ) {
 		cost = getCostMean(pose_world_ptr_->Pos().X(), pose_world_ptr_->Pos().Y());
@@ -256,6 +265,22 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 			}
 			start = position_shifted;
 		}
+	}
+	*/
+	if ( !isTargetChosen() ) {
+		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), position);
+		if ( !found ) {
+			return (false);
+		}
+		start = position_shifted;
+		std::cout << "[Target::setNewTarget] start point modification" << std::endl;
+		std::cout << "\t\tSTART / initial: x = " << pose_world_ptr_->Pos().X() << " y = " << pose_world_ptr_->Pos().Y() << " \tmodded: x = " << start.X() << " y = " << start.Y() << std::endl;
+		std::cout << "\t\tEND   / x = " << position.X() << " y = " << position.Y() << std::endl;
+		// V2
+		std::tie(found, position_shifted) = findSafePositionAlongLine(position, pose_world_ptr_->Pos());
+		std::cout << "[V2]" << std::endl;
+		std::cout << "\t\tSTART / initial: x = " << position.X() << " y = " << position.Y() << " \tmodded? " << found << " / x = " << position_shifted.X() << " y = " << position_shifted.Y() << std::endl;
+		std::cout << "\t\tEND   / x = " << pose_world_ptr_->Pos().X() << " y = " << pose_world_ptr_->Pos().Y() << std::endl << std::endl;
 	}
 
 	// Check if `has_target_` flag is set. If no target is selected
@@ -1122,41 +1147,40 @@ std::tuple<bool, gazebo::physics::ModelPtr> Target::isModelValid(const std::stri
 
 // ------------------------------------------------------------------- //
 
-std::tuple<bool, ignition::math::Vector3d> Target::findSafePositionAlongLine(const ignition::math::Vector3d &start,
-		const ignition::math::Vector3d &end, const double &min_dist_to_end)
+std::tuple<bool, ignition::math::Vector3d> Target::findSafePositionAlongLine(const ignition::math::Vector3d &pt_from,
+		const ignition::math::Vector3d &pt_towards, const double &max_shift)
 {
 
 	ignition::math::Line3d line;
-	line.Set(start.X(), start.Y(), 0.0, end.X(), end.Y(), 0.0);
+	line.Set(pt_from.X(), pt_from.Y(), 0.0, pt_towards.X(), pt_towards.Y(), 0.0);
 	ignition::math::Vector3d line_dir = line.Direction();
-	ignition::math::Vector3d start_shifted = start;
+	ignition::math::Vector3d shifted = pt_from;
 
 	// try to find a safe point near the target object whose
-	// cost (according to the global planner is small enough)
-	int tries_num = 10; // along with 0.5 factor below - maximum move-away from the intersection point is 5 m
-	while (tries_num--) {
+	// cost (according to the global planner) is small enough;
 
-		// FIXME
-		int16_t cost_superpose = getCostMean(start_shifted.X(), start_shifted.Y());
+	// check how far from the `pt_from` the `shifted` point is located
+	while ( (shifted - pt_from).Length() <= max_shift ) {
+
+		// evaluate the cost
+		int16_t cost_superpose = getCostMean(shifted.X(), shifted.Y());
 
 		if ( cost_superpose > 0 ) {
 			// move the point a little further according to line direction;
 			// move in the opposite direction (towards obstacle starting from
-			// the actor)
-			start_shifted.X(start_shifted.X() + 0.5 * line_dir.X());
-			start_shifted.Y(start_shifted.Y() + 0.5 * line_dir.Y());
+			// the actor);
+			// the smaller the multiplier near the `line_dir` is, the bigger resolution
+			// of `empty` point searching procedure is
+			shifted.X(shifted.X() + 0.1 * line_dir.X());
+			shifted.Y(shifted.Y() + 0.1 * line_dir.Y());
 			continue;
 		}
-
-		// check how far from the end point the shifted `start` point is located
-		if ( (end - start_shifted).Length() >= min_dist_to_end ) {
-			return (std::make_tuple(true, start_shifted));
-		} else {
-			return (std::make_tuple(false, start_shifted));
-		}
+		return (std::make_tuple(true, shifted));
 
 	}
-	return (std::make_tuple(false, ignition::math::Vector3d()));
+
+	// not found - return the initial position
+	return (std::make_tuple(false, pt_from));
 
 }
 
@@ -1249,26 +1273,36 @@ bool Target::tryToApplyTarget(const TargetLotV3d& target_lot, const ignition::ma
 		}
 	}
 
+	std::cout << "[Target::tryToApplyTarget] before generatePathPlan | TargetLot: raw - x = " << target_lot.getRaw().X() << " y = " << target_lot.getRaw().Y() << " \tsafe - x = " << target_lot.getSafe().X() << " y = " << target_lot.getSafe().Y() << std::endl;
+
 	// try to generate global path plan
 	if ( generatePathPlan(start, target_lot.getSafe() ) ) {
 
 		// plan has been generated;
 		// the safe point will be useful for sure
-		target_ = target_lot.getSafe();
+		target_ = target_lot.getRaw(); // target_lot.getSafe();
 
-		// if `target_lot` contents are not equal then add an additional point to the plan
-		if ( !target_lot.areEqual() ) {
-			// in turn, add an additional end point
-			global_planner_.addPoint(actor::ros_interface::Conversion::convertIgnVectorToPose(target_lot.getRaw()), false);
-		}
-
-		// similarly, check whether the `start` has been shifted
-		if ( !start.Equal(pose_world_ptr_->Pos()) ) {
-			global_planner_.addPoint(actor::ros_interface::Conversion::convertIgnVectorToPose(start), true);
-		}
+//		// if `target_lot` contents are not equal then add an additional point to the plan
+//		if ( !target_lot.areEqual() ) {
+//			// in turn, add an additional end point
+//			global_planner_.addPoint(actor::ros_interface::Conversion::convertIgnVectorToPose(target_lot.getRaw()), false);
+//		}
+//
+//		// similarly, check whether the `start` has been shifted
+//		if ( !start.Equal(pose_world_ptr_->Pos()) ) {
+//			global_planner_.addPoint(actor::ros_interface::Conversion::convertIgnVectorToPose(start), true);
+//		}
 
 		// ?
 		target_checkpoint_ = global_planner_.getWaypoint().Pos();
+
+		std::cout << "[Target::tryToApplyTarget] path length: " << global_planner_.getPoses().size() << std::endl;
+		for ( uint32_t i = 0; i < global_planner_.getPoses().size(); i++ ) {
+			std::cout << "\t" << i << ":\tx = " << global_planner_.getPoses().at(i).pose.position.x << " \t y = " << global_planner_.getPoses().at(i).pose.position.y << std::endl;
+			if ( (i > 25) && ((i + 25) < (global_planner_.getPoses().size() - 1) )) {
+				i += 25;
+			}
+		}
 
 		// Update checkpoint. After choosing a new target, the first checkpoint
 		// is equal (nearly) to the current position. This may generate a problem
@@ -1459,6 +1493,26 @@ int16_t Target::getCostMean(const double &pos_x, const double &pos_y) {
 	return (cost_superpose);
 
 }
+int16_t Target::getCostMean(const ignition::math::Vector3d &pos) {
+	return (getCostMean(pos.X(), pos.Y()));
+}
+
+// ------------------------------------------------------------------- //
+
+//bool Target::calculateClosestCostmapEmptyPoint(TargetLotV3d &lot, const ignition::math::Vector3d &pt_from,
+//		const ignition::math::Vector3d &pt_towards, const double &max_shift)
+//{
+//
+//	bool found = false;
+//	ignition::math::Vector3d position_shifted;
+//
+//	std::tie(found, position_shifted) = findSafePositionAlongLine(pt_from, pt_towards, max_shift);
+//
+//	if ( found ) {
+//		lot.setSafe(position_shifted);
+//	}
+//
+//}
 
 // ------------------------------------------------------------------- //
 
