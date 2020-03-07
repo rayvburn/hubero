@@ -19,7 +19,7 @@ namespace core {
 Actor::Actor():
  		bounding_type_(ACTOR_BOUNDING_ELLIPSE),
 		bounding_ptr_(nullptr),
-		stance_(ACTOR_STANCE_STAND),
+		//stance_(ACTOR_STANCE_STAND),
 		trans_function_ptr(nullptr)
 {}
 
@@ -231,6 +231,14 @@ void Actor::initSFM() {
 void Actor::initActor(const sdf::ElementPtr sdf) {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
+	// initial stance setup section
+	// set initial stance and create custom trajectory
+	stance_manager_.init(actor_ptr_->SkeletonAnimations(), static_cast<actor::ActorStance>(params_ptr_->getActorParams().init_stance));
+	// without an immediate trajectory update one will not be able to set another one later on
+	actor_ptr_->SetCustomTrajectory(stance_manager_.getTrajectoryInfoPtr());
+
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
 	// finite state machine setup section
 	// add states for FSM
 	fsm_.addState(ACTOR_STATE_ALIGN_TARGET);
@@ -243,7 +251,7 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 
 	// update state handler function pointer
 	if ( fsm_.didStateChange() ) {
-		updateTransitionFunctionPtr();
+		updateTransitionFunctionPtr(false);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -252,12 +260,6 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 	target_manager_ = Target(world_ptr_, pose_world_ptr_, params_ptr_);
 	target_manager_.initializeGlobalPlan(node_.getNodeHandlePtr(), 40, actor_ptr_->GetName());
 	target_manager_.initializeCommonInfo(common_info_ptr_);
-
-
-	// - - - - - - - - - - - - - - - - - - - - - - -
-	// initial stance setup section
-	// set initial stance and create custom trajectory
-	setStance( static_cast<actor::ActorStance>(params_ptr_->getActorParams().init_stance) );
 
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -644,15 +646,13 @@ const Action Actor::getActionInfo() const {
 
 bool Actor::setStance(const actor::ActorStance &stance_type) {
 
+	return (stance_manager_.configure(stance_type));
+	/*
 	if ( stance_ != stance_type ) {
 
 		stance_ = stance_type;
 		std::string animation = convertStanceToAnimationName();
 		gazebo::physics::Actor::SkeletonAnimation_M skeleton_anims = actor_ptr_->SkeletonAnimations();
-
-		/* To print available animations:
-		for (auto& x: skeleton_anims) { std::cout << "Skel. animation: " << x.first << std::endl; }
-		*/
 
 		if ( skeleton_anims.find(animation) == skeleton_anims.end() ) {
 
@@ -667,6 +667,7 @@ bool Actor::setStance(const actor::ActorStance &stance_type) {
 			trajectory_info_->type = animation;
 			trajectory_info_->duration = 1.0;
 			actor_ptr_->SetCustomTrajectory(trajectory_info_);
+			actor_ptr_->SetCustomTrajectory(new gazebo::physics::TrajectoryInfo());
 
 			// debug info
 			std::cout << "[STANCE] " << actor_ptr_->GetName() << "'s\tnew stance:\t";
@@ -684,6 +685,7 @@ bool Actor::setStance(const actor::ActorStance &stance_type) {
 
 	}
 	return (false);
+	*/
 
 }
 
@@ -957,7 +959,7 @@ void Actor::updateStanceOrientation(ignition::math::Pose3d &pose) {
 
 	ignition::math::Vector3d rpy = pose.Rot().Euler();
 
-	switch (stance_) {
+	switch (stance_manager_.getStance()) {
 
 		case(actor::ACTOR_STANCE_WALK):
 		case(actor::ACTOR_STANCE_STAND):
@@ -1095,6 +1097,10 @@ void Actor::applyUpdate(const double &dist_traveled) {
 	// update the global pose
 	actor_ptr_->SetWorldPose(*pose_world_ptr_, false, false);
 
+	// here due to `SetScriptTime` dep
+	if ( stance_manager_.update(world_ptr_->SimTime()) ) {
+		actor_ptr_->SetCustomTrajectory(stance_manager_.getTrajectoryInfoPtr());
+	}
 
 	/*
 	 * std::cout << actor->GetName() << " | script time: " << actor->ScriptTime() << "\tdist_trav: " << _dist_traveled << "\tanim_factor: " << animation_factor << std::endl;
@@ -1517,7 +1523,7 @@ void Actor::updateBounding(const ignition::math::Pose3d &pose) {
 
 // ------------------------------------------------------------------- //
 
-void Actor::updateTransitionFunctionPtr() {
+void Actor::updateTransitionFunctionPtr(bool update_stance) {
 
 	// print the name of the actor whose state changes
 	std::cout << "[ FSM ] " << actor_ptr_->GetName() << "'s \tnew state:";
@@ -1527,7 +1533,7 @@ void Actor::updateTransitionFunctionPtr() {
 	case(ACTOR_STATE_ALIGN_TARGET):
 			std::cout << "\talignToTarget" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerAlignTarget; 		// &this->Actor::stateHandlerAlignTarget;
-			setStance(ACTOR_STANCE_WALK);
+			if ( update_stance ) { setStance(ACTOR_STANCE_WALK); }
 			break;
 	case(ACTOR_STATE_STUCK):
 			std::cout << "\tgotStuck" << std::endl;
@@ -1536,83 +1542,39 @@ void Actor::updateTransitionFunctionPtr() {
 	case(ACTOR_STATE_MOVE_AROUND):
 			std::cout << "\tmoveAround" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerMoveAround; 		// &this->Actor::stateHandlerMoveAround;
-			setStance(ACTOR_STANCE_WALK);
+			if ( update_stance ) { setStance(ACTOR_STANCE_WALK); }
 			break;
 	case(ACTOR_STATE_TARGET_REACHING):
 			std::cout << "\ttargetReaching" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerTargetReaching;
-			setStance(ACTOR_STANCE_WALK);
+			if ( update_stance ) { setStance(ACTOR_STANCE_WALK); }
 			break;
 	case(ACTOR_STATE_LIE_DOWN):
 			std::cout << "\tlieDown" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerLieDown;
-			setStance(ACTOR_STANCE_WALK);
+			if ( update_stance ) { setStance(ACTOR_STANCE_WALK); }
 			break;
 	case(ACTOR_STATE_STOP_AND_STARE):
 			std::cout << "\tstopAndStare" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerStopAndStare;
-			setStance(ACTOR_STANCE_STAND);
+			if ( update_stance ) { setStance(ACTOR_STANCE_STAND); }
 			// empty
 			break;
 	case(ACTOR_STATE_FOLLOW_OBJECT):
 			std::cout << "\tfollowObject" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerFollowObject; 	// &this->Actor::stateHandlerFollowObject;
-			setStance(ACTOR_STANCE_WALK);
+			if ( update_stance ) { setStance(ACTOR_STANCE_WALK); }
 			break;
 	case(ACTOR_STATE_TELEOPERATION):
 			std::cout << "\tteleoperation" << std::endl;
 			trans_function_ptr = &actor::core::Actor::stateHandlerTeleoperation;
-			setStance(ACTOR_STANCE_STAND);
+			if ( update_stance ) { setStance(ACTOR_STANCE_STAND); }
 			break;
 	default:
 			std::cout << "\tUNKNOWN" << std::endl;
 			break;
 
 	}
-
-}
-
-// ------------------------------------------------------------------- //
-
-std::string Actor::convertStanceToAnimationName() const {
-
-	std::string anim_name;
-
-	switch( stance_ ) {
-
-	case(ACTOR_STANCE_WALK):
-			anim_name = "walk";
-			break;
-	case(ACTOR_STANCE_STAND):
-			anim_name = "stand";
-			break;
-	case(ACTOR_STANCE_LIE):
-			anim_name = "stand"; // lie is stand but in different plane
-			break;
-	case(ACTOR_STANCE_SIT_DOWN):
-			anim_name = "sit_down";
-			break;
-	case(ACTOR_STANCE_SITTING):
-			anim_name = "sitting";
-			break;
-	case(ACTOR_STANCE_STAND_UP):
-			anim_name = "stand_up";
-			break;
-	case(ACTOR_STANCE_RUN):
-			anim_name = "run";
-			break;
-	case(ACTOR_STANCE_TALK_A):
-			anim_name = "talk_a";
-			break;
-	case(ACTOR_STANCE_TALK_B):
-			anim_name = "talk_b";
-			break;
-	default:
-			break;
-
-	}
-
-	return (anim_name);
 
 }
 

@@ -63,6 +63,7 @@ add_library(actor_core
   include/actor/core/Action.h
   include/actor/core/Velocity.h
   include/actor/core/FollowObjectHelper.h
+  include/actor/core/StanceHelper.h
 
   src/actor/core/Actor.cpp 
   src/actor/core/CommonInfo.cpp 
@@ -74,6 +75,7 @@ add_library(actor_core
   src/actor/core/Action.cpp
   src/actor/core/Velocity.cpp
   src/actor/core/FollowObjectHelper.cpp
+  src/actor/core/StanceHelper.cpp
 
 )
 

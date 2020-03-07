@@ -50,7 +50,8 @@ typedef enum {
 	ACTOR_STANCE_STAND_UP,//!< ACTOR_STANCE_STAND_UP stand up
 	ACTOR_STANCE_RUN,     //!< ACTOR_STANCE_RUN run
 	ACTOR_STANCE_TALK_A,  //!< ACTOR_STANCE_TALK_A type A of talking
-	ACTOR_STANCE_TALK_B   //!< ACTOR_STANCE_TALK_B type B of talking
+	ACTOR_STANCE_TALK_B,   //!< ACTOR_STANCE_TALK_B type B of talking
+	ACTOR_STANCE_UNKNOWN
 } ActorStance;
 
 // -------------------------

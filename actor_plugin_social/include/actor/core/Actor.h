@@ -25,6 +25,7 @@
 #include <actor/core/Target.h>
 #include <actor/core/Action.h>
 #include <actor/core/Velocity.h>
+#include <actor/core/StanceHelper.h>
 #include <actor/inflation/Box.h>
 #include <actor/inflation/Circle.h>
 #include <actor/inflation/Ellipse.h>
@@ -240,16 +241,13 @@ private:
     double move(const double &dt);
 
     /// \brief Helper function to set proper state handler according to current state
-    void updateTransitionFunctionPtr();
+    void updateTransitionFunctionPtr(bool update_stance = true);
 
     /// \brief Helper function to update a pose of a bounding model
     /// \param[in] Pose which model needs to be located in;
     /// parameter is useful for SFM grid visualization where
     /// actor's fake positions are passed to bounding model
     void updateBounding(const ignition::math::Pose3d &pose);
-
-    /// \brief Helper function that converts a stance type to associated animation
-    std::string convertStanceToAnimationName() const;
 
     /// \brief Publishes position data as ROS TF messages.
     void visualizePositionData();
@@ -305,9 +303,6 @@ private:
     /// \details Actor border instance which abstracts of the actual shape of the border
     std::shared_ptr<actor::inflation::Border> bounding_ptr_;
 
-    /// \brief Actor's current stance
-    actor::ActorStance stance_;
-
     /// \brief Actor's world pose - note: the coordinate system of an actor
     /// is rotated 90 deg CCW around world coordinate system's Z axis
     std::shared_ptr<ignition::math::Pose3d> pose_world_ptr_;
@@ -361,8 +356,8 @@ private:
 	/// \brief Time of the last TransformFrames message publication
 	gazebo::common::Time time_last_tf_pub_;
 
-    /// \brief Custom trajectory info
-    gazebo::physics::TrajectoryInfoPtr trajectory_info_;
+    /// \brief TODO
+	StanceHelper stance_manager_;
 
     /// \brief Node for ROS Interface
     actor::ros_interface::Node node_;

@@ -28,6 +28,15 @@ int main(int argc, char** argv) {
 	ActorAction actor1("/gazebo/actor_plugin_ros_interface/actor1", &nh);
 	ActorAction actor2("/gazebo/actor_plugin_ros_interface/actor2", &nh);
 
+	// =================== init stage ========================================
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	actor1.setStance(3); // ACTOR_STANCE_SIT_DOWN
+	std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+	actor1.setStance(4); // ACTOR_STANCE_SITTING
+	std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+	actor1.setStance(5); // ACTOR_STANCE_STAND_UP
+	std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
 	// =================== 1st stage ========================================
 //	actor1.setGoal(+0.0, +2.0);
 	actor1.setGoal(+1.0, +1.0);

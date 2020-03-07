@@ -24,6 +24,7 @@ public:
 	bool moveAroundStart();
 	bool moveAroundStop();
 
+	// FIXME: enum-based
 	bool setStance(const uint8_t &stance_type);
 
 	/// \brief Get velocity vector (linear x, linear y and angular `yaw`)
