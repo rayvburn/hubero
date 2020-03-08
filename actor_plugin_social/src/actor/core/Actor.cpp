@@ -646,7 +646,7 @@ const Action Actor::getActionInfo() const {
 
 bool Actor::setStance(const actor::ActorStance &stance_type) {
 
-	return (stance_manager_.configure(stance_type));
+	return (stance_manager_.configure(stance_type, world_ptr_->SimTime()));
 	/*
 	if ( stance_ != stance_type ) {
 
@@ -954,31 +954,47 @@ void Actor::stateHandlerTeleoperation() {
 
 void Actor::updateStanceOrientation(ignition::math::Pose3d &pose) {
 
-	/* Corrects the rotation to align face with x axis if yaw = 0
-	 * and stand up (with roll 0 actor is lying) */
 
-	ignition::math::Vector3d rpy = pose.Rot().Euler();
+	stance_manager_.adjustStancePose(*pose_world_ptr_, world_ptr_->SimTime());
 
-	switch (stance_manager_.getStance()) {
+	/*
+	ignition::math::Pose3d pose_mod = stance_manager_.calculateStancePoseCompensation(world_ptr_->SimTime());
 
-		case(actor::ACTOR_STANCE_WALK):
-		case(actor::ACTOR_STANCE_STAND):
-		case(actor::ACTOR_STANCE_STAND_UP):
-		case(actor::ACTOR_STANCE_TALK_A):
-		case(actor::ACTOR_STANCE_TALK_B):
-		case(actor::ACTOR_STANCE_RUN):
-		case(actor::ACTOR_STANCE_SIT_DOWN):
-		case(actor::ACTOR_STANCE_SITTING):
-				rpy.X(IGN_PI_2);
-				break;
+	// constant summation of angle values (especially +90 angles)
+	// makes the actor rotate flying
+	ignition::math::Vector3d rpy_update = pose_mod.Rot().Euler();
+	ignition::math::Vector3d rpy_base = pose.Rot().Euler();
+	pose.Rot().Euler(rpy_base.X() + rpy_update.X(),
+					 rpy_base.Y() + rpy_update.Y(),
+					 rpy_base.Z() + rpy_update.Z());
+	*/
 
-		case(actor::ACTOR_STANCE_LIE):
-				rpy.X(0.0000);
-				break;
 
-	}
-
-	pose.Rot().Euler(rpy);
+//	/* Corrects the rotation to align face with x axis if yaw = 0
+//	 * and stand up (with roll 0 actor is lying) */
+//
+//	ignition::math::Vector3d rpy = pose.Rot().Euler();
+//
+//	switch (stance_manager_.getStance()) {
+//
+//		case(actor::ACTOR_STANCE_WALK):
+//		case(actor::ACTOR_STANCE_STAND):
+//		case(actor::ACTOR_STANCE_STAND_UP):
+//		case(actor::ACTOR_STANCE_TALK_A):
+//		case(actor::ACTOR_STANCE_TALK_B):
+//		case(actor::ACTOR_STANCE_RUN):
+//		case(actor::ACTOR_STANCE_SIT_DOWN):
+//		case(actor::ACTOR_STANCE_SITTING):
+//				rpy.X(IGN_PI_2);
+//				break;
+//
+//		case(actor::ACTOR_STANCE_LIE):
+//				rpy.X(0.0000);
+//				break;
+//
+//	}
+//
+//	pose.Rot().Euler(rpy);
 
 }
 

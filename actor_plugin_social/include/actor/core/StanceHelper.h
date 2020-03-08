@@ -28,11 +28,15 @@ public:
 	/// [Err] [Actor.cc:582] Trajectory not found at time [X]"
 	void init(const gazebo::physics::Actor::SkeletonAnimation_M &anims, const actor::ActorStance &stance_init);
 
-	bool configure(const std::queue<actor::ActorStance> &stance_type_v);
-	bool configure(const actor::ActorStance &stance_type);
+	/// DEPRECATED, NEEDS TO BE ADJUSTED FOR HEIGHTS
+	bool configure(const std::queue<actor::ActorStance> &stance_type_v, const gazebo::common::Time& time);
+
+	bool configure(const actor::ActorStance &stance_type, const gazebo::common::Time& time, const double &height_init = 1.0);
 
 	/// \brief Returns True if a new TrajectoryInfo was prepared and can be applied
 	bool update(const gazebo::common::Time& time);
+
+	void adjustStancePose(ignition::math::Pose3d &pose, const gazebo::common::Time& time);
 
 	gazebo::physics::TrajectoryInfoPtr& getTrajectoryInfoPtr();
 
@@ -61,14 +65,23 @@ private:
     /// stores the current stance of the actor
     std::queue<actor::ActorStance> stance_sequence_;
 
+    double height_initial_;
+
+    std::queue<double> height_sequence_;
+
     /// \brief A dictionary of skeleton animations
     gazebo::physics::Actor::SkeletonAnimation_M skeleton_anims_;
 
     /// \brief Custom trajectory info
     gazebo::physics::TrajectoryInfoPtr trajectory_info_ptr_;
 
+    /// \brief Useful for animation transitions, indicates start time
+	double trajectory_start_time_;
+
     /// \brief Useful for animation transitions, indicates end time
-    gazebo::common::Time trajectory_end_time_;
+    double trajectory_end_time_;
+
+
 
     enum {
     	STANCE_UNKNOWN = 0u,	//!< STANCE_UNKNOWN: unknown state (initial)

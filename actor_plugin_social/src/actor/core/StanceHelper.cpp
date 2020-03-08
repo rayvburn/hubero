@@ -14,7 +14,10 @@ namespace core {
 
 StanceHelper::StanceHelper()
 	: stance_status_(STANCE_UNKNOWN),
-	  stance_(ACTOR_STANCE_UNKNOWN)
+	  stance_(ACTOR_STANCE_UNKNOWN),
+	  height_initial_(1.0),
+	  trajectory_end_time_(0.0),
+	  trajectory_start_time_(0.0)
 {}
 
 // ------------------------------------------------------------------- //
@@ -25,6 +28,7 @@ void StanceHelper::init(const gazebo::physics::Actor::SkeletonAnimation_M &anims
 	stance_ = stance_init;
 	stance_status_ = STANCE_INITED;
 
+
 	// create a temporary trajectory to prevent errors
 	trajectory_info_ptr_.reset(new gazebo::physics::TrajectoryInfo());
 	trajectory_info_ptr_->type = convertStanceToAnimationName(stance_init);
@@ -34,7 +38,7 @@ void StanceHelper::init(const gazebo::physics::Actor::SkeletonAnimation_M &anims
 
 // ------------------------------------------------------------------- //
 
-bool StanceHelper::configure(const std::queue<actor::ActorStance> &stance_type_v) {
+bool StanceHelper::configure(const std::queue<actor::ActorStance> &stance_type_v, const gazebo::common::Time& time) {
 
 	// treat as error
 	if ( stance_type_v.size() == 0 ) {
@@ -45,6 +49,7 @@ bool StanceHelper::configure(const std::queue<actor::ActorStance> &stance_type_v
 	uint8_t stance_status_backup = stance_status_;
 	actor::ActorStance stance_backup = stance_;
 	std::queue<actor::ActorStance> stance_sequence_backup = stance_sequence_;
+	// TODO: height queue
 
 	// remove any previous sequence
 	clearQueue();
@@ -53,7 +58,7 @@ bool StanceHelper::configure(const std::queue<actor::ActorStance> &stance_type_v
 	// iterate over vector elements
 	for ( size_t i = 0; i < stance_type_v.size(); i++ ) {
 		// check status
-		if ( !configure(stance_type_v.front()) ) {
+		if ( !configure(stance_type_v.front(), time) ) {
 			// pop back newly added items - full sequence in or ignored totally
 			// NOTE:
 			// the first stance will not be copied into sequence
@@ -75,7 +80,8 @@ bool StanceHelper::configure(const std::queue<actor::ActorStance> &stance_type_v
 
 // ------------------------------------------------------------------- //
 
-bool StanceHelper::configure(const actor::ActorStance &stance_type) {
+bool StanceHelper::configure(const actor::ActorStance &stance_type, const gazebo::common::Time& time,
+		const double &height_init) {
 
 	// NOTE: at the moment 2 consequent stances of the sequence can be the same!
 
@@ -97,11 +103,14 @@ bool StanceHelper::configure(const actor::ActorStance &stance_type) {
 			if ( isDisposableAnimation(stance_type) ) {
 				trajectory_info_ptr_->duration = 1.0;
 			} else {
-				trajectory_info_ptr_->duration = 10000.0; // std::numeric_limits<double>::infinity();
+				trajectory_info_ptr_->duration = 100000; // std::numeric_limits<double>::infinity();
 			}
 
 			stance_ = stance_type;
+			height_initial_ = height_init;
 			stance_status_ = STANCE_SELECTED;
+			trajectory_start_time_ = time.Double();
+			trajectory_end_time_ = trajectory_start_time_ + trajectory_info_ptr_->duration;
 			return (true);
 
 		} else if ( stance_status_ == STANCE_SELECTED ) {
@@ -109,6 +118,7 @@ bool StanceHelper::configure(const actor::ActorStance &stance_type) {
 			// a new stance has just been selected but was not executed yet,
 			// let's queue the newly received stance
 			stance_sequence_.push(stance_type);
+			height_sequence_.push(height_init);
 			return (true);
 
 		}
@@ -134,7 +144,7 @@ bool StanceHelper::update(const gazebo::common::Time& time) {
 		std::cout << "[StanceHelper::update] inited" << std::endl;
 
 		// need to configure at first
-		if ( !configure(stance_) ) {
+		if ( !configure(stance_, time, height_initial_) ) {
 			stance_status_ = STANCE_UNKNOWN;
 			return (false);
 		}
@@ -158,15 +168,17 @@ bool StanceHelper::update(const gazebo::common::Time& time) {
 //		std::cout << "[StanceHelper::update] execution" << std::endl;
 
 		// evaluate whether the animation execution should be terminated
-		if ( (trajectory_end_time_.Double() != std::numeric_limits<double>::infinity()) //&&
+		if ( (trajectory_end_time_ != std::numeric_limits<double>::infinity()) //&&
 //			 (time.Double() >= trajectory_end_time_.Double()) ) {
 		){
 			// the next sequence element should be chosen (if exists)
 			if ( stance_sequence_.size() > 0 ) {
 
 				actor::ActorStance stance = stance_sequence_.front();
+				double height = height_sequence_.front();
 				stance_sequence_.pop();
-				if ( configure(stance) ) {
+				height_sequence_.pop();
+				if ( configure(stance, time, height) ) {
 					return (true);
 				}
 
@@ -177,6 +189,82 @@ bool StanceHelper::update(const gazebo::common::Time& time) {
 
 	}
 	return (false);
+
+}
+
+// ------------------------------------------------------------------- //
+
+void StanceHelper::adjustStancePose(ignition::math::Pose3d &pose, const gazebo::common::Time& time) {
+
+	//
+	/* Corrects the rotation to align face with x axis if yaw = 0
+	 * and stand up (with roll 0 actor is lying) */
+	/*
+	ignition::math::Vector3d rpy = pose.Rot().Euler();
+
+	switch (stance_manager_.getStance()) {
+
+		case(actor::ACTOR_STANCE_WALK):
+		case(actor::ACTOR_STANCE_STAND):
+		case(actor::ACTOR_STANCE_STAND_UP):
+		case(actor::ACTOR_STANCE_TALK_A):
+		case(actor::ACTOR_STANCE_TALK_B):
+		case(actor::ACTOR_STANCE_RUN):
+		case(actor::ACTOR_STANCE_SIT_DOWN):
+		case(actor::ACTOR_STANCE_SITTING):
+				rpy.X(IGN_PI_2);
+				break;
+
+		case(actor::ACTOR_STANCE_LIE):
+				rpy.X(0.0000);
+				break;
+
+	}
+	pose.Rot().Euler(rpy);
+	*/
+	//
+
+	ignition::math::Vector3d pos = pose.Pos();
+	ignition::math::Vector3d rpy = pose.Rot().Euler();
+
+	if ( isDisposableAnimation(stance_) ) {
+
+		double so_far = time.Double() - trajectory_start_time_;
+		double range = trajectory_end_time_ - trajectory_start_time_;
+
+		// animation execution progress based on the start and end time stamps
+		double progress = so_far / range;
+
+		std::cout << "StanceHelper::adjustStancePose" << std::endl;
+		std::cout << "start: " << trajectory_start_time_ << "\tcurrent: " << time.Double() << "\tend: " << trajectory_end_time_ << std::endl;
+		std::cout << "so_far: " << so_far << "\trange: " << range << "\tprogress: " << progress << std::endl;
+
+		// trim
+		if ( progress > 1.0 ) {
+			progress = 1.0;
+		}
+
+		// NOTE: relative to the initial height
+		switch ( stance_ ) {
+		case(ACTOR_STANCE_SIT_DOWN):
+			pos.Z(height_initial_ - progress * 0.3);
+			break;
+		case(ACTOR_STANCE_STAND_UP):
+			pos.Z(height_initial_ - progress * 0.2);
+			break;
+		}
+
+	} else if (stance_ != ACTOR_STANCE_LIE) {
+
+		rpy.X(IGN_PI_2);
+
+	} else if (stance_ == ACTOR_STANCE_LIE) {
+
+		rpy.X(0.0);
+
+	}
+	pose.Pos() = pos;
+	pose.Rot() = ignition::math::Quaterniond(rpy);
 
 }
 
