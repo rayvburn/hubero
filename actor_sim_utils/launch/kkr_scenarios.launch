@@ -12,6 +12,8 @@
     <!-- ====================== default values for parameters ================================== -->
     <arg name="world"       default="cafe_example"/>
     <arg name="world_file"  default="$(find actor_sim_utils)/worlds/$(arg world).world"/>
+    <arg name="run"         default="a"/>
+    <arg name="delay"       default="0"/>
     <arg name="map_file"    default="$(find actor_sim_utils)/maps/$(arg world).yaml"/>
     <arg name="gui"         default="true"/>
     <arg name="rviz"        default="true"/>
@@ -73,20 +75,25 @@
 
         <!-- ======================== load global planner node ================================= -->
         <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
+        <!-- =============================== scenario ========================================== -->
+        <node name="living_room_node" pkg="actor_sim_scenarios" type="living_room_node" args="$(arg delay)" output="screen"/> <!-- arg is a launch delay -->
 
+        <group if="$(eval run == 'a')">
 
-    	<!-- Ellipse
-    	<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">2</rosparam>
-    	<rosparam param="$(arg actor_params_ns)/inflation/ellipse">[{semi_major: 1.9, semi_minor: 1.2, offset_x: 0.35, offset_y: 0.0}]</rosparam>
-    	-->
-    	<!-- Circle  -->
-    	<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
-    	<rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.35</rosparam>
-		
-		<!-- Box 
-		<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">0</rosparam>
-    	<rosparam param="$(arg actor_params_ns)/inflation/box_size">[{x_half: 0.25, y_half: 0.25, z_half: 1.00}]</rosparam>
-    	-->
+            <!-- Circle  -->
+            <rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
+            <rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.40</rosparam>
+
+        </group> 
+
+        <group if="$(eval run == 'b')">
+
+            <!-- Ellipse -->
+            <rosparam param="$(arg actor_params_ns)/inflation/bounding_type">2</rosparam>
+            <rosparam param="$(arg actor_params_ns)/inflation/ellipse">[{semi_major: 0.40, semi_minor: 0.30, offset_x: 0.0, offset_y: 0.0}]</rosparam>
+
+        </group> 
+
         <rosparam param="$(arg actor_params_ns)/general/world_bound_x">[+6.25, -3.50]</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/world_bound_y">[-4.50, +4.50]</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">false</rosparam>
@@ -95,7 +102,6 @@
         <rosparam param="$(arg sfm_params_ns)/algorithm/internal_force_factor">500.0</rosparam>
         <rosparam param="$(arg sfm_params_ns)/algorithm/interaction_force_factor">1000.0</rosparam>
 
-
     </group>
 
 
@@ -103,10 +109,25 @@
 
         <!-- ======================== load global planner node ================================= -->
         <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
+        <!-- =============================== scenario ========================================== -->
+        <node name="parking_node" pkg="actor_sim_scenarios" type="parking_node" args="$(arg delay)"/> <!-- arg is a launch delay -->
 
+        <group if="$(eval run == 'a')">
 
-    	<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
-    	<rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.35</rosparam>
+            <!-- Circle  -->
+            <rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
+            <rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.35</rosparam>
+
+        </group> 
+
+        <group if="$(eval run == 'b')">
+
+            <!-- Box -->
+            <rosparam param="$(arg actor_params_ns)/inflation/bounding_type">0</rosparam>
+            <rosparam param="$(arg actor_params_ns)/inflation/box_size">[{x_half: 0.25, y_half: 0.25, z_half: 1.00}]</rosparam>
+        
+        </group> 
+
         <rosparam param="$(arg actor_params_ns)/general/world_bound_x">[+20.5, -5.5]</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/world_bound_y">[-6.0, +20.0]</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/limit_actors_workspace">false</rosparam>

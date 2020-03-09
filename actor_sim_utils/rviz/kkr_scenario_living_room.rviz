@@ -7,7 +7,7 @@ Panels:
         - /Actor11
         - /Actor21
       Splitter Ratio: 0.5
-    Tree Height: 359
+    Tree Height: 747
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -157,13 +157,13 @@ Visualization Manager:
           Queue Size: 100
           Value: true
         - Class: rviz/MarkerArray
-          Enabled: true
+          Enabled: false
           Marker Topic: /gazebo/actor_plugin_ros_interface/actor1/closest_points
           Name: ClosestPoints
           Namespaces:
             {}
           Queue Size: 100
-          Value: true
+          Value: false
         - Alpha: 1
           Buffer Length: 1
           Class: rviz/Path
