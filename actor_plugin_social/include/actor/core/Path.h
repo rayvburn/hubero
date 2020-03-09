@@ -70,10 +70,10 @@ private:
 	ignition::math::Vector3d last_valid_pos_;
 
 	/// @brief Vector of positions (in fact poses)
-	sfm::ShiftRegister<geometry_msgs::PoseStamped> path_{500, 0};
+	sfm::ShiftRegister<geometry_msgs::PoseStamped> path_{1500, 0}; // <- scenario recording // path_{500, 0};
 
 	/// @brief Vector of distances to the closest obstacle in the world
-	sfm::ShiftRegister<double> dists_{500, 0};
+	sfm::ShiftRegister<double> dists_{1500, 0}; // <- scenario recording
 
 	/// @brief Flag storing information whether internal vectors
 	/// have just been updated

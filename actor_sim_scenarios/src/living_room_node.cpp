@@ -48,12 +48,12 @@ int main(int argc, char** argv) {
 //	std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
 	// =================== 1st stage ========================================
-	/* Actor1 goes to the sofa neighbourhood (Actor2 pose) */
-	actor1.setGoal(+5.0, -1.0);
+	/* Actor2 goes to the sofa neighbourhood (Actor1 pose) */
+	actor2.setGoal(+5.0, -1.0);
 
 	ROS_INFO("[SCENARIO] Firing up the 1st stage!");
 	// wait for finish of both actions - synchronization point
-	while ( !(actor1.getClientPtrSetGoal()->getState() == State::SUCCEEDED) ) {
+	while ( !(actor2.getClientPtrSetGoal()->getState() == State::SUCCEEDED) ) {
 		if ( !ros::ok() ) {
 			ROS_INFO("Node stopped!");
 			return (0);
@@ -63,11 +63,11 @@ int main(int argc, char** argv) {
 	ROS_INFO("[SCENARIO] 1st stage completed!");
 
 	// =================== 2nd stage ========================================
-	/* Actor1 talks for few seconds */
+	/* Actor2 talks for few seconds */
 	ROS_INFO("[SCENARIO] Firing up the 2nd stage!");
-	actor1.setStance(7); // ACTOR_STANCE_TALK_A
+	actor2.setStance(7); // ACTOR_STANCE_TALK_A
 	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-	actor1.setStance(8); // ACTOR_STANCE_TALK_B
+	actor2.setStance(8); // ACTOR_STANCE_TALK_B
 	std::this_thread::sleep_for(std::chrono::milliseconds(4000));
 	ROS_INFO("[SCENARIO] 2nd stage completed!");
 
@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
 	std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
 //	actor1.setGoalName("table_conference_2");
-	actor1.setGoal(+2.0, -2.7);
+	actor2.setGoal(+2.0, -2.7);
 	// actor1.setGoal(+2.5, -4.8);
 	// actor1.setGoal(+2.5, -5.3);
 	// OK, far // actor1.setGoal(+2.7, -5.1);
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
 //	actor2.setGoal(+2.5, -4.8); // does not work
 //	actor2.setGoal(+2.1, -0.1); // OK, far
 //	actor2.setGoal(+0.1, -1.0); // OK
-	actor2.setGoal(+0.5, -1.2); // 1.0 ok
+	actor1.setGoal(+0.5, -1.2); // 1.0 ok
 	// NEIN // actor2.setGoal(+1.5, -3.2);
 
 	ROS_INFO("Waiting for the synchronization!");
@@ -108,7 +108,6 @@ int main(int argc, char** argv) {
 	// ==================== finish ==========================================
 
 	ROS_INFO("Scenario operation finished!");
-	ros::spin(); // optional, can safely finish
 	return (0);
 
 }

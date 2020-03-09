@@ -4660,7 +4660,7 @@
          tune the vector field used by the ActorPlugin to control the Actor. -->
     
     <actor name="actor1">
-      <pose>-5.00 -5.50 1.00 0 0 3.14</pose>
+      <pose>-5.00 -6.00 1.00 0 0 -1.57</pose>
       <skin>
         <filename>walk.dae</filename>
         <scale>1.0</scale>
@@ -4722,7 +4722,7 @@
                         
 
       <plugin name="actor1_plugin" filename="libactor_plugin_social.so">
-        <target>-4.5 11.5 1.00</target>
+        <!-- <target>-4.5 11.5 1.00</target> -->
         <animation_factor>5.1</animation_factor> 
         <ignore_obstacles>
           <model>cafe</model>
@@ -4733,7 +4733,7 @@
     
     
     <actor name="actor2">
-      <pose>4 -6 1.00 0 0 3.14</pose>
+      <pose>-4.00 -1.80 1.00 0 0 +1.57</pose>
       <skin>
         <filename>walk.dae</filename>
         <scale>1.0</scale>
@@ -4794,7 +4794,7 @@
       </animation>
 
       <plugin name="actor2_plugin" filename="libactor_plugin_social.so">
-        <target>5.25 -4.5 1.00</target>
+        <!-- <target>5.25 -4.5 1.00</target> -->
         <animation_factor>5.1</animation_factor>
         <ignore_obstacles>
           <model>cafe</model>
@@ -4805,7 +4805,7 @@
     
 
     <actor name="actor3">
-      <pose>5 18.5 1.00 0 0 -1.57</pose>
+      <pose>-2.00 0.0 1.00 0 0 +1.57</pose>
       <skin>
         <filename>walk.dae</filename>
         <scale>1.0</scale>
@@ -4867,7 +4867,7 @@
       </animation>
       
       <plugin name="actor3_plugin" filename="libactor_plugin_social.so">
-        <target>19.5 11.85 1.24</target>
+        <!-- <target>19.5 11.85 1.24</target> -->
         <animation_factor>5.1</animation_factor>
         <ignore_obstacles>
           <model>cafe</model>
@@ -4878,7 +4878,7 @@
 
 
     <actor name="actor4">
-      <pose>19.5 5 1.00 0 0 0</pose>
+      <pose>1.5 2.50 1.00 0 0 +1.57</pose>
       <skin>
         <filename>walk.dae</filename>
         <scale>1.0</scale>
@@ -4940,7 +4940,7 @@
       </animation>
 
       <plugin name="actor4_plugin" filename="libactor_plugin_social.so">
-        <target>17.25 -6.25 1.24</target>
+        <!-- <target>17.25 -6.25 1.24</target> -->
         <animation_factor>5.1</animation_factor>
         <ignore_obstacles>
           <model>cafe</model>

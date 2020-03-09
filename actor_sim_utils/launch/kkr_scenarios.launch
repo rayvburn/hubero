@@ -14,6 +14,7 @@
     <arg name="world_file"  default="$(find actor_sim_utils)/worlds/$(arg world).world"/>
     <arg name="run"         default="a"/>
     <arg name="delay"       default="0"/>
+    <arg name="scenario_en" default="1"/>
     <arg name="map_file"    default="$(find actor_sim_utils)/maps/$(arg world).yaml"/>
     <arg name="gui"         default="true"/>
     <arg name="rviz"        default="true"/>
@@ -76,13 +77,15 @@
         <!-- ======================== load global planner node ================================= -->
         <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
         <!-- =============================== scenario ========================================== -->
-        <node name="living_room_node" pkg="actor_sim_scenarios" type="living_room_node" args="$(arg delay)" output="screen"/> <!-- arg is a launch delay -->
+        <group if="$(eval scenario_en == 1)">
+            <node name="living_room_node" pkg="actor_sim_scenarios" type="living_room_node" args="$(arg delay)" output="screen"/> <!-- arg is a launch delay -->
+        </group> 
 
         <group if="$(eval run == 'a')">
 
             <!-- Circle  -->
             <rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
-            <rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.40</rosparam>
+            <rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.30</rosparam>
 
         </group> 
 
@@ -110,7 +113,9 @@
         <!-- ======================== load global planner node ================================= -->
         <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
         <!-- =============================== scenario ========================================== -->
-        <node name="parking_node" pkg="actor_sim_scenarios" type="parking_node" args="$(arg delay)"/> <!-- arg is a launch delay -->
+        <group if="$(eval scenario_en == 1)">
+            <node name="parking_node" pkg="actor_sim_scenarios" type="parking_node" args="$(arg delay)" output="screen"/> <!-- arg is a launch delay -->
+        </group> 
 
         <group if="$(eval run == 'a')">
 

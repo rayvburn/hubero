@@ -8873,7 +8873,7 @@
     </gui>
 
     <!-- Actors -->
-    <actor name='actor1'>
+    <actor name='actor2'>
       <pose frame=''>3.8 -5.3 1.0 0 -0 3.1415</pose> 
       <!-- <pose frame=''>3.8 -4.7 1.0 0 -0 3.1415</pose> -->
       <skin>
@@ -8925,7 +8925,7 @@
         <scale>1</scale>
         <interpolate_x>1</interpolate_x>
       </animation>
-      <plugin name='actor1_plugin' filename='libactor_plugin_social.so'>
+      <plugin name='actor2_plugin' filename='libactor_plugin_social.so'>
         <!--
         <target>
           <point>+4.0 -4.0 0.0</point>
@@ -8944,7 +8944,7 @@
       </plugin>
     </actor>
 
-    <actor name="actor2">
+    <actor name="actor1">
       <pose>7.0 -0.6 1.00 0 0 -1.5707</pose> 
       <!-- <pose>5.5 -0.0 1.00 0 0 -1.5707</pose> -->
       <skin>
@@ -9011,7 +9011,7 @@
       </animation>      
                         
 
-      <plugin name="actor2_plugin" filename="libactor_plugin_social.so">
+      <plugin name="actor1_plugin" filename="libactor_plugin_social.so">
         <!--
         <target>
           <point>-3.0 -2.0 0.0</point>
