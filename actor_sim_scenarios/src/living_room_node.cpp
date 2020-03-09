@@ -24,63 +24,75 @@ int main(int argc, char** argv) {
 	// node initialization
 	ros::init(argc, argv, "living_room_scenario_node");
 	ros::NodeHandle nh;
+//	ros::NodeHandle nh2;
 
+	// check if an extra (necessary) argument(s) provided
+	long int launch_delay = 0;
+	if ( argc >= 2 ) {
+		launch_delay = std::stoi(argv[1]);
+	}
+
+	// create objects
 	ActorAction actor1("/gazebo/actor_plugin_ros_interface/actor1", &nh);
 	ActorAction actor2("/gazebo/actor_plugin_ros_interface/actor2", &nh);
 
+	// wait
+	std::this_thread::sleep_for(std::chrono::milliseconds(launch_delay));
+
 	// =================== init stage ========================================
-	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	actor1.setStance(3); // ACTOR_STANCE_SIT_DOWN
-	std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-	actor1.setStance(4); // ACTOR_STANCE_SITTING
-	std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-	actor1.setStance(5); // ACTOR_STANCE_STAND_UP
-	std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+//	actor1.setStance(3); // ACTOR_STANCE_SIT_DOWN
+//	std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+//	actor1.setStance(4); // ACTOR_STANCE_SITTING
+//	std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+//	actor1.setStance(5); // ACTOR_STANCE_STAND_UP
+//	std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
 	// =================== 1st stage ========================================
-//	actor1.setGoal(+0.0, +2.0);
-	actor1.setGoal(+1.0, +1.0);
-	std::this_thread::sleep_for(std::chrono::milliseconds(50)); // free the global planner resource
-//	actor2.setGoal(-1.0, +2.5);
-	actor2.setGoal(+4.0, +3.0);
+	/* Actor1 goes to the sofa neighbourhood (Actor2 pose) */
+	actor1.setGoal(+5.0, -1.0);
 
-	ROS_INFO("Waiting for the 1st synchronization!");
+	ROS_INFO("[SCENARIO] Firing up the 1st stage!");
 	// wait for finish of both actions - synchronization point
-	while ( !(actor1.getClientPtrSetGoal()->getState() == State::SUCCEEDED &&
-			  actor2.getClientPtrSetGoal()->getState() == State::SUCCEEDED) )
-	{
+	while ( !(actor1.getClientPtrSetGoal()->getState() == State::SUCCEEDED) ) {
 		if ( !ros::ok() ) {
 			ROS_INFO("Node stopped!");
 			return (0);
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
-	ROS_INFO("1st synchronization!");
+	ROS_INFO("[SCENARIO] 1st stage completed!");
 
 	// =================== 2nd stage ========================================
-	actor1.setGoal(-1.0, -1.0);
-	std::this_thread::sleep_for(std::chrono::milliseconds(50)); // free the global planner resource
-	actor2.setGoal(+4.0, -1.0);
-
-	ROS_INFO("Waiting for the 2nd synchronization!");
-	// wait for finish of both actions - synchronization point
-	while ( !(actor1.getClientPtrSetGoal()->getState() == State::SUCCEEDED &&
-			  actor2.getClientPtrSetGoal()->getState() == State::SUCCEEDED) )
-	{
-		if ( !ros::ok() ) {
-			ROS_INFO("Node stopped!");
-			return (0);
-		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-	}
-	ROS_INFO("2nd synchronization!");
+	/* Actor1 talks for few seconds */
+	ROS_INFO("[SCENARIO] Firing up the 2nd stage!");
+	actor1.setStance(7); // ACTOR_STANCE_TALK_A
+	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+	actor1.setStance(8); // ACTOR_STANCE_TALK_B
+	std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+	ROS_INFO("[SCENARIO] 2nd stage completed!");
 
 	// =================== 3rd stage ========================================
-	actor1.setGoal(+3.0, -2.0);
-	std::this_thread::sleep_for(std::chrono::milliseconds(50)); // free the global planner resource
-	actor2.setGoal(-3.0, -2.0);
+	/* Both Actor1 and Actor2 go to the big table */
+	ROS_INFO("[SCENARIO] Firing up the 3rd stage!");
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-	ROS_INFO("Waiting for the 3rd synchronization!");
+//	actor1.setGoalName("table_conference_2");
+	actor1.setGoal(+2.0, -2.7);
+	// actor1.setGoal(+2.5, -4.8);
+	// actor1.setGoal(+2.5, -5.3);
+	// OK, far // actor1.setGoal(+2.7, -5.1);
+	// NEIN // actor1.setGoal(+1.5, -4.8);
+
+	// wait until Actor1 finish rotation (roughly estimated)
+//	std::this_thread::sleep_for(std::chrono::milliseconds(1500)); // diagram does not consider that
+//	actor2.setGoalName("table_conference_2"); // does not work
+//	actor2.setGoal(+2.5, -4.8); // does not work
+//	actor2.setGoal(+2.1, -0.1); // OK, far
+//	actor2.setGoal(+0.1, -1.0); // OK
+	actor2.setGoal(+0.5, -1.2); // 1.0 ok
+	// NEIN // actor2.setGoal(+1.5, -3.2);
+
+	ROS_INFO("Waiting for the synchronization!");
 	// wait for finish of both actions - synchronization point
 	while ( !(actor1.getClientPtrSetGoal()->getState() == State::SUCCEEDED &&
 			  actor2.getClientPtrSetGoal()->getState() == State::SUCCEEDED) )
@@ -91,7 +103,7 @@ int main(int argc, char** argv) {
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
-	ROS_INFO("3rd synchronization!");
+	ROS_INFO("[SCENARIO] 3rd stage completed!");
 
 	// ==================== finish ==========================================
 
