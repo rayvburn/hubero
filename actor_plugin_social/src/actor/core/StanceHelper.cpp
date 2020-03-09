@@ -141,7 +141,7 @@ bool StanceHelper::update(const gazebo::common::Time& time) {
 	// evaluate the current stance
 	if ( stance_status_ == STANCE_INITED ) {
 
-		std::cout << "[StanceHelper::update] inited" << std::endl;
+//		std::cout << "[StanceHelper::update] inited" << std::endl;
 
 		// need to configure at first
 		if ( !configure(stance_, time, height_initial_) ) {
@@ -153,7 +153,7 @@ bool StanceHelper::update(const gazebo::common::Time& time) {
 
 	} else if ( stance_status_ == STANCE_SELECTED ) {
 
-		std::cout << "[StanceHelper::update] selected" << std::endl;
+//		std::cout << "[StanceHelper::update] selected" << std::endl;
 
 		// new request has just been received
 
@@ -235,9 +235,9 @@ void StanceHelper::adjustStancePose(ignition::math::Pose3d &pose, const gazebo::
 		// animation execution progress based on the start and end time stamps
 		double progress = so_far / range;
 
-		std::cout << "StanceHelper::adjustStancePose" << std::endl;
-		std::cout << "start: " << trajectory_start_time_ << "\tcurrent: " << time.Double() << "\tend: " << trajectory_end_time_ << std::endl;
-		std::cout << "so_far: " << so_far << "\trange: " << range << "\tprogress: " << progress << std::endl;
+//		std::cout << "StanceHelper::adjustStancePose" << std::endl;
+//		std::cout << "start: " << trajectory_start_time_ << "\tcurrent: " << time.Double() << "\tend: " << trajectory_end_time_ << std::endl;
+//		std::cout << "so_far: " << so_far << "\trange: " << range << "\tprogress: " << progress << std::endl;
 
 		// trim
 		if ( progress > 1.0 ) {
