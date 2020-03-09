@@ -135,6 +135,7 @@ include_directories(${catkin_INCLUDE_DIRS} ${actor_sim_api_INCLUDE_DIRS})
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/actor_services_node.cpp)
 add_executable(living_room_node src/living_room_node.cpp)
+add_executable(parking_node src/parking_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -151,6 +152,14 @@ add_executable(living_room_node src/living_room_node.cpp)
 #   ${catkin_LIBRARIES}
 # )
 target_link_libraries(living_room_node
+
+	${actor_sim_api_LIBRARIES}
+	${roscpp_LIBRARIES} 
+	${catkin_LIBRARIES}
+
+)
+
+target_link_libraries(parking_node
 
 	${actor_sim_api_LIBRARIES}
 	${roscpp_LIBRARIES} 
