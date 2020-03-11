@@ -645,48 +645,7 @@ const Action Actor::getActionInfo() const {
 // ------------------------------------------------------------------- //
 
 bool Actor::setStance(const actor::ActorStance &stance_type) {
-
 	return (stance_manager_.configure(stance_type, world_ptr_->SimTime()));
-	/*
-	if ( stance_ != stance_type ) {
-
-		stance_ = stance_type;
-		std::string animation = convertStanceToAnimationName();
-		gazebo::physics::Actor::SkeletonAnimation_M skeleton_anims = actor_ptr_->SkeletonAnimations();
-
-		if ( skeleton_anims.find(animation) == skeleton_anims.end() ) {
-
-			// print warning
-			std::cout << "[STANCE] Skeleton animation " << animation << " not found.\n";
-			return (false);
-
-		} else {
-
-			// Create custom trajectory
-			trajectory_info_.reset(new gazebo::physics::TrajectoryInfo());
-			trajectory_info_->type = animation;
-			trajectory_info_->duration = 1.0;
-			actor_ptr_->SetCustomTrajectory(trajectory_info_);
-			actor_ptr_->SetCustomTrajectory(new gazebo::physics::TrajectoryInfo());
-
-			// debug info
-			std::cout << "[STANCE] " << actor_ptr_->GetName() << "'s\tnew stance:\t";
-			if ( stance_ != ACTOR_STANCE_LIE ) {
-				std::cout << animation << std::endl;
-			} else {
-				// `lie` must be handled differently as the `lie` is equal to `stand`
-				// but in a different plane
-				std::cout << "lie" << std::endl;
-			}
-
-			return (true);
-
-		}
-
-	}
-	return (false);
-	*/
-
 }
 
 // ------------------------------------------------------------------- //
@@ -1113,7 +1072,9 @@ void Actor::applyUpdate(const double &dist_traveled) {
 	// update the global pose
 	actor_ptr_->SetWorldPose(*pose_world_ptr_, false, false);
 
-	// here due to `SetScriptTime` dep
+	// potential selection of a new trajectory is called here
+	// due to the `SetScriptTime` dependency (script time must follow the
+	// custom trajectory selection)
 	if ( stance_manager_.update(world_ptr_->SimTime()) ) {
 		actor_ptr_->SetCustomTrajectory(stance_manager_.getTrajectoryInfoPtr());
 	}

@@ -5,11 +5,11 @@
  *      Author: rayvburn
  */
 
-#include <actor/core/Enums.h> 	// actor model id
+#include <actor/core/Enums.h> // actor model id
 #include <actor/core/Target.h>
 #include <ignition/math/Rand.hh> // DblUniform
-#include <thread>			// thread: sleep for
-#include <chrono>			// timer: sleep_for
+#include <thread> // thread: sleep for
+#include <chrono> // timer: sleep_for
 
 namespace actor {
 namespace core {
@@ -18,16 +18,12 @@ const int16_t Target::COST_THRESHOLD = 100;
 const double Target::SAFE_POSITION_SEARCH_MULTIPLIER = 5.0;
 
 // ------------------------------------------------------------------- //
-Target::Target(): /*COST_THRESHOLD(100),*/ has_target_(false), has_global_plan_(false), /*has_new_path_(true),*/ has_new_path_(false),
+Target::Target(): has_target_(false), has_global_plan_(false), /*has_new_path_(true),*/ has_new_path_(false),
 		is_following_(false), is_followed_object_reached_(false), followed_model_ptr_(nullptr) { }
 // ------------------------------------------------------------------- //
 
 Target::Target(gazebo::physics::WorldPtr world_ptr, std::shared_ptr<const ignition::math::Pose3d> pose_world_ptr,
 			   std::shared_ptr<const actor::ros_interface::ParamLoader> params_ptr)
-			   /*
-					: has_target_(false), has_global_plan_(false), has_new_path_(false),
-					  is_following_(false), is_followed_object_reached_(false), followed_model_ptr_(nullptr) {
-			   */
 		: Target()
 {
 	world_ptr_ = world_ptr;
