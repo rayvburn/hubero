@@ -454,6 +454,8 @@ public:
 	/// @brief Whether a position is safe according to the costmap
 	static const int16_t COST_THRESHOLD;
 
+	static const double SAFE_POSITION_SEARCH_MULTIPLIER;
+
 	/**
 	 * @brief Updates the current target even if the target queue
 	 * is not empty.

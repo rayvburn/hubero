@@ -15,6 +15,7 @@ namespace actor {
 namespace core {
 
 const int16_t Target::COST_THRESHOLD = 100;
+const double Target::SAFE_POSITION_SEARCH_MULTIPLIER = 5.0;
 
 // ------------------------------------------------------------------- //
 Target::Target(): /*COST_THRESHOLD(100),*/ has_target_(false), has_global_plan_(false), /*has_new_path_(true),*/ has_new_path_(false),
@@ -233,7 +234,7 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 	ignition::math::Vector3d position_shifted;
 	std::cout << "[setNewTarget] (V3d version) | SHIFT the TARGET"  << std::endl;
 	// potentially SHIFT the TARGET position to make it reachable for global planner
-	std::tie(found, position_shifted) = findSafePositionAlongLine(position, pose_world_ptr_->Pos(), 5.0);
+	std::tie(found, position_shifted) = findSafePositionAlongLine(position, pose_world_ptr_->Pos(), SAFE_POSITION_SEARCH_MULTIPLIER * params_ptr_->getActorInflatorParams().inflation_radius);
 	if ( !found ) {
 		return (false);
 	}
@@ -249,7 +250,7 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 
 		std::cout << "[setNewTarget] (V3d version) | SHIFT the START"  << std::endl;
 		// potentially SHIFT the START position to make it reachable for global planner
-		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), position, 5.0);
+		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), position, SAFE_POSITION_SEARCH_MULTIPLIER * params_ptr_->getActorInflatorParams().inflation_radius);
 		if ( !found ) {
 			return (false);
 		}
@@ -320,7 +321,7 @@ bool Target::setNewTarget(TargetLotV3d &target, bool force_queue) {
 	if ( !is_target_safe ) {
 
 		// find further point, which has a low cost (i.e. is safe)
-		std::tie(found, position_shifted) = findSafePositionAlongLine(target.getRaw(), pose_world_ptr_->Pos(), 5.0);
+		std::tie(found, position_shifted) = findSafePositionAlongLine(target.getRaw(), pose_world_ptr_->Pos(), SAFE_POSITION_SEARCH_MULTIPLIER * params_ptr_->getActorInflatorParams().inflation_radius);
 		if ( !found ) {
 			return (false);
 		}
@@ -335,7 +336,7 @@ bool Target::setNewTarget(TargetLotV3d &target, bool force_queue) {
 
 	if ( !has_target_ ) {
 
-		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), target.getRaw(), 5.0);
+		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), target.getRaw(), SAFE_POSITION_SEARCH_MULTIPLIER * params_ptr_->getActorInflatorParams().inflation_radius);
 		if ( !found ) {
 			return (false);
 		}
