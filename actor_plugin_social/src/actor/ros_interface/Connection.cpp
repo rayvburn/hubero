@@ -170,7 +170,7 @@ void Connection::startCallbackProcessingThread() {
 
 bool Connection::srvSetGoalCallback(actor_sim_srv::SetGoal::Request &req, actor_sim_srv::SetGoal::Response &resp) {
 
-	std::cout << "\nsrvSetGoalCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `SetGoal` service callback | " << namespace_ << std::endl;
 
 	// Preprocessing step - assert point expressed in the `world` frame;
 	// Whatever frame the goal point is expressed in, it will be converted
@@ -190,7 +190,7 @@ bool Connection::srvSetGoalCallback(actor_sim_srv::SetGoal::Request &req, actor_
 
 bool Connection::srvSetGoalNameCallback(actor_sim_srv::SetGoalName::Request &req, actor_sim_srv::SetGoalName::Response &resp) {
 
-	std::cout << "\nsrvSetGoalNameCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `SetGoalName` service callback | " << namespace_ << std::endl;
 
 	// take ownership of the Actor shared_ptr
 	resp.flag = actor_ptr_.lock()->setNewTarget(req.object_name);
@@ -203,7 +203,7 @@ bool Connection::srvSetGoalNameCallback(actor_sim_srv::SetGoalName::Request &req
 
 bool Connection::srvSetStanceCallback(actor_sim_srv::SetStance::Request &req, actor_sim_srv::SetStance::Response &resp) {
 
-	std::cout << "\nsrvSetStanceCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `SetStance` service callback | " << namespace_ << std::endl;
 
 	// take ownership of the Actor shared_ptr
 	resp.flag = actor_ptr_.lock()->setStance(static_cast<actor::ActorStance>(req.stance_enum));
@@ -216,7 +216,7 @@ bool Connection::srvSetStanceCallback(actor_sim_srv::SetStance::Request &req, ac
 
 bool Connection::srvFollowObjectCallback(actor_sim_srv::FollowObject::Request &req, actor_sim_srv::FollowObject::Response &resp) {
 
-	std::cout << "\nsrvFollowObjectCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `FollowObject` service callback | " << namespace_ << std::endl;
 
 	// take ownership of the Actor shared_ptr
 	resp.flag = actor_ptr_.lock()->followObject(req.object_name);
@@ -229,7 +229,7 @@ bool Connection::srvFollowObjectCallback(actor_sim_srv::FollowObject::Request &r
 
 bool Connection::srvStopFollowingCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp) {
 
-	std::cout << "\nsrvStopFollowingCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `StopFollowing` service callback | " << namespace_ << std::endl;
 
 	// take ownership of the Actor shared_ptr
 	resp.success = actor_ptr_.lock()->followObjectStop();
@@ -242,7 +242,7 @@ bool Connection::srvStopFollowingCallback(std_srvs::Trigger::Request &req, std_s
 
 bool Connection::srvGetVelocityCallback(actor_sim_srv::GetVelocity::Request &req, actor_sim_srv::GetVelocity::Response &resp) {
 
-	std::cout << "\nsrvGetVelocityCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `GetVelocity` service callback | " << namespace_ << std::endl;
 
 	// take ownership of the Actor shared_ptr
 	std::array<double, 3> velocity = actor_ptr_.lock()->getVelocity();
@@ -258,7 +258,7 @@ bool Connection::srvGetVelocityCallback(actor_sim_srv::GetVelocity::Request &req
 
 bool Connection::srvLieDownCallback(actor_sim_srv::LieDown::Request &req, actor_sim_srv::LieDown::Response &resp) {
 
-	std::cout << "\nsrvLieDownCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `LieDown` service callback | " << namespace_ << std::endl;
 	// take ownership of the Actor shared_ptr
 	resp.flag = actor_ptr_.lock()->lieDown(req.x_pos, req.y_pos, req.z_pos, req.rotation);
 	return (true);
@@ -269,7 +269,7 @@ bool Connection::srvLieDownCallback(actor_sim_srv::LieDown::Request &req, actor_
 
 bool Connection::srvLieDownNameCallback(actor_sim_srv::LieDownName::Request	&req, actor_sim_srv::LieDownName::Response &resp) {
 
-	std::cout << "\nsrvLieDownNameCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `LieDownName` service callback | " << namespace_ << std::endl;
 	// take ownership of the Actor shared_ptr
 	resp.flag = actor_ptr_.lock()->lieDown(req.object_name, req.lying_height, req.rotation);
 	return (true);
@@ -280,7 +280,7 @@ bool Connection::srvLieDownNameCallback(actor_sim_srv::LieDownName::Request	&req
 
 bool Connection::srvLieDownStopCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp) {
 
-	std::cout << "\nsrvLieDownStopCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `LieDownStop` service callback | " << namespace_ << std::endl;
 	// take ownership of the Actor shared_ptr
 	resp.success = actor_ptr_.lock()->lieDownStop();
 	return (true);
@@ -291,7 +291,7 @@ bool Connection::srvLieDownStopCallback(std_srvs::Trigger::Request &req, std_srv
 
 bool Connection::srvSetDebugSFMCallback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &resp) {
 
-	std::cout << "\nsrvSetDebugSFMCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `SetDebugSFM` service callback | " << namespace_ << std::endl;
 	if ( req.data == true ) {
 
 		SfmSetPrintData(true);
@@ -311,7 +311,7 @@ bool Connection::srvSetDebugSFMCallback(std_srvs::SetBool::Request &req, std_srv
 
 bool Connection::srvCommunicateCallback(incare_human_robot_communication::Communicate::Request &req, incare_human_robot_communication::Communicate::Response &resp) {
 
-	std::cout << "\nsrvCommunicateCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `Communicate` service callback | " << namespace_ << std::endl;
 
 	//	req.str
 
@@ -332,7 +332,7 @@ bool Connection::srvCommunicateCallback(incare_human_robot_communication::Commun
 
 bool Connection::srvMoveAroundCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp) {
 
-	std::cout << "\nsrvMoveAroundCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `MoveAround` service callback | " << namespace_ << std::endl;
 	// take ownership of the Actor shared_ptr
 	resp.success = actor_ptr_.lock()->moveAround();
 	return (true);
@@ -343,7 +343,7 @@ bool Connection::srvMoveAroundCallback(std_srvs::Trigger::Request &req, std_srvs
 
 bool Connection::srvMoveAroundStopCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &resp) {
 
-	std::cout << "\nsrvMoveAroundStopCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `MoveAroundStop` service callback | " << namespace_ << std::endl;
 	// take ownership of the Actor shared_ptr
 	resp.success = actor_ptr_.lock()->moveAroundStop();
 	return (true);
@@ -354,7 +354,7 @@ bool Connection::srvMoveAroundStopCallback(std_srvs::Trigger::Request &req, std_
 
 bool Connection::srvGetPoseCallback(actor_sim_srv::GetPose::Request &req, actor_sim_srv::GetPose::Response &resp) {
 
-	std::cout << "\nsrvGetPoseCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `GetPose` service callback | " << namespace_ << std::endl;
 
 	// take ownership of the Actor shared_ptr
 	std::array<double, 6> pose = actor_ptr_.lock()->getPose();

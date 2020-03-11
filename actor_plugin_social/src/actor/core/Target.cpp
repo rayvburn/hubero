@@ -228,7 +228,8 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 	// save output of the `findSafePositionAlongLine`
 	bool found = false;
 	ignition::math::Vector3d position_shifted;
-	std::cout << "[setNewTarget] (V3d version) | SHIFT the TARGET"  << std::endl;
+
+//	std::cout << "[setNewTarget] (V3d version) | SHIFT the TARGET"  << std::endl;
 	// potentially SHIFT the TARGET position to make it reachable for global planner
 	std::tie(found, position_shifted) = findSafePositionAlongLine(position, pose_world_ptr_->Pos(), SAFE_POSITION_SEARCH_MULTIPLIER * params_ptr_->getActorInflatorParams().inflation_radius);
 	if ( !found ) {
@@ -244,7 +245,7 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 
 	if ( !isTargetChosen() ) {
 
-		std::cout << "[setNewTarget] (V3d version) | SHIFT the START"  << std::endl;
+//		std::cout << "[setNewTarget] (V3d version) | SHIFT the START"  << std::endl;
 		// potentially SHIFT the START position to make it reachable for global planner
 		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), position, SAFE_POSITION_SEARCH_MULTIPLIER * params_ptr_->getActorInflatorParams().inflation_radius);
 		if ( !found ) {
@@ -793,12 +794,7 @@ bool Target::isTargetNotReachedForTooLong() const {
 
 	if ( (world_ptr_->SimTime() - time_last_target_selection_).Double() > params_ptr_->getActorParams().target_reach_max_time ) {
 
-		std::cout << "isTargetNotReachedForTooLong()" << std::endl;
-		std::cout << "curr_time: " << world_ptr_->SimTime().Double() << "\tlast: " << time_last_target_selection_.Double() << "\tdelta_cur: " << (world_ptr_->SimTime() - time_last_target_selection_).Double() << "\tmax: " << params_ptr_->getActorParams().target_reach_max_time << std::endl;
-//		std::cout << "\t" << actor_ptr_->GetName() << "\tDETECTED TARGET UNREACHABLE IN FINITE TIME!" << std::endl;
-		std::cout << std::endl;
-		std::cout << std::endl;
-		std::cout << std::endl;
+		std::cout << "[Target::isTargetNotReachedForTooLong] curr_time: " << world_ptr_->SimTime().Double() << "\tlast: " << time_last_target_selection_.Double() << "\tdelta_cur: " << (world_ptr_->SimTime() - time_last_target_selection_).Double() << "\tmax: " << params_ptr_->getActorParams().target_reach_max_time << "\ttarget will be abandoned" << std::endl;
 		return (true);
 
 	}
@@ -1106,7 +1102,7 @@ std::tuple<bool, ignition::math::Vector3d> Target::findSafePositionAlongLine(con
 
 		// evaluate the cost
 		int16_t cost_superpose = getCostMean(shifted.X(), shifted.Y());
-		std::cout << "[findSafePositionAlongLine] pos: x = " << shifted.X() << " y = " << shifted.Y() << "  |  cost = " << cost_superpose << std::endl;
+//		std::cout << "[findSafePositionAlongLine] pos: x = " << shifted.X() << " y = " << shifted.Y() << "  |  cost = " << cost_superpose << std::endl;
 
 		if ( cost_superpose > 0 ) {
 			// move the point a little further according to line direction;
