@@ -19,6 +19,8 @@
 #include <ros/ros.h>
 #include <XmlRpc.h>
 
+// local
+#include <actor/core/Enums.h>
 
 namespace actor {
 namespace ros_interface {
@@ -58,6 +60,8 @@ public:
 		double				circle_radius					= 0.5;
 		std::vector<double> box_size						{0.45, 0.45, 1.00};
 		std::vector<double> ellipse							{1.00, 0.80, 0.35, 0.00};
+		double				inflation_radius				= 0.45; // the `worst` case from the default values
+//		XmlRpc::XmlRpcValue footprint;						// TODO
 
 	} InflatorParams;
 
@@ -244,6 +248,11 @@ private:
 	/// value to 0 element and bigger to 1st;
 	/// such an order is imposed in actor::core::Actor
 	void sortVectorValues(std::vector<double> &vector);
+
+	void calculateCostmapInflationRadius(const std::shared_ptr<ros::NodeHandle> nh_ptr);
+
+	// TODO:
+	void calculateActorFootprint(const std::shared_ptr<ros::NodeHandle> nh_ptr);
 
 	/// \brief Main namespace name (for example actor's name)
 	std::string ns_;

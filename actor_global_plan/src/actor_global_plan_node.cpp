@@ -8,6 +8,10 @@
 #include <vector>
 #include <iostream>
 
+// sleep_for
+#include <thread>
+#include <chrono>
+
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <navfn/MakeNavPlan.h>
@@ -237,89 +241,39 @@ static bool GetCostSrv(actor_global_plan::GetCost::Request& req, actor_global_pl
  */
 static void SetInflationRadius(ros::NodeHandle &nh, const std::string &srv_ns) {
 
-	// stores bounding type id (default value is invalid)
-	int bounding_type = 100;
+	ros::Time start = ros::Time::now();
 
-	if ( !nh.getParam(srv_ns + "/actor/inflation/bounding_type", bounding_type) ) {
-		ROS_ERROR("'bounding_type' parameter could not be found, 'default_tolerance' planner parameter will not be set");
+	double inflation_radius = 0.01;
+	bool found = false;
+
+	// wait until found or break
+	while ( (ros::Time::now() - start).toSec() <= 30.0 ) {
+		if ( nh.getParam(srv_ns + "/actor/inflation/inflation_radius", inflation_radius) ) {
+			found = true;
+			break;
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+
+	// evaluate
+	if ( !found ) {
+		ROS_ERROR("'inflation_radius' parameter could not be found, 'inflation_radius' planner parameter will not be set");
 		return;
 	}
 
-	// stores tolerance parameter (default value is invalid)
-	float inflation = -1.0f;
-
-	// helper variables (to not allocate them inside switch statement)
-	double size   = -1.0;
-	double size_x = -1.0;
-	double size_y = -1.0;
-
-	// to store parameters linked into vectors
-	XmlRpc::XmlRpcValue list;
-	XmlRpc::XmlRpcValue sublist;
-
-	/* See "gazebo_ros_people_sim/actor_plugin_social/include/core/Enums.h"
-	 * for description. If some changes in "Enums.h" were applied the 'switch'
-	 * statement's cases must be adjusted accordingly. */
-	switch ( bounding_type ) {
-
-	/* ACTOR_BOUNDING_BOX */
-	case(0):
-
-		if ( !nh.getParam(srv_ns + "/actor/inflation/box_size", list) ) {
-			ROS_ERROR("BoundingBox'es size could not be found");
-			return;
-		}
-
-		sublist = list[0]; // only 1 element expected
-		size_x = static_cast<double>( sublist["x_half"] );
-		size_y = static_cast<double>( sublist["y_half"] );
-		size = std::max(size_x, size_y);
-		inflation = 2.15f * size * (std::sqrt(2));
-		break;
-
-	/* ACTOR_BOUNDING_CIRCLE */
-	case(1):
-
-		if ( !nh.getParam(srv_ns + "/actor/inflation/circle_radius", size) ) {
-			ROS_ERROR("BoundingCircle's size could not be found");
-			return;
-		}
-		inflation = 2.15f * size;
-		break;
-
-	/* ACTOR_BOUNDING_ELLIPSE */
-	case(2):
-
-		if ( !nh.getParam(srv_ns + "/actor/inflation/ellipse", list) ) {
-			ROS_ERROR("BoundingEllipse's size could not be found");
-			return;
-		}
-
-		sublist = list[0]; // only 1 element expected
-		size_x = static_cast<double>( sublist["semi_major"] );
-		size_y = static_cast<double>( sublist["semi_minor"] );
-		size = std::min(size_x, size_y);	// broader workspace
-		// size = std::max(size_x, size_y); // problematic for costmap - really narrow workspace
-		inflation = 2.15f * size;
-		break;
-
-	/* ACTOR_NO_BOUNDING */
-	case(3):
-
-		inflation = 0.01f;
-		break;
-
-	/* UNKNOWN id */
-	default:
-
-		return;
-		break;
-
-	}
+	// update parameter
+	nh.setParam(*node_name_ + "/gcm/inflation_layer/inflation_radius", inflation_radius);
 
 	// update parameter if `getParam()` was successful
-	nh.setParam(*node_name_ + "/gcm/inflation_layer/inflation_radius", inflation);
-	nh.setParam(*node_name_ + "/gcm/robot_radius", inflation); // TODO: use /footprint for more sophisticated shapes
+	XmlRpc::XmlRpcValue footprint;
+	if ( nh.getParam(srv_ns + "/actor/inflation/footprint", footprint) ) {
+		// use `footprint` for more sophisticated shapes
+		// re-transmit the parameter
+		nh.setParam(*node_name_ + "/gcm/footprint", footprint);
+	} else {
+		nh.setParam(*node_name_ + "/gcm/robot_radius", inflation_radius);
+	}
+
 	// INFO: http://wiki.ros.org/costmap_2d/flat#Robot_description_parameters
 
 }

@@ -188,6 +188,34 @@ void ParamLoader::loadActorInflatorParams (const std::shared_ptr<ros::NodeHandle
 
 	}
 
+	calculateCostmapInflationRadius(nh_ptr);
+
+	/*
+	// footprint test
+	XmlRpc::XmlRpcValue foot;
+	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "inflation/footprint", foot) ) {
+		// sublist
+		XmlRpc::XmlRpcValue sublist;
+		// elements in the vector
+		for ( size_t i = 0; i < foot.size(); i++ ) {
+			sublist = foot[i];
+			for ( size_t j = 0; j < sublist.size(); j++ ) {
+
+			}
+		}
+//		std::cout << "\n\n\nfootprint size: " << foot.size() << "\n\n\n" << std::endl;
+//		XmlRpc::XmlRpcValue sublist = foot[0];
+//		std::cout << "\n\n\nsublist[0] size: " << sublist.size() << "\n\n\n" << std::endl;
+//		sublist = foot[1];
+//		std::cout << "\n\n\nsublist[1] size: " << sublist.size() << "\n\n\n" << std::endl;
+//		sublist = foot[2];
+//		std::cout << "\n\n\nsublist[2] size: " << sublist.size() << "\n\n\n" << std::endl;
+//		sublist = foot[3];
+//		std::cout << "\n\n\nsublist[3] size: " << sublist.size() << "\n\n\n" << std::endl;
+	}
+	*/
+
+	calculateActorFootprint(nh_ptr);
 
 }
 
@@ -360,6 +388,162 @@ void ParamLoader::sortVectorValues(std::vector<double> &vector) {
 
 		// empty world, give an error message
 		std::cout << "ERROR - wrong world bound values - world is empty!" << std::endl;
+
+	}
+
+}
+
+// ------------------------------------------------------------------- //
+
+void ParamLoader::calculateCostmapInflationRadius(const std::shared_ptr<ros::NodeHandle> nh_ptr) {
+
+	// stores tolerance parameter (default value is invalid)
+	float inflation = -1.0f;
+
+	// helper variables (to not allocate them inside switch statement)
+	double size   = -1.0;
+	double size_x = -1.0;
+	double size_y = -1.0;
+
+	/* See "gazebo_ros_people_sim/actor_plugin_social/include/core/Enums.h"
+	 * for description. If some changes in "Enums.h" were applied the 'switch'
+	 * statement's cases must be adjusted accordingly. */
+	switch ( params_actor_bounding_.bounding_type ) {
+
+	/* ACTOR_BOUNDING_BOX */
+	case(actor::ActorBoundingType::ACTOR_BOUNDING_BOX):
+
+		size_x = params_actor_bounding_.box_size.at(0);
+		size_y = params_actor_bounding_.box_size.at(1);
+		size = std::max(size_x, size_y);
+		inflation = 2.15f * size * (std::sqrt(2));
+		break;
+
+	/* ACTOR_BOUNDING_CIRCLE */
+	case(actor::ActorBoundingType::ACTOR_BOUNDING_CIRCLE):
+
+		size = params_actor_bounding_.circle_radius;
+		inflation = 2.15f * size;
+		break;
+
+	/* ACTOR_BOUNDING_ELLIPSE */
+	case(actor::ActorBoundingType::ACTOR_BOUNDING_ELLIPSE):
+
+		size_x = params_actor_bounding_.ellipse.at(0);
+		size_y = params_actor_bounding_.ellipse.at(1);
+		size = std::min(size_x, size_y);	// broader workspace
+		// size = std::max(size_x, size_y); // problematic for costmap - really narrow workspace
+		inflation = 2.15f * size;
+		break;
+
+	/* ACTOR_NO_BOUNDING */
+	case(actor::ActorBoundingType::ACTOR_NO_BOUNDING):
+
+		inflation = 0.01f;
+		break;
+
+	/* UNKNOWN id */
+	default:
+
+		return;
+		break;
+
+	}
+
+	// update structure value
+	params_actor_bounding_.inflation_radius = inflation;
+	nh_ptr->setParam(ns_ + actor_ns_prefix_ + "inflation/inflation_radius", inflation);
+
+}
+
+// ------------------------------------------------------------------- //
+
+void ParamLoader::calculateActorFootprint(const std::shared_ptr<ros::NodeHandle> nh_ptr) {
+
+	// parameter
+	XmlRpc::XmlRpcValue footprint;
+
+	// evaluate bounding type
+	switch (params_actor_bounding_.bounding_type) {
+
+		case(actor::ActorBoundingType::ACTOR_BOUNDING_BOX):
+
+				// define 4 corner points
+				footprint.setSize(4);
+				// upper-left
+				footprint[0].setSize(2);
+				footprint[0][0] = +params_actor_bounding_.box_size.at(0) * 0.5;
+				footprint[0][1] = +params_actor_bounding_.box_size.at(1) * 0.5;
+				// lower-left
+				footprint[1].setSize(2);
+				footprint[1][0] = -params_actor_bounding_.box_size.at(0) * 0.5;
+				footprint[1][1] = +params_actor_bounding_.box_size.at(1) * 0.5;
+				// lower-right
+				footprint[2].setSize(2);
+				footprint[2][0] = -params_actor_bounding_.box_size.at(0) * 0.5;
+				footprint[2][1] = -params_actor_bounding_.box_size.at(1) * 0.5;
+				// upper-right
+				footprint[3].setSize(2);
+				footprint[3][0] = +params_actor_bounding_.box_size.at(0) * 0.5;
+				footprint[3][1] = -params_actor_bounding_.box_size.at(1) * 0.5;
+				// publish
+				nh_ptr->setParam(ns_ + actor_ns_prefix_ + "inflation/footprint", footprint);
+				break;
+
+		case(actor::ActorBoundingType::ACTOR_BOUNDING_ELLIPSE):
+
+				// define 12 points around the center (0.0, 0.0)
+				footprint.setSize(12);
+
+				// list of angles
+				std::vector<double> angles;
+				double diff = 0.523599; // 30 degrees
+				double alpha = 0.0;
+				for ( size_t i = 0; i <= 6; i++ ) {
+					angles.push_back(i * (+diff));
+				}
+				for ( size_t i = 5; i >= 1; i-- ) { // 0 was already added
+					angles.push_back(i * (-diff));
+				}
+
+//				std::cout << "calculateActorFootprint | ELLIPSE | angles" << std::endl;
+				for ( size_t i = 0; i < angles.size(); i++ ) {
+//					std::cout << "\t\t" << i << " " << angles.at(i) << std::endl;
+				}
+
+//				if ( angles.size() != 12 ) {
+//					std::cout << "ERROR! ANGLES SIZE IS: " << angles.size() << " instead of 12!" << std::endl;
+//				}
+//				std::cout << "FOOTPRINT:" << std::endl;
+				// Parametric equation of an ellipse
+				// x = a * cos(t) + x_center_shift
+				// y = b * sin(t) + y_center_shift
+				for ( size_t i = 0; i < angles.size(); i++ ) {
+
+					// calculate points in the actor reference system
+					double x = -params_actor_bounding_.ellipse.at(2) + 	// `x_center_shift`; see Enums.h note on sign
+							   (params_actor_bounding_.ellipse.at(0) * 	// `a` / semi-major
+							   cos(angles.at(i)));
+					double y = -params_actor_bounding_.ellipse.at(3) + 	// `y_center_shift`; see Enums.h note on sign
+							   (params_actor_bounding_.ellipse.at(1) * 	// `b` / semi-minor
+							   sin(angles.at(i)));
+
+					// convert points to the world reference system
+					// const double ACTOR_REF_SYSTEM_ROTATION = 1.5708;
+					double x_prim = x * cos(-1.5708) - y * sin(-1.5708);
+					double y_prim = x * sin(-1.5708) + y * cos(-1.5708);
+
+					// update the footprint contents
+					footprint[i][0] = x_prim;
+					footprint[i][1] = y_prim;
+
+//					std::cout << "\tx = " << x << "\t y = " << y << std::endl;
+
+				}
+
+				// publish
+				nh_ptr->setParam(ns_ + actor_ns_prefix_ + "inflation/footprint", footprint);
+				break;
 
 	}
 

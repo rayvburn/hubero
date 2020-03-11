@@ -88,12 +88,16 @@ void Ellipse::setCenterOffset(const ignition::math::Vector3d &offset_vector) {
 		yaw_offset_angle.Radian( std::atan2(offset_vector.Y(), offset_vector.X()) );
 		yaw_offset_angle.Normalize();
 		yaw_offset_ = yaw_offset_angle.Radian();
-		std::cout << "Ellipse::setCenterOffset() set successfully!" << std::endl;
+		std::cout << "[Ellipse::setCenterOffset()] set successfully!" << std::endl;
+
+	} else if ( offset_vector.Length() <= 1e-06 ) {
+
+		// that's okay!
 
 	} else {
 
 		// TODO: some error message
-		std::cout << "Ellipse::setCenterOffset() couldn't be set!" << std::endl;
+		std::cout << "[Ellipse::setCenterOffset()] couldn't be set!" << std::endl;
 
 	}
 
