@@ -28,5 +28,6 @@ inflation:
         - {x_half: 0.45, y_half: 0.45, z_half: 1.00}
     ellipse:                            # ellipse configuration, offset created to achieve something like described in `E. T. Hall, “Proxemics/Personal Space in Different Cultures`
         - {semi_major: 1.00, semi_minor: 0.8, offset_x: 0.35, offset_y: 0.0} # positive X: shifts ellipse's center towards actor's back, positive Y -> towards right-hand side
-                                        # ignored when another type of inflator selected, be careful choosing offset (it must be located within ellipse's bounds!)
+                                        # ignored when another type of inflator selected, be careful choosing offset (it must be located within ellipse's bounds!);
+                                        # `semi major` is the one going along the world X axis, whereas `semi minor` is the axis parallel to the world Y axis
 
