@@ -61,7 +61,6 @@ public:
 		std::vector<double> box_size						{0.45, 0.45, 1.00};
 		std::vector<double> ellipse							{1.00, 0.80, 0.35, 0.00};
 		double				inflation_radius				= 0.45; // the `worst` case from the default values
-//		XmlRpc::XmlRpcValue footprint;						// TODO
 
 	} InflatorParams;
 
@@ -249,9 +248,12 @@ private:
 	/// such an order is imposed in actor::core::Actor
 	void sortVectorValues(std::vector<double> &vector);
 
+	/// \brief Calculates inflation radius, based on the selected bounding type,
+	/// which will be later used by the ROS costmap
 	void calculateCostmapInflationRadius(const std::shared_ptr<ros::NodeHandle> nh_ptr);
 
-	// TODO:
+	/// \brief Calculates the object (by default - a robot) footprint, based on the selected bounding type,
+	/// which will be later used by the ROS costmap
 	void calculateActorFootprint(const std::shared_ptr<ros::NodeHandle> nh_ptr);
 
 	/// \brief Main namespace name (for example actor's name)

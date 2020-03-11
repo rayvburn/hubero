@@ -189,32 +189,6 @@ void ParamLoader::loadActorInflatorParams (const std::shared_ptr<ros::NodeHandle
 	}
 
 	calculateCostmapInflationRadius(nh_ptr);
-
-	/*
-	// footprint test
-	XmlRpc::XmlRpcValue foot;
-	if ( nh_ptr->getParam(ns_ + actor_ns_prefix_ + "inflation/footprint", foot) ) {
-		// sublist
-		XmlRpc::XmlRpcValue sublist;
-		// elements in the vector
-		for ( size_t i = 0; i < foot.size(); i++ ) {
-			sublist = foot[i];
-			for ( size_t j = 0; j < sublist.size(); j++ ) {
-
-			}
-		}
-//		std::cout << "\n\n\nfootprint size: " << foot.size() << "\n\n\n" << std::endl;
-//		XmlRpc::XmlRpcValue sublist = foot[0];
-//		std::cout << "\n\n\nsublist[0] size: " << sublist.size() << "\n\n\n" << std::endl;
-//		sublist = foot[1];
-//		std::cout << "\n\n\nsublist[1] size: " << sublist.size() << "\n\n\n" << std::endl;
-//		sublist = foot[2];
-//		std::cout << "\n\n\nsublist[2] size: " << sublist.size() << "\n\n\n" << std::endl;
-//		sublist = foot[3];
-//		std::cout << "\n\n\nsublist[3] size: " << sublist.size() << "\n\n\n" << std::endl;
-	}
-	*/
-
 	calculateActorFootprint(nh_ptr);
 
 }
@@ -506,15 +480,6 @@ void ParamLoader::calculateActorFootprint(const std::shared_ptr<ros::NodeHandle>
 					angles.push_back(i * (-diff));
 				}
 
-//				std::cout << "calculateActorFootprint | ELLIPSE | angles" << std::endl;
-				for ( size_t i = 0; i < angles.size(); i++ ) {
-//					std::cout << "\t\t" << i << " " << angles.at(i) << std::endl;
-				}
-
-//				if ( angles.size() != 12 ) {
-//					std::cout << "ERROR! ANGLES SIZE IS: " << angles.size() << " instead of 12!" << std::endl;
-//				}
-//				std::cout << "FOOTPRINT:" << std::endl;
 				// Parametric equation of an ellipse
 				// x = a * cos(t) + x_center_shift
 				// y = b * sin(t) + y_center_shift
@@ -530,14 +495,12 @@ void ParamLoader::calculateActorFootprint(const std::shared_ptr<ros::NodeHandle>
 
 					// convert points to the world reference system
 					// const double ACTOR_REF_SYSTEM_ROTATION = 1.5708;
-					double x_prim = x * cos(-1.5708) - y * sin(-1.5708);
-					double y_prim = x * sin(-1.5708) + y * cos(-1.5708);
+					double x_prim = x * cos(+1.5708) - y * sin(+1.5708);
+					double y_prim = x * sin(+1.5708) + y * cos(+1.5708);
 
 					// update the footprint contents
 					footprint[i][0] = x_prim;
 					footprint[i][1] = y_prim;
-
-//					std::cout << "\tx = " << x << "\t y = " << y << std::endl;
 
 				}
 
