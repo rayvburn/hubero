@@ -13,6 +13,7 @@
 #include <actor_sim_srv/GetVelocity.h>
 #include <actor_sim_srv/SetStance.h>
 #include <std_srvs/Trigger.h>
+#include "../../actor_plugin_social/include/actor/core/Enums.h" // FIXME
 
 class ActorAPI {
 
@@ -26,6 +27,7 @@ public:
 
 	// FIXME: enum-based
 	bool setStance(const uint8_t &stance_type);
+	bool setStance(const actor::ActorStance &stance_type);
 
 	/// \brief Get velocity vector (linear x, linear y and angular `yaw`)
 	std::array<double, 3> getVelocity(); // cannot be const

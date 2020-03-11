@@ -49,6 +49,12 @@ bool ActorAPI::setStance(const uint8_t &stance_type) {
 
 // ---------------------------------------------------------------------------------
 
+bool ActorAPI::setStance(const actor::ActorStance &stance_type) {
+	return (setStance(static_cast<uint8_t>(stance_type)));
+}
+
+// ---------------------------------------------------------------------------------
+
 std::array<double, 3> ActorAPI::getVelocity() {
 
 	actor_sim_srv::GetVelocity srv; // no fields to fill
