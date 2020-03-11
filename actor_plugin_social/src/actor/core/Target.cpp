@@ -231,9 +231,9 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 	// save output of the `findSafePositionAlongLine`
 	bool found = false;
 	ignition::math::Vector3d position_shifted;
-
+	std::cout << "[setNewTarget] (V3d version) | SHIFT the TARGET"  << std::endl;
 	// potentially SHIFT the TARGET position to make it reachable for global planner
-	std::tie(found, position_shifted) = findSafePositionAlongLine(position, pose_world_ptr_->Pos());
+	std::tie(found, position_shifted) = findSafePositionAlongLine(position, pose_world_ptr_->Pos(), 5.0);
 	if ( !found ) {
 		return (false);
 	}
@@ -247,8 +247,9 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 
 	if ( !isTargetChosen() ) {
 
+		std::cout << "[setNewTarget] (V3d version) | SHIFT the START"  << std::endl;
 		// potentially SHIFT the START position to make it reachable for global planner
-		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), position);
+		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), position, 5.0);
 		if ( !found ) {
 			return (false);
 		}
@@ -319,7 +320,7 @@ bool Target::setNewTarget(TargetLotV3d &target, bool force_queue) {
 	if ( !is_target_safe ) {
 
 		// find further point, which has a low cost (i.e. is safe)
-		std::tie(found, position_shifted) = findSafePositionAlongLine(target.getRaw(), pose_world_ptr_->Pos());
+		std::tie(found, position_shifted) = findSafePositionAlongLine(target.getRaw(), pose_world_ptr_->Pos(), 5.0);
 		if ( !found ) {
 			return (false);
 		}
@@ -334,7 +335,7 @@ bool Target::setNewTarget(TargetLotV3d &target, bool force_queue) {
 
 	if ( !has_target_ ) {
 
-		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), target.getRaw());
+		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), target.getRaw(), 5.0);
 		if ( !found ) {
 			return (false);
 		}
@@ -1108,6 +1109,7 @@ std::tuple<bool, ignition::math::Vector3d> Target::findSafePositionAlongLine(con
 
 		// evaluate the cost
 		int16_t cost_superpose = getCostMean(shifted.X(), shifted.Y());
+		std::cout << "[findSafePositionAlongLine] pos: x = " << shifted.X() << " y = " << shifted.Y() << "  |  cost = " << cost_superpose << std::endl;
 
 		if ( cost_superpose > 0 ) {
 			// move the point a little further according to line direction;
@@ -1115,14 +1117,15 @@ std::tuple<bool, ignition::math::Vector3d> Target::findSafePositionAlongLine(con
 			// the actor);
 			// the smaller the multiplier near the `line_dir` is, the bigger resolution
 			// of `empty` point searching procedure is
-			shifted.X(shifted.X() + 0.1 * line_dir.X());
-			shifted.Y(shifted.Y() + 0.1 * line_dir.Y());
+			shifted.X(shifted.X() + 0.5 * line_dir.X());
+			shifted.Y(shifted.Y() + 0.5 * line_dir.Y());
 			continue;
 		}
 		return (std::make_tuple(true, shifted));
 
 	}
 
+	std::cout << "[Target::findSafePositionAlongLine] Safe point was not found within the allowable range: " << max_shift << std::endl;
 	// not found - return the initial position
 	return (std::make_tuple(false, pt_from));
 
