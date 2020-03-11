@@ -282,7 +282,8 @@ void Actor::initActor(const sdf::ElementPtr sdf) {
 		init_pose.Set( params_ptr_->getActorParams().init_pose.at(0), params_ptr_->getActorParams().init_pose.at(1), params_ptr_->getActorParams().init_pose.at(2), params_ptr_->getActorParams().init_pose.at(3), params_ptr_->getActorParams().init_pose.at(4), params_ptr_->getActorParams().init_pose.at(5) );
 
 	}
-	updateStanceOrientation(init_pose);
+
+	stance_manager_.adjustStancePose(init_pose, world_ptr_->SimTime());
 	actor_ptr_->SetWorldPose(init_pose);
 
 	// set previous pose to prevent velocity overshoot
@@ -911,54 +912,6 @@ void Actor::stateHandlerTeleoperation() {
 // private section
 // ------------------------------------------------------------------- //
 
-void Actor::updateStanceOrientation(ignition::math::Pose3d &pose) {
-
-
-	stance_manager_.adjustStancePose(*pose_world_ptr_, world_ptr_->SimTime());
-
-	/*
-	ignition::math::Pose3d pose_mod = stance_manager_.calculateStancePoseCompensation(world_ptr_->SimTime());
-
-	// constant summation of angle values (especially +90 angles)
-	// makes the actor rotate flying
-	ignition::math::Vector3d rpy_update = pose_mod.Rot().Euler();
-	ignition::math::Vector3d rpy_base = pose.Rot().Euler();
-	pose.Rot().Euler(rpy_base.X() + rpy_update.X(),
-					 rpy_base.Y() + rpy_update.Y(),
-					 rpy_base.Z() + rpy_update.Z());
-	*/
-
-
-//	/* Corrects the rotation to align face with x axis if yaw = 0
-//	 * and stand up (with roll 0 actor is lying) */
-//
-//	ignition::math::Vector3d rpy = pose.Rot().Euler();
-//
-//	switch (stance_manager_.getStance()) {
-//
-//		case(actor::ACTOR_STANCE_WALK):
-//		case(actor::ACTOR_STANCE_STAND):
-//		case(actor::ACTOR_STANCE_STAND_UP):
-//		case(actor::ACTOR_STANCE_TALK_A):
-//		case(actor::ACTOR_STANCE_TALK_B):
-//		case(actor::ACTOR_STANCE_RUN):
-//		case(actor::ACTOR_STANCE_SIT_DOWN):
-//		case(actor::ACTOR_STANCE_SITTING):
-//				rpy.X(IGN_PI_2);
-//				break;
-//
-//		case(actor::ACTOR_STANCE_LIE):
-//				rpy.X(0.0000);
-//				break;
-//
-//	}
-//
-//	pose.Rot().Euler(rpy);
-
-}
-
-// ------------------------------------------------------------------- //
-
 /// \brief Calculate actor's rotation angle (`YAW`) that needs to be applied to
 /// make actor face the target direction. Rotation is performed around world's Z axis.
 /// \note 90 degrees rotation applied because actor coordinate system is rotated 90 degrees CW.
@@ -1038,7 +991,7 @@ double Actor::prepareForUpdate() {
 	// copy pose
 	*pose_world_ptr_ = actor_ptr_->WorldPose();
 
-	updateStanceOrientation(*pose_world_ptr_);
+	stance_manager_.adjustStancePose(*pose_world_ptr_, world_ptr_->SimTime());
 
 	double dt = (world_ptr_->SimTime() - time_last_update_).Double();
 	velocity_.calculate(dt);
@@ -1263,7 +1216,7 @@ bool Actor::manageTargetTracking() {
 			// when tracked object will start moving again, then stance will be changed
 			setStance(ActorStance::ACTOR_STANCE_STAND);
 			// update the pose (stance only) because the update event will be broken (stopped)
-			updateStanceOrientation(*pose_world_ptr_);
+			stance_manager_.adjustStancePose(*pose_world_ptr_, world_ptr_->SimTime());
 			applyUpdate(0.001);
 			return (false);
 
@@ -1332,7 +1285,7 @@ bool Actor::manageTargetTracking() {
 		// when tracked object will start moving again, then stance will be changed
 		setStance(ActorStance::ACTOR_STANCE_STAND);
 		// update the pose (stance only) because the update event will be broken (stopped)
-		updateStanceOrientation(*pose_world_ptr_);
+		stance_manager_.adjustStancePose(*pose_world_ptr_, world_ptr_->SimTime());
 		applyUpdate(0.001);
 		return (false);
 	}

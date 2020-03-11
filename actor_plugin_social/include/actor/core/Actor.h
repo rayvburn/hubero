@@ -208,10 +208,6 @@ private:
     /// \return: true if actor faces the target close enough (10 deg tolerance)
     bool alignToTargetDirection(ignition::math::Vector3d *rpy);
 
-    /// \brief Helper functions that consider the offsets of the actor's yaw and a roll
-    /// angles depending on current stance
-	void updateStanceOrientation(ignition::math::Pose3d &pose);
-
     /// \brief Function invoked at the start of each OnUpdate event
     /// \return: dt - time delta
     double prepareForUpdate();

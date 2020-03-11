@@ -103,7 +103,7 @@ bool StanceHelper::configure(const actor::ActorStance &stance_type, const gazebo
 			if ( isDisposableAnimation(stance_type) ) {
 				trajectory_info_ptr_->duration = 1.0;
 			} else {
-				trajectory_info_ptr_->duration = 100000; // std::numeric_limits<double>::infinity();
+				trajectory_info_ptr_->duration = 100000; // FIXME: std::numeric_limits<double>::infinity();
 			}
 
 			stance_ = stance_type;
@@ -167,6 +167,7 @@ bool StanceHelper::update(const gazebo::common::Time& time) {
 
 //		std::cout << "[StanceHelper::update] execution" << std::endl;
 
+		// FIXME:
 		// evaluate whether the animation execution should be terminated
 		if ( (trajectory_end_time_ != std::numeric_limits<double>::infinity()) //&&
 //			 (time.Double() >= trajectory_end_time_.Double()) ) {
@@ -265,6 +266,27 @@ void StanceHelper::adjustStancePose(ignition::math::Pose3d &pose, const gazebo::
 	}
 	pose.Pos() = pos;
 	pose.Rot() = ignition::math::Quaterniond(rpy);
+
+}
+
+// ------------------------------------------------------------------- //
+
+bool StanceHelper::isBusy() const {
+
+	// FIXME:
+	switch (stance_) {
+
+		case(ACTOR_STANCE_SIT_DOWN):
+		case(ACTOR_STANCE_STAND_UP):
+			// if ( )
+			return (true);
+			break;
+
+		default:
+			return (false);
+			break;
+
+	}
 
 }
 

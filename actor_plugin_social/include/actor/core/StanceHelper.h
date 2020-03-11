@@ -36,7 +36,12 @@ public:
 	/// \brief Returns True if a new TrajectoryInfo was prepared and can be applied
 	bool update(const gazebo::common::Time& time);
 
+	/// FIXME
+	/// \brief Helper functions that consider the offsets of the actor's yaw and a roll
+	/// angles depending on current stance
 	void adjustStancePose(ignition::math::Pose3d &pose, const gazebo::common::Time& time);
+
+	bool isBusy() const;
 
 	gazebo::physics::TrajectoryInfoPtr& getTrajectoryInfoPtr();
 
