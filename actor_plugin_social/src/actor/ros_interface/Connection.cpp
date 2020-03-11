@@ -402,13 +402,14 @@ void Connection::callbackThreadHandler() {
 
 void Connection::actionFollowObjectCallback(const actor_sim_action::FollowObjectGoalConstPtr &goal) {
 
-	std::cout << "\nactionFollowObjectCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `FollowObject` action callback START | " << namespace_ << std::endl;
 
 	actor_sim_action::FollowObjectFeedback feedback;
 	actor_sim_action::FollowObjectResult result;
 
 	// take ownership of the Actor shared_ptr
 	if ( !actor_ptr_.lock()->followObject(goal->object_name) ) {
+		std::cout << "[Connection] `FollowObject` action request cannot be processed | " << namespace_ << std::endl;
 		publishAbort(action_follow_object_ptr_);
 		return;
 	}
@@ -421,7 +422,7 @@ void Connection::actionFollowObjectCallback(const actor_sim_action::FollowObject
 	publishFeedback(action_follow_object_ptr_);
 	publishResult(action_follow_object_ptr_);
 
-	std::cout << "\nactionFollowObjectCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
+	std::cout << "[Connection] `FollowObject` action callback FINISH | " << namespace_ << std::endl;
 
 }
 
@@ -429,13 +430,13 @@ void Connection::actionFollowObjectCallback(const actor_sim_action::FollowObject
 
 void Connection::actionSetGoalCallback(const actor_sim_action::SetGoalGoalConstPtr &goal) {
 
-	std::cout << "\nactionSetGoalCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `SetGoal` action callback START | " << namespace_ << std::endl;
 
 	actor_sim_action::SetGoalFeedback feedback;
 	actor_sim_action::SetGoalResult result;
 
 	if ( !actor_ptr_.lock()->setNewTarget(transformPoint(goal->frame, goal->x_pos, goal->y_pos)) ) {
-		std::cout << "SetGoal request cannot be processed" << std::endl;
+		std::cout << "[Connection] `SetGoal` action request cannot be processed | " << namespace_ << std::endl;
 		publishAbort(action_set_goal_ptr_);
 		return;
 	}
@@ -449,7 +450,7 @@ void Connection::actionSetGoalCallback(const actor_sim_action::SetGoalGoalConstP
 	publishFeedback(action_set_goal_ptr_);
 	publishResult(action_set_goal_ptr_);
 
-	std::cout << "\nactionSetGoalCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
+	std::cout << "[Connection] `SetGoal` action callback FINISH | " << namespace_ << std::endl;
 
 }
 
@@ -457,13 +458,13 @@ void Connection::actionSetGoalCallback(const actor_sim_action::SetGoalGoalConstP
 
 void Connection::actionSetGoalNameCallback(const actor_sim_action::SetGoalNameGoalConstPtr &goal) {
 
-	std::cout << "\nactionSetGoalNameCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `SetGoalName` action callback START | " << namespace_ << std::endl;
 
 	actor_sim_action::SetGoalNameFeedback feedback;
 	actor_sim_action::SetGoalNameResult result;
 
 	if ( !actor_ptr_.lock()->setNewTarget(goal->object_name) ) {
-		std::cout << "SetGoalName request cannot be processed" << std::endl;
+		std::cout << "[Connection] `SetGoalName` action request cannot be processed | " << namespace_ << std::endl;
 		publishAbort(action_set_goal_name_ptr_);
 		return;
 	}
@@ -477,7 +478,7 @@ void Connection::actionSetGoalNameCallback(const actor_sim_action::SetGoalNameGo
 	publishFeedback(action_set_goal_name_ptr_);
 	publishResult(action_set_goal_name_ptr_);
 
-	std::cout << "\nactionSetGoalNameCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
+	std::cout << "[Connection] `SetGoalName` action callback FINISH | " << namespace_ << std::endl;
 
 }
 
@@ -485,14 +486,14 @@ void Connection::actionSetGoalNameCallback(const actor_sim_action::SetGoalNameGo
 
 void Connection::actionLieDownCallback(const actor_sim_action::LieDownGoalConstPtr &goal) {
 
-	std::cout << "\nactionLieDownCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `LieDown` action callback START | " << namespace_ << std::endl;
 
 	actor_sim_action::LieDownFeedback feedback;
 	actor_sim_action::LieDownResult result;
 
 	ignition::math::Pose3d pose_world = transformPoint(goal->frame, goal->x_pos, goal->y_pos, goal->z_pos);
 	if ( !actor_ptr_.lock()->lieDown(pose_world.Pos().X(), pose_world.Pos().Y(), pose_world.Pos().Z(), goal->rotation) ) {
-		std::cout << "LieDown request cannot be processed" << std::endl;
+		std::cout << "[Connection] `LieDown` action request cannot be processed | " << namespace_ << std::endl;
 		publishAbort(action_lie_down_ptr_);
 		return;
 	}
@@ -505,7 +506,7 @@ void Connection::actionLieDownCallback(const actor_sim_action::LieDownGoalConstP
 	publishFeedback(action_lie_down_ptr_);
 	publishResult(action_lie_down_ptr_);
 
-	std::cout << "\nactionLieDownCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
+	std::cout << "[Connection] `LieDown` action callback FINISH | " << namespace_ << std::endl;
 
 }
 
@@ -513,10 +514,10 @@ void Connection::actionLieDownCallback(const actor_sim_action::LieDownGoalConstP
 
 void Connection::actionLieDownNameCallback(const actor_sim_action::LieDownNameGoalConstPtr &goal) {
 
-	std::cout << "\nactionLieDownNameCallback()" << "\t" << namespace_ << "\n" << std::endl;
+	std::cout << "[Connection] `LieDownName` action callback START | " << namespace_ << std::endl;
 
 	if ( !actor_ptr_.lock()->lieDown(goal->object_name, goal->lying_height, goal->rotation) ) {
-		std::cout << "LieDownName request cannot be processed" << std::endl;
+		std::cout << "[Connection] `LieDownName` action request cannot be processed | " << namespace_ << std::endl;
 		publishAbort(action_lie_down_name_ptr_);
 		return;
 	}
@@ -529,7 +530,7 @@ void Connection::actionLieDownNameCallback(const actor_sim_action::LieDownNameGo
 	publishFeedback(action_lie_down_name_ptr_);
 	publishResult(action_lie_down_name_ptr_);
 
-	std::cout << "\nactionLieDownNameCallback()" << "\t" << namespace_ << "\tFINISH\n" << std::endl;
+	std::cout << "[Connection] `LieDownName` action callback FINISH | " << namespace_ << std::endl;
 
 }
 
