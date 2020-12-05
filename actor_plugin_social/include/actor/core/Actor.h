@@ -318,6 +318,11 @@ private:
     /// \brief Social Force Model interface object
     sfm::SocialForceModel sfm_;
 
+	// FIXME
+//	sfm::ShiftRegister<ignition::math::Vector3d> force_internal_register_{50, 10};
+//	sfm::ShiftRegister<ignition::math::Vector3d> force_interaction_register_{50, 10};
+//	sfm::ShiftRegister<ignition::math::Vector3d> force_social_register_{50, 10};
+
     /// \brief Social Force Model arrows visualization;
     /// An object which `arrow` markers are created from
     /// so it is crucial to set the color, the frame etc.

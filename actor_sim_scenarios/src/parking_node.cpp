@@ -44,14 +44,14 @@ int main(int argc, char** argv) {
 	/* Actor4 and Actor3 go straight to their cars;
 	 * Actor2 goes to his friend, Actor1 goes to the dustbin */
 	ROS_INFO("[SCENARIO] Firing up the 1st stage!");
-	actor4.setGoal(-0.5, +7.0);
-	std::this_thread::sleep_for(std::chrono::milliseconds(500));
-	actor3.setGoal(-0.5, +18.8);
-	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	actor4.setGoal(+0.5, +6.6);
+	std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+	actor3.setGoal(+0.3, +18.8);
+	std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 	actor2.setGoal(+7.0, +2.9);
-	std::this_thread::sleep_for(std::chrono::milliseconds(500));
-	actor1.setGoal(+0.6, -5.8);
-	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+	actor1.setGoal(+1.2, -5.7); // (+0.6, -5.8);
+	std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 
 	ROS_INFO("[SCENARIO] 1st stage completed!");
 

@@ -1403,9 +1403,19 @@ double Actor::move(const double &dt) {
 
 	}
 
+	//
+//	force_internal_register_.update(sfm_.getForceInternal());
+//	force_interaction_register_.update(sfm_.getForceInteraction());
+//	force_social_register_.update(human_action_force);
+//	ignition::math::Vector3d f_internal_avg = force_internal_register_.getAverage();
+//	ignition::math::Vector3d f_interaction_avg = force_interaction_register_.getAverage();
+//	ignition::math::Vector3d f_social_avg = force_social_register_.getAverage();
+	//
+
     // according to the force, calculate a new pose
 	ignition::math::Pose3d new_pose = sfm_.computeNewPose(*pose_world_ptr_, velocity_.getLinear(),
 														  sfm_.getForceCombined() + human_action_force,
+//														  f_internal_avg + f_interaction_avg + f_social_avg,
 														  target_manager_.getCheckpoint(), dt);
 
 	// object info update
@@ -1697,6 +1707,11 @@ void Actor::resetVisualization(bool reset_global_path) {
 	sfm_.reset(); // clear SFM markers
 	social_conductor_.reset();
 //	path_storage_.reset();
+
+//	force_internal_register_.clear();
+//	force_interaction_register_.clear();
+//	force_social_register_.clear();
+
 }
 
 // ------------------------------------------------------------------- //

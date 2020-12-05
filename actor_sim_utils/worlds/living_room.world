@@ -8945,7 +8945,7 @@
     </actor>
 
     <actor name="actor1">
-      <pose>7.0 -0.6 1.00 0 0 -1.5707</pose> 
+      <pose>6.3 2.5 1.00 0 0 0.0</pose> 
       <!-- <pose>5.5 -0.0 1.00 0 0 -1.5707</pose> -->
       <skin>
         <!-- <filename>walk.dae</filename>  -->

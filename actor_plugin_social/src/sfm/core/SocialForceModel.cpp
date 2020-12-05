@@ -228,6 +228,8 @@ bool SocialForceModel::computeSocialForce(const gazebo::physics::WorldPtr &world
 		// check if the obstacle is static or dynamic (force calculation differs)
 		is_dynamic = isDynamicObstacle(model_vel);
 
+		// TODO: consider actor personal space even when he is standing!
+
 		// model_closest i.e. closest to an actor or the actor's bounding
 		ignition::math::Pose3d actor_closest_to_model_pose = actor_pose;
 		ignition::math::Pose3d model_closest_point_pose = model_raw_pose;

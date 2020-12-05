@@ -229,7 +229,7 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 	bool found = false;
 	ignition::math::Vector3d position_shifted;
 
-//	std::cout << "[setNewTarget] (V3d version) | SHIFT the TARGET"  << std::endl;
+	std::cout << "[setNewTarget] (V3d version) | SHIFT the TARGET"  << std::endl;
 	// potentially SHIFT the TARGET position to make it reachable for global planner
 	std::tie(found, position_shifted) = findSafePositionAlongLine(position, pose_world_ptr_->Pos(), SAFE_POSITION_SEARCH_MULTIPLIER * params_ptr_->getActorInflatorParams().inflation_radius);
 	if ( !found ) {
@@ -245,7 +245,7 @@ bool Target::setNewTarget(const ignition::math::Vector3d &position, bool force_q
 
 	if ( !isTargetChosen() ) {
 
-//		std::cout << "[setNewTarget] (V3d version) | SHIFT the START"  << std::endl;
+		std::cout << "[setNewTarget] (V3d version) | SHIFT the START"  << std::endl;
 		// potentially SHIFT the START position to make it reachable for global planner
 		std::tie(found, position_shifted) = findSafePositionAlongLine(pose_world_ptr_->Pos(), position, SAFE_POSITION_SEARCH_MULTIPLIER * params_ptr_->getActorInflatorParams().inflation_radius);
 		if ( !found ) {
@@ -1102,16 +1102,16 @@ std::tuple<bool, ignition::math::Vector3d> Target::findSafePositionAlongLine(con
 
 		// evaluate the cost
 		int16_t cost_superpose = getCostMean(shifted.X(), shifted.Y());
-//		std::cout << "[findSafePositionAlongLine] pos: x = " << shifted.X() << " y = " << shifted.Y() << "  |  cost = " << cost_superpose << std::endl;
+		std::cout << "[findSafePositionAlongLine] pos: x = " << shifted.X() << " y = " << shifted.Y() << "  |  cost = " << cost_superpose << std::endl;
 
-		if ( cost_superpose > 0 ) {
+		if ( cost_superpose > 100 ) {
 			// move the point a little further according to line direction;
 			// move in the opposite direction (towards obstacle starting from
 			// the actor);
 			// the smaller the multiplier near the `line_dir` is, the bigger resolution
 			// of `empty` point searching procedure is
-			shifted.X(shifted.X() + 0.5 * line_dir.X());
-			shifted.Y(shifted.Y() + 0.5 * line_dir.Y());
+			shifted.X(shifted.X() + 0.2 * line_dir.X());
+			shifted.Y(shifted.Y() + 0.2 * line_dir.Y());
 			continue;
 		}
 		return (std::make_tuple(true, shifted));
