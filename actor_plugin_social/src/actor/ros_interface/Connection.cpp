@@ -23,11 +23,6 @@
 namespace actor {
 namespace ros_interface {
 
-// declaration of a static variable(s) - database is shared among actors
-incare::communication::RobotCommands Connection::voice_robot_;
-
-// ------------------------------------------------------------------- //
-
 Connection::Connection()
 	:	action_follow_object_ptr_(nullptr),
 		action_set_goal_ptr_(nullptr),
@@ -85,18 +80,6 @@ void Connection::initServices() {
 	srv_get_pose_		= nh_ptr_->advertiseService(namespace_ + "/get_pose", 		&Connection::srvGetPoseCallback, this);
 
 	srv_switch_debug_sfm_= nh_ptr_->advertiseService(namespace_ + "/debug_sfm", 	&Connection::srvSetDebugSFMCallback, this);
-
-	srv_communicate_	= nh_ptr_->advertiseService(namespace_ + "/communicate", 	&Connection::srvCommunicateCallback, this);
-
-	// Verbal interface
-	std::cout << "\n\nVOICE TEST\n\n\n";
-	for (size_t i = 0; i < voice_robot_.getDatabase().size(); i++) {
-		for (size_t j = 0; j < voice_robot_.getDatabase().at(i).size(); j++) {
-			std::cout << voice_robot_.getDatabase().at(i).at(j) << "\t";
-		}
-		std::cout << "\n";
-	}
-	std::cout << "\n\n\nEND\n\n";
 
 }
 
@@ -303,27 +286,6 @@ bool Connection::srvSetDebugSFMCallback(std_srvs::SetBool::Request &req, std_srv
 	}
 
 	resp.success = true;
-	return (true);
-
-}
-
-// ------------------------------------------------------------------- //
-
-bool Connection::srvCommunicateCallback(incare_human_robot_communication::Communicate::Request &req, incare_human_robot_communication::Communicate::Response &resp) {
-
-	std::cout << "[Connection] `Communicate` service callback | " << namespace_ << std::endl;
-
-	//	req.str
-
-	//	std::vector<std::string> db;
-//	for (size_t i = 0; i < db.size(); i++) {
-//		db.at(i)
-//	}
-//	if (s1.find(s2) != std::string::npos) {
-//
-//	}
-
-	resp.str = "TEST_RESP";
 	return (true);
 
 }

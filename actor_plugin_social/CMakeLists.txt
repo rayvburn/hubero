@@ -9,7 +9,6 @@ find_package(roscpp REQUIRED)
 find_package(actor_sim_utils REQUIRED)
 find_package(actor_sim_srv REQUIRED)
 find_package(actor_sim_action REQUIRED)
-find_package(catkin REQUIRED COMPONENTS incare_human_robot_communication)
 find_package(actor_global_plan REQUIRED)
 find_package(catkin REQUIRED COMPONENTS visualization_msgs)
 
@@ -21,7 +20,6 @@ include_directories(${roscpp_INCLUDE_DIRS})
 include_directories(${actor_sim_utils_INCLUDE_DIRS})
 include_directories(${actor_sim_srv_INCLUDE_DIRS})
 include_directories(${actor_sim_action_INCLUDE_DIRS})
-include_directories(${incare_human_robot_communication_INCLUDE_DIRS})
 include_directories(${actor_global_plan_INCLUDE_DIRS})
 
 include_directories(${tf_INCLUDE_DIRS})
@@ -31,8 +29,6 @@ include_directories(${std_srvs_INCLUDE_DIRS})
 include_directories(/user/include/sdformat-5.2)
 include_directories(./include)
 
-link_directories(${incare_human_robot_communication_LIBRARY_DIRS})
-
 find_package(gazebo REQUIRED)
 include_directories(${GAZEBO_INCLUDE_DIRS})
 link_directories(${GAZEBO_LIBRARY_DIRS})
@@ -40,7 +36,7 @@ list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
 
-catkin_package(CATKIN_DEPENDS roscpp incare_human_robot_communication)
+catkin_package(CATKIN_DEPENDS roscpp)
 
 
 add_library(${PROJECT_NAME} SHARED 
@@ -182,10 +178,7 @@ target_link_libraries(fuzzy ${fuzzylite_LIBRARY})
 target_link_libraries(actor_ros 
 
 	# catkin_LIBRARIES - if the library depends on libraries provided by other catkin package(s)
-	#${incare_human_robot_communication_LIBRARIES} ${incare_human_robot_communication_INCLUDE_DIRS} ${incare_human_robot_communication_LIBRARY_DIRS} ${catkin_LIBRARIES}
-
-	# TODO: this issue must be fixed
-	/home/rayvburn/ros_workspace/ws_people_sim/src/incare_human_robot_communication/lib/libincare_human_robot_communication.so
+	# ${catkin_LIBRARIES}
 
   # link common library
   actor_frame

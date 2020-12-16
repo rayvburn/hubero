@@ -33,9 +33,6 @@
 
 #include <actor/ros_interface/Conversion.h>
 
-#include <incare_human_robot_communication/Database.h>
-#include <incare_human_robot_communication/Communicate.h>
-
 #include <std_srvs/Trigger.h>	// stopLying, stopFollowing
 #include <std_srvs/SetBool.h>	// switching on/off SFM's debugging info
 
@@ -118,9 +115,6 @@ private:
 	/// \brief Switcher of a debug info printing
 	bool srvSetDebugSFMCallback		(std_srvs::SetBool::Request				&req,	std_srvs::SetBool::Response 			&resp);
 
-	/// \brief A service for communication (verbose) with a robot/other actors
-	bool srvCommunicateCallback		(incare_human_robot_communication::Communicate::Request &req, incare_human_robot_communication::Communicate::Response &resp);
-
 	/// \brief `main` for a callback thread
 	void callbackThreadHandler();
 
@@ -169,12 +163,6 @@ private:
 
 	/// \brief Only for debugging purposes
 	ros::ServiceServer srv_switch_debug_sfm_;
-
-	/// \brief Service server for 'verbal' communication via ROS
-	ros::ServiceServer srv_communicate_;
-
-	/// \brief Database for 'voice'-alike commands recognition
-	static incare::communication::RobotCommands voice_robot_;
 
 	/// \section Actions
 	/// \brief
