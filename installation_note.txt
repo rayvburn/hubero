@@ -35,3 +35,7 @@ https://github.com/rayvburn/turtlebot3
 sudo apt-get install ros-kinetic-turtlebot3-applications
 
 TODO: upload own models from `home/building_editor_models`
+
+
+In case you face this error: `*** No rule to make target '/usr/lib/x86_64-linux-gnu/libvtkproj4-6.2.so.6.2.0'`, the solution can be found [here](https://blog.csdn.net/Steve_Kung/article/details/96652114). Simply run:
+sudo ln -s /usr/lib/x86_64-linux-gnu/libvtkCommonCore-6.2.so /usr/lib/x86_64-linux-gnu/libvtkproj4-6.2.so.6.2.0
