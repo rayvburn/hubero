@@ -40,6 +40,7 @@ void gazebo::ActorPlugin::Load(gazebo::physics::ModelPtr _model, sdf::ElementPtr
 
     std::cout << "LOADED POSE: " << this->actor->WorldPose() << std::endl;
 	actor_ptr_ = std::make_shared<actor::core::Actor>();
+	actor_ptr_->initialize();
 	actor_ptr_->initGazeboInterface(actor, world);
 	actor_ptr_->initRosInterface();
 	actor_ptr_->initActor(_sdf);

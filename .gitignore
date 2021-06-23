@@ -5,6 +5,10 @@ terminator_launch.md
 gazebo_gui_kkr_scenarios.ini
 actor_sim_utils/rviz/actor_groups_map_costmap_ext_vis_turtle_nav1.rviz
 
+# vscode
+build/
+.vscode/
+
 # 012 world files
 actor_sim_utils/blender_ws/*
 actor_sim_utils/sweet_home_ws/*

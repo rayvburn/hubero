@@ -20,8 +20,21 @@ Actor::Actor():
  		bounding_type_(ACTOR_BOUNDING_ELLIPSE),
 		bounding_ptr_(nullptr),
 		//stance_(ACTOR_STANCE_STAND),
-		trans_function_ptr(nullptr)
+		trans_function_ptr(nullptr),
+		navigation_loader_("hubero_interface", "hubero::interface::NavigationBase")
 {}
+
+// ------------------------------------------------------------------- //
+
+void Actor::initialize() {
+	try {
+		navigation_ptr_ = navigation_loader_.createInstance("hubero/NavigationROS");
+		ROS_INFO("Successfully loaded plugin hubero/NavigationROS");
+	} catch (pluginlib::PluginlibException& ex) {
+		// handle the class failing to load
+		ROS_ERROR("The plugin failed to load for some reason. Error: %s", ex.what());
+	}
+}
 
 // ------------------------------------------------------------------- //
 
