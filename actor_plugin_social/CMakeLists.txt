@@ -10,7 +10,7 @@ find_package(actor_sim_utils REQUIRED)
 find_package(actor_sim_srv REQUIRED)
 find_package(actor_sim_action REQUIRED)
 find_package(actor_global_plan REQUIRED)
-find_package(catkin REQUIRED COMPONENTS visualization_msgs)
+find_package(catkin REQUIRED COMPONENTS visualization_msgs hubero_common hubero_interface)
 
 find_package(tf REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -25,6 +25,8 @@ include_directories(${actor_global_plan_INCLUDE_DIRS})
 include_directories(${tf_INCLUDE_DIRS})
 include_directories(${std_msgs_INCLUDE_DIRS})
 include_directories(${std_srvs_INCLUDE_DIRS})
+include_directories(${hubero_common_INCLUDE_DIRS})
+include_directories(${hubero_interface_INCLUDE_DIRS})
 
 include_directories(/user/include/sdformat-5.2)
 include_directories(./include)
@@ -40,7 +42,7 @@ catkin_package(CATKIN_DEPENDS roscpp)
 
 
 add_library(${PROJECT_NAME} SHARED 
-  include/ActorPluginSocial.h 
+  include/ActorPluginSocial.h
   src/ActorPluginSocial.cpp
 )
 

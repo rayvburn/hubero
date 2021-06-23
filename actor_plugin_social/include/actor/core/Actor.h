@@ -39,6 +39,11 @@
 #include <fuzz/SocialConductor.h>
 #include <actor/FrameGlobal.h>
 
+// pluginlib
+#include <boost/shared_ptr.hpp>
+#include <pluginlib/class_loader.h>
+#include <hubero_interface/navigation_base.h>
+
 // Visualization
 #include <sfm/vis/Arrow.h>
 #include <sfm/vis/GridForce.h>
@@ -88,6 +93,8 @@ public:
 
 	/// \brief Default contructor
 	Actor();
+
+    void initialize();
 
 	/// \brief Passes World and Actor pointers for use within Actor controller class
 	void initGazeboInterface(const gazebo::physics::ActorPtr &actor, const gazebo::physics::WorldPtr &world);
@@ -407,6 +414,9 @@ private:
 
     /// \brief Stores a status of the current action
     Action action_info_;
+
+    pluginlib::ClassLoader<hubero::interface::NavigationBase> navigation_loader_;
+    boost::shared_ptr<hubero::interface::NavigationBase> navigation_ptr_;
 
 public:
 
