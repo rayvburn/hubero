@@ -26,12 +26,14 @@ Actor::Actor():
 
 // ------------------------------------------------------------------- //
 
-void Actor::initialize() {
+void Actor::initialize(const std::string& agent_name) {
 	try {
 		navigation_ptr_ = navigation_loader_.createInstance("hubero/NavigationROS");
 		ROS_INFO("Successfully loaded plugin hubero/NavigationROS");
+		navigation_ptr_->initialize(agent_name);
 	} catch (pluginlib::PluginlibException& ex) {
 		// handle the class failing to load
+		navigation_ptr_.reset();
 		ROS_ERROR("The plugin failed to load for some reason. Error: %s", ex.what());
 	}
 }
@@ -236,7 +238,7 @@ void Actor::initSFM() {
 
 	// initialize SFM parameters
 	sfm_.init(params_ptr_, sfm_inflation, actor_ptr_->GetName(), world_ptr_);
-	
+
 }
 
 // ------------------------------------------------------------------- //
@@ -1000,6 +1002,21 @@ bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 // ------------------------------------------------------------------- //
 
 double Actor::prepareForUpdate() {
+	Vector3 pos = pose_world_ptr_->Pos();
+	double roll = pose_world_ptr_->Rot().Roll();
+	roll = IGN_PI_2;
+	double pitch = pose_world_ptr_->Rot().Pitch();
+	double yaw = pose_world_ptr_->Rot().Yaw();
+	yaw -= IGN_PI_2;
+
+	// rpy.X(IGN_PI_2);
+	// rpy.Z(rpy.Z() - IGN_PI_2);
+
+	//ignition::math::Angle yaw_actor_w(pose_world_ptr_->Rot().Yaw() - IGN_PI_2);
+
+	navigation_ptr_->setPose(Pose3(pos.X(), pos.Y(), pos.Z(), roll, pitch, yaw), "world");
+
+	// =======================================================
 
 	// copy pose
 	*pose_world_ptr_ = actor_ptr_->WorldPose();
@@ -1388,6 +1405,14 @@ bool Actor::manageTargetSingleReachment() {
 // ------------------------------------------------------------------- //
 
 double Actor::move(const double &dt) {
+	if (navigation_ptr_ == nullptr) {
+		printf("[Actor::move] Actor has not working Navigation module\r\n");
+		return 0.0;
+	}
+	auto vel = navigation_ptr_->getVelocityCmd();
+	// printf("[Actor::move] cmd: x %2.4f, y: %2.4f, z %2.4f\r\n", vel.X(), vel.Y(), vel.Z());
+
+	// ==========================================================================
 
 	// calculate `social` force (i.e. `internal` and `interaction` components)
 	sfm_.computeSocialForce(world_ptr_, *pose_world_ptr_, velocity_.getLinear(),
