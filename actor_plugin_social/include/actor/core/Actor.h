@@ -94,7 +94,8 @@ public:
 	/// \brief Default contructor
 	Actor();
 
-    void initialize();
+    /// \brief Initializes plugins of HuBeRo interfaces
+    void initialize(const std::string& agent_name);
 
 	/// \brief Passes World and Actor pointers for use within Actor controller class
 	void initGazeboInterface(const gazebo::physics::ActorPtr &actor, const gazebo::physics::WorldPtr &world);
@@ -429,6 +430,8 @@ public:
 	bool setNewTarget(const T &target) {
 
 		bool status = target_manager_.setNewTargetPriority(target, true);
+        printf("[Actor::setNewTarget] new target expressed in 'world' frame!\r\n");
+        //navigation_ptr_->setGoal(Pose3(0.0, 0.0, 0.0, 0.0, 0.0, 0.0), "world");
 
 		// if new-desired target is achievable then change the state (align firstly)
 		if ( status ) {
