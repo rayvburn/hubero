@@ -1,0 +1,7 @@
+<library path="lib/libhubero_navigation_ros">
+    <class name="hubero/NavigationROS" type="hubero::NavigationROS" base_class_type="hubero::interface::NavigationBase">
+    <description>
+      TODO
+    </description>
+  </class>
+</library>
