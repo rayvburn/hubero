@@ -3616,6 +3616,88 @@
         <filename>walk.dae</filename>
         <scale>1.0</scale>
       </skin>
+      <!-- camera sensor -->
+      <!-- http://gazebosim.org/tutorials?tut=ros_gzplugins#OpenniKinect -->
+      <link name="camera_link">
+        <sensor name="camera" type="depth">
+        <!-- CS info: x - side axis, y - height, z - person's nose heading -->
+        <pose>0 0.55 +0.15 0 -1.57 -1.57</pose>
+        <visualize>true</visualize>
+          <camera name="head">
+            <horizontal_fov>1.047198</horizontal_fov>
+            <image>
+              <width>640</width>
+              <height>480</height>
+              <format>R8G8B8</format>
+            </image>
+            <clip>
+              <near>0.05</near>
+              <far>300</far>
+            </clip>
+          </camera>
+          <plugin name="camera_controller" filename="libgazebo_ros_openni_kinect.so">
+            <baseline>0.2</baseline>
+            <alwaysOn>true</alwaysOn>
+            <updateRate>1.0</updateRate>
+            <cameraName>camera</cameraName>
+            <imageTopicName>/hubero/actor4/color/image_raw</imageTopicName>
+            <cameraInfoTopicName>/hubero/actor4/color/camera_info</cameraInfoTopicName>
+            <depthImageTopicName>/hubero/actor4/depth/image_raw</depthImageTopicName>
+            <depthImageInfoTopicName>/hubero/actor4/depth/camera_info</depthImageInfoTopicName>
+            <pointCloudTopicName>/hubero/actor4/depth/points</pointCloudTopicName>
+            <frameName>actor4/base_camera_link</frameName>
+            <pointCloudCutoff>0.5</pointCloudCutoff>
+            <pointCloudCutoffMax>3.0</pointCloudCutoffMax>
+            <distortionK1>0.0</distortionK1>
+            <distortionK2>0.0</distortionK2>
+            <distortionK3>0.0</distortionK3>
+            <distortionT1>0.0</distortionT1>
+            <distortionT2>0.0</distortionT2>
+            <CxPrime>0</CxPrime>
+            <Cx>0</Cx>
+            <Cy>0</Cy>
+            <focalLength>0</focalLength>
+            <hackBaseline>0</hackBaseline>
+          </plugin>
+        </sensor>
+      </link>
+      <!-- laser sensor -->
+      <link name="laser_link">
+        <sensor type="gpu_ray" name="laser">
+        <!-- CS info: x - side axis, y - height, z - person's nose heading -->
+        <pose>0 -0.8 0.55 0 -1.57 -1.57</pose>
+        <visualize>true</visualize>
+        <update_rate>10</update_rate>
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>720</samples>
+              <resolution>1</resolution>
+              <min_angle>-2.170796</min_angle>
+              <max_angle>2.170796</max_angle>
+            </horizontal>
+          </scan>
+          <range>
+            <min>0.10</min>
+            <max>10.0</max>
+            <resolution>0.01</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <!-- Noise parameters based on published spec for Hokuyo laser
+                achieving "+-30mm" accuracy at range < 10m.  A mean of 0.0m and
+                stddev of 0.01m will put 99.7% of samples within 0.03m of the true
+                reading. -->
+            <mean>0.0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </ray>
+        <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_gpu_laser.so">
+          <topicName>hubero/actor4/laser_scan</topicName>
+          <frameName>actor4/base_laser_link</frameName>
+        </plugin>
+      </sensor>
+    </link>
 
 
       <animation name="walk">
