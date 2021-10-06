@@ -6,6 +6,7 @@
 namespace hubero {
 namespace interface {
 
+//template<typename T>
 class LocalisationBase {
 public:
     virtual bool initialize(const std::string& frame = "") {

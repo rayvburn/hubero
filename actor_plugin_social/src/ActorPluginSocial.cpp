@@ -18,12 +18,15 @@
 #include "gazebo/common/UpdateInfo.hh"
 #include "gazebo/physics/physics.hh"
 #include "ActorPluginSocial.h"
+#include <hubero_gazebo/localisation_gazebo.h>
 
 GZ_REGISTER_MODEL_PLUGIN(gazebo::ActorPlugin)
 
 /////////////////////////////////////////////////
 
-gazebo::ActorPlugin::ActorPlugin(): controller_enabled_(false) { }
+gazebo::ActorPlugin::ActorPlugin(): controller_enabled_(false) { 
+	localisation_ptr_ = std::make_shared<hubero::interface::LocalisationGazebo>();
+}
 
 /////////////////////////////////////////////////
 void gazebo::ActorPlugin::Load(gazebo::physics::ModelPtr _model, sdf::ElementPtr _sdf)
@@ -40,6 +43,8 @@ void gazebo::ActorPlugin::Load(gazebo::physics::ModelPtr _model, sdf::ElementPtr
 
     std::cout << "LOADED POSE: " << this->actor->WorldPose() << std::endl;
 	actor_ptr_ = std::make_shared<actor::core::Actor>();
+
+	localisation_ptr_->initialize("world");
 	actor_ptr_->initialize(actor->GetName());
 	actor_ptr_->initGazeboInterface(actor, world);
 	actor_ptr_->initRosInterface();
@@ -84,6 +89,7 @@ void gazebo::ActorPlugin::OnUpdate(const gazebo::common::UpdateInfo &_info)
 		return;
 	};
 
+	localisation_ptr_->update(this->actor->WorldPose());
 	actor_ptr_->executeTransitionFunction();
 
   	return; // OnUpdate testing

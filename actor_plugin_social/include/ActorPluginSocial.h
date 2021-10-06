@@ -34,7 +34,7 @@
 #include "gazebo/physics/physics.hh"
 #include "gazebo/util/system.hh"
 
-
+#include <hubero_interface/localisation_base.h>
 
 #define ACTOR_SHARED_PTR
 
@@ -98,6 +98,8 @@ namespace gazebo
     private: std::vector<std::string> ignoreModels;
 
     private: bool controller_enabled_;
+
+    private: std::shared_ptr<hubero::interface::LocalisationBase> localisation_ptr_;
 
   };
 }
