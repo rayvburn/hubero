@@ -46,6 +46,11 @@ void gazebo::ActorPlugin::Load(gazebo::physics::ModelPtr _model, sdf::ElementPtr
 
 	localisation_ptr_->initialize("world");
 	actor_ptr_->initialize(actor->GetName());
+	// TODO: actor_ptr's interface should only allow interfaces to:
+	// - virtual receptor
+	// - virtual effector
+	// - interagent communication channels
+
 	actor_ptr_->initGazeboInterface(actor, world);
 	actor_ptr_->initRosInterface();
 	actor_ptr_->initActor(_sdf);
