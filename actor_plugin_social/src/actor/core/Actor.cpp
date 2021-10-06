@@ -1003,18 +1003,27 @@ bool Actor::alignToTargetDirection(ignition::math::Vector3d *rpy) {
 
 double Actor::prepareForUpdate() {
 	Vector3 pos = pose_world_ptr_->Pos();
-	double roll = pose_world_ptr_->Rot().Roll();
-	roll = IGN_PI_2;
-	double pitch = pose_world_ptr_->Rot().Pitch();
-	double yaw = pose_world_ptr_->Rot().Yaw();
-	yaw -= IGN_PI_2;
-
-	// rpy.X(IGN_PI_2);
-	// rpy.Z(rpy.Z() - IGN_PI_2);
-
-	//ignition::math::Angle yaw_actor_w(pose_world_ptr_->Rot().Yaw() - IGN_PI_2);
-
-	navigation_ptr_->setPose(Pose3(pos.X(), pos.Y(), pos.Z(), roll, pitch, yaw), "world");
+	Vector3 rpy = pose_world_ptr_->Rot().Euler();
+	// match local CS axes to the world frame
+	Angle roll(rpy.X() - IGN_PI_2);
+	roll.Normalize();
+	// rpy.X() -= IGN_PI_2;
+	rpy.X() = roll.Radian();
+	rpy.Y() = 0.0;
+	Angle yaw(rpy.Z() - IGN_PI_2);
+	yaw.Normalize();
+	// rpy.Z() += IGN_PI_2;
+	rpy.Z() = yaw.Radian();
+	printf("\nActor::prepareForUpdate(): (0) x %1.2f, y %1.2f, z %1.2f, R %1.2f, P %1.2f, Y %1.2f\r\n",
+            pos.X(),
+            pos.Y(),
+            pos.Z(),
+            rpy.X(),
+            rpy.Y(),
+            rpy.Z()
+    );
+	// TODO: world frame in initialization
+	navigation_ptr_->setPose(Pose3(pos, Quaternion(rpy)), "world");
 
 	// =======================================================
 
