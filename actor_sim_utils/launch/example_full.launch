@@ -15,6 +15,7 @@
     <arg name="gui"         default="true"/>
     <arg name="rviz"        default="true"/>
     <arg name="gdb"         default="false"/>
+    <arg name="robot"       default="true"/>
 
     <arg name="actor_params_ns" default="/gazebo/actor_plugin_ros_interface/actor"/>
     <arg name="sfm_params_ns"   default="/gazebo/actor_plugin_ros_interface/sfm"/>
@@ -142,7 +143,11 @@
         <rosparam param="$(arg sfm_params_ns)/algorithm/internal_force_factor">500.0</rosparam>
         <rosparam param="$(arg sfm_params_ns)/algorithm/interaction_force_factor">1000.0</rosparam>
 
-
+        <group if="$(arg robot)">
+            <include file="$(find tiago_scenarios)/launch/robot_spawn.launch">
+                <arg name="gzpose" value="-x 0.0 -y 0.0 -z 0.0 -R 0.0 -P 0.0 -Y 3.1415"/>
+            </include>
+        </group>
     </group>
 
 
@@ -153,7 +158,6 @@
         <!-- ======================== load global planner node ================================= -->
         <include file="$(find actor_global_plan)/launch/actor_global_plan.launch"> </include>
 
-
     	<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
     	<rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.35</rosparam>
         <rosparam param="$(arg actor_params_ns)/general/world_bound_x">[+20.5, -5.5]</rosparam>
@@ -162,6 +166,11 @@
         <rosparam param="$(arg sfm_params_ns)/world_dictionary/ignored_models">[ground_plane, sun]</rosparam>
         <rosparam param="$(arg sfm_params_ns)/algorithm/min_force">700.0</rosparam> <!-- to force a faster movement (lack of objects in space makes people walking slowly) -->
 
+        <group if="$(arg robot)">
+            <include file="$(find tiago_scenarios)/launch/robot_spawn.launch">
+                <arg name="gzpose" value="-x 10.0 -y 0.0 -z 0.0 -R 0.0 -P 0.0 -Y 3.1415"/>
+            </include>
+        </group>
     </group>
 
 
