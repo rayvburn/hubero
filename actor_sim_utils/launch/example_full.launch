@@ -129,7 +129,7 @@
     	-->
     	<!-- Circle  -->
     	<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">1</rosparam>
-    	<rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.35</rosparam>
+    	<rosparam param="$(arg actor_params_ns)/inflation/circle_radius">0.2</rosparam>
 		
 		<!-- Box 
 		<rosparam param="$(arg actor_params_ns)/inflation/bounding_type">0</rosparam>
