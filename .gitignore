@@ -1,3 +1,6 @@
+# VSCode output
+build/
+
 actor_plugin_social/doc/*
 actor_plugin_social/doxygen/*
 actor_plugin_social/lib/*
