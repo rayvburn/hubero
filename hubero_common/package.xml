@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>hubero_common</name>
-  <version>0.0.1</version>
+  <version>0.5.0</version>
   <description>The hubero_common package</description>
 
-  <maintainer email="chromedivizer@gmail.com">Jarosław Karwowski</maintainer>
   <author email="chromedivizer@gmail.com">Jarosław Karwowski</author>
+  <maintainer email="chromedivizer@gmail.com">Jarosław Karwowski</maintainer>
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
