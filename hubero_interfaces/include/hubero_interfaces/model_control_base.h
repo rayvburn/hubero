@@ -13,15 +13,17 @@ namespace hubero {
  */
 class ModelControlBase {
 public:
-	ModelControlBase(const std::string& frame_id): initialized_(false), frame_id_(frame_id) {}
+	ModelControlBase(): initialized_(false) {}
 
-	inline virtual void initialize(
+	virtual void initialize(
+		const std::string& frame_id,
 		std::function<void(Pose3)> fun_pose,
 		std::function<void(Vector3)> fun_ang_vel,
 		std::function<void(Vector3)> fun_lin_vel,
 		std::function<void(Vector3)> fun_ang_acc
 		std::function<void(Vector3)> fun_lin_acc
 	) {
+		frame_id_ = frame_id;
 		fun_pose_ = fun_pose;
 		fun_ang_vel_ = fun_ang_vel;
 		fun_lin_vel_ = fun_lin_vel;
@@ -30,13 +32,18 @@ public:
 		initialized_ = true;
 	}
 
-	inline virtual void update(
+	virtual void update(
 		const Pose3& pose,
 		const Vector3& vel_ang,
 		const Vector3& vel_lin,
 		const Vector3& acc_ang,
 		const Vector3& acc_lin
 	) {
+		if (!isInitialized()) {
+			HUBERO_LOG("[ModelControlBase] 'update' call could not be processed due to lack of initialization\r\n");
+			return;
+		}
+
 		if (fun_pose_ != nullptr) {
 			fun_pose_(pose);
 		} else {
@@ -68,11 +75,11 @@ public:
 		}
 	}
 
-	bool isInitialized() const {
+	inline bool isInitialized() const {
 		return initialized_;
 	}
 
-	std::string getFrame() const {
+	inline std::string getFrame() const {
 		return frame_id_;
 	}
 

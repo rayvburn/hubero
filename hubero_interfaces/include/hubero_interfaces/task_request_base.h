@@ -10,13 +10,14 @@ namespace hubero {
  */
 class TaskRequestBase {
 public:
-    TaskRequestBase() {};
+    TaskRequestBase(): initialized_(false) {};
 
     /**
      * @brief Adds certain task so it can be called via some kind of class derived from this interface class
      */
     void addTask(TaskType task, std::shared_ptr<TaskBase> task_ptr) {
         tasks_map_.insert({task, task_ptr});
+        initialized_ = true;
     }
 
     template <typename... Args>
@@ -59,7 +60,13 @@ public:
         return false;
     }
 
+    inline bool isInitialized() const {
+        return initialized_;
+    }
+
 protected:
+    /// True if at least 1 task was added
+    bool initialized_;
     std::map<TaskType, std::shared_ptr<TaskBase>> tasks_map_;
 };
 
