@@ -25,7 +25,7 @@ struct AnimationData {
  */
 class AnimationControlBase {
 public:
-    AnimationControlBase(): anim_finished_(true) {}
+    AnimationControlBase(): initialized_(false), anim_finished_(true) {}
 
     void addAnimationHandler(
         AnimationType anim_type,
@@ -36,7 +36,7 @@ public:
         anim_data.handler = std::move(anim_handler);
         anim_data.duration = duration;
         map_animation_handlers_.insert({anim_type, anim_data});
-        // map_animation_handlers_.insert({anim_type, std::move(anim_handler)});
+        initialized_ = true;
     }
 
     /**
@@ -46,7 +46,6 @@ public:
         auto it = map_animation_handlers_.find(anim_type);
         if (it != map_animation_handlers_.end()) {
             if (it->second.handler == nullptr) {
-            // if (it->second == nullptr) {
                 HUBERO_LOG("[AnimationControlBase] Cannot start animation since its handler was not defined\r\n");
                 return false;
             }
@@ -57,7 +56,6 @@ public:
             time_finish_ = Time::computeTimestamp(time_begin_, it->second.duration);
 
             it->second.handler();
-            //it->second();
             return true;
         }
         HUBERO_LOG("[AnimationControlBase] Cannot start animation since it was not defined\r\n");
@@ -70,15 +68,21 @@ public:
      */
     virtual void adjustPose(Pose3& pose, const Time& time_current) const {}
 
-    bool isFinished() const {
+    inline bool isInitialized() const {
+		return initialized_;
+	}
+
+    inline bool isFinished() const {
         return anim_finished_;
     }
 
-    AnimationType getActiveAnimation() const {
+    inline AnimationType getActiveAnimation() const {
         return anim_active_;
     }
 
 protected:
+    /// True if at least 1 animation handler was added
+    bool initialized_;
     bool anim_finished_;
     AnimationType anim_active_;
 
@@ -86,7 +90,6 @@ protected:
     Time time_finish_;
 
     std::map<AnimationType, AnimationData> map_animation_handlers_;
-    // std::map<AnimationType, std::function<void(void)>> map_animation_handlers_;
 };
 
 } // namespace hubero

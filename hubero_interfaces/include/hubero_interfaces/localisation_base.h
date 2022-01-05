@@ -1,6 +1,7 @@
 #pragma once
 
 #include <hubero_common/typedefs.h>
+#include <hubero_common/logger.h>
 #include <string>
 
 namespace hubero {
@@ -10,9 +11,18 @@ namespace hubero {
  */
 class LocalisationBase {
 public:
-	LocalisationBase(const std::string& world_frame_id): frame_id_(world_frame_id) {}
+	LocalisationBase(): initialized_(false) {}
+
+	virtual void initialize(const std::string& world_frame_id) {
+		frame_id_ = world_frame_id;
+		initialized_ = true;
+	}
 
 	virtual void update(const Pose3& pose) {
+		if (!isInitialized()) {
+			HUBERO_LOG("[LocalisationBase] 'update' call could not be processed due to lack of initialization\r\n");
+			return;
+		}
 		pose_ = pose;
 	}
 
@@ -23,11 +33,19 @@ public:
 		const Vector3& acc_lin,
 		const Vector3& acc_ang
 	) {
+		if (!isInitialized()) {
+			HUBERO_LOG("[LocalisationBase] 'update' call could not be processed due to lack of initialization\r\n");
+			return;
+		}
 		pose_ = pose;
 		vel_lin_ = vel_lin;
 		vel_ang_ = vel_ang;
 		acc_lin_ = acc_lin;
 		acc_ang_ = acc_ang;
+	}
+
+	inline bool isInitialized() const {
+		return initialized_;
 	}
 
 	inline virtual std::string getFrame() const {
@@ -55,6 +73,7 @@ public:
 	}
 
 protected:
+	bool initialized_;
 	std::string frame_id_;
 
 	Pose3 pose_;

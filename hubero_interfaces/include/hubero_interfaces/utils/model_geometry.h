@@ -8,8 +8,8 @@ namespace hubero {
 class ModelGeometry {
 public:
 	ModelGeometry(
-		const std::string& name,
-		const std::string& frame_id,
+		const std::string& name = std::string(),
+		const std::string& frame_id = std::string(),
 		const Pose3& pose = Pose3(),
 		const Vector3& vel_lin = Vector3(),
 		const Vector3& vel_ang = Vector3(),

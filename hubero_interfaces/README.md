@@ -1,3 +1,7 @@
-Base classes that are meant to be extended by specific simulators and robotic frameworks.
+# hubero_interfaces
 
-Some classes were designed to be used as `pluginlib` classes (therefore `initialize` methods).
+This repository contains HuBeRo base classes that are meant to be extended by specific simulators and robotic frameworks.
+
+## Notes
+
+Some classes were designed to be used with `pluginlib`, therefore `initialize` methods are used instead of constructor initialization.

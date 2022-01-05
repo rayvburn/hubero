@@ -58,7 +58,7 @@ public:
 	/**
 	 * @brief Returns true if class was initialized successfully
 	 */
-	bool isInitialized() const {
+	inline bool isInitialized() const {
 		return initialized_;
 	}
 
@@ -71,6 +71,6 @@ public:
 
 protected:
 	bool initialized_;
-};
+}; // class NavigationBase
 
 } // namespace hubero
