@@ -6,7 +6,7 @@
 
 #include <pluginlib/class_list_macros.h>
 //register this class as a `hubero::interface::NavigationBase` plugin
-PLUGINLIB_EXPORT_CLASS(hubero::NavigationROS, hubero::interface::NavigationBase)
+PLUGINLIB_EXPORT_CLASS(hubero::NavigationROS, hubero::NavigationBase)
 
 namespace hubero {
 
@@ -159,27 +159,25 @@ void NavigationROS::setPose(const Pose3& pose, const std::string& frame) {
     tf_broadcaster_.sendTransform(transform_camera);
 }
 
-void NavigationROS::update(const sensor_msgs::LaserScan& scan) {
-    if (!initialized_) {
-        ROS_WARN("NavigationROS plugin is not initialized, call `initialize` first");
-        return;
-    }
+// void NavigationROS::update(const sensor_msgs::LaserScan& scan) {
+//     if (!initialized_) {
+//         ROS_WARN("NavigationROS plugin is not initialized, call `initialize` first");
+//         return;
+//     }
+//     ROS_INFO("HuBeRo.NavigationROS::update: 1 (empty)");
+// }
 
-    ROS_INFO("HuBeRo.NavigationROS::update: 1 (empty)");
-}
-
-void NavigationROS::update(
-    const sensor_msgs::LaserScan& scan,
-    const sensor_msgs::Image& img,
-    const sensor_msgs::PointCloud2& rgbd_pcl
-) {
-    if (!initialized_) {
-        ROS_WARN("NavigationROS plugin is not initialized, call `initialize` first");
-        return;
-    }
-
-    ROS_INFO("HuBeRo.NavigationROS::update: 2 (empty)");
-}
+// void NavigationROS::update(
+//     const sensor_msgs::LaserScan& scan,
+//     const sensor_msgs::Image& img,
+//     const sensor_msgs::PointCloud2& rgbd_pcl
+// ) {
+//     if (!initialized_) {
+//         ROS_WARN("NavigationROS plugin is not initialized, call `initialize` first");
+//         return;
+//     }
+//     ROS_INFO("HuBeRo.NavigationROS::update: 2 (empty)");
+// }
 
 bool NavigationROS::setGoal(const Pose3& pose, const std::string& frame) {
     if (!initialized_) {
