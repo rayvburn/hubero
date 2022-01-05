@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(hubero_interface)
+project(hubero_interfaces)
 
 # based on: https://github.com/ros-planning/navigation/blob/kinetic-devel/nav_core/CMakeLists.txt
 
@@ -11,12 +11,6 @@ project(hubero_interface)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   hubero_common
-  roscpp
-  nav_msgs
-  std_msgs
-  sensor_msgs
-  geometry_msgs
-  tf
 )
 
 catkin_package(
@@ -24,16 +18,11 @@ catkin_package(
       include
     CATKIN_DEPENDS
       hubero_common
-      roscpp
-      nav_msgs
-      std_msgs
-      sensor_msgs
-      geometry_msgs
-      tf
 )
 
 ## Install project namespaced headers
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
-  PATTERN ".svn" EXCLUDE)
+  PATTERN ".svn" EXCLUDE
+)
