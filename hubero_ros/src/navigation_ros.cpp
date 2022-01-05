@@ -1,11 +1,12 @@
 #include <hubero_ros/navigation_ros.h>
+#include <hubero_ros/utils/converter.h>
 
 #include <actionlib_msgs/GoalID.h>
 #include <move_base_msgs/MoveBaseActionGoal.h>
-#include <hubero_common/converter.h>
 
 #include <pluginlib/class_list_macros.h>
-//register this class as a `hubero::interface::NavigationBase` plugin
+
+// register this class as a `hubero::NavigationBase` plugin
 PLUGINLIB_EXPORT_CLASS(hubero::NavigationROS, hubero::NavigationBase)
 
 namespace hubero {
@@ -59,8 +60,11 @@ bool NavigationROS::isPoseAchievable(const Pose3& start, const Pose3& goal, cons
 
     nav_msgs::GetPlan::Request req;
     nav_msgs::GetPlan::Response resp;
-    req.start = converter::ignPoseToPoseStamped(start, frame);;
-    req.goal = converter::ignPoseToPoseStamped(goal, frame);
+    req.start.header.frame_id = frame;
+    req.start.header.stamp = ros::Time::now();
+    req.start.pose = ignPoseToMsgPose(start);
+    req.goal.header = req.start.header;
+    req.goal.pose = ignPoseToMsgPose(goal);
     // TODO: param
     req.tolerance = 1.0f;
     bool success = srv_mb_get_plan_.call(req, resp);
@@ -100,7 +104,9 @@ void NavigationROS::setPose(const Pose3& pose, const std::string& frame) {
         pose.Rot().Yaw()
     );
 
-    geometry_msgs::TransformStamped transform_actor = converter::ignPoseToTfStamped(pose, false);
+    geometry_msgs::TransformStamped transform_actor {};
+    transform_actor.transform = ignPoseToMsgTf(pose);
+    transform_actor.header.stamp = ros::Time::now();
     transform_actor.header.frame_id = frame;
     transform_actor.header.stamp = stamp;
     transform_actor.child_frame_id = agent_base_frame_id;
@@ -187,11 +193,14 @@ bool NavigationROS::setGoal(const Pose3& pose, const std::string& frame) {
 
     move_base_msgs::MoveBaseActionGoal goal;
     actionlib_msgs::GoalID goal_id;
+    auto time_current = ros::Time::now();
     goal_id.id = "";
-    goal_id.stamp = ros::Time::now();
+    goal_id.stamp = time_current;
     goal.goal_id = goal_id;
     goal.header.frame_id = frame;
-    goal.goal.target_pose = converter::ignPoseToPoseStamped(pose, frame);
+    goal.goal.target_pose.header.frame_id = frame;
+    goal.goal.target_pose.header.stamp = time_current;
+    goal.goal.target_pose.pose = ignPoseToMsgPose(pose);
     pub_mb_goal_.publish(goal);
     ROS_INFO("HuBeRo.NavigationROS::setGoal: trying to set goal");
     return true;
