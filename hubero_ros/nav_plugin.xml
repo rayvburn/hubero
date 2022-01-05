@@ -1,7 +1,7 @@
 <library path="lib/libhubero_navigation_ros">
-    <class name="hubero/NavigationROS" type="hubero::NavigationROS" base_class_type="hubero::interface::NavigationBase">
+    <class name="hubero/NavigationROS" type="hubero::NavigationROS" base_class_type="hubero::NavigationBase">
     <description>
-      TODO
+      Plugin that connects HuBeRo navigation with ROS Navigation stack
     </description>
   </class>
 </library>

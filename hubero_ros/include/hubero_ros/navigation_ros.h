@@ -53,30 +53,6 @@ public:
      */
     virtual void setPose(const Pose3& pose, const std::string& frame = "") override;
 
-    // /**
-    //  * @brief Updates receptors data
-    //  *
-    //  * @details Empty laser scan data is published to ROS topic directly via `libgazebo_ros_*` plugin
-    //  *
-    //  * @param scan LaserScan data
-    //  */
-    // virtual void update(const sensor_msgs::LaserScan& scan) override;
-
-    // /**
-    //  * @brief Updates receptors data
-    //  *
-    //  * @details Empty since laser scan and RGBD camera data is published to ROS topic directly via `libgazebo_ros_*`
-    //  * plugin
-    //  *
-    //  * @param scan LaserScan data
-    //  * @param img Image data
-    //  * @param rgbd_pcl Depth data from RGBD camera
-    //  */
-    // virtual void update(
-    //     const sensor_msgs::LaserScan& scan,
-    //     const sensor_msgs::Image& img,
-    //     const sensor_msgs::PointCloud2& rgbd_pcl) override;
-
     /**
      * @brief Set the goal
      *
