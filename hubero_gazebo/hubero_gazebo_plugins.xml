@@ -1,0 +1,7 @@
+<library path="lib/libhubero_localisation_gazebo">
+    <class name="hubero/LocalisationGazebo" type="hubero::LocalisationGazebo" base_class_type="hubero::interface::LocalisationBase">
+    <description>
+      TODO
+    </description>
+  </class>
+</library>
