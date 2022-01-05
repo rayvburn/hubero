@@ -1,0 +1,13 @@
+<!-- <?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <!-- Launch for testing actor namespace -->
+    <arg name="actor_namespace" default="actor"/>
+    <arg name="multiple"       default="false"/>
+
+
+    <!-- Planning -->
+    <include file="$(find hubero_ros)/launch/planning_ros.launch">
+        <arg name="actor_namespace" value="$(arg actor_namespace)"/>
+        <arg name="multiple" value="$(arg multiple)"/>
+    </include>
+</launch> -->

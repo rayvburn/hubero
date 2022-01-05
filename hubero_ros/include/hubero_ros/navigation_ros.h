@@ -1,6 +1,6 @@
 #pragma once
 
-#include <hubero_interface/navigation_base.h>
+#include <hubero_interfaces/navigation_base.h>
 
 #include <ros/ros.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -12,13 +12,13 @@
 namespace hubero {
 
 /**
- * @brief Implements ROS interface for navigation tasks realisation in HuBeRo
+ * @brief Implements ROS interface for navigation tasks realization in HuBeRo
  *
  * @details @ref move_base is used as a planning interface
  * With GazeboRos plugins, we expect that perception data (i.e. LaserScan (and possibly Image with PCL))
  * are published to ROS topics. Topics configuration (for costmap generation) is placed inside YAML files.
  */
-class NavigationROS: public interface::NavigationBase {
+class NavigationROS: public NavigationBase {
 public:
     /**
      * @brief Constructor
@@ -53,29 +53,29 @@ public:
      */
     virtual void setPose(const Pose3& pose, const std::string& frame = "") override;
 
-    /**
-     * @brief Updates receptors data
-     *
-     * @details Empty laser scan data is published to ROS topic directly via `libgazebo_ros_*` plugin
-     *
-     * @param scan LaserScan data
-     */
-    virtual void update(const sensor_msgs::LaserScan& scan) override;
+    // /**
+    //  * @brief Updates receptors data
+    //  *
+    //  * @details Empty laser scan data is published to ROS topic directly via `libgazebo_ros_*` plugin
+    //  *
+    //  * @param scan LaserScan data
+    //  */
+    // virtual void update(const sensor_msgs::LaserScan& scan) override;
 
-    /**
-     * @brief Updates receptors data
-     *
-     * @details Empty since laser scan and RGBD camera data is published to ROS topic directly via `libgazebo_ros_*`
-     * plugin
-     *
-     * @param scan LaserScan data
-     * @param img Image data
-     * @param rgbd_pcl Depth data from RGBD camera
-     */
-    virtual void update(
-        const sensor_msgs::LaserScan& scan,
-        const sensor_msgs::Image& img,
-        const sensor_msgs::PointCloud2& rgbd_pcl) override;
+    // /**
+    //  * @brief Updates receptors data
+    //  *
+    //  * @details Empty since laser scan and RGBD camera data is published to ROS topic directly via `libgazebo_ros_*`
+    //  * plugin
+    //  *
+    //  * @param scan LaserScan data
+    //  * @param img Image data
+    //  * @param rgbd_pcl Depth data from RGBD camera
+    //  */
+    // virtual void update(
+    //     const sensor_msgs::LaserScan& scan,
+    //     const sensor_msgs::Image& img,
+    //     const sensor_msgs::PointCloud2& rgbd_pcl) override;
 
     /**
      * @brief Set the goal
