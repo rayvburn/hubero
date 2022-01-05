@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>hubero_common</name>
+  <version>0.0.1</version>
+  <description>The hubero_common package</description>
+
+  <maintainer email="chromedivizer@gmail.com">Jarosław Karwowski</maintainer>
+  <author email="chromedivizer@gmail.com">Jarosław Karwowski</author>
+
+  <!-- One license tag required, multiple allowed, one license per tag -->
+  <!-- Commonly used license strings: -->
+  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
+  <license>BSD-3</license>
+
+  <!-- Url tags are optional, but multiple are allowed, one per tag -->
+  <!-- Optional attribute type can be: website, bugtracker, or repository -->
+  <!-- Example: -->
+  <!-- <url type="website">http://wiki.ros.org/hubero_common</url> -->
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>
