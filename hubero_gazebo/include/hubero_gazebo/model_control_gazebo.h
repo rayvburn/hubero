@@ -7,9 +7,12 @@ namespace hubero {
 
 class ModelControlGazebo: public ModelControlBase {
 public:
-    ModelControlGazebo(const std::string& frame_id);
+    ModelControlGazebo();
 
-    void initialize(gazebo::physics::ActorPtr& actor_ptr);
+    void initialize(gazebo::physics::ActorPtr& actor_ptr, const std::string& frame_id);
+protected:
+    // cast is required due to 'error: no matching function for call to ‘bind(<unresolved overloaded function type>'
+    
 }; // class ModelControlGazebo
 
 } // namespace hubero
