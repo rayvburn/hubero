@@ -1,24 +1,3 @@
-/*
- * Copyright (C) 2016 Open Source Robotics Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
-*/
-
-#include "gazebo/common/UpdateInfo.hh"
-#include "gazebo/physics/physics.hh"
-
-// #include "ActorPluginSocial.h"
 #include <hubero_gazebo/actor_plugin_gazebo.h>
 
 GZ_REGISTER_MODEL_PLUGIN(gazebo::ActorPlugin)
@@ -31,17 +10,17 @@ ActorPlugin::ActorPlugin()/*:
 	sim_model_control_(std::make_shared<hubero::ModelControlBase>()),
 	sim_world_geometry_(std::make_shared<hubero::WorldGeometryBase>()),
 	sim_time_(std::make_shared<hubero::TimeBase>())*/
- { // : controller_enabled_(false) { 
+{ // : controller_enabled_(false) { 
 	// localisation_ptr_ = std::make_shared<hubero::interface::LocalisationGazebo>();
 }
 
-void ActorPlugin::Load(gazebo::physics::ModelPtr _model, sdf::ElementPtr _sdf) {
+void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 	// plugin-related setup
-	this->sdf = _sdf;
-	this->model = _model;
-	this->actor = boost::dynamic_pointer_cast<physics::Actor>(_model);
-	this->world = this->actor->GetWorld();
-	this->connections.push_back(event::Events::ConnectWorldUpdateBegin(
+	sdf_ptr_ = sdf;
+	model_ptr_ = model;
+	actor_ptr_ = boost::dynamic_pointer_cast<physics::Actor>(model);
+	world_ptr_ = actor_ptr_->GetWorld();
+	connections_.push_back(event::Events::ConnectWorldUpdateBegin(
 		std::bind(
 			&ActorPlugin::OnUpdate,
 			this,
@@ -50,7 +29,7 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr _model, sdf::ElementPtr _sdf) {
 	);
 
 	// HuBeRo framework-related setup
-    std::cout << "LOADED POSE: " << this->actor->WorldPose() << std::endl;
+    std::cout << "LOADED POSE: " << actor_ptr_->WorldPose() << std::endl;
 	// actor_ptr_ = std::make_shared<actor::core::Actor>();
 
 	// localisation_ptr_->initialize("world");
@@ -62,7 +41,7 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr _model, sdf::ElementPtr _sdf) {
 
 	// actor_ptr_->initGazeboInterface(actor, world);
 	// actor_ptr_->initRosInterface();
-	// actor_ptr_->initActor(_sdf);
+	// actor_ptr_->initActor(sdf);
 	// std::cout << "MODDED POSE: " << this->actor->WorldPose() << std::endl;
 
 }

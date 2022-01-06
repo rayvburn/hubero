@@ -1,28 +1,16 @@
-/*
- * Copyright (C) 2016 Open Source Robotics Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
-*/
-
-#ifndef GAZEBO_PLUGINS_ACTORPLUGIN_HH_
-#define GAZEBO_PLUGINS_ACTORPLUGIN_HH_
+/**
+ * @file actor_plugin_gazebo.h
+ * @author Jarosław Karwowski (chromedivizer@gmail.com)
+ * @brief Based on https://github.com/osrf/gazebo/blob/master/plugins/ActorPlugin.hh
+ */
+#pragma once
 
 #include <string>
 #include <vector>
 #include <memory>
 
 #include "gazebo/common/Plugin.hh"
+#include "gazebo/common/UpdateInfo.hh"
 #include "gazebo/physics/physics.hh"
 #include "gazebo/util/system.hh"
 
@@ -42,9 +30,9 @@ public:
 	ActorPlugin();
 
 	/// \brief Load the actor plugin.
-	/// \param[in] _model Pointer to the parent model.
-	/// \param[in] _sdf Pointer to the plugin's SDF elements.
-	virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
+	/// \param[in] model Pointer to the parent model.
+	/// \param[in] sdf Pointer to the plugin's SDF elements.
+	virtual void Load(physics::ModelPtr model, sdf::ElementPtr sdf);
 
 	// Documentation Unherited.
 	virtual void Reset();
@@ -70,23 +58,22 @@ protected:
 
 private:
 	/// \brief Function that is called every update cycle.
-	/// \param[in] _info Timing information
-	void OnUpdate(const common::UpdateInfo &_info);
+	/// \param[in] info Timing information
+	void OnUpdate(const common::UpdateInfo &info);
 
 	/// \brief Pointer to the model.
-	physics::ModelPtr model;
+	physics::ModelPtr model_ptr_;
 
 	/// \brief Pointer to the parent actor.
-	physics::ActorPtr actor;
+	physics::ActorPtr actor_ptr_;
 
 	/// \brief Pointer to the world, for convenience.
-	physics::WorldPtr world;
+	physics::WorldPtr world_ptr_;
 
 	/// \brief Pointer to the sdf element.
-	sdf::ElementPtr sdf;
+	sdf::ElementPtr sdf_ptr_;
 
 	/// \brief List of connections
-	std::vector<event::ConnectionPtr> connections;
+	std::vector<event::ConnectionPtr> connections_;
 }; // class ActorPlugin
 } // namespace gazebo
-#endif
