@@ -14,11 +14,12 @@ const std::map<AnimationType, std::string> AnimationControlGazebo::animation_nam
 	{ANIMATION_TALK, "talk_a"}
 };
 
-AnimationControlGazebo::AnimationControlGazebo(
+AnimationControlGazebo::AnimationControlGazebo(): AnimationControlBase::AnimationControlBase() {}
+
+void AnimationControlGazebo::initialize(
 	const gazebo::physics::Actor::SkeletonAnimation_M& anims,
-	const AnimationType& anim_init):
-	AnimationControlBase::AnimationControlBase()
-	{
+	const AnimationType& anim_init
+) {
 	// add supported animations handlers
 	addAnimationHandler(
 		ANIMATION_STAND,
@@ -53,6 +54,9 @@ AnimationControlGazebo::AnimationControlGazebo(
 		std::bind(&AnimationControlGazebo::handlerTalk, this)
 	);
 
+	// configure
+	skeleton_anims_ = anims;
+	setupAnimation(anim_init);
 }
 
 void AnimationControlGazebo::adjustPose(Pose3& pose, const Time& time_current) {
@@ -73,7 +77,7 @@ void AnimationControlGazebo::adjustPose(Pose3& pose, const Time& time_current) {
 		Time time_range = Time::computeDuration(time_begin_, time_finish_);
 
 		// animation execution progress based on the start and end time stamps
-		double time_progress = so_far.getTime() / range.getTime();
+		double time_progress = time_so_far.getTime() / time_range.getTime();
 
 		// trim
 		if (time_progress > 1.0) {
@@ -83,14 +87,14 @@ void AnimationControlGazebo::adjustPose(Pose3& pose, const Time& time_current) {
 
 		// handle each case separately
 		if (getActiveAnimation() == ANIMATION_SIT_DOWN) {
-			pos.Z(height_initial_ - progress * 0.3);
+			pos.Z(animation_height_initial_ - time_progress * 0.3);
 		} else if (getActiveAnimation() == ANIMATION_STAND_UP) {
-			pos.Z(height_initial_ - progress * 0.2);
+			pos.Z(animation_height_initial_ - time_progress * 0.2);
 		}
 	}
 
 	pose.Pos() = pos;
-	pose.Rot() = Quaterniond(rpy);
+	pose.Rot() = Quaternion(rpy);
 }
 
 void AnimationControlGazebo::setupAnimation(AnimationType animation_type) {
@@ -117,7 +121,7 @@ void AnimationControlGazebo::setupAnimation(AnimationType animation_type) {
 	}
 
 	// compute animation duration
-	Time duration = time_finish_ - time_begin_;
+	Time duration = Time::computeDuration(time_begin_, time_finish_);
 
 	// Create custom trajectory
 	trajectory_info_ptr_.reset(new gazebo::physics::TrajectoryInfo());

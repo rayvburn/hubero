@@ -10,14 +10,13 @@ namespace hubero {
 
 class AnimationControlGazebo: public AnimationControlBase {
 public:
-    AnimationControlGazebo(
-        const gazebo::physics::Actor::SkeletonAnimation_M& anims,
-        const AnimationType& anim_init
-    );
+    AnimationControlGazebo();
 
-    virtual void adjustPose(Pose3& pose, const Time& time_current) const override;
+    void initialize(const gazebo::physics::Actor::SkeletonAnimation_M& anims, const AnimationType& anim_init);
 
-    gazebo::physics::TrajectoryInfoPtr& getTrajectoryInfo() const {
+    virtual void adjustPose(Pose3& pose, const Time& time_current) override;
+
+    inline gazebo::physics::TrajectoryInfoPtr& getTrajectoryInfo() {
         return trajectory_info_ptr_;
     }
 
@@ -28,7 +27,7 @@ protected:
      */
     static const std::map<AnimationType, std::string> animation_name_map_;
 
-    void setupAnimation();
+    void setupAnimation(AnimationType animation_type);
 
     void handlerStand();
     void handlerWalk();

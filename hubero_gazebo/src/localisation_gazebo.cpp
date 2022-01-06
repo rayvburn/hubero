@@ -1,11 +1,16 @@
 #include <hubero_gazebo/localisation_gazebo.h>
+#include <hubero_common/logger.h>
 
 namespace hubero {
 
-LocalisationGazebo::LocalisationGazebo(const std::string& world_frame_id):
-	LocalisationBase::LocalisationBase(world_frame_id) {}
+LocalisationGazebo::LocalisationGazebo(): LocalisationBase::LocalisationBase() {}
 
 void LocalisationGazebo::update(const Pose3& pose) {
+	if (!isInitialized()) {
+		HUBERO_LOG("[LocalisationGazebo] 'update' call could not be processed due to lack of initialization\r\n");
+		return;
+	}
+
     // some additional operations must be performed due to the ActorPlugins' human body frame
     // match local CS axes to the world frame
 	Vector3 pos = pose.Pos();
@@ -24,7 +29,7 @@ void LocalisationGazebo::update(const Pose3& pose) {
 	yaw.Normalize();
 	rpy.Z() = yaw.Radian();
 
-    LocalisationBase::update(Pose3(pos, rpy));
+    LocalisationBase::update(Pose3(pos, Quaternion(rpy)));
 }
 
 void LocalisationGazebo::update(

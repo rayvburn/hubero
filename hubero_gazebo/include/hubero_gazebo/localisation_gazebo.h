@@ -1,11 +1,11 @@
 #pragma once
 
-#include <hubero_interface/localisation_base.h>
+#include <hubero_interfaces/localisation_base.h>
 
 namespace hubero {
 
 class LocalisationGazebo: public LocalisationBase {
-    LocalisationGazebo(const std::string& world_frame_id);
+    LocalisationGazebo();
 
     virtual void update(const Pose3& pose) override;
 

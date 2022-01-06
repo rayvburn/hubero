@@ -2,17 +2,20 @@
 
 #include <hubero_interfaces/world_geometry_base.h>
 #include <gazebo/physics/World.hh>
+#include <gazebo/physics/Model.hh>
 
 namespace hubero {
 
 class WorldGeometryGazebo: public WorldGeometryBase {
 public:
-    WorldGeometryGazebo(const std::string& world_frame_id);
+    WorldGeometryGazebo();
+
+    virtual void initialize(const std::string& world_frame_id) override;
 
     /**
      * @brief This method is Gazebo-specific
      */
-    void initialize(gazebo::physics::WorldPtr& world_ptr, const std::string& actor_name);
+    void initialize(const std::string& world_frame_id, gazebo::physics::WorldPtr& world_ptr, const std::string& actor_name);
 
     /**
      * @brief This method is Gazebo-specific, used for update of the actors velocities etc.
@@ -23,7 +26,7 @@ public:
         const Vector3& vel_lin,
         const Vector3& acc_ang,
         const Vector3& acc_lin,
-        const BBox& box,
+        const BBox& box
     );
 
 	virtual ModelGeometry getModel(const std::string& name) override;

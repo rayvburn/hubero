@@ -25,12 +25,12 @@ GZ_REGISTER_MODEL_PLUGIN(gazebo::ActorPlugin)
 
 namespace gazebo {
 
-ActorPlugin::ActorPlugin():
+ActorPlugin::ActorPlugin()/*:
 	sim_animation_control_(std::make_shared<hubero::AnimationControlBase>()),
 	sim_localisation_(std::make_shared<hubero::LocalisationBase>()),
 	sim_model_control_(std::make_shared<hubero::ModelControlBase>()),
 	sim_world_geometry_(std::make_shared<hubero::WorldGeometryBase>()),
-	sim_time_(std::make_shared<hubero::TimeBase>())
+	sim_time_(std::make_shared<hubero::TimeBase>())*/
  { // : controller_enabled_(false) { 
 	// localisation_ptr_ = std::make_shared<hubero::interface::LocalisationGazebo>();
 }

@@ -62,11 +62,11 @@ protected:
 	std::shared_ptr<hubero::interface::LocalisationBase> localisation_ptr_;
 	*/
 
-	std::shared_ptr<hubero::AnimationControlBase> sim_animation_control_;
-	std::shared_ptr<hubero::LocalisationBase> sim_localisation_;
-	std::shared_ptr<hubero::ModelControlBase> sim_model_control_;
-	std::shared_ptr<hubero::WorldGeometryBase> sim_world_geometry_;
-	std::shared_ptr<hubero::TimeBase> sim_time_;
+	// std::shared_ptr<hubero::AnimationControlBase> sim_animation_control_;
+	// std::shared_ptr<hubero::LocalisationBase> sim_localisation_;
+	// std::shared_ptr<hubero::ModelControlBase> sim_model_control_;
+	// std::shared_ptr<hubero::WorldGeometryBase> sim_world_geometry_;
+	// std::shared_ptr<hubero::TimeBase> sim_time_;
 
 private:
 	/// \brief Function that is called every update cycle.
