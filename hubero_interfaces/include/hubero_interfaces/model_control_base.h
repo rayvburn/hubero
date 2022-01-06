@@ -20,7 +20,7 @@ public:
 		std::function<void(Pose3)> fun_pose,
 		std::function<void(Vector3)> fun_ang_vel,
 		std::function<void(Vector3)> fun_lin_vel,
-		std::function<void(Vector3)> fun_ang_acc
+		std::function<void(Vector3)> fun_ang_acc,
 		std::function<void(Vector3)> fun_lin_acc
 	) {
 		frame_id_ = frame_id;

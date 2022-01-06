@@ -3,7 +3,9 @@
 #include <hubero_common/defines.h>
 #include <hubero_common/logger.h>
 #include <hubero_common/time.h>
+#include <hubero_common/typedefs.h>
 
+#include <functional>
 #include <limits>
 #include <map>
 #include <string>
@@ -66,7 +68,7 @@ public:
      * @brief Additional method that allows to modify pose for specific animation by hand
      * @details Typically this method is empty since all animation operations are managed by a particular handler
      */
-    virtual void adjustPose(Pose3& pose, const Time& time_current) const {}
+    virtual void adjustPose(Pose3& pose, const Time& time_current) {}
 
     inline bool isInitialized() const {
 		return initialized_;
