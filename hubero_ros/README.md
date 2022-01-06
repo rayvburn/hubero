@@ -15,3 +15,5 @@ Actor messages are published to ROS via `NavigationROS` plugin.
 - frame names from `move_base.launch` must match the frame names defined in sensors attached to the actors in Gazebo (particularly, in Gazebo world definition)
 - `actor_namespace` from `planning_ros.launch` must be equal to name of the actor created in `Gazebo` simulation
   - name of the actor defines namespace of navigation part of the system that runs in ROS as `move_base` node (one for each actor)
+
+Tested with Ubuntu 16.04 and ROS Kinetic (`rosversion: 1.12.17`).
