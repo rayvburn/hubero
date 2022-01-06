@@ -7,7 +7,7 @@ namespace hubero {
  */
 class Time {
 public:
-    Time(const double& time): time_(time) {}
+    Time(const double& time = 0.0): time_(time) {}
 
     double getTime() const {
         return time_;
