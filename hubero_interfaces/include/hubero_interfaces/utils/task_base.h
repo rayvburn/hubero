@@ -2,6 +2,9 @@
 
 #include <hubero_common/defines.h>
 
+#include <functional>
+#include <map>
+
 namespace hubero {
 
 /**

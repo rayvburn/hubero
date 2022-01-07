@@ -3,6 +3,9 @@
 #include <hubero_common/defines.h>
 #include <hubero_interfaces/utils/task_base.h>
 
+#include <memory>
+#include <utility>
+
 namespace hubero {
 
 /**
@@ -28,7 +31,7 @@ public:
                 HUBERO_LOG("[TaskRequestBase] Cannot request task since its class was not defined\r\n");
                 return false;
             }
-            return it->second->request(task_args);
+            return it->second->request(std::forward<Args>(task_args)...);
         }
         HUBERO_LOG("[TaskRequestBase] Cannot request task since it was not defined\r\n");
         return false;
