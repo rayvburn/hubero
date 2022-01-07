@@ -1,4 +1,4 @@
 [submodule "fsmlite"]
 	path = hubero_core/libs/fsmlite
 	url = https://github.com/rayvburn/fsmlite.git
-	branch = feature/fix_install_path
+	branch = feature/fix_install_path_and_support_old_cmake
