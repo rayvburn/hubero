@@ -10,16 +10,21 @@ namespace hubero {
 
 /**
  * @brief Provides interface class for various task definitions that can be requested from HuBeRo actors
+ * @details Typical task lifecycle:
+ *   - requested, not active
+ *   - activation, requested flag erased
+ *   - active
+ *   - finished, active flag erased
  */
 class TaskBase {
 public:
-    static constexpr int TASK_ARGS_NUM_DEFAULT = 127;
+    static constexpr int TASK_ARGS_NUM_DEFAULT = 0;
 
     TaskBase(TaskType task):
         task_type_(task),
         requested_(false),
         aborted_(false),
-        finished_(true),
+        finished_(false),
         task_args_num_(TASK_ARGS_NUM_DEFAULT) {}
 
 
@@ -34,7 +39,7 @@ public:
     bool request(Args... task_args) {
         if (sizeof...(task_args) != task_args_num_) {
             aborted_ = false;
-            finished_ = true;
+            finished_ = false;
             requested_ = false;
             return false;
         }
@@ -49,9 +54,22 @@ public:
     bool abort() {
         bool actual_abort_call = requested_;
         aborted_ = true;
-        finished_ = true;
+        finished_ = false;
         requested_ = false;
         return actual_abort_call;
+    }
+
+    virtual inline void activate() {
+        active_ = true;
+        aborted_ = false;
+        // leave finished_ as it is
+        requested_ = false;
+    }
+
+    virtual inline void terminate() {
+        active_ = false;
+        aborted_ = false;
+        finished_ = false;
     }
 
     TaskType getTaskType() const {
@@ -60,6 +78,10 @@ public:
 
     bool isRequested() const {
         return requested_;
+    }
+
+    bool isActive() const {
+        return active_;
     }
 
     bool isAborted() const {
@@ -88,6 +110,7 @@ protected:
     TaskType task_type_;
 
     bool requested_;
+    bool active_;
     bool aborted_;
     bool finished_;
 
