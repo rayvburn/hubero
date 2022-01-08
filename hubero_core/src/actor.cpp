@@ -7,15 +7,59 @@ Actor::Actor() {
 }
 
 void Actor::initialize(const std::string& agent_name) {
-	try {
-		navigation_ptr_ = navigation_loader_.createInstance("hubero/NavigationROS");
-		ROS_INFO("Successfully loaded plugin hubero/NavigationROS");
-		navigation_ptr_->initialize(agent_name);
-	} catch (pluginlib::PluginlibException& ex) {
-		// handle the class failing to load
-		navigation_ptr_.reset();
-		ROS_ERROR("The plugin failed to load for some reason. Error: %s", ex.what());
-	}
+
+}
+
+void Actor::update(const Time& time) {
+
+}
+
+void Actor::bbStand() {
+
+}
+
+void Actor::bbAlignToTarget() {
+
+}
+
+void Actor::bbMoveToGoal() {
+
+}
+
+void Actor::bbChooseNewGoal() {
+
+}
+
+void Actor::bbAwaitObjectMovement() {
+
+}
+
+void Actor::bbLieDown() {
+
+}
+
+void Actor::bbStandUpFromLying() {
+
+}
+
+void Actor::bbSitDown() {
+
+}
+
+void Actor::bbStandUpFromSitting() {
+
+}
+
+void Actor::bbRun() {
+
+}
+
+void Actor::bbTalk() {
+
+}
+
+void Actor::bbTeleop() {
+
 }
 
 } // namespace hubero
