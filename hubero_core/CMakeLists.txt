@@ -67,3 +67,10 @@ install(DIRECTORY include/${PROJECT_NAME}/
    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 
+##########
+## Test ##
+##########
+if (CATKIN_ENABLE_TESTING)
+  catkin_add_gtest(test_fsm_super test/test_fsm_super.cpp)
+  target_link_libraries(test_fsm_super ${ACTOR_LIB_NAME})
+endif()
