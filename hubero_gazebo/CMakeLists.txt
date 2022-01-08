@@ -3,8 +3,7 @@ project(hubero_gazebo)
 
 find_package(catkin REQUIRED
     COMPONENTS
-        hubero_common
-        hubero_interfaces
+        hubero_core
         # roscpp
 )
 find_package(gazebo REQUIRED)
@@ -13,8 +12,7 @@ include_directories(
     include
     # ${catkin_INCLUDE_DIRS}
     ${GAZEBO_INCLUDE_DIRS}
-    ${hubero_common_INCLUDE_DIRS}
-    ${hubero_interfaces_INCLUDE_DIRS}
+    ${hubero_core_INCLUDE_DIRS}
 )
 # TODO: ${GAZEBO_INCLUDE_DIRS} should provide that
 # include_directories(/usr/include/sdformat-5.2)
@@ -40,7 +38,7 @@ add_library(${HUBERO_INTERFACE_LIB_NAME} SHARED
     src/world_geometry_gazebo.cpp
 )
 target_link_libraries(${HUBERO_INTERFACE_LIB_NAME}
-    ${hubero_common_LIBRARIES}
+    ${hubero_core_LIBRARIES}
 )
 
 add_library(${ACTOR_PLUGIN_LIB_NAME} SHARED
@@ -59,8 +57,7 @@ catkin_package(
     # LIBRARIES
     #     hubero_localisation_gazebo
     CATKIN_DEPENDS
-        hubero_common
-        hubero_interfaces
+        hubero_core
         # roscpp
 )
 
