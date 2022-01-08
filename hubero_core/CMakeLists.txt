@@ -20,20 +20,20 @@ include_directories(
    libs/fsmlite
 )
 
+set(ACTOR_LIB_NAME hubero_actor)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
 catkin_package(
    INCLUDE_DIRS include
-   LIBRARIES ${PROJECT_NAME}
+   LIBRARIES ${ACTOR_LIB_NAME}
    DEPENDS hubero_common hubero_interfaces
 )
 
 ###########
 ## Build ##
 ###########
-set(ACTOR_LIB_NAME hubero_actor)
-
 add_library(${ACTOR_LIB_NAME} SHARED
    src/actor.cpp
    src/fsm_super.cpp
