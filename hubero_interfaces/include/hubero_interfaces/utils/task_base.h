@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <map>
+#include <type_traits>
 
 namespace hubero {
 
@@ -74,6 +75,16 @@ public:
     }
 
 protected:
+    /**
+     * @brief Counts number of arguments of class method
+     * @details This method should be used in constructor of specific task to define @ref task_args_num_
+     * @note https://stackoverflow.com/questions/64312577/get-number-of-arguments-in-a-class-member-function
+     */
+    template <typename R, typename T, typename ... Types>
+    size_t countArgumentsNum(R(T::*)(Types ...)) {
+        return static_cast<size_t>(std::integral_constant<unsigned, sizeof ...(Types)>{}.value);
+    }
+
     TaskType task_type_;
 
     bool requested_;
@@ -84,9 +95,7 @@ protected:
      * @brief How many arguments are required to be passed to @ref request method - this must be redefined by a specific Task
      * @details https://stackoverflow.com/questions/36797770/get-function-parameters-count
      */
-    unsigned int task_args_num_;
-
-    // TODO: FSM of the task
+    size_t task_args_num_;
 
     static std::map<BasicBehaviourType, std::function<void(void)>> basic_behaviour_handlers_;
 }; // class TaskBase
