@@ -24,7 +24,10 @@ list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
 # LIBRARIES
-add_library(${PROJECT_NAME}_interface SHARED
+set(HUBERO_INTERFACE_LIB_NAME ${PROJECT_NAME}_interface)
+set(ACTOR_PLUGIN_LIB_NAME ${PROJECT_NAME}_actor)
+
+add_library(${HUBERO_INTERFACE_LIB_NAME} SHARED
     include/${PROJECT_NAME}/animation_control_gazebo.h
     include/${PROJECT_NAME}/localisation_gazebo.h
     include/${PROJECT_NAME}/model_control_gazebo.h
@@ -36,16 +39,16 @@ add_library(${PROJECT_NAME}_interface SHARED
     src/time_gazebo.cpp
     src/world_geometry_gazebo.cpp
 )
-target_link_libraries(${PROJECT_NAME}_interface
+target_link_libraries(${HUBERO_INTERFACE_LIB_NAME}
     ${hubero_common_LIBRARIES}
 )
 
-add_library(${PROJECT_NAME}_actor SHARED
+add_library(${ACTOR_PLUGIN_LIB_NAME} SHARED
   include/${PROJECT_NAME}/actor_plugin_gazebo.h
   src/actor_plugin_gazebo.cpp
 )
-target_link_libraries(${PROJECT_NAME}_actor
-    ${PROJECT_NAME}_interface
+target_link_libraries(${ACTOR_PLUGIN_LIB_NAME}
+    ${HUBERO_INTERFACE_LIB_NAME}
     ${GAZEBO_LIBRARIES}
 )
 
@@ -62,7 +65,7 @@ catkin_package(
 )
 
 # INSTALL
-install(TARGETS ${PROJECT_NAME}_actor
+install(TARGETS ${ACTOR_PLUGIN_LIB_NAME}
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
@@ -72,6 +75,6 @@ install(DIRECTORY include/${PROJECT_NAME}/
   PATTERN ".svn" EXCLUDE
 )
 
-set_target_properties(${PROJECT_NAME}_actor PROPERTIES
+set_target_properties(${ACTOR_PLUGIN_LIB_NAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib
 )
