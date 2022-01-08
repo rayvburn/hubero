@@ -25,6 +25,7 @@ include_directories(
 ###################################
 catkin_package(
    INCLUDE_DIRS include
+   LIBRARIES ${PROJECT_NAME}
    DEPENDS hubero_common hubero_interfaces
 )
 
@@ -33,6 +34,24 @@ catkin_package(
 ###########
 set(ACTOR_LIB_NAME hubero_actor)
 
+add_library(${ACTOR_LIB_NAME} SHARED
+   src/actor.cpp
+   src/fsm_super.cpp
+   src/tasks/task_follow_object.cpp
+   src/tasks/task_lie_down.cpp
+   src/tasks/task_move_around.cpp
+   src/tasks/task_move_to_goal.cpp
+   src/tasks/task_run.cpp
+   src/tasks/task_sit_down.cpp
+   src/tasks/task_stand.cpp
+   src/tasks/task_talk.cpp
+   src/tasks/task_teleop.cpp
+)
+target_link_libraries(${ACTOR_LIB_NAME}
+   ${hubero_common_LIBRARIES}
+   ${hubero_interfaces_LIBRARIES}
+   fsmlite::fsmlite
+)
 
 #############
 ## Install ##

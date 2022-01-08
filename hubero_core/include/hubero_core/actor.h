@@ -1,14 +1,18 @@
 #pragma once
 
+#include <hubero_common/defines.h>
+#include <hubero_common/time.h>
+#include <hubero_common/typedefs.h>
+
 #include <hubero_interfaces/navigation_base.h>
 #include <hubero_interfaces/localisation_base.h>
 #include <hubero_interfaces/task_request_base.h>
 #include <hubero_interfaces/animation_control_base.h>
 #include <hubero_interfaces/model_control_base.h>
 
-#include <hubero_common/defines.h>
-#include <hubero_common/time.h>
-#include <hubero_common/typedefs.h>
+#include <hubero_core/tasks/task_stand.h>
+
+#include <memory>
 
 namespace hubero {
 
@@ -28,23 +32,39 @@ protected:
 	 * @defgroup Basic behaviour methods
 	 * @{
 	 */
+	void bbStand();
 	void bbAlignToTarget();
 	void bbMoveToGoal();
+	void bbChooseNewGoal();
+	void bbAwaitObjectMovement();
+	void bbLieDown();
+	void bbStandUpFromLying();
+	void bbSitDown();
+	void bbStandUpFromSitting();
+	void bbRun();
+	void bbTalk();
+	void bbTeleop();
 	/// @}
 
 	/**
-	 * @defgroup Interface classes
-	 * `boost` shared_ptr used due to the fact that `pluginlib` uses it instead of `std` library
+	 * @defgroup Task classes that orchestrate specific tasks
+	 * @note Tasks stored as shared_ptr to pass them to TaskRequest class
 	 * @{
 	 */
-	boost::shared_ptr<hubero::NavigationBase> navigation_ptr_;
-	boost::shared_ptr<hubero::LocalisationBase> localisation_ptr_;
-	boost::shared_ptr<hubero::TaskRequestBase> task_req_ptr_;
-	boost::shared_ptr<hubero::AnimationControlBase> animation_control_ptr_;
-	boost::shared_ptr<hubero::ModelControlBase> model_control_ptr_;
-	/// @}
+	std::shared_ptr<TaskStand> task_stand_ptr_;
 
-	// FSM w actor cs, ten FSM bedzie zawieral FSMy poszczególnych zadan
-}
+	/**
+	 * @defgroup Interface classes
+	 * @{
+	 */
+	/*
+	std::shared_ptr<hubero::NavigationBase> navigation_ptr_;
+	std::shared_ptr<hubero::LocalisationBase> localisation_ptr_;
+	std::shared_ptr<hubero::TaskRequestBase> task_req_ptr_;
+	std::shared_ptr<hubero::AnimationControlBase> animation_control_ptr_;
+	std::shared_ptr<hubero::ModelControlBase> model_control_ptr_;
+	*/
+	/// @}
+}; // class Actor
 
 } // namespace hubero
