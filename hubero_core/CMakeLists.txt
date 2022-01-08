@@ -26,7 +26,8 @@ set(ACTOR_LIB_NAME hubero_actor)
 ## catkin specific configuration ##
 ###################################
 catkin_package(
-   INCLUDE_DIRS include
+   # libs/fsmlite/src: workaround for 'fsm.h' not being found when another package tries to use 'hubero_core' classes
+   INCLUDE_DIRS include libs/fsmlite/src
    LIBRARIES ${ACTOR_LIB_NAME}
    DEPENDS hubero_common hubero_interfaces
 )
