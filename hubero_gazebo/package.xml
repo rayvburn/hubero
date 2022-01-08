@@ -36,18 +36,15 @@
 
   <!-- <build_depend>roscpp</build_depend> -->
   <build_depend>gazebo</build_depend>
-  <build_depend>hubero_common</build_depend>
-  <build_depend>hubero_interfaces</build_depend>
+  <build_depend>hubero_core</build_depend>
 
   <!-- <build_export_depend>roscpp</build_export_depend> -->
   <build_export_depend>gazebo</build_export_depend>
-  <build_export_depend>hubero_common</build_export_depend>
-  <build_export_depend>hubero_interfaces</build_export_depend>
+  <build_export_depend>hubero_core</build_export_depend>
 
   <!-- <exec_depend>roscpp</exec_depend> -->
   <exec_depend>gazebo</exec_depend>
-  <exec_depend>hubero_common</exec_depend>
-  <exec_depend>hubero_interfaces</exec_depend>
+  <exec_depend>hubero_core</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
