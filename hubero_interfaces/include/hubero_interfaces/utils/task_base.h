@@ -32,7 +32,7 @@ public:
      */
     template <typename... Args>
     bool request(Args... task_args) {
-        if (sizeof(task_args_num_) != task_args_num_) {
+        if (sizeof...(task_args) != task_args_num_) {
             aborted_ = false;
             finished_ = true;
             requested_ = false;
