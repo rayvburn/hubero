@@ -1,12 +1,15 @@
-#include <hubero_core/tasks/task_base.h>
+#pragma once
+
+#include <hubero_interfaces/utils/task_base.h>
 
 namespace hubero {
 
+/**
+ * @brief Simplest task - just stand in 1 place, no goal, no FSM
+ */
 class TaskStand: public TaskBase {
 public:
-
-protected:
-
-}; // class TaskStand
+	TaskStand();
+}; // TaskStand
 
 } // namespace hubero
