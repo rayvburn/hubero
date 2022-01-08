@@ -11,6 +11,7 @@
 #include <hubero_interfaces/model_control_base.h>
 
 #include <hubero_core/tasks/task_stand.h>
+#include <hubero_core/fsm_super.h>
 
 #include <memory>
 
@@ -45,6 +46,9 @@ protected:
 	void bbTalk();
 	void bbTeleop();
 	/// @}
+
+	/// Highest level Finite State Machine that orchestrates Actor activities
+	FsmSuper fsm_;
 
 	/**
 	 * @defgroup Task classes that orchestrate specific tasks
