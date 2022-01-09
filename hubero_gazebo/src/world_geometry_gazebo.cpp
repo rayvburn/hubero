@@ -13,7 +13,7 @@ void WorldGeometryGazebo::initialize(const std::string& world_frame_id) {
 
 void WorldGeometryGazebo::initialize(
     const std::string& world_frame_id,
-    gazebo::physics::WorldPtr& world_ptr,
+    const gazebo::physics::WorldPtr& world_ptr,
     const std::string& actor_name
 ) {
     world_ptr_ = world_ptr;
