@@ -5,6 +5,7 @@
 namespace hubero {
 
 class LocalisationGazebo: public LocalisationBase {
+public:
     LocalisationGazebo();
 
     virtual void update(const Pose3& pose) override;
@@ -16,6 +17,8 @@ class LocalisationGazebo: public LocalisationBase {
 		const Vector3& acc_lin,
 		const Vector3& acc_ang
 	) override;
+
+	Pose3 getPoseTransformed() const;
 };
 
 } // namespace hubero

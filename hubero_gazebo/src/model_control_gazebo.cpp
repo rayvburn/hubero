@@ -3,7 +3,7 @@
 
 namespace hubero {
 
-ModelControlGazebo::ModelControlGazebo(): ModelControlBase() {}
+ModelControlGazebo::ModelControlGazebo(): ModelControlBase::ModelControlBase() {}
 
 void ModelControlGazebo::initialize(gazebo::physics::ActorPtr& actor_ptr, const std::string& frame_id) {
     // for simplicity

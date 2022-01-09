@@ -15,7 +15,7 @@ public:
     /**
      * @brief This method is Gazebo-specific
      */
-    void initialize(const std::string& world_frame_id, gazebo::physics::WorldPtr& world_ptr, const std::string& actor_name);
+    void initialize(const std::string& world_frame_id, const gazebo::physics::WorldPtr& world_ptr, const std::string& actor_name);
 
     /**
      * @brief This method is Gazebo-specific, used for update of the actors velocities etc.
@@ -34,7 +34,7 @@ public:
 protected:
     ModelGeometry getModel(const gazebo::physics::ModelPtr& model_ptr);
 
-    gazebo::physics::WorldPtr world_ptr_;
+    boost::shared_ptr<const gazebo::physics::World> world_ptr_;
 
     /// Name of the actor that poses an instance of this class
     std::string actor_name_;
