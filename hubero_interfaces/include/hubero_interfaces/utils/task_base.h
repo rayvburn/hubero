@@ -41,7 +41,8 @@ public:
 
 
     static bool addBasicBehaviourHandler(BasicBehaviourType behaviour_type, std::function<void(void)> handler) {
-        TaskBase::basic_behaviour_handlers_.insert({behaviour_type, std::move(handler)});
+        auto status = TaskBase::basic_behaviour_handlers_.insert({behaviour_type, std::move(handler)});
+        return status.second;
     }
 
     /**
