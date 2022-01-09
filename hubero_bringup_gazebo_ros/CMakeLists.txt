@@ -8,7 +8,6 @@ project(hubero_bringup_gazebo_ros)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  hubero_common
   hubero_gazebo
   hubero_ros
 )
