@@ -1,0 +1,25 @@
+# branch nodes identifiers cannot be changed, they are used as a reference to search parameters
+hubero_ros:
+  # defines namespace where communication channels of simulated actors will be available
+  namespace: "hubero"
+  # name of the frame used as a reference in simulator poses etc.;
+  # usually, frame with that name should be at the top of the ROS TF tree
+  simulator_frame: "world"
+  # name of the namespace that contains topics usable to request tasks from actors (shouldn't be empty)
+  task_namespace: "task"
+  # defines topic names related to navigation - each simulated actor is connected to such a topic set
+  navigation:
+    goal_topic: "nav/goal"
+    cancel_topic: "nav/cancel"
+    get_plan_srv: "nav/get_plan"
+    command_topic: "nav/cmd_vel"
+  # define frame naming pattern for each actor namespace, e.g. "/actor1/<actor_frames/base>" etc.
+  actor_frames:
+    base: "base_footprint"
+    global_ref: "map"
+    local_ref: "odom"
+    lidar: "base_laser_link"
+    camera: "base_camera_link"
+  # define topic names related to status - each simulated actor is connected to such a topic set
+  actor_status:
+    person_msg_topic: "status/person"
