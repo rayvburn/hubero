@@ -7,12 +7,14 @@ find_package(catkin REQUIRED
 	COMPONENTS
 		hubero_common
 		hubero_interfaces
+		hubero_ros_msgs
 		cmake_modules
 		nav_core
 		move_base
 		nav_msgs
 		pluginlib
 		roscpp
+		actionlib
 		tf
 )
 
@@ -21,6 +23,7 @@ include_directories(
 	${catkin_INCLUDE_DIRS}
 	${hubero_common_INCLUDE_DIRS}
 	${hubero_interfaces_INCLUDE_DIRS}
+	${hubero_ros_msgs_INCLUDE_DIRS}
 )
 
 set(HUBERO_NAV_ROS hubero_navigation_ros)
@@ -37,9 +40,11 @@ catkin_package(
 	CATKIN_DEPENDS
 		hubero_common
 		hubero_interfaces
+		hubero_ros_msgs
 		nav_msgs
 		pluginlib
 		roscpp
+		actionlib
 )
 
 ## Node library for HuBeRo
