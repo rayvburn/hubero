@@ -34,20 +34,26 @@
   <build_depend>nav_msgs</build_depend>
   <build_depend>pluginlib</build_depend>
   <build_depend>hubero_interfaces</build_depend>
+  <build_depend>hubero_ros_msgs</build_depend>
   <build_depend>hubero_common</build_depend>
+  <build_depend>actionlib</build_depend>
 
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>nav_msgs</build_export_depend>
   <build_export_depend>pluginlib</build_export_depend>
   <build_export_depend>hubero_interfaces</build_export_depend>
+  <build_export_depend>hubero_ros_msgs</build_export_depend>
   <build_export_depend>hubero_common</build_export_depend>
+  <build_export_depend>actionlib</build_export_depend>
 
   <exec_depend>roscpp</exec_depend>
   <exec_depend>move_base</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>hubero_interfaces</exec_depend>
+  <exec_depend>hubero_ros_msgs</exec_depend>
   <exec_depend>hubero_common</exec_depend>
+  <exec_depend>actionlib</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
