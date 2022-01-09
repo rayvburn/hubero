@@ -8,6 +8,18 @@
 
 namespace hubero {
 
+/*
+ * Workaround that allows to use static members in header-only library with C++11/14:
+ * https://stackoverflow.com/questions/11709859/how-to-have-static-data-members-in-a-header-only-library
+ */
+template <typename Tkey, typename Tval>
+struct _StaticMapBbHandlers {
+    static std::map<Tkey, Tval> basic_behaviour_handlers_;
+};
+
+template <typename Tkey, typename Tval>
+std::map<Tkey, Tval> _StaticMapBbHandlers<Tkey, Tval>::basic_behaviour_handlers_;
+
 /**
  * @brief Provides interface class for various task definitions that can be requested from HuBeRo actors
  * @details Typical task lifecycle:
@@ -16,7 +28,7 @@ namespace hubero {
  *   - active
  *   - finished, active flag erased
  */
-class TaskBase {
+class TaskBase: protected _StaticMapBbHandlers<BasicBehaviourType, std::function<void(void)>> {
 public:
     static constexpr int TASK_ARGS_NUM_DEFAULT = 0;
 
@@ -29,7 +41,7 @@ public:
 
 
     static bool addBasicBehaviourHandler(BasicBehaviourType behaviour_type, std::function<void(void)> handler) {
-        basic_behaviour_handlers_.insert({behaviour_type, std::move(handler)});
+        TaskBase::basic_behaviour_handlers_.insert({behaviour_type, std::move(handler)});
     }
 
     /**
@@ -119,8 +131,6 @@ protected:
      * @details https://stackoverflow.com/questions/36797770/get-function-parameters-count
      */
     size_t task_args_num_;
-
-    static std::map<BasicBehaviourType, std::function<void(void)>> basic_behaviour_handlers_;
 }; // class TaskBase
 
 } // namespace hubero

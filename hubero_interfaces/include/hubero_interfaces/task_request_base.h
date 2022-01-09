@@ -10,13 +10,26 @@
 
 namespace hubero {
 
+/*
+ * Workaround that allows to use static members in header-only library with C++11/14:
+ * https://stackoverflow.com/questions/11709859/how-to-have-static-data-members-in-a-header-only-library
+ */
+template <typename Tkey, typename Tval>
+struct _StaticMapTaskNames {
+    /// Binds task names (strings) to TaskTypes
+    static std::map<Tkey, Tval> task_names_map_;
+};
+
+template <typename Tkey, typename Tval>
+std::map<Tkey, Tval> _StaticMapTaskNames<Tkey, Tval>::task_names_map_;
+
 /**
  * @brief This class acts as a generic interface to request Actor's tasks.
  *
  * @details This class must be initialized by @ref hubero::Actor that adds specific tasks that can be externally
  * requested via @ref hubero::TaskRequestBase API.
  */
-class TaskRequestBase {
+class TaskRequestBase: protected _StaticMapTaskNames<std::string, TaskType> {
 public:
     TaskRequestBase(): initialized_(false) {
         TaskRequestBase::task_names_map_ = {
@@ -107,9 +120,6 @@ protected:
 
     /// Binds TaskTypes to actual task classes that inherit TaskBase
     std::map<TaskType, std::shared_ptr<TaskBase>> tasks_map_;
-
-    /// Binds task names (strings) to TaskTypes
-    static std::map<std::string, TaskType> task_names_map_;
 };
 
 } // namespace hubero
