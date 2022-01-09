@@ -11,6 +11,15 @@
 #include <hubero_interfaces/model_control_base.h>
 
 #include <hubero_core/tasks/task_stand.h>
+#include <hubero_core/tasks/task_move_to_goal.h>
+#include <hubero_core/tasks/task_move_around.h>
+#include <hubero_core/tasks/task_lie_down.h>
+#include <hubero_core/tasks/task_sit_down.h>
+#include <hubero_core/tasks/task_follow_object.h>
+#include <hubero_core/tasks/task_teleop.h>
+#include <hubero_core/tasks/task_run.h>
+#include <hubero_core/tasks/task_talk.h>
+
 #include <hubero_core/fsm_super.h>
 
 #include <memory>
@@ -70,6 +79,14 @@ protected:
 	 * @{
 	 */
 	std::shared_ptr<TaskStand> task_stand_ptr_;
+	std::shared_ptr<TaskMoveToGoal> task_move_to_goal_ptr_;
+	std::shared_ptr<TaskMoveAround> task_move_around_ptr_;
+	std::shared_ptr<TaskLieDown> task_lie_down_ptr_;
+	std::shared_ptr<TaskSitDown> task_sit_down_ptr_;
+	std::shared_ptr<TaskFollowObject> task_follow_object_ptr_;
+	std::shared_ptr<TaskTeleop> task_teleop_ptr_;
+	std::shared_ptr<TaskRun> task_run_ptr_;
+	std::shared_ptr<TaskTalk> task_talk_ptr_;
 
 	/**
 	 * @defgroup Interface classes
