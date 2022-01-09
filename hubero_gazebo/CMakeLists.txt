@@ -69,3 +69,9 @@ install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   PATTERN ".svn" EXCLUDE
 )
+
+# TEST
+if (CATKIN_ENABLE_TESTING)
+  catkin_add_gtest(test_localisation test/test_localisation.cpp)
+  target_link_libraries(test_localisation ${HUBERO_INTERFACE_LIB_NAME})
+endif()
