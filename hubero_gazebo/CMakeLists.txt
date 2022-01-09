@@ -4,27 +4,31 @@ project(hubero_gazebo)
 find_package(catkin REQUIRED
     COMPONENTS
         hubero_core
-        # roscpp
 )
 find_package(gazebo REQUIRED)
 
 include_directories(
     include
-    # ${catkin_INCLUDE_DIRS}
     ${GAZEBO_INCLUDE_DIRS}
     ${hubero_core_INCLUDE_DIRS}
 )
-# TODO: ${GAZEBO_INCLUDE_DIRS} should provide that
-# include_directories(/usr/include/sdformat-5.2)
 
 link_directories(${GAZEBO_LIBRARY_DIRS})
 list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
-# LIBRARIES
 set(HUBERO_INTERFACE_LIB_NAME ${PROJECT_NAME}_interface)
 set(ACTOR_PLUGIN_LIB_NAME ${PROJECT_NAME}_actor)
 
+# CATKIN PACKAGE
+catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES ${HUBERO_INTERFACE_LIB_NAME} ${ACTOR_PLUGIN_LIB_NAME}
+    CATKIN_DEPENDS hubero_core
+    DEPENDS GAZEBO
+)
+
+# BUILD
 add_library(${HUBERO_INTERFACE_LIB_NAME} SHARED
     include/${PROJECT_NAME}/animation_control_gazebo.h
     include/${PROJECT_NAME}/localisation_gazebo.h
@@ -39,6 +43,7 @@ add_library(${HUBERO_INTERFACE_LIB_NAME} SHARED
 )
 target_link_libraries(${HUBERO_INTERFACE_LIB_NAME}
     ${hubero_core_LIBRARIES}
+    ${GAZEBO_LIBRARIES}
 )
 
 add_library(${ACTOR_PLUGIN_LIB_NAME} SHARED
@@ -49,29 +54,18 @@ target_link_libraries(${ACTOR_PLUGIN_LIB_NAME}
     ${HUBERO_INTERFACE_LIB_NAME}
     ${GAZEBO_LIBRARIES}
 )
-
-# CATKIN PACKAGE
-catkin_package(
-    INCLUDE_DIRS
-        include
-    # LIBRARIES
-    #     hubero_localisation_gazebo
-    CATKIN_DEPENDS
-        hubero_core
-        # roscpp
+set_target_properties(${ACTOR_PLUGIN_LIB_NAME} PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib
 )
 
 # INSTALL
-install(TARGETS ${ACTOR_PLUGIN_LIB_NAME}
+install(TARGETS ${HUBERO_INTERFACE_LIB_NAME} ${ACTOR_PLUGIN_LIB_NAME}
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
 )
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   PATTERN ".svn" EXCLUDE
-)
-
-set_target_properties(${ACTOR_PLUGIN_LIB_NAME} PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib
 )
