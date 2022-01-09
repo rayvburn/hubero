@@ -22,6 +22,8 @@
 #include <hubero_gazebo/time_gazebo.h>
 #include <hubero_gazebo/world_geometry_gazebo.h>
 
+#include <hubero_core/actor.h>
+
 namespace gazebo {
 
 class GAZEBO_VISIBLE ActorPlugin: public ModelPlugin {
@@ -38,28 +40,20 @@ public:
 	virtual void Reset();
 
 protected:
-	/*
-	/// \brief Actor class object
-	std::shared_ptr<actor::core::Actor> actor_ptr_;
-
-	/// \brief List of models to ignore. Used for vector field
-	std::vector<std::string> ignoreModels;
+	void initializeHuberoInterface();
 
 	bool controller_enabled_;
 
-	std::shared_ptr<hubero::interface::LocalisationBase> localisation_ptr_;
-	*/
-
-	// std::shared_ptr<hubero::AnimationControlBase> sim_animation_control_;
-	// std::shared_ptr<hubero::LocalisationBase> sim_localisation_;
-	// std::shared_ptr<hubero::ModelControlBase> sim_model_control_;
-	// std::shared_ptr<hubero::WorldGeometryBase> sim_world_geometry_;
-	// std::shared_ptr<hubero::TimeBase> sim_time_;
+	hubero::Actor hubero_actor_;
+	std::shared_ptr<hubero::AnimationControlGazebo> sim_animation_control_;
+	std::shared_ptr<hubero::LocalisationGazebo> sim_localisation_;
+	std::shared_ptr<hubero::ModelControlGazebo> sim_model_control_;
+	std::shared_ptr<hubero::WorldGeometryGazebo> sim_world_geometry_;
 
 private:
 	/// \brief Function that is called every update cycle.
 	/// \param[in] info Timing information
-	void OnUpdate(const common::UpdateInfo &info);
+	void OnUpdate(const common::UpdateInfo& info);
 
 	/// \brief Pointer to the model.
 	physics::ModelPtr model_ptr_;

@@ -24,9 +24,20 @@ class Actor {
 public:
 	Actor();
 
-	void initialize(const std::string& agent_name);
+	void initializeSim(
+		const std::string& actor_sim_name,
+		std::shared_ptr<hubero::AnimationControlBase> animation_control_ptr,
+		std::shared_ptr<hubero::ModelControlBase> model_control_ptr,
+		std::shared_ptr<hubero::LocalisationBase> localisation_ptr
+	);
+
+	void initializeNav(std::shared_ptr<hubero::NavigationBase> navigation_ptr);
+
+	void initializeTask(std::shared_ptr<hubero::TaskRequestBase> task_request_ptr);
 
 	void update(const Time& time);
+
+	bool isInitialized() const;
 
 protected:
 	/**
@@ -47,6 +58,9 @@ protected:
 	void bbTeleop();
 	/// @}
 
+	/// Name of the actor in simulator
+	std::string actor_sim_name_;
+
 	/// Highest level Finite State Machine that orchestrates Actor activities
 	FsmSuper fsm_;
 
@@ -61,13 +75,12 @@ protected:
 	 * @defgroup Interface classes
 	 * @{
 	 */
-	/*
-	std::shared_ptr<hubero::NavigationBase> navigation_ptr_;
-	std::shared_ptr<hubero::LocalisationBase> localisation_ptr_;
-	std::shared_ptr<hubero::TaskRequestBase> task_req_ptr_;
 	std::shared_ptr<hubero::AnimationControlBase> animation_control_ptr_;
 	std::shared_ptr<hubero::ModelControlBase> model_control_ptr_;
-	*/
+	std::shared_ptr<hubero::LocalisationBase> localisation_ptr_;
+	std::shared_ptr<hubero::NavigationBase> navigation_ptr_;
+	std::shared_ptr<hubero::TaskRequestBase> task_request_ptr_;
+
 	/// @}
 }; // class Actor
 
