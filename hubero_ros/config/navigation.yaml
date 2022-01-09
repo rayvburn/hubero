@@ -1,6 +1,0 @@
-navigation_ros:
-  move_base:
-    goal_topic: ""
-    cancel_topic: ""
-    get_plan_srv: ""
-    command_topic: ""
