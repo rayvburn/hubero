@@ -47,4 +47,7 @@
     <!-- ============================== load map =========================================== -->
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" output="screen" />
 
+    <!-- ============================== load params =========================================== -->
+    <rosparam file="$(find hubero_ros)/config/params_example.yaml" command="load" />
+
 </launch>
