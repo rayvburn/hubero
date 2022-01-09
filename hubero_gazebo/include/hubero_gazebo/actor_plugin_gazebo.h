@@ -22,6 +22,10 @@
 #include <hubero_gazebo/time_gazebo.h>
 #include <hubero_gazebo/world_geometry_gazebo.h>
 
+#include <hubero_ros/node.h>
+#include <hubero_ros/task_request_ros.h>
+#include <hubero_ros/navigation_ros.h>
+
 #include <hubero_core/actor.h>
 
 namespace gazebo {
@@ -45,10 +49,15 @@ protected:
 	bool controller_enabled_;
 
 	hubero::Actor hubero_actor_;
+	std::shared_ptr<hubero::Node> ros_node_ptr_;
+	// TODO: _ptr_
 	std::shared_ptr<hubero::AnimationControlGazebo> sim_animation_control_;
 	std::shared_ptr<hubero::LocalisationGazebo> sim_localisation_;
 	std::shared_ptr<hubero::ModelControlGazebo> sim_model_control_;
 	std::shared_ptr<hubero::WorldGeometryGazebo> sim_world_geometry_;
+
+	std::shared_ptr<hubero::TaskRequestROS> task_;
+	// std::shared_ptr<hubero::NavigationROS> nav_;
 
 private:
 	/// \brief Function that is called every update cycle.

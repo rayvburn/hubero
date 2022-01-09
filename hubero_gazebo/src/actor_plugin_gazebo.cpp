@@ -6,10 +6,12 @@ namespace gazebo {
 
 ActorPlugin::ActorPlugin():
 	controller_enabled_(false),
+	ros_node_ptr_(std::make_shared<hubero::Node>()),
 	sim_animation_control_(std::make_shared<hubero::AnimationControlGazebo>()),
 	sim_localisation_(std::make_shared<hubero::LocalisationGazebo>()),
 	sim_model_control_(std::make_shared<hubero::ModelControlGazebo>()),
-	sim_world_geometry_(std::make_shared<hubero::WorldGeometryGazebo>())
+	sim_world_geometry_(std::make_shared<hubero::WorldGeometryGazebo>()),
+	task_(std::make_shared<hubero::TaskRequestROS>())
 {}
 
 void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
@@ -33,6 +35,8 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 	 */
 	initializeHuberoInterface();
 	hubero_actor_.initializeSim(actor_ptr_->GetName(), sim_animation_control_, sim_model_control_, sim_localisation_);
+
+	task_->initialize(ros_node_ptr_, actor_ptr_->GetName());
 
 	/*
 	 * Enable specific trajectory of actor
