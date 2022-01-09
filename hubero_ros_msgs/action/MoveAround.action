@@ -1,0 +1,9 @@
+# goal definition
+---
+# result definition
+int32 status
+string text
+---
+# feedback
+int32 status
+string text

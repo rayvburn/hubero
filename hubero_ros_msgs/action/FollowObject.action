@@ -1,0 +1,10 @@
+# goal definition
+string object_name
+---
+# result definition
+int32 status
+string text
+---
+# feedback
+int32 status
+string text

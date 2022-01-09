@@ -1,0 +1,12 @@
+# goal definition
+string object_name
+float64 lying_height
+float64 rotation
+---
+# result definition
+int32 status
+string text
+---
+# feedback
+int32 status
+string text

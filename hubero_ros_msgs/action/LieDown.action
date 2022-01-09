@@ -1,0 +1,14 @@
+# goal definition
+float64 x_pos
+float64 y_pos
+float64 z_pos
+float64 rotation
+string frame
+---
+# result definition
+int32 status
+string text
+---
+# feedback
+int32 status
+string text
