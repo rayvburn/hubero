@@ -2,11 +2,11 @@
 
 namespace hubero {
 
-TaskRequestROS::TaskRequestROS(): TaskRequestBase::TaskRequestBase() {}
+TaskRequestRos::TaskRequestRos(): TaskRequestBase::TaskRequestBase() {}
 
-void TaskRequestROS::initialize(std::shared_ptr<Node> node_ptr, const std::string& actor_name) {
+void TaskRequestRos::initialize(std::shared_ptr<Node> node_ptr, const std::string& actor_name) {
     if (node_ptr == nullptr) {
-        HUBERO_LOG("[TaskRequestROS] Pointer to Node is null, action servers will not be started\r\n");
+        HUBERO_LOG("[TaskRequestRos] Pointer to Node is null, action servers will not be started\r\n");
         return;
     }
 
@@ -27,7 +27,7 @@ void TaskRequestROS::initialize(std::shared_ptr<Node> node_ptr, const std::strin
     as_follow_object_ = std::make_shared<ActionServer<hubero_ros_msgs::FollowObjectAction>>(
         *node_ptr_->getNodeHandlePtr(),
         actor_name + "/" + name_task_follow_object,
-        std::bind(&TaskRequestROS::actionCbFollowObject, this, std::placeholders::_1),
+        std::bind(&TaskRequestRos::actionCbFollowObject, this, std::placeholders::_1),
         false
     );
     as_follow_object_->start();
@@ -35,15 +35,15 @@ void TaskRequestROS::initialize(std::shared_ptr<Node> node_ptr, const std::strin
     as_lie_down_ = std::make_shared<ActionServer<hubero_ros_msgs::LieDownAction>>(
         *node_ptr_->getNodeHandlePtr(),
         actor_name + "/" + name_task_lie_down,
-        std::bind(&TaskRequestROS::actionCbLieDown, this, std::placeholders::_1),
+        std::bind(&TaskRequestRos::actionCbLieDown, this, std::placeholders::_1),
         false
     );
     as_lie_down_->start();
 
     as_lie_down_object_ = std::make_shared<ActionServer<hubero_ros_msgs::LieDownObjectAction>>(
         *node_ptr_->getNodeHandlePtr(),
-        actor_name + "/" + name_task_lie_down + TaskRequestROS::OBJECT_ORIENTED_TASK_SUFFIX,
-        std::bind(&TaskRequestROS::actionCbLieDownObject, this, std::placeholders::_1),
+        actor_name + "/" + name_task_lie_down + TaskRequestRos::OBJECT_ORIENTED_TASK_SUFFIX,
+        std::bind(&TaskRequestRos::actionCbLieDownObject, this, std::placeholders::_1),
         false
     );
     as_lie_down_object_->start();
@@ -51,21 +51,21 @@ void TaskRequestROS::initialize(std::shared_ptr<Node> node_ptr, const std::strin
     as_move_to_goal_ = std::make_shared<ActionServer<hubero_ros_msgs::MoveToGoalAction>>(
         *node_ptr_->getNodeHandlePtr(),
         actor_name + "/" + name_task_move_to_goal,
-        std::bind(&TaskRequestROS::actionCbMoveToGoal, this, std::placeholders::_1),
+        std::bind(&TaskRequestRos::actionCbMoveToGoal, this, std::placeholders::_1),
         false
     );
     as_move_to_goal_->start();
 
     as_move_to_object_ = std::make_shared<ActionServer<hubero_ros_msgs::MoveToObjectAction>>(
         *node_ptr_->getNodeHandlePtr(),
-        actor_name + "/" + name_task_move_to_goal + TaskRequestROS::OBJECT_ORIENTED_TASK_SUFFIX,
-        std::bind(&TaskRequestROS::actionCbMoveToObject, this, std::placeholders::_1),
+        actor_name + "/" + name_task_move_to_goal + TaskRequestRos::OBJECT_ORIENTED_TASK_SUFFIX,
+        std::bind(&TaskRequestRos::actionCbMoveToObject, this, std::placeholders::_1),
         false
     );
     as_move_to_object_->start();
 }
 
-void TaskRequestROS::actionCbFollowObject(const hubero_ros_msgs::FollowObjectGoalConstPtr& goal) {
+void TaskRequestRos::actionCbFollowObject(const hubero_ros_msgs::FollowObjectGoalConstPtr& goal) {
     bool request_processed_ok = request(TASK_FOLLOW_OBJECT, goal->object_name);
     actionCbHandler<hubero_ros_msgs::FollowObjectResult, hubero_ros_msgs::FollowObjectFeedback>(
         request_processed_ok,
@@ -74,7 +74,7 @@ void TaskRequestROS::actionCbFollowObject(const hubero_ros_msgs::FollowObjectGoa
     );
 }
 
-void TaskRequestROS::actionCbMoveToGoal(const hubero_ros_msgs::MoveToGoalGoalConstPtr& goal) {
+void TaskRequestRos::actionCbMoveToGoal(const hubero_ros_msgs::MoveToGoalGoalConstPtr& goal) {
     bool request_processed_ok = false; // request(TASK_MOVE_TO_GOAL, goal->...);
     actionCbHandler<hubero_ros_msgs::MoveToGoalResult, hubero_ros_msgs::MoveToGoalFeedback>(
         request_processed_ok,
@@ -83,7 +83,7 @@ void TaskRequestROS::actionCbMoveToGoal(const hubero_ros_msgs::MoveToGoalGoalCon
     );
 }
 
-void TaskRequestROS::actionCbMoveToObject(const hubero_ros_msgs::MoveToObjectGoalConstPtr& goal) {
+void TaskRequestRos::actionCbMoveToObject(const hubero_ros_msgs::MoveToObjectGoalConstPtr& goal) {
     bool request_processed_ok = false; // request(TASK_MOVE_TO_GOAL, goal->...);
     actionCbHandler<hubero_ros_msgs::MoveToObjectResult, hubero_ros_msgs::MoveToObjectFeedback>(
         request_processed_ok,
@@ -92,7 +92,7 @@ void TaskRequestROS::actionCbMoveToObject(const hubero_ros_msgs::MoveToObjectGoa
     );
 }
 
-void TaskRequestROS::actionCbLieDown(const hubero_ros_msgs::LieDownGoalConstPtr& goal) {
+void TaskRequestRos::actionCbLieDown(const hubero_ros_msgs::LieDownGoalConstPtr& goal) {
     bool request_processed_ok = false; // request(TASK_LIE_DOWN, goal->...);
     actionCbHandler<hubero_ros_msgs::LieDownResult, hubero_ros_msgs::LieDownFeedback>(
         request_processed_ok,
@@ -101,7 +101,7 @@ void TaskRequestROS::actionCbLieDown(const hubero_ros_msgs::LieDownGoalConstPtr&
     );
 }
 
-void TaskRequestROS::actionCbLieDownObject(const hubero_ros_msgs::LieDownObjectGoalConstPtr& goal) {
+void TaskRequestRos::actionCbLieDownObject(const hubero_ros_msgs::LieDownObjectGoalConstPtr& goal) {
     bool request_processed_ok = false; // request(TASK_LIE_DOWN, goal->...);
     actionCbHandler<hubero_ros_msgs::LieDownObjectResult, hubero_ros_msgs::LieDownObjectFeedback>(
         request_processed_ok,

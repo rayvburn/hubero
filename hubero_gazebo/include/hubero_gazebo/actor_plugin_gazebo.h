@@ -56,6 +56,7 @@ protected:
 	std::shared_ptr<hubero::ModelControlGazebo> sim_model_control_;
 	std::shared_ptr<hubero::WorldGeometryGazebo> sim_world_geometry_;
 
+	std::shared_ptr<hubero::TaskRequestRos> task_;
 	// std::shared_ptr<hubero::NavigationRos> nav_;
 
 private:
