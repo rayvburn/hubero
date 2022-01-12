@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(hubero_ros)
 
-# Based on https://github.com/ros-planning/navigation/blob/kinetic-devel/base_local_planner/CMakeLists.txt
+add_definitions(-std=c++14)
 
 find_package(catkin REQUIRED
 	COMPONENTS
