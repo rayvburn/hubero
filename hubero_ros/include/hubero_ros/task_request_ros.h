@@ -23,7 +23,7 @@ namespace hubero {
 /**
  * @brief Provides ROS interface to request tasks from actors and allows to monitor execution using feedback data
  */
-class TaskRequestROS: public TaskRequestBase {
+class TaskRequestRos: public TaskRequestBase {
 public:
 	/// Alias declaration
 	template <typename T>
@@ -42,7 +42,7 @@ public:
 	/**
 	 * @brief Default constructor
 	 */
-	TaskRequestROS();
+	TaskRequestRos();
 
 	/**
 	 * @brief Initializes ROS interface to request tasks from simulated actor, named @ref actor_name

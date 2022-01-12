@@ -11,7 +11,7 @@ ActorPlugin::ActorPlugin():
 	sim_localisation_(std::make_shared<hubero::LocalisationGazebo>()),
 	sim_model_control_(std::make_shared<hubero::ModelControlGazebo>()),
 	sim_world_geometry_(std::make_shared<hubero::WorldGeometryGazebo>()),
-	task_(std::make_shared<hubero::TaskRequestROS>())
+	task_(std::make_shared<hubero::TaskRequestRos>())
 {}
 
 void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
