@@ -99,6 +99,58 @@ public:
         return false;
     }
 
+    bool isActive(TaskType task) const {
+        auto it = tasks_map_.find(task);
+        if (it != tasks_map_.end()) {
+            if (it->second == nullptr) {
+                HUBERO_LOG("[TaskRequestBase] Cannot check if task is active since its class was not defined\r\n");
+                return false;
+            }
+            return it->second->isActive();
+        }
+        HUBERO_LOG("[TaskRequestBase] Cannot check if task is active since it was not defined\r\n");
+        return false;
+    }
+
+    bool isAborted(TaskType task) const {
+        auto it = tasks_map_.find(task);
+        if (it != tasks_map_.end()) {
+            if (it->second == nullptr) {
+                HUBERO_LOG("[TaskRequestBase] Cannot check if task was aborted since its class was not defined\r\n");
+                return false;
+            }
+            return it->second->isAborted();
+        }
+        HUBERO_LOG("[TaskRequestBase] Cannot check if task was aborted since it was not defined\r\n");
+        return false;
+    }
+
+    bool isFinished(TaskType task) const {
+        auto it = tasks_map_.find(task);
+        if (it != tasks_map_.end()) {
+            if (it->second == nullptr) {
+                HUBERO_LOG("[TaskRequestBase] Cannot check if task is finished since its class was not defined\r\n");
+                return false;
+            }
+            return it->second->isFinished();
+        }
+        HUBERO_LOG("[TaskRequestBase] Cannot check if task is finished since it was not defined\r\n");
+        return false;
+    }
+
+    TaskFeedbackType getTaskFeedbackType(TaskType task) const {
+        auto it = tasks_map_.find(task);
+        if (it != tasks_map_.end()) {
+            if (it->second == nullptr) {
+                HUBERO_LOG("[TaskRequestBase] Cannot check task feedback since task's class was not defined\r\n");
+                return TaskFeedbackType::TASK_FEEDBACK_UNDEFINED;
+            }
+            return it->second->getTaskFeedbackType();
+        }
+        HUBERO_LOG("[TaskRequestBase] Cannot check task feedback since task was not defined\r\n");
+        return TaskFeedbackType::TASK_FEEDBACK_UNDEFINED;
+    }
+
     inline bool isInitialized() const {
         return initialized_;
     }
