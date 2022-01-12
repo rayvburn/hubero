@@ -166,6 +166,18 @@ public:
         return it->second;
     }
 
+    /**
+     * @brief Searches for @ref task_type value in the @ref task_names_map_ and returns corresponding key from the map
+     */
+    static std::string getTaskName(const TaskType& task_type) {
+        for (const auto& task_name_pair: TaskRequestBase::task_names_map_) {
+            if (task_name_pair.second == task_type) {
+                return task_name_pair.first;
+            }
+        }
+        return std::string();
+    }
+
 protected:
     /// True if at least 1 task was added
     bool initialized_;
