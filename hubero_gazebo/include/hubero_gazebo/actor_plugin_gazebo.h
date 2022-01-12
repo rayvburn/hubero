@@ -56,8 +56,7 @@ protected:
 	std::shared_ptr<hubero::ModelControlGazebo> sim_model_control_;
 	std::shared_ptr<hubero::WorldGeometryGazebo> sim_world_geometry_;
 
-	std::shared_ptr<hubero::TaskRequestROS> task_;
-	// std::shared_ptr<hubero::NavigationROS> nav_;
+	// std::shared_ptr<hubero::NavigationRos> nav_;
 
 private:
 	/// \brief Function that is called every update cycle.

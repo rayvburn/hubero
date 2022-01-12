@@ -7,23 +7,23 @@
 #include <pluginlib/class_list_macros.h>
 
 // register this class as a `hubero::NavigationBase` plugin
-PLUGINLIB_EXPORT_CLASS(hubero::NavigationROS, hubero::NavigationBase)
+PLUGINLIB_EXPORT_CLASS(hubero::NavigationRos, hubero::NavigationBase)
 
 namespace hubero {
 
-NavigationROS::NavigationROS():
+NavigationRos::NavigationRos():
     nh_("hubero_navigation_ros"),
     agent_name_("actor"),
     initialized_(false)
 {}
 
-bool NavigationROS::initialize(const std::string& agent_name) {
+bool NavigationRos::initialize(const std::string& agent_name) {
     if (initialized_) {
-        ROS_WARN("NavigationROS plugin was already initialized, aborting");
+        ROS_WARN("NavigationRos plugin was already initialized, aborting");
         return false;
     }
 
-    ROS_INFO("NavigationROS::intialize: pub_mb_goal topic: %s, pub_mb_cancel topic: %s, srv_mb_get_plan name: %s, sub_cmd_vel topic: %s",
+    ROS_INFO("NavigationRos::intialize: pub_mb_goal topic: %s, pub_mb_cancel topic: %s, srv_mb_get_plan name: %s, sub_cmd_vel topic: %s",
         ("/hubero/" + agent_name_ + "/move_base/navigation_ros/goal").c_str(),
         ("/hubero/" + agent_name_ + "/move_base/navigation_ros/cancel").c_str(),
         ("/hubero/" + agent_name_ + "/move_base/navigation_ros/get_plan").c_str(),
@@ -45,16 +45,16 @@ bool NavigationROS::initialize(const std::string& agent_name) {
     sub_cmd_vel_ = nh_.subscribe(
         "/hubero/" + agent_name_ + "/move_base/cmd_vel",
         10,
-        &NavigationROS::callbackCmdVel,
+        &NavigationRos::callbackCmdVel,
         this
     );
     initialized_ = true;
     return initialized_;
 }
 
-bool NavigationROS::isPoseAchievable(const Pose3& start, const Pose3& goal, const std::string& frame) {
+bool NavigationRos::isPoseAchievable(const Pose3& start, const Pose3& goal, const std::string& frame) {
     if (!initialized_) {
-        ROS_WARN("NavigationROS plugin is not initialized, call `initialize` first");
+        ROS_WARN("NavigationRos plugin is not initialized, call `initialize` first");
         return false;
     }
 
@@ -75,9 +75,9 @@ bool NavigationROS::isPoseAchievable(const Pose3& start, const Pose3& goal, cons
     return true;
 }
 
-void NavigationROS::setPose(const Pose3& pose, const std::string& frame) {
+void NavigationRos::setPose(const Pose3& pose, const std::string& frame) {
     if (!initialized_) {
-        ROS_WARN("NavigationROS plugin is not initialized, call `initialize` first");
+        ROS_WARN("NavigationRos plugin is not initialized, call `initialize` first");
         return;
     }
 
@@ -87,7 +87,7 @@ void NavigationROS::setPose(const Pose3& pose, const std::string& frame) {
     std::string agent_base_frame_id = agent_name_ + "/base_footprint";
 
     auto eul = pose.Rot().Euler();
-    printf("NavigationROS::setPose(): (1) x %1.2f, y %1.2f, z %1.2f, R %1.2f, P %1.2f, Y %1.2f\r\n",
+    printf("NavigationRos::setPose(): (1) x %1.2f, y %1.2f, z %1.2f, R %1.2f, P %1.2f, Y %1.2f\r\n",
             pose.Pos().X(),
             pose.Pos().Y(),
             pose.Pos().Z(),
@@ -117,7 +117,7 @@ void NavigationROS::setPose(const Pose3& pose, const std::string& frame) {
         transform_actor.transform.rotation.z
     );
     auto eul_actor_from_quat = quat_actor.Euler();
-    printf("NavigationROS::setPose(): (2) x %1.2f, y %1.2f, z %1.2f, R %1.2f, P %1.2f, Y %1.2f\r\n",
+    printf("NavigationRos::setPose(): (2) x %1.2f, y %1.2f, z %1.2f, R %1.2f, P %1.2f, Y %1.2f\r\n",
         transform_actor.transform.translation.x,
         transform_actor.transform.translation.y,
         transform_actor.transform.translation.z,
@@ -128,7 +128,7 @@ void NavigationROS::setPose(const Pose3& pose, const std::string& frame) {
 
     auto quat_actor_from_euler = Quaternion::EulerToQuaternion(eul_actor_from_quat);
     auto euler_test = quat_actor_from_euler.Euler();
-    printf("NavigationROS::setPose(): (3) x %1.2f, y %1.2f, z %1.2f, R %1.2f, P %1.2f, Y %1.2f\r\n",
+    printf("NavigationRos::setPose(): (3) x %1.2f, y %1.2f, z %1.2f, R %1.2f, P %1.2f, Y %1.2f\r\n",
         transform_actor.transform.translation.x,
         transform_actor.transform.translation.y,
         transform_actor.transform.translation.z,
@@ -165,29 +165,29 @@ void NavigationROS::setPose(const Pose3& pose, const std::string& frame) {
     tf_broadcaster_.sendTransform(transform_camera);
 }
 
-// void NavigationROS::update(const sensor_msgs::LaserScan& scan) {
+// void NavigationRos::update(const sensor_msgs::LaserScan& scan) {
 //     if (!initialized_) {
-//         ROS_WARN("NavigationROS plugin is not initialized, call `initialize` first");
+//         ROS_WARN("NavigationRos plugin is not initialized, call `initialize` first");
 //         return;
 //     }
-//     ROS_INFO("HuBeRo.NavigationROS::update: 1 (empty)");
+//     ROS_INFO("HuBeRo.NavigationRos::update: 1 (empty)");
 // }
 
-// void NavigationROS::update(
+// void NavigationRos::update(
 //     const sensor_msgs::LaserScan& scan,
 //     const sensor_msgs::Image& img,
 //     const sensor_msgs::PointCloud2& rgbd_pcl
 // ) {
 //     if (!initialized_) {
-//         ROS_WARN("NavigationROS plugin is not initialized, call `initialize` first");
+//         ROS_WARN("NavigationRos plugin is not initialized, call `initialize` first");
 //         return;
 //     }
-//     ROS_INFO("HuBeRo.NavigationROS::update: 2 (empty)");
+//     ROS_INFO("HuBeRo.NavigationRos::update: 2 (empty)");
 // }
 
-bool NavigationROS::setGoal(const Pose3& pose, const std::string& frame) {
+bool NavigationRos::setGoal(const Pose3& pose, const std::string& frame) {
     if (!initialized_) {
-        ROS_WARN("NavigationROS plugin is not initialized, call `initialize` first");
+        ROS_WARN("NavigationRos plugin is not initialized, call `initialize` first");
         return false;
     }
 
@@ -202,31 +202,31 @@ bool NavigationROS::setGoal(const Pose3& pose, const std::string& frame) {
     goal.goal.target_pose.header.stamp = time_current;
     goal.goal.target_pose.pose = ignPoseToMsgPose(pose);
     pub_mb_goal_.publish(goal);
-    ROS_INFO("HuBeRo.NavigationROS::setGoal: trying to set goal");
+    ROS_INFO("HuBeRo.NavigationRos::setGoal: trying to set goal");
     return true;
 }
 
-bool NavigationROS::cancelGoal() {
+bool NavigationRos::cancelGoal() {
     if (!initialized_) {
-        ROS_WARN("NavigationROS plugin is not initialized, call `initialize` first");
+        ROS_WARN("NavigationRos plugin is not initialized, call `initialize` first");
         return false;
     }
 
     actionlib_msgs::GoalID goal_cancel;
     pub_mb_cancel_.publish(goal_cancel);
-    ROS_INFO("HuBeRo.NavigationROS::cancelGoal: trying to cancel goal without specyfing stamp or ID!");
+    ROS_INFO("HuBeRo.NavigationRos::cancelGoal: trying to cancel goal without specyfing stamp or ID!");
     return true;
 }
 
-Vector3 NavigationROS::getVelocityCmd() const {
+Vector3 NavigationRos::getVelocityCmd() const {
     if (!initialized_) {
-        ROS_WARN("NavigationROS plugin is not initialized, call `initialize` first");
+        ROS_WARN("NavigationRos plugin is not initialized, call `initialize` first");
         return Vector3();
     }
     return cmd_vel_;
 }
 
-void NavigationROS::callbackCmdVel(const geometry_msgs::Twist::ConstPtr& msg) {
+void NavigationRos::callbackCmdVel(const geometry_msgs::Twist::ConstPtr& msg) {
     const std::lock_guard<std::mutex> lock(mutex_callback_);
     cmd_vel_.X(msg->linear.x);
     cmd_vel_.Y(msg->linear.y);

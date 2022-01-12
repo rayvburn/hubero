@@ -18,12 +18,12 @@ namespace hubero {
  * With GazeboRos plugins, we expect that perception data (i.e. LaserScan (and possibly Image with PCL))
  * are published to ROS topics. Topics configuration (for costmap generation) is placed inside YAML files.
  */
-class NavigationROS: public NavigationBase {
+class NavigationRos: public NavigationBase {
 public:
     /**
      * @brief Constructor
      */
-    NavigationROS();
+    NavigationRos();
 
     /**
      * @brief Initializes internal components of the class
@@ -82,7 +82,7 @@ public:
      * @brief Destructor
      *
      */
-    virtual ~NavigationROS() = default;
+    virtual ~NavigationRos() = default;
 
 protected:
     /**
