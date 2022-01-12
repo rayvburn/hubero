@@ -37,6 +37,7 @@ public:
         requested_(false),
         aborted_(false),
         finished_(false),
+        feedback_type_(TASK_FEEDBACK_UNDEFINED),
         task_args_num_(TASK_ARGS_NUM_DEFAULT) {}
 
 
@@ -54,11 +55,13 @@ public:
             aborted_ = false;
             finished_ = false;
             requested_ = false;
+            feedback_type_ = TASK_FEEDBACK_REJECTED;
             return false;
         }
         aborted_ = false;
         finished_ = false;
         requested_ = true;
+        feedback_type_ = TASK_FEEDBACK_PENDING;
     }
 
     /**
@@ -69,6 +72,7 @@ public:
         aborted_ = true;
         finished_ = false;
         requested_ = false;
+        feedback_type_ = TASK_FEEDBACK_ABORTED;
         return actual_abort_call;
     }
 
@@ -77,16 +81,22 @@ public:
         aborted_ = false;
         // leave finished_ as it is
         requested_ = false;
+        feedback_type_ = TASK_FEEDBACK_ACTIVE;
     }
 
     virtual inline void terminate() {
         active_ = false;
         aborted_ = false;
         finished_ = false;
+        feedback_type_ = TASK_FEEDBACK_SUCCEEDED;
     }
 
     TaskType getTaskType() const {
         return task_type_;
+    }
+
+    TaskFeedbackType getTaskFeedbackType() const {
+        return feedback_type_;
     }
 
     bool isRequested() const {
@@ -126,6 +136,8 @@ protected:
     bool active_;
     bool aborted_;
     bool finished_;
+
+    TaskFeedbackType feedback_type_;
 
     /**
      * @brief How many arguments are required to be passed to @ref request method - this must be redefined by a specific Task
