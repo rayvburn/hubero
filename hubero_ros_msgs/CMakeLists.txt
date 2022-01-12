@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(hubero_ros_msgs)
 
+add_definitions(-std=c++14)
+
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED
   COMPONENTS

@@ -3,8 +3,7 @@ project(hubero_core
 	LANGUAGES CXX
 )
 
-## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+add_definitions(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
    hubero_common
