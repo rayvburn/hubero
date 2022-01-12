@@ -25,6 +25,7 @@ include_directories(
 
 set(HUBERO_NAV_ROS hubero_navigation_ros)
 set(HUBERO_TASK_ROS hubero_task_request_ros)
+set(HUBERO_NODE_ROS hubero_node_ros)
 
 catkin_package(
 	INCLUDE_DIRS
@@ -32,12 +33,26 @@ catkin_package(
 	LIBRARIES
 		${HUBERO_NAV_ROS}
 		${HUBERO_TASK_ROS}
+		${HUBERO_NODE_ROS}
 	CATKIN_DEPENDS
 		hubero_common
 		hubero_interfaces
 		nav_msgs
 		pluginlib
 		roscpp
+)
+
+## Node library for HuBeRo
+add_library(${HUBERO_NODE_ROS}
+	include/${PROJECT_NAME}/node.h
+	src/node.cpp
+)
+add_dependencies(${HUBERO_NODE_ROS}
+	${${PROJECT_NAME}_EXPORTED_TARGETS}
+	${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(${HUBERO_NODE_ROS}
+	${catkin_LIBRARIES}
 )
 
 ## Navigation library for HuBeRo
@@ -54,6 +69,7 @@ add_dependencies(${HUBERO_NAV_ROS}
 target_link_libraries(${HUBERO_NAV_ROS}
 	${hubero_interfaces_LIBRARIES}
 	${hubero_common_LIBRARIES}
+	${HUBERO_NODE_ROS}
 	${catkin_LIBRARIES}
 )
 
@@ -65,11 +81,12 @@ add_library(${HUBERO_TASK_ROS}
 target_link_libraries(${HUBERO_TASK_ROS}
 	${hubero_interfaces_LIBRARIES}
 	${hubero_common_LIBRARIES}
+	${HUBERO_NODE_ROS}
 	${catkin_LIBRARIES}
 )
 
 ## Install
-install(TARGETS ${HUBERO_NAV_ROS} ${HUBERO_TASK_ROS}
+install(TARGETS ${HUBERO_NAV_ROS} ${HUBERO_TASK_ROS} ${HUBERO_NODE_ROS}
 	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 	RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
