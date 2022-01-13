@@ -9,6 +9,7 @@ TEST(HuberoTaskBase, idle) {
 	ASSERT_FALSE(task.isAborted());
 	ASSERT_FALSE(task.isActive());
 	ASSERT_FALSE(task.isFinished());
+	ASSERT_EQ(task.getTaskFeedbackType(), TASK_FEEDBACK_UNDEFINED);
 }
 
 TEST(HuberoTaskBase, request) {
@@ -18,6 +19,7 @@ TEST(HuberoTaskBase, request) {
 	ASSERT_FALSE(task.isAborted());
 	ASSERT_FALSE(task.isActive());
 	ASSERT_FALSE(task.isFinished());
+	ASSERT_EQ(task.getTaskFeedbackType(), TASK_FEEDBACK_PENDING);
 }
 
 TEST(HuberoTaskBase, abort) {
@@ -27,6 +29,7 @@ TEST(HuberoTaskBase, abort) {
 	ASSERT_TRUE(task.isAborted());
 	ASSERT_FALSE(task.isActive());
 	ASSERT_FALSE(task.isFinished());
+	ASSERT_EQ(task.getTaskFeedbackType(), TASK_FEEDBACK_ABORTED);
 }
 
 TEST(HuberoTaskBase, activate) {
@@ -36,6 +39,7 @@ TEST(HuberoTaskBase, activate) {
 	ASSERT_FALSE(task.isAborted());
 	ASSERT_TRUE(task.isActive());
 	ASSERT_FALSE(task.isFinished());
+	ASSERT_EQ(task.getTaskFeedbackType(), TASK_FEEDBACK_ACTIVE);
 }
 
 TEST(HuberoTaskBase, terminate) {
@@ -45,6 +49,7 @@ TEST(HuberoTaskBase, terminate) {
 	ASSERT_FALSE(task.isAborted());
 	ASSERT_FALSE(task.isActive());
 	ASSERT_FALSE(task.isFinished());
+	ASSERT_EQ(task.getTaskFeedbackType(), TASK_FEEDBACK_SUCCEEDED);
 }
 
 int main(int argc, char** argv) {
