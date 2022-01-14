@@ -16,7 +16,7 @@ public:
 	Node(const std::string& node_name = std::string("hubero_ros_node"));
 
 	/**
-	 * @brief Retrieves namespace name that was read via ROS param
+	 * @brief Retrieves main namespace name that was read via ROS param
 	 */
 	static inline std::string getNamespaceName() {
 		return Node::namespace_;
@@ -27,6 +27,13 @@ public:
 	 */
 	static inline std::string getSimulatorFrame() {
 		return Node::simulator_frame_id_;
+	}
+
+	/**
+	 * @brief Retrieves task namespace name that was read via ROS param
+	 */
+	static inline std::string getTaskNamespaceName() {
+		return Node::task_namespace_;
 	}
 
 	/**
@@ -43,15 +50,14 @@ protected:
 	 */
 	static bool node_started_;
 
-	/**
-	 * @brief Defines shared namespace of the HuBeRo topics/actions etc.
-	 */
+	/// @brief Defines shared namespace of the HuBeRo topics/actions etc.
 	static std::string namespace_;
 
-	/**
-	 * @brief Defines name of the frame that poses from simulator are using
-	 */
+	/// @brief Defines name of the frame that poses from simulator are using
 	static std::string simulator_frame_id_;
+
+	/// @brief Defines shared namespace of the HuBeRo topics that allow task requesting
+	static std::string task_namespace_;
 
 	/**
 	 * @brief NodeHandle's shared_ptr which is passed to other classes to provide interface with ROS.
