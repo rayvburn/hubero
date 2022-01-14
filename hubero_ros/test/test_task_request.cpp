@@ -4,7 +4,7 @@
 using namespace hubero;
 
 TEST(HuberoTaskRequestRos, taskRequest) {
-	auto node = std::make_shared<Node>();
+	auto node = std::make_shared<Node>("task_ros");
     auto task = std::make_shared<TaskBase>(TASK_STAND);
     TaskRequestRos task_request;
     task_request.addTask(TASK_STAND, task);
