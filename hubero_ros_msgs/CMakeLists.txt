@@ -7,7 +7,10 @@ add_definitions(-std=c++14)
 find_package(catkin REQUIRED
   COMPONENTS
     actionlib_msgs
+    geometry_msgs
+    std_msgs
     message_generation
+    message_runtime
 )
 
 ## Generate actions in the 'action' folder
@@ -29,13 +32,21 @@ add_action_files(
     # Teleop.action
 )
 
+## Generate messages in the `msg` folder
+add_message_files(
+  FILES
+    Person.msg
+)
+
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
    actionlib_msgs
+   geometry_msgs
+   std_msgs
 )
 
 ## catkin specific configuration
 catkin_package(
-  CATKIN_DEPENDS actionlib_msgs message_generation
+  CATKIN_DEPENDS actionlib_msgs message_generation message_runtime
 )
