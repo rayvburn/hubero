@@ -44,7 +44,7 @@ public:
 	virtual void Reset();
 
 protected:
-	void initializeHuberoInterface();
+	void initializeHuberoSimInterface();
 
 	bool controller_enabled_;
 
