@@ -24,10 +24,13 @@ void TaskRequestRos::initialize(std::shared_ptr<Node> node_ptr, const std::strin
 	auto name_task_run = TaskRequestBase::getTaskName(TASK_RUN);
 	auto name_task_talk = TaskRequestBase::getTaskName(TASK_TALK);
 
+    // prepare task namespace
+    std::string task_ns = actor_name + "/" + node_ptr->getTaskNamespaceName() + "/";
+
     // create action servers
     as_follow_object_ = std::make_shared<ActionServer<hubero_ros_msgs::FollowObjectAction>>(
         *node_ptr->getNodeHandlePtr(),
-        actor_name + "/" + name_task_follow_object,
+        task_ns + name_task_follow_object,
         std::bind(&TaskRequestRos::actionCbFollowObject, this, std::placeholders::_1),
         false
     );
@@ -35,7 +38,7 @@ void TaskRequestRos::initialize(std::shared_ptr<Node> node_ptr, const std::strin
 
     as_lie_down_ = std::make_shared<ActionServer<hubero_ros_msgs::LieDownAction>>(
         *node_ptr->getNodeHandlePtr(),
-        actor_name + "/" + name_task_lie_down,
+        task_ns + name_task_lie_down,
         std::bind(&TaskRequestRos::actionCbLieDown, this, std::placeholders::_1),
         false
     );
@@ -43,7 +46,7 @@ void TaskRequestRos::initialize(std::shared_ptr<Node> node_ptr, const std::strin
 
     as_lie_down_object_ = std::make_shared<ActionServer<hubero_ros_msgs::LieDownObjectAction>>(
         *node_ptr->getNodeHandlePtr(),
-        actor_name + "/" + name_task_lie_down + TaskRequestRos::OBJECT_ORIENTED_TASK_SUFFIX,
+        task_ns + name_task_lie_down + TaskRequestRos::OBJECT_ORIENTED_TASK_SUFFIX,
         std::bind(&TaskRequestRos::actionCbLieDownObject, this, std::placeholders::_1),
         false
     );
@@ -51,7 +54,7 @@ void TaskRequestRos::initialize(std::shared_ptr<Node> node_ptr, const std::strin
 
     as_move_to_goal_ = std::make_shared<ActionServer<hubero_ros_msgs::MoveToGoalAction>>(
         *node_ptr->getNodeHandlePtr(),
-        actor_name + "/" + name_task_move_to_goal,
+        task_ns + name_task_move_to_goal,
         std::bind(&TaskRequestRos::actionCbMoveToGoal, this, std::placeholders::_1),
         false
     );
@@ -59,7 +62,7 @@ void TaskRequestRos::initialize(std::shared_ptr<Node> node_ptr, const std::strin
 
     as_move_to_object_ = std::make_shared<ActionServer<hubero_ros_msgs::MoveToObjectAction>>(
         *node_ptr->getNodeHandlePtr(),
-        actor_name + "/" + name_task_move_to_goal + TaskRequestRos::OBJECT_ORIENTED_TASK_SUFFIX,
+        task_ns + name_task_move_to_goal + TaskRequestRos::OBJECT_ORIENTED_TASK_SUFFIX,
         std::bind(&TaskRequestRos::actionCbMoveToObject, this, std::placeholders::_1),
         false
     );
