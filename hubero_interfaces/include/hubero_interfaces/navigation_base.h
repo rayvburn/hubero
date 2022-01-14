@@ -14,7 +14,7 @@ public:
 	/**
 	 * @brief Default constructor
 	 */
-	NavigationBase(): initialized_(false) {}
+	NavigationBase(): initialized_(false), feedback_(TaskFeedbackType::TASK_FEEDBACK_UNDEFINED) {}
 
 	/**
 	 * @brief Initialization
@@ -28,7 +28,9 @@ public:
 	 *
 	 * @note could be const, but ROS version uses non-const serviceclient::call inside
 	 */
-	virtual bool isPoseAchievable(const Pose3& start, const Pose3& goal, const std::string& frame = "") {}
+	inline virtual bool isPoseAchievable(const Pose3& start, const Pose3& goal, const std::string& frame = "") {
+		return false;
+	}
 
 	/**
 	 * @brief Related to localisation
@@ -49,10 +51,9 @@ public:
 
 	/**
 	 * @brief Returns TaskFeedbackType
-	 * TODO: consider `const`
 	 */
-	virtual TaskFeedbackType getFeedback() {
-		return TaskFeedbackType::TASK_FEEDBACK_UNDEFINED;
+	inline TaskFeedbackType getFeedback() const {
+		return feedback_;
 	}
 
 	/**
@@ -71,6 +72,7 @@ public:
 
 protected:
 	bool initialized_;
+	TaskFeedbackType feedback_;
 }; // class NavigationBase
 
 } // namespace hubero
