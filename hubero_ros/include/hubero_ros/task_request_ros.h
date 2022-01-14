@@ -51,11 +51,6 @@ public:
 
 protected:
 	/**
-	 * @brief Shared node handle
-	 */
-	std::shared_ptr<Node> node_ptr_;
-
-	/**
 	 * @defgroup actions ROS actions
 	 * @{
 	 */
