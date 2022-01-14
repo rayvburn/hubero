@@ -2,6 +2,9 @@
 
 namespace hubero {
 
+const std::string TaskRequestRos::OBJECT_ORIENTED_TASK_SUFFIX = "_name";
+const std::chrono::milliseconds TaskRequestRos::TASK_FEEDBACK_PERIOD = std::chrono::milliseconds(500);
+
 TaskRequestRos::TaskRequestRos(): TaskRequestBase::TaskRequestBase() {}
 
 void TaskRequestRos::initialize(std::shared_ptr<Node> node_ptr, const std::string& actor_name) {
