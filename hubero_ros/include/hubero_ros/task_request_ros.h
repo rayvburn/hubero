@@ -33,6 +33,7 @@ public:
 	template <typename T>
 	using ActionServerPtr = std::shared_ptr<ActionServer<T>>;
 
+	// TODO: would look cleaner with C++17 'static constexpr'
 	/// Contains suffix attached to basic action name, e.g., MoveToGoal vs MoveToObject
 	static const std::string OBJECT_ORIENTED_TASK_SUFFIX;
 

@@ -23,6 +23,7 @@ namespace hubero {
 template <typename Taction, typename Tfeedback>
 class ActionClient: public actionlib::SimpleActionClient<Taction> {
 public:
+	// TODO: would look cleaner with C++17 'static constexpr'
 	/// Defines default size of the queue used for subscriber
 	const int SUBSCRIBER_QUEUE_SIZE = 10;
 

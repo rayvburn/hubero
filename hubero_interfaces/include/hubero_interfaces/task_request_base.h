@@ -10,6 +10,7 @@
 
 namespace hubero {
 
+// TODO: would look cleaner with C++17
 /*
  * Workaround that allows to use static members in header-only library with C++11/14:
  * https://stackoverflow.com/questions/11709859/how-to-have-static-data-members-in-a-header-only-library
