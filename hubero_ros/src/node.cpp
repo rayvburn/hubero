@@ -10,7 +10,7 @@ std::string Node::namespace_;
 std::string Node::simulator_frame_id_;
 std::shared_ptr<ros::NodeHandle> Node::nh_ptr_;
 
-Node::Node() {
+Node::Node(const std::string& node_name) {
 	if (Node::node_started_) {
 		return;
 	}
@@ -18,7 +18,7 @@ Node::Node() {
 	// initialize ROS node
 	int argc = 0;
 	char **argv = nullptr;
-	ros::init(argc, argv, "hubero_ros_node");
+	ros::init(argc, argv, node_name);
 
 	// flag to create only 1 node for all actors
 	Node::node_started_ = true;
