@@ -33,10 +33,11 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 	/*
 	 * HuBeRo framework interface initialization
 	 */
-	initializeHuberoInterface();
+	initializeHuberoSimInterface();
 	hubero_actor_.initializeSim(actor_ptr_->GetName(), sim_animation_control_, sim_model_control_, sim_localisation_);
 
 	task_->initialize(ros_node_ptr_, actor_ptr_->GetName());
+	hubero_actor_.initializeTask(task_);
 
 	/*
 	 * Enable specific trajectory of actor
@@ -58,7 +59,7 @@ void ActorPlugin::Reset() {
 
 }
 
-void ActorPlugin::initializeHuberoInterface() {
+void ActorPlugin::initializeHuberoSimInterface() {
 	// animation control
 	sim_animation_control_->initialize(
 		actor_ptr_->SkeletonAnimations(),
