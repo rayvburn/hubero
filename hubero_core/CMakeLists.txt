@@ -76,4 +76,7 @@ if (CATKIN_ENABLE_TESTING)
 
   catkin_add_gtest(test_task_base test/test_task_base.cpp)
   target_link_libraries(test_task_base ${ACTOR_LIB_NAME})
+
+  catkin_add_gtest(test_navigation_base test/test_navigation_base.cpp)
+  target_link_libraries(test_navigation_base ${ACTOR_LIB_NAME})
 endif()
