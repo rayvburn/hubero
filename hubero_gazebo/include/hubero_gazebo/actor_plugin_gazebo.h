@@ -32,51 +32,59 @@ namespace gazebo {
 
 class GAZEBO_VISIBLE ActorPlugin: public ModelPlugin {
 public:
-	/// \brief Constructor
+	/// @brief Constructor
 	ActorPlugin();
 
-	/// \brief Load the actor plugin.
-	/// \param[in] model Pointer to the parent model.
-	/// \param[in] sdf Pointer to the plugin's SDF elements.
+	/// @brief Load the actor plugin.
+	/// @param[in] model Pointer to the parent model.
+	/// @param[in] sdf Pointer to the plugin's SDF elements.
 	virtual void Load(physics::ModelPtr model, sdf::ElementPtr sdf);
 
 	// Documentation Unherited.
 	virtual void Reset();
 
 protected:
-	void initializeHuberoSimInterface();
-
 	bool controller_enabled_;
 
+	/// @brief Instance of the main agent of the HuBeRo framework - the Actor agent
 	hubero::Actor hubero_actor_;
-	std::shared_ptr<hubero::Node> ros_node_ptr_;
-	// TODO: _ptr_
-	std::shared_ptr<hubero::AnimationControlGazebo> sim_animation_control_;
-	std::shared_ptr<hubero::LocalisationGazebo> sim_localisation_;
-	std::shared_ptr<hubero::ModelControlGazebo> sim_model_control_;
-	std::shared_ptr<hubero::WorldGeometryGazebo> sim_world_geometry_;
 
-	std::shared_ptr<hubero::TaskRequestRos> task_;
-	// std::shared_ptr<hubero::NavigationRos> nav_;
+	/**
+	 * @defgroup huberosim Simulator-related HuBeRo interfaces
+	 * @{
+	 */
+	std::shared_ptr<hubero::AnimationControlGazebo> sim_animation_control_ptr_;
+	std::shared_ptr<hubero::LocalisationGazebo> sim_localisation_ptr_;
+	std::shared_ptr<hubero::ModelControlGazebo> sim_model_control_ptr_;
+	std::shared_ptr<hubero::WorldGeometryGazebo> sim_world_geometry_ptr_;
+	/// @}
+
+	/**
+	 * @defgroup huberorobotics Robotics framework-related HuBeRo interfaces
+	 */
+	std::shared_ptr<hubero::Node> ros_node_ptr_;
+	std::shared_ptr<hubero::TaskRequestRos> ros_task_ptr_;
+	std::shared_ptr<hubero::NavigationRos> ros_nav_ptr_;
+	/// @}
 
 private:
-	/// \brief Function that is called every update cycle.
-	/// \param[in] info Timing information
+	/// @brief Function that is called every update cycle.
+	/// @param[in] info Timing information
 	void OnUpdate(const common::UpdateInfo& info);
 
-	/// \brief Pointer to the model.
+	/// @brief Pointer to the model.
 	physics::ModelPtr model_ptr_;
 
-	/// \brief Pointer to the parent actor.
+	/// @brief Pointer to the parent actor.
 	physics::ActorPtr actor_ptr_;
 
-	/// \brief Pointer to the world, for convenience.
+	/// @brief Pointer to the world, for convenience.
 	physics::WorldPtr world_ptr_;
 
-	/// \brief Pointer to the sdf element.
+	/// @brief Pointer to the sdf element.
 	sdf::ElementPtr sdf_ptr_;
 
-	/// \brief List of connections
+	/// @brief List of connections
 	std::vector<event::ConnectionPtr> connections_;
 }; // class ActorPlugin
 } // namespace gazebo

@@ -6,12 +6,13 @@ namespace gazebo {
 
 ActorPlugin::ActorPlugin():
 	controller_enabled_(false),
-	ros_node_ptr_(std::make_shared<hubero::Node>()),
-	sim_animation_control_(std::make_shared<hubero::AnimationControlGazebo>()),
-	sim_localisation_(std::make_shared<hubero::LocalisationGazebo>()),
-	sim_model_control_(std::make_shared<hubero::ModelControlGazebo>()),
-	sim_world_geometry_(std::make_shared<hubero::WorldGeometryGazebo>()),
-	task_(std::make_shared<hubero::TaskRequestRos>())
+	sim_animation_control_ptr_(std::make_shared<hubero::AnimationControlGazebo>()),
+	sim_localisation_ptr_(std::make_shared<hubero::LocalisationGazebo>()),
+	sim_model_control_ptr_(std::make_shared<hubero::ModelControlGazebo>()),
+	sim_world_geometry_ptr_(std::make_shared<hubero::WorldGeometryGazebo>()),
+	ros_node_ptr_(std::make_shared<hubero::Node>("hubero_gazebo_ros_node")),
+	ros_task_ptr_(std::make_shared<hubero::TaskRequestRos>()),
+	ros_nav_ptr_(std::make_shared<hubero::NavigationRos>())
 {}
 
 void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
@@ -31,53 +32,43 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 	);
 
 	/*
-	 * HuBeRo framework interface initialization
+	 * HuBeRo framework interfaces initialization
 	 */
-	initializeHuberoSimInterface();
-	hubero_actor_.initializeSim(actor_ptr_->GetName(), sim_animation_control_, sim_model_control_, sim_localisation_);
+	// TODO: consider parameterization of the initial animation type
+	sim_animation_control_ptr_->initialize(actor_ptr_->SkeletonAnimations(), hubero::AnimationType::ANIMATION_STAND);
+	sim_localisation_ptr_->initialize(ros_node_ptr_->getSimulatorFrame());
+	sim_model_control_ptr_->initialize(actor_ptr_, ros_node_ptr_->getSimulatorFrame());
+	sim_world_geometry_ptr_->initialize(ros_node_ptr_->getSimulatorFrame(), world_ptr_, actor_ptr_->GetName());
 
-	task_->initialize(ros_node_ptr_, actor_ptr_->GetName());
-	hubero_actor_.initializeTask(task_);
+	// setup simulator interfaces
+	hubero_actor_.initializeSim(actor_ptr_->GetName(), sim_animation_control_ptr_, sim_model_control_ptr_, sim_localisation_ptr_);
+
+	// setup task interface
+	ros_task_ptr_->initialize(ros_node_ptr_, actor_ptr_->GetName());
+	hubero_actor_.initializeTask(ros_task_ptr_);
+
+	// setup navigation interface
+	ros_nav_ptr_->initialize(actor_ptr_->GetName());
+	hubero_actor_.initializeNav(ros_nav_ptr_);
 
 	/*
 	 * Enable specific trajectory of actor
 	 * It must be done in "Load", otherwise default animation (running) will be triggered and all actors in the 'world'
 	 * will be located in exact the same place
 	 */
-	actor_ptr_->SetCustomTrajectory(sim_animation_control_->getTrajectoryInfo());
+	actor_ptr_->SetCustomTrajectory(sim_animation_control_ptr_->getTrajectoryInfo());
 
 	/*
 	 * Update pose. Note that coordinate system of the human model is different to ROS REP 105
 	 * https://www.ros.org/reps/rep-0105.html
 	 */
 	std::cout << "LOADED POSE: " << actor_ptr_->WorldPose() << std::endl;
-	sim_localisation_->update(actor_ptr_->WorldPose());
-	actor_ptr_->SetWorldPose(sim_localisation_->getPoseTransformed());
+	sim_localisation_ptr_->update(actor_ptr_->WorldPose());
+	actor_ptr_->SetWorldPose(sim_localisation_ptr_->getPoseTransformed());
 }
 
 void ActorPlugin::Reset() {
 
-}
-
-void ActorPlugin::initializeHuberoSimInterface() {
-	// animation control
-	sim_animation_control_->initialize(
-		actor_ptr_->SkeletonAnimations(),
-		// TODO: param
-		hubero::ANIMATION_STAND
-	);
-
-	// localisation
-	// TODO: param
-	sim_localisation_->initialize("world");
-
-	// model control
-	// TODO: param
-	sim_model_control_->initialize(actor_ptr_, "world");
-
-	// world geometry
-	// TODO: param
-	sim_world_geometry_->initialize("world", world_ptr_, actor_ptr_->GetName());
 }
 
 void ActorPlugin::OnUpdate(const common::UpdateInfo& info) {
@@ -96,7 +87,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo& info) {
 	/*
 	 * Handle simulation update
 	 */
-	sim_localisation_->update(actor_ptr_->WorldPose());
+	sim_localisation_ptr_->update(actor_ptr_->WorldPose());
 	hubero::Time time(info.simTime.Double());
 	hubero_actor_.update(time);
 }
