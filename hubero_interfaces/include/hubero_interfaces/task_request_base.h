@@ -21,7 +21,17 @@ struct _StaticMapTaskNames {
 };
 
 template <typename Tkey, typename Tval>
-std::map<Tkey, Tval> _StaticMapTaskNames<Tkey, Tval>::task_names_map_;
+std::map<Tkey, Tval> _StaticMapTaskNames<Tkey, Tval>::task_names_map_ = {
+    {"stand", TaskType::TASK_STAND},
+    {"move_to_goal", TaskType::TASK_MOVE_TO_GOAL},
+    {"move_around", TaskType::TASK_MOVE_AROUND},
+    {"lie_down", TaskType::TASK_LIE_DOWN},
+    {"sit_down", TaskType::TASK_SIT_DOWN},
+    {"follow_object", TaskType::TASK_FOLLOW_OBJECT},
+    {"teleop", TaskType::TASK_TELEOP},
+    {"run", TaskType::TASK_RUN},
+    {"talk", TaskType::TASK_TALK}
+};
 
 /**
  * @brief This class acts as a generic interface to request Actor's tasks.
@@ -31,19 +41,7 @@ std::map<Tkey, Tval> _StaticMapTaskNames<Tkey, Tval>::task_names_map_;
  */
 class TaskRequestBase: protected _StaticMapTaskNames<std::string, TaskType> {
 public:
-    TaskRequestBase(): initialized_(false) {
-        TaskRequestBase::task_names_map_ = {
-            {"stand", TaskType::TASK_STAND},
-            {"move_to_goal", TaskType::TASK_MOVE_TO_GOAL},
-            {"move_around", TaskType::TASK_MOVE_AROUND},
-            {"lie_down", TaskType::TASK_LIE_DOWN},
-            {"sit_down", TaskType::TASK_SIT_DOWN},
-            {"follow_object", TaskType::TASK_FOLLOW_OBJECT},
-            {"teleop", TaskType::TASK_TELEOP},
-            {"run", TaskType::TASK_RUN},
-            {"talk", TaskType::TASK_TALK}
-        };
-    }
+    TaskRequestBase(): initialized_(false) {}
 
     /**
      * @brief Adds certain task so it can be called via some kind of class derived from this interface class
