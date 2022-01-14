@@ -5,12 +5,15 @@
 
 namespace hubero {
 
+/**
+ * @brief ROS NodeHandle with main parameters of HuBeRo ROS interface
+ */
 class Node {
 public:
 	/**
-	 * @brief Default constructor; initializes ROS node
+	 * @brief Constructor that initializes ROS node named @ref node_name
 	 */
-	Node();
+	Node(const std::string& node_name = std::string("hubero_ros_node"));
 
 	/**
 	 * @brief Retrieves namespace name that was read via ROS param
