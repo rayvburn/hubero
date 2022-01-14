@@ -34,10 +34,10 @@ public:
 	using ActionServerPtr = std::shared_ptr<ActionServer<T>>;
 
 	/// Contains suffix attached to basic action name, e.g., MoveToGoal vs MoveToObject
-	const std::string OBJECT_ORIENTED_TASK_SUFFIX = "_name";
+	static const std::string OBJECT_ORIENTED_TASK_SUFFIX;
 
 	/// How often task feedback should be published
-	const std::chrono::milliseconds TASK_FEEDBACK_PERIOD = std::chrono::milliseconds(500);
+	static const std::chrono::milliseconds TASK_FEEDBACK_PERIOD;
 
 	/**
 	 * @brief Default constructor
