@@ -19,7 +19,7 @@ public:
 	/**
 	 * @brief Initialization
 	 */
-	inline virtual bool initialize(const std::string& agent_name) {
+	inline virtual bool initialize() {
 		initialized_ = true;
 	}
 
