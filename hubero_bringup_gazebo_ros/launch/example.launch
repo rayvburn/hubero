@@ -48,6 +48,25 @@
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" output="screen" />
 
     <!-- ============================== load params =========================================== -->
-    <rosparam file="$(find hubero_ros)/config/params_example.yaml" command="load" />
+    <rosparam file="$(find hubero_ros)/config/params_common.yaml" command="load" />
 
+    <!-- ===================== activities specific to the selected world ====================== -->
+    <group if="$(eval world == 'parking')">
+        <include file="$(find hubero_ros)/launch/actor.launch">
+            <arg name="actor_namespace" value="actor1"/>
+            <arg name="main_ns" value="hubero"/>
+        </include>
+        <include file="$(find hubero_ros)/launch/actor.launch">
+            <arg name="actor_namespace" value="actor2"/>
+            <arg name="main_ns" value="hubero"/>
+        </include>
+        <include file="$(find hubero_ros)/launch/actor.launch">
+            <arg name="actor_namespace" value="actor3"/>
+            <arg name="main_ns" value="hubero"/>
+        </include>
+        <include file="$(find hubero_ros)/launch/actor.launch">
+            <arg name="actor_namespace" value="actor4"/>
+            <arg name="main_ns" value="hubero"/>
+        </include>
+    </group>
 </launch>

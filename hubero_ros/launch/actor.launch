@@ -1,12 +1,83 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <!-- Launch for testing actor namespace -->
-    <arg name="actor_namespace" default="test_actor"/>
-    <arg name="multiple"       default="true"/>
+    <!-- ===================================== ARGS ======================================== -->
+    <arg name="main_ns" default="hubero"/>
+
+    <!-- directory with configuration files -->
+    <arg name="config_base_path"       default="$(find hubero_ros)/config/planning"/>
+
+    <arg name="global_planner"         default="global_planner"/>
+    <arg name="global_planner_suffix"  default=""/>
+    <arg name="local_planner"          default="dwa"/>
+    <arg name="local_planner_suffix"   default=""/>
+
+    <arg name="actor_namespace"  default="actor"/>
+
+    <arg name="odom_topic"    default="odom"/>
+    <arg name="cmd_vel_topic" default="nav_vel"/>
+    <arg name="map_file"      default=""/>
+
+    <arg name="debug"         default="false"/>
+
+    <!-- TF frame naming pattern for each actor namespace, e.g. "/actor1/<actor_frames/base>" etc. -->
+    <arg name="map_frame" default="map"/>
+    <arg name="odom_frame" default="odom"/>
+    <arg name="base_frame"  default="base_footprint"/>
+    <arg name="lidar_frame"  default="base_laser_link"/>
+    <arg name="camera_frame" default="base_camera_link"/>
+
+    <!-- actor's `tf_lidar` and `tf_camera` must match attributes written to .world file -->
+    <arg name="tf_lidar"  default="+0.00 -0.80 +0.55 +0.00 -1.57 -1.57"/>
+    <arg name="tf_camera" default="+0.00 +0.55 +0.15 +0.00 -1.57 -1.57"/>
+
+    <!-- Topic names related to navigation - each simulated actor is connected to such a topic set -->
+    <arg name="nav_goal_topic" default="nav/goal"/>
+    <arg name="nav_cancel_topic" default="nav/cancel"/>
+    <arg name="nav_get_plan_topic" default="nav/get_plan"/>
+    <arg name="nav_command_topic" default="nav/cmd_vel"/>
+
+    <!-- =================================== ACTIONS ======================================= -->
+    <!-- Load common params -->
+    <rosparam file="$(find hubero_ros)/config/params_common.yaml" command="load" />
+
+    <!-- Set params whose values are also used in this launch file -->
+    <param name="hubero_ros/navigation/goal_topic" value="$(arg nav_goal_topic)"/>
+    <param name="hubero_ros/navigation/cancel_topic" value="$(arg nav_cancel_topic)"/>
+    <param name="hubero_ros/navigation/get_plan_srv" value="$(arg nav_get_plan_topic)"/>
+    <param name="hubero_ros/navigation/command_topic" value="$(arg nav_command_topic)"/>
+    <param name="hubero_ros/actor_frames/base" value="$(arg base_frame)"/>
+    <param name="hubero_ros/actor_frames/global_ref" value="$(arg map_frame)"/>
+    <param name="hubero_ros/actor_frames/local_ref" value="$(arg odom_frame)"/>
+    <param name="hubero_ros/actor_frames/lidar" value="$(arg lidar_frame)"/>
+    <param name="hubero_ros/actor_frames/camera" value="$(arg camera_frame)"/>
+
+    <!-- Start static TF broadcaster -->
+    <include file="$(find hubero_ros)/launch/sensor_tf.launch" ns="$(arg main_ns)">
+        <arg name="actor_namespace"  value="$(arg actor_namespace)"/>
+        <arg name="lidar_frame"      value="$(arg lidar_frame)"/>
+        <arg name="camera_frame"     value="$(arg camera_frame)"/>
+        <arg name="tf_lidar"         value="$(arg tf_lidar)"/>
+        <arg name="tf_camera"        value="$(arg tf_camera)"/>
+    </include>
+
+    <!-- Map Server -->
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" ns="$(arg main_ns)/$(arg actor_namespace)" output="screen" />
 
     <!-- Planning -->
-    <include file="$(find hubero_ros)/launch/planning_ros.launch">
-        <arg name="actor_namespace" value="$(arg actor_namespace)"/>
-        <arg name="multiple" value="$(arg multiple)"/>
+    <include file="$(find hubero_ros)/launch/move_base.launch" ns="$(arg main_ns)">
+        <arg name="config_base_path"      value="$(arg config_base_path)"/>
+        <arg name="actor_namespace"       value="$(arg actor_namespace)"/>
+        <arg name="global_planner"        value="$(arg global_planner)"/>
+        <arg name="global_planner_suffix" value="$(arg global_planner_suffix)"/>
+        <arg name="local_planner"         value="$(arg local_planner)"/>
+        <arg name="local_planner_suffix"  value="$(arg local_planner_suffix)"/>
+        <arg name="odom"                  value="$(arg odom_topic)"/>
+        <arg name="cmd_vel"               value="$(arg cmd_vel_topic)"/>
+        <arg name="frame_sensor_laser"    value="$(arg lidar_frame)"/>
+        <arg name="frame_sensor_camera"   value="$(arg camera_frame)"/>
+        <arg name="frame_base"            value="$(arg base_frame)"/>
+        <arg name="frame_global_plan_ref" value="$(arg map_frame)"/>
+        <arg name="frame_local_plan_ref"  value="$(arg odom_frame)"/>
+        <arg name="debug"                 value="$(arg debug)"/>
     </include>
 </launch>
