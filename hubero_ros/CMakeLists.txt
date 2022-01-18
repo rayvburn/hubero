@@ -12,7 +12,6 @@ find_package(catkin REQUIRED
 		nav_core
 		move_base
 		nav_msgs
-		pluginlib
 		roscpp
 		actionlib
 		tf
@@ -44,7 +43,6 @@ catkin_package(
 		hubero_interfaces
 		hubero_ros_msgs
 		nav_msgs
-		pluginlib
 		roscpp
 		actionlib
 )
@@ -109,10 +107,6 @@ install(TARGETS ${HUBERO_NAV_ROS} ${HUBERO_TASK_ROS} ${HUBERO_TASK_ROS_API} ${HU
 	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 	RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
-)
-
-install(FILES nav_plugin.xml
-	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
 install(DIRECTORY include/${PROJECT_NAME}/
