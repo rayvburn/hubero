@@ -27,6 +27,18 @@ geometry_msgs::Transform ignPoseToMsgTf(const Pose3& pose) {
 	return tf_stamp;
 }
 
+geometry_msgs::Twist ignVectorsToMsgTwist(const Vector3& vel_lin, const Vector3& vel_ang) {
+	geometry_msgs::Twist twist;
+	twist.linear.x = vel_lin.X();
+	twist.linear.y = vel_lin.Y();
+	twist.linear.z = vel_lin.Z();
+
+	twist.angular.x = vel_ang.X();
+	twist.angular.y = vel_ang.Y();
+	twist.angular.z = vel_ang.Z();
+	return twist;
+}
+
 Vector3 msgTwistToIgnVector(const geometry_msgs::Twist& twist) {
 	return Vector3(twist.linear.x, twist.linear.y, twist.angular.z);
 }
