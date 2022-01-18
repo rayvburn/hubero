@@ -6,11 +6,6 @@
 #include <actionlib_msgs/GoalID.h>
 #include <move_base_msgs/MoveBaseActionGoal.h>
 
-#include <pluginlib/class_list_macros.h>
-
-// register this class as a `hubero::NavigationBase` plugin
-PLUGINLIB_EXPORT_CLASS(hubero::NavigationRos, hubero::NavigationBase)
-
 namespace hubero {
 
 const int NavigationRos::SUBSCRIBER_QUEUE_SIZE = 10;
