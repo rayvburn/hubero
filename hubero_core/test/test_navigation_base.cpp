@@ -8,7 +8,7 @@ using namespace hubero;
 TEST(HuberoNav, initialState) {
     NavigationBase nav;
     ASSERT_FALSE(nav.isInitialized());
-    nav.initialize();
+    nav.initialize("johnny", "sim_world");
     ASSERT_TRUE(nav.isInitialized());
     ASSERT_EQ(nav.getFeedback(), TaskFeedbackType::TASK_FEEDBACK_UNDEFINED);
     ASSERT_FALSE(nav.isPoseAchievable(Pose3(), Pose3()));

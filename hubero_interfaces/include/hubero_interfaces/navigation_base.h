@@ -1,6 +1,7 @@
 #pragma once
 
 #include <hubero_common/defines.h>
+#include <hubero_common/logger.h>
 #include <hubero_common/typedefs.h>
 #include <string>
 
@@ -19,7 +20,9 @@ public:
 	/**
 	 * @brief Initialization
 	 */
-	inline virtual bool initialize() {
+	inline virtual bool initialize(const std::string& actor_name, const std::string& world_frame_name) {
+		actor_name_ = actor_name;
+		world_frame_name_ = world_frame_name;
 		initialized_ = true;
 	}
 
@@ -35,12 +38,18 @@ public:
 	/**
 	 * @brief Related to localisation
 	 */
-	virtual void setPose(const Pose3& pose, const std::string& frame = "") {}
+	virtual void update(const Pose3& pose, const Vector3& vel_lin = Vector3(), const Vector3& vel_ang = Vector3()) {
+		current_pose_ = pose;
+	}
 
 	/**
 	 * @brief Related to simplest navigation task (moving to goal pose)
 	 */
-	virtual bool setGoal(const Pose3& pose, const std::string& frame = "") {}
+	virtual bool setGoal(const Pose3& pose, const std::string& frame = "") {
+		goal_pose_ = pose;
+		goal_frame_ = frame;
+		return true;
+	}
 
 	/**
 	 * @brief Tries to abort the movement goal, returns true if successful
@@ -70,9 +79,41 @@ public:
 		return Vector3();
 	}
 
+	/**
+	 * @brief Retrieves newest goal pose
+	 */
+	inline virtual Pose3 getGoalPose() const {
+		return goal_pose_;
+	}
+
+	/**
+	 * @brief Retrieves newest goal's frame ID
+	 */
+	inline virtual std::string getGoalFrame() const {
+		return goal_frame_;
+	}
+
 protected:
+	/// @brief Stores initialization indicator flag
 	bool initialized_;
+
+	/// @brief Name of the actor
+	std::string actor_name_;
+
+	/// @brief Navigation task feedback
 	TaskFeedbackType feedback_;
+
+	/// @brief Name of the frame that incoming ( @ref update ) poses are referenced in
+	std::string world_frame_name_;
+
+	/// @brief Stores most recent pose from localisation
+	Pose3 current_pose_;
+
+	/// @brief Stores newest goal pose
+	Pose3 goal_pose_;
+
+	/// @brief Stores newest goal pose frame
+	std::string goal_frame_;
 }; // class NavigationBase
 
 } // namespace hubero
