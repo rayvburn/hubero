@@ -124,4 +124,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
 if (CATKIN_ENABLE_TESTING)
 	catkin_add_gtest(test_task_request test/test_task_request.cpp)
 	target_link_libraries(test_task_request ${HUBERO_TASK_ROS})
+
+	catkin_add_gtest(test_navigation test/test_navigation.cpp)
+	target_link_libraries(test_navigation ${HUBERO_NAV_ROS})
 endif()

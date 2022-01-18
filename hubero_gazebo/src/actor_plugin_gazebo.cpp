@@ -32,7 +32,7 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 	);
 
 	/*
-	 * HuBeRo framework interfaces initialization
+	 * HuBeRo framework simulator interfaces initialization
 	 */
 	// TODO: consider parameterization of the initial animation type
 	sim_animation_control_ptr_->initialize(actor_ptr_->SkeletonAnimations(), hubero::AnimationType::ANIMATION_STAND);
@@ -43,12 +43,27 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 	// setup simulator interfaces
 	hubero_actor_.initializeSim(actor_ptr_->GetName(), sim_animation_control_ptr_, sim_model_control_ptr_, sim_localisation_ptr_);
 
-	// setup task interface
+	/*
+	 * Update pose. Note that coordinate system of the human model is different to ROS REP 105
+	 * https://www.ros.org/reps/rep-0105.html
+	 */
+	sim_localisation_ptr_->update(actor_ptr_->WorldPose());
+	actor_ptr_->SetWorldPose(sim_localisation_ptr_->getPoseTransformed());
+
+	/*
+	 * HuBeRo framework task interface initialization
+	 */
 	ros_task_ptr_->initialize(ros_node_ptr_, actor_ptr_->GetName());
 	hubero_actor_.initializeTask(ros_task_ptr_);
 
-	// setup navigation interface
-	ros_nav_ptr_->initialize(actor_ptr_->GetName());
+	/*
+	 * HuBeRo framework navigation interface initialization
+	 */
+	ros_nav_ptr_->initialize(ros_node_ptr_,
+		actor_ptr_->GetName(),
+		ros_node_ptr_->getSimulatorFrame(),
+		sim_localisation_ptr_->getPose()
+	);
 	hubero_actor_.initializeNav(ros_nav_ptr_);
 
 	/*
@@ -57,14 +72,6 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 	 * will be located in exact the same place
 	 */
 	actor_ptr_->SetCustomTrajectory(sim_animation_control_ptr_->getTrajectoryInfo());
-
-	/*
-	 * Update pose. Note that coordinate system of the human model is different to ROS REP 105
-	 * https://www.ros.org/reps/rep-0105.html
-	 */
-	std::cout << "LOADED POSE: " << actor_ptr_->WorldPose() << std::endl;
-	sim_localisation_ptr_->update(actor_ptr_->WorldPose());
-	actor_ptr_->SetWorldPose(sim_localisation_ptr_->getPoseTransformed());
 }
 
 void ActorPlugin::Reset() {
@@ -89,6 +96,12 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo& info) {
 	 */
 	sim_localisation_ptr_->update(actor_ptr_->WorldPose());
 	hubero::Time time(info.simTime.Double());
+	// FIXME: move to actor internals
+	ros_nav_ptr_->update(
+		sim_localisation_ptr_->getPose(),
+		sim_localisation_ptr_->getVelocityLinear(),
+		sim_localisation_ptr_->getVelocityAngular()
+	);
 	hubero_actor_.update(time);
 }
 
