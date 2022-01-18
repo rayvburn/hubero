@@ -5,13 +5,14 @@
     <arg name="tf_lidar"  default="0 0 0 0 0 0"/>
     <arg name="tf_camera" default="0 0 0 0 0 0"/>
 
-    <arg name="lidar_frame"  default="base_laser_link"/>
-    <arg name="camera_frame" default="base_camera_link"/>
+    <arg name="actor_base_frame" default="base_footprint"/>
+    <arg name="lidar_frame"      default="base_laser_link"/>
+    <arg name="camera_frame"     default="base_camera_link"/>
 
     <!-- publishing frequency of the static TF -->
     <arg name="sensor_tf_freq" default="20"/>
 
     <!-- run node that publishes static transform between actor body and sensor -->
-    <node name="tf_static_lidar"  pkg="tf" type="static_transform_publisher" ns="$(arg actor_namespace)" args="$(arg tf_lidar)  $(arg actor_namespace) $(arg actor_namespace)/$(arg lidar_frame)  $(arg sensor_tf_freq)"/>
-    <node name="tf_static_camera" pkg="tf" type="static_transform_publisher" ns="$(arg actor_namespace)" args="$(arg tf_camera) $(arg actor_namespace) $(arg actor_namespace)/$(arg camera_frame) $(arg sensor_tf_freq)"/>
+    <node name="tf_static_lidar"  pkg="tf" type="static_transform_publisher" ns="$(arg actor_namespace)" args="$(arg tf_lidar)  $(arg actor_namespace)/$(arg actor_base_frame) $(arg actor_namespace)/$(arg lidar_frame)  $(arg sensor_tf_freq)"/>
+    <node name="tf_static_camera" pkg="tf" type="static_transform_publisher" ns="$(arg actor_namespace)" args="$(arg tf_camera) $(arg actor_namespace)/$(arg actor_base_frame) $(arg actor_namespace)/$(arg camera_frame) $(arg sensor_tf_freq)"/>
 </launch>
