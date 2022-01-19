@@ -10,68 +10,77 @@
   `/tf_static`
 -->
 <launch>
-  <arg name="multiple"        default="true"/>
-  <arg name="actor_namespace" default=""/>
+  <!-- Namespace used to organize resources for specific actor -->
+  <arg name="actor_ns" default=""/>
 
-  <arg name="global_planner"        default="global_planner"/>
+  <arg name="global_planner" default="global_planner"/>
   <arg name="global_planner_suffix" default=""/>
-  <arg name="local_planner"         default="dwa"/>
-  <arg name="local_planner_suffix"  default=""/>
+  <arg name="local_planner" default="dwa"/>
+  <arg name="local_planner_suffix" default=""/>
 
-  <arg name="odom"    default="odom"/>
-  <arg name="cmd_vel" default="nav_vel"/>
+  <arg name="odom_topic" default="odom"/>
+  <arg name="cmd_vel_topic" default="nav_vel"/>
 
-  <arg name="debug"         default="false"/>
-  <arg name="launch_prefix" value="gdb -ex run --args"     if="$(arg debug)"/>
-  <arg name="launch_prefix" value=""                   unless="$(arg debug)"/>
+  <arg name="debug" default="false"/>
+  <arg name="launch_prefix" value="gdb -ex run --args" if="$(arg debug)"/>
+  <arg name="launch_prefix" value="" unless="$(arg debug)"/>
 
-  <arg name="config_base_path"      default="$(find hubero_ros)/config/planning"/>
+  <arg name="config_base_path" default="$(find hubero_ros)/config/planning"/>
 
-  <arg name="frame_sensor_laser"    default="base_laser_link"/>
-  <arg name="frame_sensor_camera"   default="base_camera_link"/>
-  <arg name="frame_base"            default="base_footprint"/>
+  <arg name="map_topic" default="/map"/>
+  <arg name="base_scan_topic" default="/scan"/>
+  <arg name="rgbd_scan_topic" default="/rgbd_scan"/>
+
+  <arg name="frame_sensor_laser" default="base_laser_link"/>
+  <arg name="frame_sensor_camera" default="base_camera_link"/>
+  <arg name="frame_base" default="base_footprint"/>
   <arg name="frame_global_plan_ref" default="map"/>
-  <arg name="frame_local_plan_ref"  default="odom"/>
+  <arg name="frame_local_plan_ref" default="odom"/>
 
-  <!-- Start `move_base` within `$actor_namespace` -->
-  <group ns="$(arg actor_namespace)">
+  <!-- Start `move_base` within `$actor_ns` -->
+  <group ns="$(arg actor_ns)">
     <node pkg="move_base" type="move_base" name="move_base" clear_params="true" output="screen" respawn="true" launch-prefix="$(arg launch_prefix)">
-      <remap from="odom"    to="$(arg odom)"/>
-      <remap from="cmd_vel" to="$(arg cmd_vel)"/>
+      <remap from="odom" to="$(arg odom_topic)"/>
+      <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
 
       <!-- Decentralized map server -->
-      <remap from="map" to="$(arg actor_namespace)/map"/>
+      <!-- <remap from="map" to="$(arg actor_ns)/map"/> -->
 
       <!-- Each actor generates his own map -->
-      <param if="$(arg multiple)" name="map_frame" value="$(arg actor_namespace)/map"/>
+      <!-- <param name="map_frame" value="$(arg actor_ns)/map"/> -->
 
-      <rosparam command="load" file="$(arg config_base_path)/base/common/move_base.yaml"/>
-      <rosparam command="load" file="$(arg config_base_path)/base/common/recovery_behaviors.yaml"/>
+      <rosparam command="load" file="$(arg config_base_path)/common/move_base.yaml"/>
+      <rosparam command="load" file="$(arg config_base_path)/common/recovery_behaviors.yaml"/>
 
-      <rosparam command="load" file="$(arg config_base_path)/base/common/global_costmap_plugins.yaml"/>
-      <rosparam command="load" file="$(arg config_base_path)/base/common/global_costmap.yaml"/>
+      <rosparam command="load" file="$(arg config_base_path)/common/global_costmap_plugins.yaml"/>
+      <rosparam command="load" file="$(arg config_base_path)/common/global_costmap.yaml"/>
 
-      <rosparam command="load" file="$(arg config_base_path)/base/common/local_costmap_plugins.yaml"/>
-      <rosparam command="load" file="$(arg config_base_path)/base/common/local_costmap.yaml"/>
+      <rosparam command="load" file="$(arg config_base_path)/common/local_costmap_plugins.yaml"/>
+      <rosparam command="load" file="$(arg config_base_path)/common/local_costmap.yaml"/>
 
-      <rosparam command="load" file="$(arg config_base_path)/base/global_planner/$(arg global_planner)$(arg global_planner_suffix).yaml"/>
-      <rosparam command="load" file="$(arg config_base_path)/base/$(arg local_planner)/local_planner$(arg local_planner_suffix).yaml"/>
+      <rosparam command="load" file="$(arg config_base_path)/global_planner/$(arg global_planner)$(arg global_planner_suffix).yaml"/>
+      <rosparam command="load" file="$(arg config_base_path)/$(arg local_planner)/local_planner$(arg local_planner_suffix).yaml"/>
 
       <!-- global costmap parameters -->
-      <param if="$(arg multiple)" name="global_costmap/global_frame" value="$(arg actor_namespace)/$(arg frame_global_plan_ref)"/>
-      <param if="$(arg multiple)" name="global_costmap/robot_base_frame" value="$(arg actor_namespace)/$(arg frame_base)"/>
-      <param if="$(arg multiple)" name="global_costmap/obstacle_laser_layer/base_scan/sensor_frame" value="$(arg actor_namespace)/$(arg frame_sensor_laser)"/>
-      <param if="$(arg multiple)" name="global_costmap/obstacle_rgbd_layer/rgbd_scan/sensor_frame" value="$(arg actor_namespace)/$(arg frame_sensor_camera)"/>
+      <param name="global_costmap/global_frame" value="$(arg actor_ns)/$(arg frame_global_plan_ref)"/>
+      <param name="global_costmap/robot_base_frame" value="$(arg actor_ns)/$(arg frame_base)"/>
+      <param name="global_costmap/static_layer/map_topic" value="$(arg map_topic)"/>
+      <param name="global_costmap/obstacle_laser_layer/base_scan/sensor_frame" value="$(arg actor_ns)/$(arg frame_sensor_laser)"/>
+      <param name="global_costmap/obstacle_laser_layer/base_scan/topic" value="$(arg base_scan_topic)"/>
+      <param name="global_costmap/obstacle_rgbd_layer/rgbd_scan/sensor_frame" value="$(arg actor_ns)/$(arg frame_sensor_camera)"/>
+      <param name="global_costmap/obstacle_rgbd_layer/rgbd_scan/topic" value="$(arg rgbd_scan_topic)"/>
 
       <!-- local costmap parameters -->
-      <param if="$(arg multiple)" name="local_costmap/global_frame" value="$(arg actor_namespace)/$(arg frame_local_plan_ref)"/>
-      <param if="$(arg multiple)" name="local_costmap/robot_base_frame" value="$(arg actor_namespace)/$(arg frame_base)"/>
-      <param if="$(arg multiple)" name="local_costmap/obstacle_laser_layer/base_scan/sensor_frame" value="$(arg actor_namespace)/$(arg frame_sensor_laser)"/>
-      <param if="$(arg multiple)" name="local_costmap/obstacle_rgbd_layer/rgbd_scan/sensor_frame" value="$(arg actor_namespace)/$(arg frame_sensor_camera)"/>
+      <param name="local_costmap/global_frame" value="$(arg actor_ns)/$(arg frame_local_plan_ref)"/>
+      <param name="local_costmap/robot_base_frame" value="$(arg actor_ns)/$(arg frame_base)"/>
+      <param name="local_costmap/obstacle_laser_layer/base_scan/sensor_frame" value="$(arg actor_ns)/$(arg frame_sensor_laser)"/>
+      <param name="local_costmap/obstacle_laser_layer/base_scan/topic" value="$(arg base_scan_topic)"/>
+      <param name="local_costmap/obstacle_rgbd_layer/rgbd_scan/sensor_frame" value="$(arg actor_ns)/$(arg frame_sensor_camera)"/>
+      <param name="local_costmap/obstacle_rgbd_layer/rgbd_scan/topic" value="$(arg rgbd_scan_topic)"/>
 
       <!-- local planner parameters -->
-      <param if="$(arg multiple)" name="local_planner/laser_frame" value="$(arg actor_namespace)/$(arg frame_sensor_laser)"/>
-      <param if="$(arg multiple)" name="local_planner/base_frame" value="$(arg actor_namespace)/$(arg frame_base)"/>
+      <param name="local_planner/laser_frame" value="$(arg actor_ns)/$(arg frame_sensor_laser)"/>
+      <param name="local_planner/base_frame" value="$(arg actor_ns)/$(arg frame_base)"/>
     </node>
   </group>
 </launch>

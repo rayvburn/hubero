@@ -4,20 +4,35 @@
     <!-- directory with configuration files -->
     <arg name="config_base_path" default="$(find hubero_ros)/config/planning"/>
 
+    <!-- Planners -->
     <arg name="global_planner" default="global_planner"/>
     <arg name="global_planner_suffix" default=""/>
     <arg name="local_planner" default="dwa"/>
     <arg name="local_planner_suffix" default=""/>
 
-    <arg name="actor_namespace" default="actor"/>
-    <arg name="map_file" default=""/>
-    <!-- If set to false, new instance of map_server will be ran and new static map topic will be published within actor_namespace -->
-    <arg name="use_shared_map" default="true"/>
-
+    <!-- allows running with gdb -->
     <arg name="debug" default="false"/>
 
+    <!-- Namespaces -->
+    <!-- Specific actor identifier -->
+    <arg name="actor_name" default="actor"/>
     <!-- Namespace where communication channels (nodes) of simulated actors will be available -->
     <arg name="main_ns" default="hubero"/>
+    <!-- Sensor data namespace -->
+    <arg name="sensors_ns" default="receptor"/>
+    <!-- Actor namespace -->
+    <arg name="actor_ns" value="$(arg main_ns)/$(arg actor_name)"/>
+
+    <!-- Map -->
+    <!-- Path to the map file, necessary to be overwritten if use_shared_map is set to true -->
+    <arg name="map_file" default=""/>
+    <!-- If set to false, new instance of map_server will be ran and new static map topic will be published within actor_name -->
+    <arg name="use_shared_map" default="true"/>
+    <!-- map_topic argument can be overwritten only if use_shared_map was set to true -->
+    <arg name="map_topic" default="/map"/>
+    <!-- map_topic_name is set to map_topic if shared map was selected to use -->
+    <arg name="map_topic_name" value="$(arg map_topic)" if="$(arg use_shared_map)"/>
+    <arg name="map_topic_name" value="$(arg actor_ns)/map" unless="$(arg use_shared_map)"/>
 
     <!-- TF frame naming pattern for each actor namespace, e.g. "/actor1/<actor_frames/base>" etc. -->
     <arg name="map_frame" default="map"/>
@@ -44,6 +59,10 @@
     <arg name="nav_odometry_topic" default="nav/odom"/>
     <arg name="nav_get_plan_tolerance" default="1.0"/>
 
+    <!-- Topic names related to sensor data - for Gazebo's Actor plugin, they must match XML tag values from the .world file -->
+    <arg name="base_scan_topic" default="/$(arg actor_ns)/$(arg sensors_ns)/laser_scan"/>
+    <arg name="rgbd_scan_topic" default="/$(arg actor_ns)/$(arg sensors_ns)/rgbd_scan"/>
+
     <!-- =================================== ACTIONS ======================================= -->
     <!-- Load common params -->
     <rosparam file="$(find hubero_ros)/config/params_common.yaml" command="load" />
@@ -66,39 +85,42 @@
     <param name="hubero_ros/actor_frames/camera" value="$(arg camera_frame)"/>
 
     <!-- Start world-map static TF broadcast -->
-    <node name="world_map_tf_static" pkg="tf" type="static_transform_publisher" ns="$(arg main_ns)/$(arg actor_namespace)" args="$(arg tf_world_map) $(arg simulator_global_frame) $(arg actor_namespace)/$(arg map_frame) 50"/>
+    <node name="world_map_tf_static" pkg="tf" type="static_transform_publisher" ns="$(arg actor_ns)" args="$(arg tf_world_map) $(arg simulator_global_frame) $(arg actor_name)/$(arg map_frame) 50"/>
 
     <!-- Map Server -->
     <!-- start map server with a static map for the agent only if required -->
     <group if="$(eval arg('use_shared_map') == 0)">
-        <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" ns="$(arg main_ns)/$(arg actor_namespace)" output="screen" />
+        <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" ns="$(arg actor_ns)" output="screen" />
     </group>
 
     <!-- Start static TF broadcaster -->
     <include file="$(find hubero_ros)/launch/sensor_tf.launch" ns="$(arg main_ns)">
-        <arg name="actor_namespace"  value="$(arg actor_namespace)"/>
+        <arg name="actor_namespace" value="$(arg actor_name)"/>
         <arg name="actor_base_frame" value="$(arg base_frame)"/>
-        <arg name="lidar_frame"      value="$(arg lidar_frame)"/>
-        <arg name="camera_frame"     value="$(arg camera_frame)"/>
-        <arg name="tf_lidar"         value="$(arg tf_lidar)"/>
-        <arg name="tf_camera"        value="$(arg tf_camera)"/>
+        <arg name="lidar_frame" value="$(arg lidar_frame)"/>
+        <arg name="camera_frame" value="$(arg camera_frame)"/>
+        <arg name="tf_lidar" value="$(arg tf_lidar)"/>
+        <arg name="tf_camera" value="$(arg tf_camera)"/>
     </include>
 
     <!-- Planning -->
     <include file="$(find hubero_ros)/launch/move_base.launch" ns="$(arg main_ns)">
-        <arg name="config_base_path"      value="$(arg config_base_path)"/>
-        <arg name="actor_namespace"       value="$(arg actor_namespace)"/>
-        <arg name="global_planner"        value="$(arg global_planner)"/>
+        <arg name="config_base_path" value="$(arg config_base_path)"/>
+        <arg name="actor_ns" value="$(arg actor_name)"/>
+        <arg name="global_planner" value="$(arg global_planner)"/>
         <arg name="global_planner_suffix" value="$(arg global_planner_suffix)"/>
-        <arg name="local_planner"         value="$(arg local_planner)"/>
-        <arg name="local_planner_suffix"  value="$(arg local_planner_suffix)"/>
-        <arg name="odom"                  value="$(arg nav_odometry_topic)"/>
-        <arg name="cmd_vel"               value="$(arg nav_command_topic)"/>
-        <arg name="frame_sensor_laser"    value="$(arg lidar_frame)"/>
-        <arg name="frame_sensor_camera"   value="$(arg camera_frame)"/>
-        <arg name="frame_base"            value="$(arg base_frame)"/>
+        <arg name="local_planner" value="$(arg local_planner)"/>
+        <arg name="local_planner_suffix" value="$(arg local_planner_suffix)"/>
+        <arg name="odom_topic" value="$(arg nav_odometry_topic)"/>
+        <arg name="cmd_vel_topic" value="$(arg nav_command_topic)"/>
+        <arg name="map_topic" value="$(arg map_topic_name)"/>
+        <arg name="base_scan_topic" value="$(arg base_scan_topic)"/>
+        <arg name="rgbd_scan_topic" value="$(arg rgbd_scan_topic)"/>
+        <arg name="frame_sensor_laser" value="$(arg lidar_frame)"/>
+        <arg name="frame_sensor_camera" value="$(arg camera_frame)"/>
+        <arg name="frame_base" value="$(arg base_frame)"/>
         <arg name="frame_global_plan_ref" value="$(arg map_frame)"/>
-        <arg name="frame_local_plan_ref"  value="$(arg odom_frame)"/>
-        <arg name="debug"                 value="$(arg debug)"/>
+        <arg name="frame_local_plan_ref" value="$(arg odom_frame)"/>
+        <arg name="debug" value="$(arg debug)"/>
     </include>
 </launch>
