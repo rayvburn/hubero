@@ -1,4 +1,4 @@
-base_local_planner: base_local_planner/TrajectoryPlannerROS 
+base_local_planner: base_local_planner/TrajectoryPlannerROS
 
 TrajectoryPlannerROS:
   # Acceleration limits

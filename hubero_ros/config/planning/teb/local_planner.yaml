@@ -1,12 +1,10 @@
 base_local_planner: teb_local_planner/TebLocalPlannerROS
 
 TebLocalPlannerROS:
-
   odom_topic: /mobile_base_controller/odom
   map_frame: map
-    
+
   # Trajectory
-  
   teb_autosize: True
   dt_ref: 0.3
   dt_hysteresis: 0.1
@@ -19,7 +17,6 @@ TebLocalPlannerROS:
   allow_init_with_backwards_motion: false
 
   # Robot
-  
   max_vel_x: 0.5
   max_vel_x_backwards: 0.15
   max_vel_theta: 0.6
@@ -31,13 +28,11 @@ TebLocalPlannerROS:
     radius: 0.275
 
   # GoalTolerance
-
   xy_goal_tolerance: 0.2
   yaw_goal_tolerance: 0.2
   free_goal_vel: False
 
   # Obstacles
-
   min_obstacle_dist: 0.06
   include_costmap_obstacles: True
   costmap_obstacles_behind_robot_dist: 1.0
@@ -51,7 +46,6 @@ TebLocalPlannerROS:
   costmap_converter_rate: 5
 
   # Optimization
-    
   no_inner_iterations: 5
   no_outer_iterations: 4
   optimization_activate: True
@@ -72,7 +66,6 @@ TebLocalPlannerROS:
   weight_viapoint: 0.75
 
   # Homotopy Class Planner
-
   enable_homotopy_class_planning: False
   enable_multithreading: True
   simple_exploration: False

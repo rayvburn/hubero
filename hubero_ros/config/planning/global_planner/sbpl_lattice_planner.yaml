@@ -1,0 +1,4 @@
+base_global_planner: SBPLLatticePlanner
+
+SBPLLatticePlanner:
+  # see https://github.com/sysuyedong/cart/blob/8557510f87bc5198e3c023f905742422be60664b/trunk/sbpl_cart_planner/launch/pr2_cart_articulate.mprim
