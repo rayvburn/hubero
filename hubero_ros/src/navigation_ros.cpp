@@ -169,6 +169,14 @@ void NavigationRos::update(const Pose3& pose, const Vector3& vel_lin, const Vect
 	setIdealCovariance(odometry.twist.covariance);
 	pub_odom_.publish(odometry);
 
+	// publish odom TF
+	geometry_msgs::TransformStamped transform_odom {};
+	transform_odom.header.stamp = ros::Time::now();
+	transform_odom.header.frame_id = world_frame_name_;
+	transform_odom.child_frame_id = actor_name_ + "/" + frame_local_ref_;
+	transform_odom.transform = ignPoseToMsgTf(pose_initial_);
+	tf_broadcaster_.sendTransform(transform_odom);
+
 	// publish actor TF
 	geometry_msgs::TransformStamped transform_actor {};
 	transform_actor.header.stamp = ros::Time::now();
