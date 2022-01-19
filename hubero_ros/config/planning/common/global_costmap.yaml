@@ -2,7 +2,9 @@
 global_costmap:
   map_type: costmap
 
+  # NOTE: 'global_frame' is overwritten by .launch file
   global_frame: map
+  # NOTE: 'robot_base_frame' is overwritten by .launch file
   robot_base_frame: base_footprint
 
   update_frequency: 10.0
@@ -19,6 +21,7 @@ global_costmap:
 
   static_layer:
     enabled: true
+    # NOTE: 'map_topic' is overwritten by .launch file
     map_topic: map
 
   obstacle_laser_layer:
@@ -28,8 +31,10 @@ global_costmap:
     combination_method: 0
 
     base_scan:
+      # NOTE: 'sensor_frame' is overwritten by .launch file
       sensor_frame: base_laser_link
       data_type: LaserScan
+      # NOTE: 'topic' is overwritten by .launch file
       topic: scan
       expected_update_rate: 0.3
       observation_persistence: 1.0
@@ -45,8 +50,10 @@ global_costmap:
     combination_method: 1
 
     rgbd_scan:
+      # NOTE: 'sensor_frame' is overwritten by .launch file
       sensor_frame: base_footprint
       data_type: LaserScan
+      # NOTE: 'topic' is overwritten by .launch file
       topic: rgbd_scan
       expected_update_rate: 0.5
       observation_persistence: 0.0

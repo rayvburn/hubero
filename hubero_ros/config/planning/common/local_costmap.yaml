@@ -2,7 +2,9 @@
 local_costmap:
   map_type: costmap
 
+  # NOTE: 'global_frame' overwritten by .launch file
   global_frame: odom
+  # NOTE: 'robot_base_frame' overwritten by .launch file
   robot_base_frame: base_footprint
 
   update_frequency: 5.0
@@ -25,8 +27,10 @@ local_costmap:
     combination_method: 0
 
     base_scan:
+      # NOTE: 'sensor_frame' is overwritten by .launch file
       sensor_frame: base_laser_link
       data_type: LaserScan
+      # NOTE: 'topic' is overwritten by .launch file
       topic: scan
       expected_update_rate: 0.3
       observation_persistence: 1.0
@@ -42,8 +46,10 @@ local_costmap:
     combination_method: 1
 
     rgbd_scan:
+      # NOTE: 'sensor_frame' is overwritten by .launch file
       sensor_frame: base_footprint
       data_type: LaserScan
+      # NOTE: 'topic' is overwritten by .launch file
       topic: rgbd_scan
       expected_update_rate: 0.5
       observation_persistence: 0.0
