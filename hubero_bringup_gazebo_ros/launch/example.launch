@@ -45,6 +45,7 @@
     </group>
 
     <!-- ============================== load map =========================================== -->
+    <!-- Map server starts to provide a shared static map topic for all actors -->
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" output="screen" />
 
     <!-- ============================== load params =========================================== -->
@@ -53,20 +54,17 @@
     <!-- ===================== activities specific to the selected world ====================== -->
     <group if="$(eval world == 'parking')">
         <include file="$(find hubero_ros)/launch/actor.launch">
-            <arg name="actor_namespace" value="actor1"/>
-            <arg name="main_ns" value="hubero"/>
+            <arg name="actor_name" value="actor1"/>
         </include>
         <include file="$(find hubero_ros)/launch/actor.launch">
-            <arg name="actor_namespace" value="actor2"/>
-            <arg name="main_ns" value="hubero"/>
+            <arg name="actor_name" value="actor2"/>
         </include>
         <include file="$(find hubero_ros)/launch/actor.launch">
-            <arg name="actor_namespace" value="actor3"/>
-            <arg name="main_ns" value="hubero"/>
+            <arg name="actor_name" value="actor3"/>
         </include>
+        -->
         <include file="$(find hubero_ros)/launch/actor.launch">
-            <arg name="actor_namespace" value="actor4"/>
-            <arg name="main_ns" value="hubero"/>
+            <arg name="actor_name" value="actor4"/>
         </include>
     </group>
 </launch>

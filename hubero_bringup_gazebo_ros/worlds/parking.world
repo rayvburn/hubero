@@ -3635,12 +3635,12 @@
             <baseline>0.2</baseline>
             <alwaysOn>true</alwaysOn>
             <updateRate>1.0</updateRate>
-            <cameraName>/hubero/actor4/camera</cameraName>
-            <imageTopicName>/hubero/actor4/color/image_raw</imageTopicName>
-            <cameraInfoTopicName>/hubero/actor4/color/camera_info</cameraInfoTopicName>
-            <depthImageTopicName>/hubero/actor4/depth/image_raw</depthImageTopicName>
-            <depthImageInfoTopicName>/hubero/actor4/depth/camera_info</depthImageInfoTopicName>
-            <pointCloudTopicName>/hubero/actor4/depth/points</pointCloudTopicName>
+            <cameraName>/hubero/actor4/receptor/camera</cameraName>
+            <imageTopicName>/hubero/actor4/receptor/color/image_raw</imageTopicName>
+            <cameraInfoTopicName>/hubero/actor4/receptor/color/camera_info</cameraInfoTopicName>
+            <depthImageTopicName>/hubero/actor4/receptor/depth/image_raw</depthImageTopicName>
+            <depthImageInfoTopicName>/hubero/actor4/receptor/depth/camera_info</depthImageInfoTopicName>
+            <pointCloudTopicName>/hubero/actor4/receptor/depth/points</pointCloudTopicName>
             <frameName>actor4/base_camera_link</frameName>
             <pointCloudCutoff>0.5</pointCloudCutoff>
             <pointCloudCutoffMax>3.0</pointCloudCutoffMax>
@@ -3689,7 +3689,7 @@
           </noise>
         </ray>
         <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_gpu_laser.so">
-          <topicName>hubero/actor4/laser_scan</topicName>
+          <topicName>/hubero/actor4/receptor/laser_scan</topicName>
           <frameName>actor4/base_laser_link</frameName>
         </plugin>
       </sensor>
