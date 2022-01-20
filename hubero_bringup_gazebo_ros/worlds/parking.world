@@ -3618,7 +3618,7 @@
         <!-- CS info: x - side axis, y - height, z - person's nose heading -->
         <pose>0 0.55 +0.15 0 -1.57 -1.57</pose>
         <visualize>true</visualize>
-        <update_rate>10</update_rate>
+        <update_rate>2.5</update_rate>
           <camera name="head">
             <horizontal_fov>1.047198</horizontal_fov>
             <image>
@@ -3634,13 +3634,13 @@
           <plugin name="camera_controller" filename="libgazebo_ros_openni_kinect.so">
             <baseline>0.2</baseline>
             <alwaysOn>true</alwaysOn>
-            <updateRate>1.0</updateRate>
-            <cameraName>/hubero/actor4/receptor/camera</cameraName>
-            <imageTopicName>/hubero/actor4/receptor/color/image_raw</imageTopicName>
-            <cameraInfoTopicName>/hubero/actor4/receptor/color/camera_info</cameraInfoTopicName>
-            <depthImageTopicName>/hubero/actor4/receptor/depth/image_raw</depthImageTopicName>
-            <depthImageInfoTopicName>/hubero/actor4/receptor/depth/camera_info</depthImageInfoTopicName>
-            <pointCloudTopicName>/hubero/actor4/receptor/depth/points</pointCloudTopicName>
+            <updateRate>0.0</updateRate>
+            <cameraName>actor4/eyes</cameraName>
+            <imageTopicName>/hubero/actor4/receptor/camera/color/image_raw</imageTopicName>
+            <cameraInfoTopicName>/hubero/actor4/receptor/camera/color/camera_info</cameraInfoTopicName>
+            <depthImageTopicName>/hubero/actor4/receptor/camera/depth/image_raw</depthImageTopicName>
+            <depthImageInfoTopicName>/hubero/actor4/receptor/camera/depth/camera_info</depthImageInfoTopicName>
+            <pointCloudTopicName>/hubero/actor4/receptor/camera/depth/cloud</pointCloudTopicName>
             <frameName>actor4/base_camera_link</frameName>
             <pointCloudCutoff>0.5</pointCloudCutoff>
             <pointCloudCutoffMax>3.0</pointCloudCutoffMax>
