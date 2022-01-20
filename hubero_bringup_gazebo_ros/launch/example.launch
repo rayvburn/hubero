@@ -41,7 +41,7 @@
 
     <!-- =============================== start rViz ============================================ -->
     <group if="$(arg rviz)">
-    	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find actor_sim_utils)/rviz/actor_groups_map_costmap_ext_vis.rviz"/>
+        <include file="$(find hubero_bringup_gazebo_ros)/launch/rviz.launch"/>
     </group>
 
     <!-- ============================== load map =========================================== -->
