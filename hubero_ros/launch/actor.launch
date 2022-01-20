@@ -5,6 +5,7 @@
     <arg name="config_base_path" default="$(find hubero_ros)/config/planning"/>
 
     <!-- Planners -->
+    <!-- NOTE: suffixes enable to differentiate planner parameters between actors -->
     <arg name="global_planner" default="global_planner"/>
     <arg name="global_planner_suffix" default=""/>
     <arg name="local_planner" default="dwa"/>
@@ -41,13 +42,22 @@
     <arg name="lidar_frame" default="base_laser_link"/>
     <arg name="camera_frame" default="base_camera_link"/>
 
+    <!-- Prepare full frame names, including specific actor's namespace -->
+    <!-- NOTE: this <actor_name>/<frame_name> pattern is also followed in source code - see, e.g. NavigationRos -->
+    <arg name="actor_map_frame" value="$(arg actor_name)/$(arg map_frame)"/>
+    <arg name="actor_odom_frame" value="$(arg actor_name)/$(arg odom_frame)"/>
+    <arg name="actor_base_frame" value="$(arg actor_name)/$(arg base_frame)"/>
+    <arg name="actor_lidar_frame" value="$(arg actor_name)/$(arg lidar_frame)"/>
+    <arg name="actor_camera_frame" value="$(arg actor_name)/$(arg camera_frame)"/>
+
     <!-- Name of the frame used as a reference in simulator poses etc. usually, frame at the top of the ROS TF tree -->
     <arg name="simulator_global_frame" default="world"/>
 
     <!-- Actor's map center pose relative to the world center pose -->
     <arg name="tf_world_map" default="+0.00 +0.00 +0.00 +0.00 +0.00 +0.00"/>
 
-    <!-- actor's `tf_lidar` and `tf_camera` must match attributes written to .world file -->
+    <!-- actor's `tf_lidar` and `tf_camera` must correspond to attributes written to .world file -->
+    <!-- NOTE: additional rotations were applied to tf_camera -->
     <arg name="tf_lidar" default="+0.55 +0.00 -0.80 +0.00 +0.00 +0.00"/>
     <arg name="tf_camera" default="+0.15 +0.00 +0.55 +1.57 +3.14 +1.57"/>
 
@@ -85,7 +95,7 @@
     <param name="hubero_ros/actor_frames/camera" value="$(arg camera_frame)"/>
 
     <!-- Start world-map static TF broadcast -->
-    <node name="world_map_tf_static" pkg="tf" type="static_transform_publisher" ns="$(arg actor_ns)" args="$(arg tf_world_map) $(arg simulator_global_frame) $(arg actor_name)/$(arg map_frame) 50"/>
+    <node name="world_map_tf_static" pkg="tf" type="static_transform_publisher" ns="$(arg actor_ns)" args="$(arg tf_world_map) $(arg simulator_global_frame) $(arg actor_map_frame) 50"/>
 
     <!-- Map Server -->
     <!-- start map server with a static map for the agent only if required -->
@@ -94,19 +104,17 @@
     </group>
 
     <!-- Start static TF broadcaster -->
-    <include file="$(find hubero_ros)/launch/sensor_tf.launch" ns="$(arg main_ns)">
-        <arg name="actor_namespace" value="$(arg actor_name)"/>
-        <arg name="actor_base_frame" value="$(arg base_frame)"/>
-        <arg name="lidar_frame" value="$(arg lidar_frame)"/>
-        <arg name="camera_frame" value="$(arg camera_frame)"/>
+    <include file="$(find hubero_ros)/launch/sensor_tf.launch" ns="$(arg actor_ns)">
+        <arg name="base_frame" value="$(arg actor_base_frame)"/>
+        <arg name="lidar_frame" value="$(arg actor_lidar_frame)"/>
+        <arg name="camera_frame" value="$(arg actor_camera_frame)"/>
         <arg name="tf_lidar" value="$(arg tf_lidar)"/>
         <arg name="tf_camera" value="$(arg tf_camera)"/>
     </include>
 
     <!-- Planning -->
-    <include file="$(find hubero_ros)/launch/move_base.launch" ns="$(arg main_ns)">
+    <include file="$(find hubero_ros)/launch/move_base.launch" ns="$(arg actor_ns)">
         <arg name="config_base_path" value="$(arg config_base_path)"/>
-        <arg name="actor_ns" value="$(arg actor_name)"/>
         <arg name="global_planner" value="$(arg global_planner)"/>
         <arg name="global_planner_suffix" value="$(arg global_planner_suffix)"/>
         <arg name="local_planner" value="$(arg local_planner)"/>
@@ -116,11 +124,11 @@
         <arg name="map_topic" value="$(arg map_topic_name)"/>
         <arg name="base_scan_topic" value="$(arg base_scan_topic)"/>
         <arg name="rgbd_scan_topic" value="$(arg rgbd_scan_topic)"/>
-        <arg name="frame_sensor_laser" value="$(arg lidar_frame)"/>
-        <arg name="frame_sensor_camera" value="$(arg camera_frame)"/>
-        <arg name="frame_base" value="$(arg base_frame)"/>
-        <arg name="frame_global_plan_ref" value="$(arg map_frame)"/>
-        <arg name="frame_local_plan_ref" value="$(arg odom_frame)"/>
+        <arg name="frame_sensor_laser" value="$(arg actor_lidar_frame)"/>
+        <arg name="frame_sensor_camera" value="$(arg actor_camera_frame)"/>
+        <arg name="frame_base" value="$(arg actor_base_frame)"/>
+        <arg name="frame_global_plan_ref" value="$(arg actor_map_frame)"/>
+        <arg name="frame_local_plan_ref" value="$(arg actor_odom_frame)"/>
         <arg name="debug" value="$(arg debug)"/>
     </include>
 </launch>
