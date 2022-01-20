@@ -154,12 +154,16 @@ void NavigationRos::update(const Pose3& pose, const Vector3& vel_lin, const Vect
 
 	NavigationBase::update(pose);
 
+	// prepare full frame names
+	auto frame_local_ref_full = actor_name_ + "/" + frame_local_ref_;
+	auto frame_base_full = actor_name_ + "/" + frame_base_;
+
 	// publish odom
 	nav_msgs::Odometry odometry {};
 	// header
 	odometry.header.stamp = ros::Time::now();
-	odometry.header.frame_id = frame_local_ref_;
-	odometry.child_frame_id = frame_base_;
+	odometry.header.frame_id = frame_local_ref_full;
+	odometry.child_frame_id = frame_base_full;
 	// pose
 	Pose3 odom_pose = pose - pose_initial_;
 	odometry.pose.pose = ignPoseToMsgPose(odom_pose);
@@ -173,7 +177,7 @@ void NavigationRos::update(const Pose3& pose, const Vector3& vel_lin, const Vect
 	geometry_msgs::TransformStamped transform_odom {};
 	transform_odom.header.stamp = ros::Time::now();
 	transform_odom.header.frame_id = world_frame_name_;
-	transform_odom.child_frame_id = actor_name_ + "/" + frame_local_ref_;
+	transform_odom.child_frame_id = frame_local_ref_full;
 	transform_odom.transform = ignPoseToMsgTf(pose_initial_);
 	tf_broadcaster_.sendTransform(transform_odom);
 
@@ -181,7 +185,7 @@ void NavigationRos::update(const Pose3& pose, const Vector3& vel_lin, const Vect
 	geometry_msgs::TransformStamped transform_actor {};
 	transform_actor.header.stamp = ros::Time::now();
 	transform_actor.header.frame_id = world_frame_name_;
-	transform_actor.child_frame_id = actor_name_ + "/" + frame_base_;
+	transform_actor.child_frame_id = frame_base_full;
 	transform_actor.transform = ignPoseToMsgTf(pose);
 	tf_broadcaster_.sendTransform(transform_actor);
 }
