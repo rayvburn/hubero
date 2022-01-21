@@ -21,9 +21,6 @@ Node::Node(const std::string& node_name) {
 	char **argv = nullptr;
 	ros::init(argc, argv, node_name);
 
-	// flag to create only 1 node for all actors
-	Node::node_started_ = true;
-
 	// find namespace value
 	ros::NodeHandle nh;
 	std::string namespace_ros_param;
@@ -42,6 +39,9 @@ Node::Node(const std::string& node_name) {
 
 	// create new NodeHandle in a global namespace
 	nh_ptr_.reset(new ros::NodeHandle(("/" + Node::namespace_)));
+
+	// flag to create only 1 node for all actors
+	Node::node_started_ = true;
 }
 
 } // namespace hubero
