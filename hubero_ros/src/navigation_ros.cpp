@@ -11,7 +11,9 @@ namespace hubero {
 const int NavigationRos::SUBSCRIBER_QUEUE_SIZE = 10;
 const int NavigationRos::PUBLISHER_QUEUE_SIZE = 15;
 
-NavigationRos::NavigationRos(): NavigationBase::NavigationBase() {}
+NavigationRos::NavigationRos():
+	NavigationBase::NavigationBase(),
+	tf_listener_(tf_buffer_) {}
 
 bool NavigationRos::initialize(
 	std::shared_ptr<Node> node_ptr,
