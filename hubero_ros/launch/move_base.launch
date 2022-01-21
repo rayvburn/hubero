@@ -40,12 +40,7 @@
     <remap from="odom" to="$(arg odom_topic)"/>
     <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
 
-    <!-- Decentralized map server -->
-    <!-- <remap from="map" to="$(arg actor_ns)/map"/> -->
-
-    <!-- Each actor generates his own map -->
-    <!-- <param name="map_frame" value="$(arg actor_ns)/map"/> -->
-
+    <!-- load parameters from files -->
     <rosparam command="load" file="$(arg config_base_path)/common/move_base.yaml"/>
     <rosparam command="load" file="$(arg config_base_path)/common/recovery_behaviors.yaml"/>
 
@@ -58,6 +53,7 @@
     <rosparam command="load" file="$(arg config_base_path)/global_planner/$(arg global_planner)$(arg global_planner_suffix).yaml"/>
     <rosparam command="load" file="$(arg config_base_path)/$(arg local_planner)/local_planner$(arg local_planner_suffix).yaml"/>
 
+    <!-- overwrite loaded params -->
     <!-- global costmap parameters -->
     <param name="global_costmap/global_frame" value="$(arg frame_global_plan_ref)"/>
     <param name="global_costmap/robot_base_frame" value="$(arg frame_base)"/>
