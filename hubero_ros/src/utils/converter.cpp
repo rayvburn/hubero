@@ -43,4 +43,16 @@ Vector3 msgTwistToIgnVector(const geometry_msgs::Twist& twist) {
 	return Vector3(twist.linear.x, twist.linear.y, twist.angular.z);
 }
 
+Pose3 msgTfToPose(const geometry_msgs::Transform& tf) {
+	return Pose3(
+		tf.translation.x,
+		tf.translation.y,
+		tf.translation.z,
+		tf.rotation.w,
+		tf.rotation.x,
+		tf.rotation.y,
+		tf.rotation.z
+	);
+}
+
 } // namespace hubero
