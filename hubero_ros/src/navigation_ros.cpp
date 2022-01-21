@@ -281,7 +281,7 @@ void NavigationRos::setIdealCovariance(boost::array<double, 36>& cov) {
 	std::fill(cov.begin(), cov.end(), 0);
 	// ones on diagonal
 	for (unsigned int i = 0; i < cov.size(); i += 1 + sqrt(cov.size())) {
-		cov[i] = 1.0;
+		cov[i] = 1e-06;
 	}
 }
 
