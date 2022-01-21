@@ -22,7 +22,7 @@
     <!-- Sensor data namespace -->
     <arg name="sensors_ns" default="receptor"/>
     <!-- Actor namespace -->
-    <arg name="actor_ns" value="$(arg main_ns)/$(arg actor_name)"/>
+    <arg name="actor_ns" value="/$(arg main_ns)/$(arg actor_name)"/>
 
     <!-- Map -->
     <!-- Path to the map file, necessary to be overwritten if use_shared_map is set to true -->
