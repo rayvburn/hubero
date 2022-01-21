@@ -157,8 +157,10 @@ void NavigationRos::update(const Pose3& pose, const Vector3& vel_lin, const Vect
 	NavigationBase::update(pose);
 
 	// prepare full frame names
+	auto frame_global_ref_full = actor_name_ + "/" + frame_global_ref_;
 	auto frame_local_ref_full = actor_name_ + "/" + frame_local_ref_;
 	auto frame_base_full = actor_name_ + "/" + frame_base_;
+	auto frame_laser_full = actor_name_ + "/" + frame_laser_;
 
 	// publish odom
 	nav_msgs::Odometry odometry {};
@@ -175,20 +177,41 @@ void NavigationRos::update(const Pose3& pose, const Vector3& vel_lin, const Vect
 	setIdealCovariance(odometry.twist.covariance);
 	pub_odom_.publish(odometry);
 
+	/*
+	 * Find TFs: world->map, map->odom to publish odometry etc.
+	 * NOTE: this is a hack, compared to a typical approach with a real robot, but poses from simulator are expressed
+	 * in a global, static frame, whereas we want to create a tree of transforms for the actor - odom->base_footprint.
+	 * These computations aim to create a separate TF tree for each actor. All actor trees derive from the one common
+	 * frame (typically - "world").
+	 */
+	Pose3 global_ref_shift;
+	try {
+		auto tf_world_global_ref = tf_buffer_.lookupTransform(frame_global_ref_full, world_frame_name_, ros::Time(0));
+		global_ref_shift = msgTfToPose(tf_world_global_ref.transform);
+	} catch (tf2::TransformException& ex) {
+		HUBERO_LOG(
+			"[%s].[NavigationRos] Could not transform '%s' to '%s' - exception: '%s'",
+			actor_name_.c_str(),
+			world_frame_name_.c_str(),
+			frame_global_ref_full.c_str(),
+			ex.what()
+		);
+	}
+
 	// publish odom TF
 	geometry_msgs::TransformStamped transform_odom {};
 	transform_odom.header.stamp = ros::Time::now();
-	transform_odom.header.frame_id = world_frame_name_;
+	transform_odom.header.frame_id = frame_global_ref_full;
 	transform_odom.child_frame_id = frame_local_ref_full;
-	transform_odom.transform = ignPoseToMsgTf(pose_initial_);
+	transform_odom.transform = ignPoseToMsgTf(pose_initial_ - global_ref_shift);
 	tf_broadcaster_.sendTransform(transform_odom);
 
-	// publish actor TF
+	// publish actor base TF
 	geometry_msgs::TransformStamped transform_actor {};
 	transform_actor.header.stamp = ros::Time::now();
-	transform_actor.header.frame_id = world_frame_name_;
+	transform_actor.header.frame_id = frame_local_ref_full;
 	transform_actor.child_frame_id = frame_base_full;
-	transform_actor.transform = ignPoseToMsgTf(pose);
+	transform_actor.transform = ignPoseToMsgTf(pose - pose_initial_);
 	tf_broadcaster_.sendTransform(transform_actor);
 }
 
