@@ -31,7 +31,7 @@
     <arg name="use_shared_map" default="true"/>
     <!-- map_topic argument can be overwritten only if use_shared_map was set to true -->
     <arg name="map_topic" default="/map"/>
-    <!-- map_topic_name is set to map_topic if shared map was selected to use -->
+    <!-- map_topic_name is set to map_topic if shared map was selected to use; 'actor_ns' because of 'ns' of the map_server -->
     <arg name="map_topic_name" value="$(arg map_topic)" if="$(arg use_shared_map)"/>
     <arg name="map_topic_name" value="$(arg actor_ns)/map" unless="$(arg use_shared_map)"/>
 
@@ -44,7 +44,8 @@
 
     <!-- Prepare full frame names, including specific actor's namespace -->
     <!-- NOTE: this <actor_name>/<frame_name> pattern is also followed in source code - see, e.g. NavigationRos -->
-    <arg name="actor_map_frame" value="$(arg actor_name)/$(arg map_frame)"/>
+    <arg name="actor_map_frame" value="$(arg map_frame)" if="$(arg use_shared_map)"/>
+    <arg name="actor_map_frame" value="$(arg actor_name)/$(arg map_frame)" unless="$(arg use_shared_map)"/>
     <arg name="actor_odom_frame" value="$(arg actor_name)/$(arg odom_frame)"/>
     <arg name="actor_base_frame" value="$(arg actor_name)/$(arg base_frame)"/>
     <arg name="actor_lidar_frame" value="$(arg actor_name)/$(arg lidar_frame)"/>
@@ -99,13 +100,15 @@
     <param name="hubero_ros/actor_frames/lidar" value="$(arg lidar_frame)"/>
     <param name="hubero_ros/actor_frames/camera" value="$(arg camera_frame)"/>
 
-    <!-- Start world-map static TF broadcast -->
-    <node name="world_map_tf_static" pkg="tf" type="static_transform_publisher" ns="$(arg actor_ns)" args="$(arg tf_world_map) $(arg simulator_global_frame) $(arg actor_map_frame) 50"/>
-
-    <!-- Map Server -->
-    <!-- start map server with a static map for the agent only if required -->
-    <group if="$(eval arg('use_shared_map') == 0)">
-        <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" ns="$(arg actor_ns)" output="screen" />
+    <!-- If shared map approach is not used, map server will be started and static tf publisher will start too -->
+    <!-- NOTE: in a shared_map approach, user MUST externally run 'shared' map server and publish 'shared' world-map static TF -->
+    <group if="$(eval arg('use_shared_map') == false)">
+        <!-- start map server with a static map for the agent only if required -->
+        <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" ns="$(arg actor_ns)" output="screen">
+            <param name="frame_id" value="$(arg actor_map_frame)"/>
+        </node>
+        <!-- Start world-map static TF broadcast -->
+        <node name="world_map_tf_static" pkg="tf" type="static_transform_publisher" ns="$(arg actor_ns)" args="$(arg tf_world_map) $(arg simulator_global_frame) $(arg actor_map_frame) 50"/>
     </group>
 
     <!-- Start static TF broadcaster -->

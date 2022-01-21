@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 
 <launch>
+    <!-- first, make HuBeRo actor control plugin visible for Gazebo -->
     <env name="GAZEBO_PLUGIN_PATH" value="$(find hubero_gazebo)/lib:$(optenv GAZEBO_PLUGIN_PATH)"/>
-    <!-- TODO world - map tf parameter is required -->
 
     <!-- ====================== default values for parameters ================================== -->
     <arg name="world"       default="cafe_example"/>
@@ -11,6 +11,16 @@
     <arg name="gui"         default="true"/>
     <arg name="rviz"        default="true"/>
     <arg name="gdb"         default="false"/>
+
+    <!-- Namespace where communication channels (nodes) of simulated actors will be available -->
+    <arg name="main_ns" default="hubero"/>
+
+    <!-- Actor's map center pose relative to the world center pose -->
+    <arg name="tf_world_map" default="+0.00 +0.00 +0.00 +0.00 +0.00 +0.00"/>
+    <arg name="shared_map" default="true"/>
+    <arg name="map_frame" default="map"/>
+    <!-- Name of the frame used as a reference in simulator poses etc. usually, frame at the top of the ROS TF tree -->
+    <arg name="simulator_global_frame" default="world"/>
 
     <!-- ========================= launch world (Gazebo server and GUI) ========================================= -->
 
@@ -44,9 +54,15 @@
         <include file="$(find hubero_bringup_gazebo_ros)/launch/rviz.launch"/>
     </group>
 
-    <!-- ============================== load map =========================================== -->
-    <!-- Map server starts to provide a shared static map topic for all actors -->
-    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" output="screen" />
+    <!-- ============================== load map & static TF ================================== -->
+    <group if="$(eval arg('shared_map') == true)">
+        <!-- Map server starts to provide a shared static map topic for all actors -->
+        <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" output="screen">
+            <param name="frame_id" value="$(arg map_frame)"/>
+        </node>
+        <!-- Start world-map (shared frame) static TF broadcast -->
+        <node name="world_map_tf_static" pkg="tf" type="static_transform_publisher" ns="$(arg main_ns)" args="$(arg tf_world_map) $(arg simulator_global_frame) $(arg map_frame) 50"/>
+    </group>
 
     <!-- ============================== load params =========================================== -->
     <rosparam file="$(find hubero_ros)/config/params_common.yaml" command="load" />
@@ -65,6 +81,13 @@
         -->
         <include file="$(find hubero_ros)/launch/actor.launch">
             <arg name="actor_name" value="actor4"/>
+            <arg name="main_ns" value="$(arg main_ns)"/>
+            <arg name="map_file" value="$(arg map_file)"/>
+            <arg name="use_shared_map" value="$(arg shared_map)"/>
+            <arg name="map_frame" value="$(arg map_frame)"/>
+            <arg name="simulator_global_frame" value="$(arg simulator_global_frame)"/>
+            <!-- passing 'tf_world_map' is excessive when 'shared_map' is set to true -->
+            <arg name="tf_world_map" value="$(arg tf_world_map)"/>
         </include>
     </group>
 </launch>
