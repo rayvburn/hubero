@@ -69,9 +69,14 @@
     <arg name="nav_odometry_topic" default="nav/odom"/>
     <arg name="nav_get_plan_tolerance" default="1.0"/>
 
+    <!-- Sensor data launch parameters -->
+    <!-- NOTE: these must be used with caution - see details in 'actor_<sensor>_scan_topic' below -->
+    <arg name="base_scan_topic" default="laser_scan"/>
+    <arg name="rgbd_scan_topic" default="rgbd_scan"/>
+
     <!-- Topic names related to sensor data - for Gazebo's Actor plugin, they must match XML tag values from the .world file -->
-    <arg name="base_scan_topic" default="/$(arg actor_ns)/$(arg sensors_ns)/laser_scan"/>
-    <arg name="rgbd_scan_topic" default="/$(arg actor_ns)/$(arg sensors_ns)/rgbd_scan"/>
+    <arg name="actor_base_scan_topic" value="$(arg actor_ns)/$(arg sensors_ns)/$(arg base_scan_topic)"/>
+    <arg name="actor_rgbd_scan_topic" value="$(arg actor_ns)/$(arg sensors_ns)/$(arg rgbd_scan_topic)"/>
 
     <!-- =================================== ACTIONS ======================================= -->
     <!-- Load common params -->
@@ -122,8 +127,8 @@
         <arg name="odom_topic" value="$(arg nav_odometry_topic)"/>
         <arg name="cmd_vel_topic" value="$(arg nav_command_topic)"/>
         <arg name="map_topic" value="$(arg map_topic_name)"/>
-        <arg name="base_scan_topic" value="$(arg base_scan_topic)"/>
-        <arg name="rgbd_scan_topic" value="$(arg rgbd_scan_topic)"/>
+        <arg name="base_scan_topic" value="$(arg actor_base_scan_topic)"/>
+        <arg name="rgbd_scan_topic" value="$(arg actor_rgbd_scan_topic)"/>
         <arg name="frame_sensor_laser" value="$(arg actor_lidar_frame)"/>
         <arg name="frame_sensor_camera" value="$(arg actor_camera_frame)"/>
         <arg name="frame_base" value="$(arg actor_base_frame)"/>
