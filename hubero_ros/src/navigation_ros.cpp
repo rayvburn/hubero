@@ -268,13 +268,6 @@ Vector3 NavigationRos::getVelocityCmd() const {
 	return cmd_vel_;
 }
 
-void NavigationRos::callbackCmdVel(const geometry_msgs::Twist::ConstPtr& msg) {
-	const std::lock_guard<std::mutex> lock(mutex_callback_);
-	cmd_vel_.X(msg->linear.x);
-	cmd_vel_.Y(msg->linear.y);
-	cmd_vel_.Z(msg->angular.z);
-}
-
 // static
 void NavigationRos::setIdealCovariance(boost::array<double, 36>& cov) {
 	// update covariance - note that pose is perfectly known
@@ -283,6 +276,13 @@ void NavigationRos::setIdealCovariance(boost::array<double, 36>& cov) {
 	for (unsigned int i = 0; i < cov.size(); i += 1 + sqrt(cov.size())) {
 		cov[i] = 1e-06;
 	}
+}
+
+void NavigationRos::callbackCmdVel(const geometry_msgs::Twist::ConstPtr& msg) {
+	const std::lock_guard<std::mutex> lock(mutex_callback_);
+	cmd_vel_.X(msg->linear.x);
+	cmd_vel_.Y(msg->linear.y);
+	cmd_vel_.Z(msg->angular.z);
 }
 
 } // namespace hubero
