@@ -94,11 +94,11 @@
     <param name="hubero_ros/navigation/odometry_topic" value="$(arg nav_odometry_topic)"/>
     <param name="hubero_ros/navigation/nav_get_plan_tolerance" value="$(arg nav_get_plan_tolerance)"/>
 
-    <param name="hubero_ros/actor_frames/base" value="$(arg base_frame)"/>
-    <param name="hubero_ros/actor_frames/global_ref" value="$(arg map_frame)"/>
-    <param name="hubero_ros/actor_frames/local_ref" value="$(arg odom_frame)"/>
-    <param name="hubero_ros/actor_frames/lidar" value="$(arg lidar_frame)"/>
-    <param name="hubero_ros/actor_frames/camera" value="$(arg camera_frame)"/>
+    <param name="hubero_ros/actor_frames/base" value="$(arg actor_base_frame)"/>
+    <param name="hubero_ros/actor_frames/global_ref" value="$(arg actor_map_frame)"/>
+    <param name="hubero_ros/actor_frames/local_ref" value="$(arg actor_odom_frame)"/>
+    <param name="hubero_ros/actor_frames/lidar" value="$(arg actor_lidar_frame)"/>
+    <param name="hubero_ros/actor_frames/camera" value="$(arg actor_camera_frame)"/>
 
     <!-- If shared map approach is not used, map server will be started and static tf publisher will start too -->
     <!-- NOTE: in a shared_map approach, user MUST externally run 'shared' map server and publish 'shared' world-map static TF -->
