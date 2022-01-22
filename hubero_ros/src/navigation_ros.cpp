@@ -80,46 +80,43 @@ bool NavigationRos::initialize(
 	nh.searchParam("/hubero_ros/navigation/nav_get_plan_tolerance", param_nav_get_plan_tolerance);
 	nh.param(param_nav_get_plan_tolerance, nav_get_plan_tolerance_, 1.0);
 
-	// prepare name
-	std::string ns_nav = actor_name_ + "/";
-
 	// initialize publishers, service clients, subscribers
 	pub_mb_goal_ = node_ptr->getNodeHandlePtr()->advertise<move_base_msgs::MoveBaseActionGoal>(
-		ns_nav + topic_nav_goal,
+		topic_nav_goal,
 		PUBLISHER_QUEUE_SIZE
 	);
 
 	pub_mb_cancel_ = node_ptr->getNodeHandlePtr()->advertise<actionlib_msgs::GoalID>(
-		ns_nav + topic_nav_cancel,
+		topic_nav_cancel,
 		PUBLISHER_QUEUE_SIZE
 	);
 
 	srv_mb_get_plan_ = node_ptr->getNodeHandlePtr()->serviceClient<nav_msgs::GetPlan>(
-		ns_nav + srv_nav_get_plan
+		srv_nav_get_plan
 	);
 
 	sub_cmd_vel_ = node_ptr->getNodeHandlePtr()->subscribe(
-		ns_nav + topic_nav_cmd,
+		topic_nav_cmd,
 		SUBSCRIBER_QUEUE_SIZE,
 		&NavigationRos::callbackCmdVel,
 		this
 	);
 
 	pub_odom_ = node_ptr->getNodeHandlePtr()->advertise<nav_msgs::Odometry>(
-		ns_nav + topic_nav_odometry,
+		topic_nav_odometry,
 		PUBLISHER_QUEUE_SIZE
 	);
 
-	HUBERO_LOG("[%s].[NavigationRos] Initialized ROS interface\r\n"
+	HUBERO_LOG("[%s].[NavigationRos] Initialized ROS navigation stack interface\r\n"
 		"\t(pub) goal request topic  at '%s'\r\n"
 		"\t(pub) goal cancel  topic  at '%s'\r\n"
 		"\t(srv) get plan     client at '%s'\r\n"
 		"\t(sub) cmd vel      topic  at '%s'\r\n",
 		actor_name.c_str(),
-		(node_ptr->getNamespaceName() + "/" + ns_nav + topic_nav_goal).c_str(),
-		(node_ptr->getNamespaceName() + "/" + ns_nav + topic_nav_cancel).c_str(),
-		(node_ptr->getNamespaceName() + "/" + ns_nav + srv_nav_get_plan).c_str(),
-		(node_ptr->getNamespaceName() + "/" + ns_nav + topic_nav_cmd).c_str()
+		topic_nav_goal.c_str(),
+		topic_nav_cancel.c_str(),
+		srv_nav_get_plan.c_str(),
+		topic_nav_cmd.c_str()
 	);
 
 	return true;

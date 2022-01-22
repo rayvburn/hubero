@@ -70,6 +70,13 @@
     <arg name="nav_odometry_topic" default="nav/odom"/>
     <arg name="nav_get_plan_tolerance" default="1.0"/>
 
+    <!-- Append 'nav' related topics to full topic name that includes specific actor named <actor_name> -->
+    <arg name="actor_nav_goal_topic" value="$(arg actor_ns)/$(arg nav_goal_topic)"/>
+    <arg name="actor_nav_cancel_topic" value="$(arg actor_ns)/$(arg nav_cancel_topic)"/>
+    <arg name="actor_nav_get_plan_topic" value="$(arg actor_ns)/$(arg nav_get_plan_topic)"/>
+    <arg name="actor_nav_command_topic" value="$(arg actor_ns)/$(arg nav_command_topic)"/>
+    <arg name="actor_nav_odometry_topic" value="$(arg actor_ns)/$(arg nav_odometry_topic)"/>
+
     <!-- Sensor data launch parameters -->
     <!-- NOTE: these must be used with caution - see details in 'actor_<sensor>_scan_topic' below -->
     <arg name="base_scan_topic" default="laser_scan"/>
@@ -87,11 +94,11 @@
     <param name="hubero_ros/simulator_frame" value="$(arg simulator_global_frame)"/>
     <param name="hubero_ros/namespace" value="$(arg main_ns)"/>
 
-    <param name="hubero_ros/navigation/goal_topic" value="$(arg nav_goal_topic)"/>
-    <param name="hubero_ros/navigation/cancel_topic" value="$(arg nav_cancel_topic)"/>
-    <param name="hubero_ros/navigation/get_plan_srv" value="$(arg nav_get_plan_topic)"/>
-    <param name="hubero_ros/navigation/command_topic" value="$(arg nav_command_topic)"/>
-    <param name="hubero_ros/navigation/odometry_topic" value="$(arg nav_odometry_topic)"/>
+    <param name="hubero_ros/navigation/goal_topic" value="$(arg actor_nav_goal_topic)"/>
+    <param name="hubero_ros/navigation/cancel_topic" value="$(arg actor_nav_cancel_topic)"/>
+    <param name="hubero_ros/navigation/get_plan_srv" value="$(arg actor_nav_get_plan_topic)"/>
+    <param name="hubero_ros/navigation/command_topic" value="$(arg actor_nav_command_topic)"/>
+    <param name="hubero_ros/navigation/odometry_topic" value="$(arg actor_nav_odometry_topic)"/>
     <param name="hubero_ros/navigation/nav_get_plan_tolerance" value="$(arg nav_get_plan_tolerance)"/>
 
     <param name="hubero_ros/actor_frames/base" value="$(arg actor_base_frame)"/>
@@ -127,8 +134,8 @@
         <arg name="global_planner_suffix" value="$(arg global_planner_suffix)"/>
         <arg name="local_planner" value="$(arg local_planner)"/>
         <arg name="local_planner_suffix" value="$(arg local_planner_suffix)"/>
-        <arg name="odom_topic" value="$(arg nav_odometry_topic)"/>
-        <arg name="cmd_vel_topic" value="$(arg nav_command_topic)"/>
+        <arg name="odom_topic" value="$(arg actor_nav_odometry_topic)"/>
+        <arg name="cmd_vel_topic" value="$(arg actor_nav_command_topic)"/>
         <arg name="map_topic" value="$(arg map_topic_name)"/>
         <arg name="base_scan_topic" value="$(arg actor_base_scan_topic)"/>
         <arg name="rgbd_scan_topic" value="$(arg actor_rgbd_scan_topic)"/>
