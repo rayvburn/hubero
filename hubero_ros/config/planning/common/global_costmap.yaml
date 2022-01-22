@@ -42,6 +42,7 @@ global_costmap:
       marking: true
       clearing: true
       raytrace_range: 4.0
+      obstacle_range: 6.0
       # NOTE: robot_base_frame is placed above the laser, so negative obstacle heights must be allowed
       min_obstacle_height: -1.5
       max_obstacle_height: +1.5
