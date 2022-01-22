@@ -3,7 +3,7 @@ local_costmap:
   plugins:
     - name: obstacle_laser_layer
       type: 'costmap_2d::ObstacleLayer'
-    - name: obstacle_rgbd_layer
-      type: 'costmap_2d::ObstacleLayer'
+    # - name: obstacle_rgbd_layer
+    #   type: 'costmap_2d::ObstacleLayer'
     - name: inflation_layer
       type: 'costmap_2d::InflationLayer'
