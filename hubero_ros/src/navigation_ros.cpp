@@ -194,7 +194,9 @@ void NavigationRos::update(const Pose3& pose, const Vector3& vel_lin, const Vect
 	transform_odom.header.stamp = ros::Time::now();
 	transform_odom.header.frame_id = frame_global_ref_;
 	transform_odom.child_frame_id = frame_local_ref_;
-	transform_odom.transform = ignPoseToMsgTf(pose_initial_ - global_ref_shift);
+	// ignore height of the pose in this step - this will produce odometry frame at the same height as global ref frame
+	Pose3 pose_initial_plane(Vector3(pose_initial_.Pos().X(), pose_initial_.Pos().Y(), 0.0), pose_initial_.Rot());
+	transform_odom.transform = ignPoseToMsgTf(pose_initial_plane - global_ref_shift);
 	tf_broadcaster_.sendTransform(transform_odom);
 
 	// publish actor base TF
@@ -202,7 +204,10 @@ void NavigationRos::update(const Pose3& pose, const Vector3& vel_lin, const Vect
 	transform_actor.header.stamp = ros::Time::now();
 	transform_actor.header.frame_id = frame_local_ref_;
 	transform_actor.child_frame_id = frame_base_;
-	transform_actor.transform = ignPoseToMsgTf(pose - pose_initial_);
+	// elevate with pose_initial_.Pos().Z() that was ignored in the previous TF
+	Pose3 pose_base(pose - pose_initial_);
+	pose_base.Pos().Z() += pose_initial_.Pos().Z();
+	transform_actor.transform = ignPoseToMsgTf(pose_base);
 	tf_broadcaster_.sendTransform(transform_actor);
 }
 
