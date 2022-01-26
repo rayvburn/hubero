@@ -63,4 +63,8 @@ Pose3 msgTfToPose(const geometry_msgs::Transform& tf) {
 	);
 }
 
+Vector3 msgPointToIgnVector(const geometry_msgs::Point& point) {
+	return Vector3(point.x, point.y, point.z);
+}
+
 } // namespace hubero
