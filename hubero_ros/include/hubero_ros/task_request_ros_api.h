@@ -33,59 +33,149 @@ namespace hubero {
  */
 class TaskRequestRosApi {
 public:
+	/**
+	 * @brief Constructor of @ref TaskRequestRosApi instance
+	 * @param actor_name actor identifier from simulation
+	 */
 	TaskRequestRosApi(const std::string& actor_name);
 
+	/**
+	 * @defgroup tasks Methods that allow to request specific task from controlled actor
+	 * @{
+	 */
+	/**
+	 * @brief Requests actor to follow object that in simulation is recognized by @ref object_name
+	 */
 	bool followObject(const std::string& object_name);
 
+	/**
+	 * @brief Requests actor to follow object according to @ref goal
+	 */
 	bool followObject(const hubero_ros_msgs::FollowObjectGoal& goal);
 
+	/**
+	 * @brief Requests actor to lie down at @ref pos point with orientation @ref yaw
+	 * @details @ref pos frame (coordinate system) of reference is given by @ref frame_id
+	 */
 	bool lieDown(const Vector3& pos, const double& yaw, const std::string& frame_id);
 
+	/**
+	 * @brief Requests actor to lie down according to @ref goal
+	 */
 	bool lieDown(const hubero_ros_msgs::LieDownGoal& goal);
 
+	/**
+	 * @brief Requests actor to lie down onto @ref object_name object with orientation @ref yaw at @ref height height
+	 */
 	bool lieDownObject(const std::string& object_name, const double& height, const double& yaw);
 
+	/**
+	 * @brief Requests actor to lie down onto object according to @ref goal
+	 */
 	bool lieDownObject(const hubero_ros_msgs::LieDownObjectGoal& goal);
 
+	/**
+	 * @brief Requests actor to move around (choose his navigation goals randomly)
+	 */
 	bool moveAround();
 
+	/**
+	 * @brief Requests actor to move around (choose his navigation goals randomly)
+	 */
 	bool moveAround(const hubero_ros_msgs::MoveAroundGoal& goal);
 
+	/**
+	 * @brief Requests actor to move to @ref pos point, where @ref pos frame of reference is given by @ref frame_id
+	 */
 	bool moveToGoal(const Vector3& pos, const std::string& frame_id);
 
+	/**
+	 * @brief Requests actor to move to goal according to @ref goal
+	 */
 	bool moveToGoal(const hubero_ros_msgs::MoveToGoalGoal& goal);
 
+	/**
+	 * @brief Requests actor to move to specific object named @ref object_name
+	 */
 	bool moveToObject(const std::string& object_name);
 
+	/**
+	 * @brief Requests actor to move to specific object according to @ref goal
+	 */
 	bool moveToObject(const hubero_ros_msgs::MoveToObjectGoal& goal);
 
+	/**
+	 * @brief Requests actor to run to @ref pos point, where @ref pos frame of reference is given by @ref frame_id
+	 */
 	bool run(const Vector3& pos, const std::string& frame_id);
 
+	/**
+	 * @brief Requests actor to run to goal point according to @ref goal
+	 */
 	bool run(const hubero_ros_msgs::RunGoal& goal);
 
+	/**
+	 * @brief Requests actor to sit down at @ref pos point with orientation @ref yaw
+	 * @details @ref pos frame (coordinate system) of reference is given by @ref frame_id
+	 */
 	bool sitDown(const Vector3& pos, const double& yaw, const std::string& frame_id);
 
+	/**
+	 * @brief Requests actor to sit down according to @ref goal
+	 */
 	bool sitDown(const hubero_ros_msgs::SitDownGoal& goal);
 
+	/**
+	 * @brief Requests actor to sit down onto @ref object_name object with orientation @ref yaw at @ref height height
+	 */
 	bool sitDownObject(const std::string& object_name, const double& height, const double& yaw);
 
+	/**
+	 * @brief Requests actor to sit down onto object according to @ref goal
+	 */
 	bool sitDownObject(const hubero_ros_msgs::SitDownObjectGoal& goal);
 
+	/**
+	 * @brief Requests actor to stand still
+	 */
 	bool stand();
 
+	/**
+	 * @brief Requests actor to stand still according to @ref goal
+	 */
 	bool stand(const hubero_ros_msgs::StandGoal& goal);
 
+	/**
+	 * @brief Requests actor to talk, but first let it move to @ref pos position expressed in @ref frame_id frame
+	 */
 	bool talk(const Vector3& pos, const std::string& frame_id);
 
+	/**
+	 * @brief Requests actor to talk according to @ref goal
+	 */
 	bool talk(const hubero_ros_msgs::TalkGoal& goal);
 
+	/**
+	 * @brief Requests actor to talk to object (move towards that object and start talking) given by @ref object_name
+	 */
 	bool talkObject(const std::string& object_name);
 
+	/**
+	 * @brief Requests actor to talk to object according to @ref goal
+	 * @details Also @see talkObject
+	 */
 	bool talkObject(const hubero_ros_msgs::TalkObjectGoal& goal);
 
+	/**
+	 * @brief Requests actor to teleoperate
+	 */
 	bool teleop();
 
+	/**
+	 * @brief Requests actor to teleoperate according to @ref goal
+	 */
 	bool teleop(const hubero_ros_msgs::TeleopGoal& goal);
+	/// @}
 
 protected:
 	std::shared_ptr<Node> node_ptr_;
