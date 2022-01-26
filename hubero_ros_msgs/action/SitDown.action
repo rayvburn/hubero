@@ -1,0 +1,10 @@
+# goal definition
+string frame
+geometry_msgs/Point pos
+float64 yaw
+---
+# result
+hubero_ros_msgs/Result result
+---
+# feedback
+hubero_ros_msgs/Feedback feedback

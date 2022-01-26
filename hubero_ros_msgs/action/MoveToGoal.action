@@ -1,12 +1,9 @@
 # goal definition
-float64 x_pos
-float64 y_pos
 string frame
+geometry_msgs/Point pos
 ---
-# result definition
-int32 status
-string text
+# result
+hubero_ros_msgs/Result result
 ---
 # feedback
-int32 status
-string text
+hubero_ros_msgs/Feedback feedback

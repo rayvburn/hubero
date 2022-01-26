@@ -2,12 +2,14 @@
 
 #include <hubero_common/typedefs.h>
 
+#include <geometry_msgs/Point.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Transform.h>
 #include <geometry_msgs/Twist.h>
 
 namespace hubero {
 
+geometry_msgs::Point ignVectorToMsgPoint(const Vector3& position);
 geometry_msgs::Pose ignPoseToMsgPose(const Pose3& pose);
 geometry_msgs::Transform ignPoseToMsgTf(const Pose3& pose);
 geometry_msgs::Twist ignVectorsToMsgTwist(const Vector3& vel_lin, const Vector3& vel_ang);

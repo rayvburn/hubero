@@ -1,0 +1,7 @@
+# goal definition
+---
+# result
+hubero_ros_msgs/Result result
+---
+# feedback
+hubero_ros_msgs/Feedback feedback

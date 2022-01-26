@@ -21,20 +21,23 @@ add_action_files(
     FollowObject.action
     LieDown.action
     LieDownObject.action
-    # MoveAround.action
+    MoveAround.action
     MoveToGoal.action
     MoveToObject.action
-    # Run.action
-    # SitDown.action
-    # SitDownObject.action
-    # Stand.action
-    # Talk.action
-    # Teleop.action
+    Run.action
+    SitDown.action
+    SitDownObject.action
+    Stand.action
+    Talk.action
+    TalkObject.action
+    Teleop.action
 )
 
 ## Generate messages in the `msg` folder
 add_message_files(
   FILES
+    Feedback.msg
+    Result.msg
     Person.msg
 )
 

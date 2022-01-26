@@ -1,14 +1,10 @@
 # goal definition
-float64 x_pos
-float64 y_pos
-float64 z_pos
-float64 rotation
 string frame
+geometry_msgs/Point pos
+float64 yaw
 ---
-# result definition
-int32 status
-string text
+# result
+hubero_ros_msgs/Result result
 ---
 # feedback
-int32 status
-string text
+hubero_ros_msgs/Feedback feedback
