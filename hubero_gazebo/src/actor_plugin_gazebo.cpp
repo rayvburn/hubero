@@ -53,7 +53,7 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 	/*
 	 * HuBeRo framework task interface initialization
 	 */
-	ros_task_ptr_->initialize(ros_node_ptr_, actor_ptr_->GetName());
+	ros_task_ptr_->initialize(ros_node_ptr_, actor_ptr_->GetName(), ros_node_ptr_->getSimulatorFrame());
 	hubero_actor_.initializeTask(ros_task_ptr_);
 
 	/*

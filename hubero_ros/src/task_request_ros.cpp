@@ -1,17 +1,27 @@
 #include <hubero_ros/task_request_ros.h>
+#include <hubero_ros/utils/converter.h>
 
 namespace hubero {
 
 const std::string TaskRequestRos::OBJECT_ORIENTED_TASK_SUFFIX = "_name";
 const std::chrono::milliseconds TaskRequestRos::TASK_FEEDBACK_PERIOD = std::chrono::milliseconds(500);
 
-TaskRequestRos::TaskRequestRos(): TaskRequestBase::TaskRequestBase() {}
+TaskRequestRos::TaskRequestRos():
+	TaskRequestBase::TaskRequestBase(),
+	tf_listener_(tf_buffer_) {}
 
-void TaskRequestRos::initialize(std::shared_ptr<Node> node_ptr, const std::string& actor_name) {
+void TaskRequestRos::initialize(
+	std::shared_ptr<Node> node_ptr,
+	const std::string& actor_name,
+	const std::string& world_frame_name
+) {
 	if (node_ptr == nullptr) {
 		HUBERO_LOG("[TaskRequestRos] Pointer to Node is null, action servers will not be started\r\n");
 		return;
 	}
+
+	actor_name_ = actor_name;
+	world_frame_name_ = world_frame_name;
 
 	// convert task IDs to task names
 	auto name_task_stand = TaskRequestBase::getTaskName(TASK_STAND);
@@ -131,6 +141,42 @@ void TaskRequestRos::initialize(std::shared_ptr<Node> node_ptr, const std::strin
 		false
 	);
 	as_teleop_->start();
+}
+
+/**
+ * @note Use of tf_buffer_.transform will produce linking errors in packages that use task request library.
+ * Suggestions like this: https://answers.ros.org/question/261419/tf2-transformpose-in-c/ did not help
+ */
+Vector3 TaskRequestRos::transformToWorldFrame(const Vector3& pos, const std::string& frame_id) const {
+	Pose3 tf_goal_to_world = computeTransformToWorld(Pose3(pos, Quaternion()), frame_id);
+	Pose3 pos_world = Pose3(pos, Quaternion()) + tf_goal_to_world;
+	return pos_world.Pos();
+}
+
+/**
+ * @note Use of tf_buffer_.transform will produce linking errors in packages that use task request library
+ */
+Pose3 TaskRequestRos::transformToWorldFrame(const Pose3& pose, const std::string& frame_id) const {
+	Pose3 tf_goal_to_world = computeTransformToWorld(pose, frame_id);
+	Pose3 pos_world = pose + tf_goal_to_world;
+	return pos_world;
+}
+
+Pose3 TaskRequestRos::computeTransformToWorld(const Pose3& pose, const std::string& frame_id) const {
+	Pose3 tf_goal_to_world;
+	try {
+		auto tf_goal_world_msg = tf_buffer_.lookupTransform(world_frame_name_, frame_id, ros::Time(0));
+		tf_goal_to_world = msgTfToPose(tf_goal_world_msg.transform);
+	} catch (tf2::TransformException& ex) {
+		HUBERO_LOG(
+			"[%s].[TaskRequestRos] Could not transform '%s' to '%s' - exception: '%s'",
+			actor_name_.c_str(),
+			world_frame_name_.c_str(),
+			frame_id.c_str(),
+			ex.what()
+		);
+	}
+	return tf_goal_to_world;
 }
 
 void TaskRequestRos::actionCbFollowObject(const hubero_ros_msgs::FollowObjectGoalConstPtr& goal) {
