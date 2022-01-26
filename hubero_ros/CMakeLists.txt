@@ -14,7 +14,8 @@ find_package(catkin REQUIRED
 		nav_msgs
 		roscpp
 		actionlib
-		tf
+		tf2
+		tf2_ros
 )
 
 include_directories(
@@ -29,6 +30,7 @@ set(HUBERO_NAV_ROS hubero_navigation_ros)
 set(HUBERO_TASK_ROS hubero_task_request_ros)
 set(HUBERO_TASK_ROS_API hubero_task_request_ros_api)
 set(HUBERO_NODE_ROS hubero_node_ros)
+set(HUBERO_ROS_TYPECONV hubero_converter_ros)
 
 catkin_package(
 	INCLUDE_DIRS
@@ -45,6 +47,8 @@ catkin_package(
 		nav_msgs
 		roscpp
 		actionlib
+		tf2
+		tf2_ros
 )
 
 ## Node library for HuBeRo
@@ -60,12 +64,24 @@ target_link_libraries(${HUBERO_NODE_ROS}
 	${catkin_LIBRARIES}
 )
 
+## Converter library
+add_library(${HUBERO_ROS_TYPECONV}
+	include/${PROJECT_NAME}/utils/converter.h
+	src/utils/converter.cpp
+)
+add_dependencies(${HUBERO_ROS_TYPECONV}
+	${${PROJECT_NAME}_EXPORTED_TARGETS}
+	${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(${HUBERO_ROS_TYPECONV}
+	${hubero_common_LIBRARIES}
+	${catkin_LIBRARIES}
+)
+
 ## Navigation library for HuBeRo
 add_library(${HUBERO_NAV_ROS}
 	include/${PROJECT_NAME}/navigation_ros.h
-	include/${PROJECT_NAME}/utils/converter.h
 	src/navigation_ros.cpp
-	src/utils/converter.cpp
 )
 add_dependencies(${HUBERO_NAV_ROS}
 	${${PROJECT_NAME}_EXPORTED_TARGETS}
@@ -75,6 +91,7 @@ target_link_libraries(${HUBERO_NAV_ROS}
 	${hubero_interfaces_LIBRARIES}
 	${hubero_common_LIBRARIES}
 	${HUBERO_NODE_ROS}
+	${HUBERO_ROS_TYPECONV}
 	${catkin_LIBRARIES}
 )
 
@@ -83,10 +100,15 @@ add_library(${HUBERO_TASK_ROS}
 	include/${PROJECT_NAME}/task_request_ros.h
 	src/task_request_ros.cpp
 )
+add_dependencies(${HUBERO_TASK_ROS}
+	${${PROJECT_NAME}_EXPORTED_TARGETS}
+	${catkin_EXPORTED_TARGETS}
+)
 target_link_libraries(${HUBERO_TASK_ROS}
 	${hubero_interfaces_LIBRARIES}
 	${hubero_common_LIBRARIES}
 	${HUBERO_NODE_ROS}
+	${HUBERO_ROS_TYPECONV}
 	${catkin_LIBRARIES}
 )
 
@@ -99,6 +121,7 @@ target_link_libraries(${HUBERO_TASK_ROS_API}
 	${hubero_interfaces_LIBRARIES}
 	${hubero_common_LIBRARIES}
 	${HUBERO_NODE_ROS}
+	${HUBERO_ROS_TYPECONV}
 	${catkin_LIBRARIES}
 )
 

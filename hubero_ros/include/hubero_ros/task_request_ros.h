@@ -1,5 +1,6 @@
 #pragma once
 
+#include <hubero_common/typedefs.h>
 #include <hubero_interfaces/task_request_base.h>
 #include <hubero_ros/node.h>
 
@@ -19,6 +20,9 @@
 
 #include <actionlib/server/simple_action_server.h>
 #include <actionlib_msgs/GoalStatus.h>
+
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 
 #include <chrono>
 #include <memory>
@@ -55,10 +59,30 @@ public:
 
 	/**
 	 * @brief Initializes ROS interface to request tasks from simulated actor, named @ref actor_name
+	 * @param world_frame_name ID of the coordinate system that actor operates in (i.e. simulator frame of reference)
 	 */
-	void initialize(std::shared_ptr<Node> node_ptr, const std::string& actor_name);
+	void initialize(
+		std::shared_ptr<Node> node_ptr,
+		const std::string& actor_name,
+		const std::string& world_frame_name
+	);
+
+	/**
+	 * @brief Returns transformed @ref pos vector
+	 * @details @ref pos, expressed in @ref frame_id, is transformed to vector expressed in @ref world_frame_name_
+	 */
+	Vector3 transformToWorldFrame(const Vector3& pos, const std::string& frame_id) const;
+
+	/**
+	 * @brief Returns transformed @ref pose pose
+	 * @details @ref pose, expressed in @ref frame_id, is transformed to pose expressed in @ref world_frame_name_
+	 */
+	Pose3 transformToWorldFrame(const Pose3& pose, const std::string& frame_id) const;
 
 protected:
+	/// @brief Name of the actor
+	std::string actor_name_;
+
 	/**
 	 * @defgroup actions ROS actions
 	 * @{
@@ -76,6 +100,23 @@ protected:
 	ActionServerPtr<hubero_ros_msgs::TalkAction> as_talk_;
 	ActionServerPtr<hubero_ros_msgs::TalkObjectAction> as_talk_object_;
 	ActionServerPtr<hubero_ros_msgs::TeleopAction> as_teleop_;
+	/// @}
+
+	/**
+	 * @defgroup tf Frame transformations
+	 * Used for position preparation, we aim core of HuBeRo to operate in simulated world's frame
+	 * @{
+	 */
+	tf2_ros::Buffer tf_buffer_;
+	tf2_ros::TransformListener tf_listener_;
+
+	/// @brief Name of the frame that incoming ( @ref update ) poses are referenced in
+	std::string world_frame_name_;
+
+	/**
+	 * @brief Performs lookup in ROS TF buffer, looking for @ref frame_id -> @ref world_frame_name_ transform
+	 */
+	Pose3 computeTransformToWorld(const Pose3& pose, const std::string& frame_id) const;
 	/// @}
 
 	/**
