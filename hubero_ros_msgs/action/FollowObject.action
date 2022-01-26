@@ -1,10 +1,8 @@
 # goal definition
 string object_name
 ---
-# result definition
-int32 status
-string text
+# result
+hubero_ros_msgs/Result result
 ---
 # feedback
-int32 status
-string text
+hubero_ros_msgs/Feedback feedback

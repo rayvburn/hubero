@@ -2,6 +2,14 @@
 
 namespace hubero {
 
+geometry_msgs::Point ignVectorToMsgPoint(const Vector3& position) {
+	geometry_msgs::Point point;
+	point.x = position.X();
+	point.y = position.Y();
+	point.z = position.Z();
+	return point;
+}
+
 geometry_msgs::Pose ignPoseToMsgPose(const Pose3& pose) {
 	geometry_msgs::Pose geom_pose;
 	geom_pose.position.x = pose.Pos().X();

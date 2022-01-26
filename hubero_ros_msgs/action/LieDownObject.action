@@ -1,12 +1,10 @@
 # goal definition
 string object_name
-float64 lying_height
-float64 rotation
+float64 height
+float64 yaw
 ---
-# result definition
-int32 status
-string text
+# result
+hubero_ros_msgs/Result result
 ---
 # feedback
-int32 status
-string text
+hubero_ros_msgs/Feedback feedback

@@ -1,0 +1,10 @@
+# goal definition
+string object_name
+float64 height
+float64 yaw
+---
+# result
+hubero_ros_msgs/Result result
+---
+# feedback
+hubero_ros_msgs/Feedback feedback

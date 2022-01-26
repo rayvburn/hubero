@@ -84,8 +84,8 @@ protected:
 	TaskFeedbackType feedback_status_;
 
 	void callbackFeedback(const Tfeedback& msg) {
-		feedback_txt_ = std::string(msg->feedback.text);
-		feedback_status_ = static_cast<TaskFeedbackType>(msg->feedback.status);
+		feedback_txt_ = std::string(msg->feedback.feedback.text);
+		feedback_status_ = static_cast<TaskFeedbackType>(msg->feedback.feedback.status);
 	}
 }; // class ActionClient
 } // namespace hubero

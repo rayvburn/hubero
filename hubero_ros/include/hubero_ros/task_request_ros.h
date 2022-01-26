@@ -6,8 +6,16 @@
 #include <hubero_ros_msgs/FollowObjectAction.h>
 #include <hubero_ros_msgs/LieDownAction.h>
 #include <hubero_ros_msgs/LieDownObjectAction.h>
+#include <hubero_ros_msgs/MoveAroundAction.h>
 #include <hubero_ros_msgs/MoveToGoalAction.h>
 #include <hubero_ros_msgs/MoveToObjectAction.h>
+#include <hubero_ros_msgs/RunAction.h>
+#include <hubero_ros_msgs/SitDownAction.h>
+#include <hubero_ros_msgs/SitDownObjectAction.h>
+#include <hubero_ros_msgs/StandAction.h>
+#include <hubero_ros_msgs/TalkAction.h>
+#include <hubero_ros_msgs/TalkObjectAction.h>
+#include <hubero_ros_msgs/TeleopAction.h>
 
 #include <actionlib/server/simple_action_server.h>
 #include <actionlib_msgs/GoalStatus.h>
@@ -58,8 +66,16 @@ protected:
 	ActionServerPtr<hubero_ros_msgs::FollowObjectAction> as_follow_object_;
 	ActionServerPtr<hubero_ros_msgs::LieDownAction> as_lie_down_;
 	ActionServerPtr<hubero_ros_msgs::LieDownObjectAction> as_lie_down_object_;
+	ActionServerPtr<hubero_ros_msgs::MoveAroundAction> as_move_around_;
 	ActionServerPtr<hubero_ros_msgs::MoveToGoalAction> as_move_to_goal_;
 	ActionServerPtr<hubero_ros_msgs::MoveToObjectAction> as_move_to_object_;
+	ActionServerPtr<hubero_ros_msgs::RunAction> as_run_;
+	ActionServerPtr<hubero_ros_msgs::SitDownAction> as_sit_down_;
+	ActionServerPtr<hubero_ros_msgs::SitDownObjectAction> as_sit_down_object_;
+	ActionServerPtr<hubero_ros_msgs::StandAction> as_stand_;
+	ActionServerPtr<hubero_ros_msgs::TalkAction> as_talk_;
+	ActionServerPtr<hubero_ros_msgs::TalkObjectAction> as_talk_object_;
+	ActionServerPtr<hubero_ros_msgs::TeleopAction> as_teleop_;
 	/// @}
 
 	/**
@@ -67,10 +83,18 @@ protected:
 	 * @{
 	 */
 	void actionCbFollowObject(const hubero_ros_msgs::FollowObjectGoalConstPtr& goal);
-	void actionCbMoveToGoal(const hubero_ros_msgs::MoveToGoalGoalConstPtr& goal);
-	void actionCbMoveToObject(const hubero_ros_msgs::MoveToObjectGoalConstPtr& goal);
 	void actionCbLieDown(const hubero_ros_msgs::LieDownGoalConstPtr& goal);
 	void actionCbLieDownObject(const hubero_ros_msgs::LieDownObjectGoalConstPtr& goal);
+	void actionCbMoveAround(const hubero_ros_msgs::MoveAroundGoalConstPtr& goal);
+	void actionCbMoveToGoal(const hubero_ros_msgs::MoveToGoalGoalConstPtr& goal);
+	void actionCbMoveToObject(const hubero_ros_msgs::MoveToObjectGoalConstPtr& goal);
+	void actionCbRun(const hubero_ros_msgs::RunGoalConstPtr& goal);
+	void actionCbSitDown(const hubero_ros_msgs::SitDownGoalConstPtr& goal);
+	void actionCbSitDownObject(const hubero_ros_msgs::SitDownObjectGoalConstPtr& goal);
+	void actionCbStand(const hubero_ros_msgs::StandGoalConstPtr& goal);
+	void actionCbTalk(const hubero_ros_msgs::TalkGoalConstPtr& goal);
+	void actionCbTalkObject(const hubero_ros_msgs::TalkObjectGoalConstPtr& goal);
+	void actionCbTeleop(const hubero_ros_msgs::TeleopGoalConstPtr& goal);
 	/// @}
 
 	/**
@@ -88,8 +112,8 @@ protected:
 		// evaluate request initial response
 		if (!request_processed_ok || getTaskFeedbackType(task_type) == TASK_FEEDBACK_REJECTED) {
 			Tresult result;
-			result.text = "Rejected after initial check";
-			result.status = actionlib_msgs::GoalStatus::REJECTED;
+			result.result.text = "Rejected after initial check";
+			result.result.status = actionlib_msgs::GoalStatus::REJECTED;
 			as_ptr->setAborted(result);
 			return;
 		}
@@ -103,7 +127,7 @@ protected:
 		TaskFeedbackType feedback_type = TASK_FEEDBACK_UNDEFINED;
 		while ((feedback_type = getTaskFeedbackType(task_type)) == TASK_FEEDBACK_ACTIVE) {
 			Tfeedback feedback;
-			feedback.status = feedback_type;
+			feedback.feedback.status = feedback_type;
 			as_ptr->publishFeedback(feedback);
 			std::this_thread::sleep_for(TASK_FEEDBACK_PERIOD);
 		}
