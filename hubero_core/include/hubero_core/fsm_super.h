@@ -11,21 +11,6 @@
 namespace hubero {
 
 /**
- * @brief Enum with super-states definitions
- */
-enum StateSuper {
-	STATE_SUPER_STAND = 0,
-	STATE_SUPER_MOVE_TO_GOAL,
-	STATE_SUPER_MOVE_AROUND,
-	STATE_SUPER_FOLLOW_OBJECT,
-	STATE_SUPER_LIE_DOWN,
-	STATE_SUPER_SIT_DOWN,
-	STATE_SUPER_RUN,
-	STATE_SUPER_TALK,
-	STATE_SUPER_TELEOP
-};
-
-/**
  * @brief Struct with predicates of each task
  * @details It is assumed that start of task execution erases 'requested' flag from @ref TaskPredicates
  */
@@ -59,7 +44,22 @@ struct EventFsmSuper {
  */
 class FsmSuper: public fsmlite::fsm<FsmSuper> {
 public:
-	FsmSuper(StateSuper state_init = StateSuper::STATE_SUPER_STAND);
+	/**
+	 * @brief Enum with super-states definitions
+	 */
+	enum State {
+		STAND = 0,
+		MOVE_TO_GOAL,
+		MOVE_AROUND,
+		FOLLOW_OBJECT,
+		LIE_DOWN,
+		SIT_DOWN,
+		RUN,
+		TALK,
+		TELEOP
+	};
+
+	FsmSuper(State state_init = State::STAND);
 
 	void setLoggingVerbosity(bool enable_verbose);
 
@@ -236,21 +236,21 @@ protected:
 	 * @note mem_fn_row will likely change after switching to C++17
 	 */
 	using transition_table = table<
-		mem_fn_row<STATE_SUPER_STAND, EventFsmSuper, STATE_SUPER_MOVE_TO_GOAL, &FsmSuper::transHandlerStand2MoveToGoal, &FsmSuper::guardStand2MoveToGoal>,
-		mem_fn_row<STATE_SUPER_STAND, EventFsmSuper, STATE_SUPER_MOVE_AROUND, &FsmSuper::transHandlerStand2MoveAround, &FsmSuper::guardStand2MoveAround>,
-		mem_fn_row<STATE_SUPER_STAND, EventFsmSuper, STATE_SUPER_FOLLOW_OBJECT, &FsmSuper::transHandlerStand2FollowObject, &FsmSuper::guardStand2FollowObject>,
-		mem_fn_row<STATE_SUPER_STAND, EventFsmSuper, STATE_SUPER_LIE_DOWN, &FsmSuper::transHandlerStand2LieDown, &FsmSuper::guardStand2LieDown>,
-		mem_fn_row<STATE_SUPER_STAND, EventFsmSuper, STATE_SUPER_RUN, &FsmSuper::transHandlerStand2Run, &FsmSuper::guardStand2Run>,
-		mem_fn_row<STATE_SUPER_STAND, EventFsmSuper, STATE_SUPER_TALK, &FsmSuper::transHandlerStand2Talk, &FsmSuper::guardStand2Talk>,
-		mem_fn_row<STATE_SUPER_STAND, EventFsmSuper, STATE_SUPER_TELEOP, &FsmSuper::transHandlerStand2Teleop, &FsmSuper::guardStand2Teleop>,
+		mem_fn_row<STAND, EventFsmSuper, MOVE_TO_GOAL, &FsmSuper::transHandlerStand2MoveToGoal, &FsmSuper::guardStand2MoveToGoal>,
+		mem_fn_row<STAND, EventFsmSuper, MOVE_AROUND, &FsmSuper::transHandlerStand2MoveAround, &FsmSuper::guardStand2MoveAround>,
+		mem_fn_row<STAND, EventFsmSuper, FOLLOW_OBJECT, &FsmSuper::transHandlerStand2FollowObject, &FsmSuper::guardStand2FollowObject>,
+		mem_fn_row<STAND, EventFsmSuper, LIE_DOWN, &FsmSuper::transHandlerStand2LieDown, &FsmSuper::guardStand2LieDown>,
+		mem_fn_row<STAND, EventFsmSuper, RUN, &FsmSuper::transHandlerStand2Run, &FsmSuper::guardStand2Run>,
+		mem_fn_row<STAND, EventFsmSuper, TALK, &FsmSuper::transHandlerStand2Talk, &FsmSuper::guardStand2Talk>,
+		mem_fn_row<STAND, EventFsmSuper, TELEOP, &FsmSuper::transHandlerStand2Teleop, &FsmSuper::guardStand2Teleop>,
 
-		mem_fn_row<STATE_SUPER_MOVE_TO_GOAL, EventFsmSuper, STATE_SUPER_STAND, &FsmSuper::transHandlerMoveToGoal2Stand, &FsmSuper::guardMoveToGoal2Stand>,
-		mem_fn_row<STATE_SUPER_MOVE_AROUND, EventFsmSuper, STATE_SUPER_STAND, &FsmSuper::transHandlerMoveAround2Stand, &FsmSuper::guardMoveAround2Stand>,
-		mem_fn_row<STATE_SUPER_FOLLOW_OBJECT, EventFsmSuper, STATE_SUPER_STAND, &FsmSuper::transHandlerFollowObject2Stand, &FsmSuper::guardFollowObject2Stand>,
-		mem_fn_row<STATE_SUPER_LIE_DOWN, EventFsmSuper, STATE_SUPER_STAND, &FsmSuper::transHandlerLieDown2Stand, &FsmSuper::guardLieDown2Stand>,
-		mem_fn_row<STATE_SUPER_RUN, EventFsmSuper, STATE_SUPER_STAND, &FsmSuper::transHandlerRun2Stand, &FsmSuper::guardRun2Stand>,
-		mem_fn_row<STATE_SUPER_TALK, EventFsmSuper, STATE_SUPER_STAND, &FsmSuper::transHandlerTalk2Stand, &FsmSuper::guardTalk2Stand>,
-		mem_fn_row<STATE_SUPER_TELEOP, EventFsmSuper, STATE_SUPER_STAND, &FsmSuper::transHandlerTeleop2Stand, &FsmSuper::guardTeleop2Stand>
+		mem_fn_row<MOVE_TO_GOAL, EventFsmSuper, STAND, &FsmSuper::transHandlerMoveToGoal2Stand, &FsmSuper::guardMoveToGoal2Stand>,
+		mem_fn_row<MOVE_AROUND, EventFsmSuper, STAND, &FsmSuper::transHandlerMoveAround2Stand, &FsmSuper::guardMoveAround2Stand>,
+		mem_fn_row<FOLLOW_OBJECT, EventFsmSuper, STAND, &FsmSuper::transHandlerFollowObject2Stand, &FsmSuper::guardFollowObject2Stand>,
+		mem_fn_row<LIE_DOWN, EventFsmSuper, STAND, &FsmSuper::transHandlerLieDown2Stand, &FsmSuper::guardLieDown2Stand>,
+		mem_fn_row<RUN, EventFsmSuper, STAND, &FsmSuper::transHandlerRun2Stand, &FsmSuper::guardRun2Stand>,
+		mem_fn_row<TALK, EventFsmSuper, STAND, &FsmSuper::transHandlerTalk2Stand, &FsmSuper::guardTalk2Stand>,
+		mem_fn_row<TELEOP, EventFsmSuper, STAND, &FsmSuper::transHandlerTeleop2Stand, &FsmSuper::guardTeleop2Stand>
 
 	>;
 
