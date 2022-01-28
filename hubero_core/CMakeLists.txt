@@ -74,6 +74,9 @@ if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_fsm_super test/test_fsm_super.cpp)
   target_link_libraries(test_fsm_super ${ACTOR_LIB_NAME})
 
+  catkin_add_gtest(test_fsm_tasks test/test_fsm_tasks.cpp)
+  target_link_libraries(test_fsm_tasks ${ACTOR_LIB_NAME})
+
   catkin_add_gtest(test_task_base test/test_task_base.cpp)
   target_link_libraries(test_task_base ${ACTOR_LIB_NAME})
 
