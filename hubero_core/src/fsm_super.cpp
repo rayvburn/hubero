@@ -3,7 +3,7 @@
 
 namespace hubero {
 
-FsmSuper::FsmSuper(StateSuper state_init): fsm(state_init), logging_verbose_(false) {
+FsmSuper::FsmSuper(State state_init): fsm(state_init), logging_verbose_(false) {
 
 }
 
