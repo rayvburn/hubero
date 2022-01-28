@@ -233,6 +233,7 @@ protected:
 	/**
 	 * @brief Transition table order also defines transition priority
 	 * @details Guard returning true allows transition between states to happen.
+	 * @note mem_fn_row will likely change after switching to C++17
 	 */
 	using transition_table = table<
 		mem_fn_row<STATE_SUPER_STAND, EventFsmSuper, STATE_SUPER_MOVE_TO_GOAL, &FsmSuper::transHandlerStand2MoveToGoal, &FsmSuper::guardStand2MoveToGoal>,
