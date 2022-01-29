@@ -11,12 +11,11 @@ using namespace hubero;
 
 /// single state 'fsm'
 TEST(HuberoFsmTasks, basic) {
-	const int STATE_INIT = 1;
-	FsmBasic fsm(STATE_INIT);
+	FsmBasic fsm;
 	EventFsmBasic event {};
-	ASSERT_EQ(fsm.current_state(), STATE_INIT);
+	ASSERT_EQ(fsm.current_state(), FsmBasic::State::ACTIVE);
 	fsm.process_event(event);
-	ASSERT_EQ(fsm.current_state(), STATE_INIT);
+	ASSERT_EQ(fsm.current_state(), FsmBasic::State::ACTIVE);
 }
 
 TEST(HuberoFsmTasks, followObject) {
