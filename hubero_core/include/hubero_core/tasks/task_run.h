@@ -1,12 +1,44 @@
 #pragma once
 
-#include <hubero_interfaces/utils/task_base.h>
+#include <hubero_common/typedefs.h>
+#include <hubero_core/tasks/task_essentials.h>
+#include <hubero_core/tasks/fsm_basic.h>
 
 namespace hubero {
 
-class TaskRun: public TaskBase {
+/**
+ * @note In fact this is a MoveToGoal task but with different animation and different movement speed
+ * // TODO: inherit from TaskMoveToGoal
+ */
+class TaskRun: public TaskEssentials<FsmBasic, FsmBasic::State, EventFsmBasic> {
 public:
-	TaskRun();
+	TaskRun(double goal_reached_distance = 1.0):
+		TaskEssentials::TaskEssentials(TASK_RUN),
+		goal_reached_distance_(goal_reached_distance)
+	{
+		task_args_num_ = countArgumentsNum(&TaskRun::request);
+		state_bb_map_ = {
+			{FsmBasic::State::ACTIVE, BasicBehaviourType::BB_RUN}
+		};
+	}
+
+	void request(const Pose3& goal) {
+		goal_ = goal;
+		TaskEssentials::request(goal);
+	}
+
+	inline Pose3 getGoal() const {
+		return goal_;
+	}
+
+	double getDistanceGoalReached() const {
+		return goal_reached_distance_;
+	}
+
+protected:
+	Pose3 goal_;
+
+	double goal_reached_distance_;
 }; // TaskRun
 
 } // namespace hubero

@@ -34,18 +34,10 @@ catkin_package(
 ###########
 ## Build ##
 ###########
+# NOTE: header-only files (e.g., FSM and task brief definitions) are not listed here
 add_library(${ACTOR_LIB_NAME} SHARED
    src/actor.cpp
    src/fsm_super.cpp
-   src/tasks/task_follow_object.cpp
-   src/tasks/task_lie_down.cpp
-   src/tasks/task_move_around.cpp
-   src/tasks/task_move_to_goal.cpp
-   src/tasks/task_run.cpp
-   src/tasks/task_sit_down.cpp
-   src/tasks/task_stand.cpp
-   src/tasks/task_talk.cpp
-   src/tasks/task_teleop.cpp
 )
 target_link_libraries(${ACTOR_LIB_NAME}
    ${hubero_common_LIBRARIES}
@@ -79,6 +71,9 @@ if (CATKIN_ENABLE_TESTING)
 
   catkin_add_gtest(test_task_base test/test_task_base.cpp)
   target_link_libraries(test_task_base ${ACTOR_LIB_NAME})
+
+  catkin_add_gtest(test_tasks test/test_tasks.cpp)
+  target_link_libraries(test_tasks ${ACTOR_LIB_NAME})
 
   catkin_add_gtest(test_navigation_base test/test_navigation_base.cpp)
   target_link_libraries(test_navigation_base ${ACTOR_LIB_NAME})
