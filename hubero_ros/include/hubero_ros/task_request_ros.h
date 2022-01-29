@@ -121,6 +121,7 @@ protected:
 
 	/**
 	 * @defgroup actioncallbacks Callbacks for each action
+	 * @details Argument list of internal request calls for task requesting must match Task's @ref request definition
 	 * @{
 	 */
 	void actionCbFollowObject(const hubero_ros_msgs::FollowObjectGoalConstPtr& goal);
