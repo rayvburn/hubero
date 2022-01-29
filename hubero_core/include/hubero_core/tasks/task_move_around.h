@@ -1,17 +1,34 @@
 #pragma once
 
-#include <hubero_interfaces/utils/task_base.h>
+#include <hubero_core/tasks/task_essentials.h>
+#include <hubero_core/tasks/fsm_move_around.h>
 
 namespace hubero {
 
-class TaskMoveAround: public TaskBase {
+class TaskMoveAround: public TaskEssentials<FsmMoveAround, FsmMoveAround::State, EventFsmMoveAround> {
 public:
-	enum State {
-		STATE_MOVE_TO_GOAL = 0,
-		STATE_CHOOSE_NEW_GOAL
-	};
+	TaskMoveAround(double goal_reached_distance = 1.0):
+		TaskEssentials::TaskEssentials(TASK_MOVE_AROUND),
+		goal_reached_distance_(goal_reached_distance)
+	{
+		task_args_num_ = countArgumentsNum(&TaskMoveAround::request);
+		state_bb_map_ = {
+			{FsmMoveAround::State::MOVING_TO_GOAL, BasicBehaviourType::BB_MOVE_TO_GOAL},
+			{FsmMoveAround::State::CHOOSING_GOAL, BasicBehaviourType::BB_CHOOSE_NEW_GOAL}
+		};
+	}
 
-	TaskMoveAround();
+	bool request() {
+		return TaskEssentials::request();
+	}
+
+	double getDistanceGoalReached() const {
+		return goal_reached_distance_;
+	}
+
+protected:
+	double goal_reached_distance_;
+
 }; // TaskMoveAround
 
 } // namespace hubero
