@@ -180,6 +180,7 @@ Pose3 TaskRequestRos::computeTransformToWorld(const Pose3& pose, const std::stri
 }
 
 void TaskRequestRos::actionCbFollowObject(const hubero_ros_msgs::FollowObjectGoalConstPtr& goal) {
+	// request task
 	bool request_processed_ok = request(TASK_FOLLOW_OBJECT, goal->object_name);
 	actionCbHandler<hubero_ros_msgs::FollowObjectResult, hubero_ros_msgs::FollowObjectFeedback>(
 		request_processed_ok,
@@ -189,7 +190,11 @@ void TaskRequestRos::actionCbFollowObject(const hubero_ros_msgs::FollowObjectGoa
 }
 
 void TaskRequestRos::actionCbLieDown(const hubero_ros_msgs::LieDownGoalConstPtr& goal) {
-	bool request_processed_ok = false; // request(TASK_LIE_DOWN, goal->...);
+	// task objective preprocessing
+	Pose3 goal_pose(msgPointToIgnVector(goal->pos), Quaternion(0.0, 0.0, goal->yaw));
+	Pose3 goal_world_pose = transformToWorldFrame(goal_pose, goal->frame);
+	// request task
+	bool request_processed_ok = request(TASK_LIE_DOWN, goal_world_pose.Pos(), goal_world_pose.Rot().Yaw());
 	actionCbHandler<hubero_ros_msgs::LieDownResult, hubero_ros_msgs::LieDownFeedback>(
 		request_processed_ok,
 		TASK_LIE_DOWN,
@@ -198,6 +203,9 @@ void TaskRequestRos::actionCbLieDown(const hubero_ros_msgs::LieDownGoalConstPtr&
 }
 
 void TaskRequestRos::actionCbLieDownObject(const hubero_ros_msgs::LieDownObjectGoalConstPtr& goal) {
+	HUBERO_LOG("[CAUTION] LieDownObject task is not supported yet, use plain LieDown instead\r\n");
+	Pose3 goal_rel_world_pose(Vector3(0.0, 0.0, goal->height), Quaternion(0.0, 0.0, goal->yaw));
+	// request task
 	bool request_processed_ok = false; // request(TASK_LIE_DOWN, goal->...);
 	actionCbHandler<hubero_ros_msgs::LieDownObjectResult, hubero_ros_msgs::LieDownObjectFeedback>(
 		request_processed_ok,
@@ -207,7 +215,8 @@ void TaskRequestRos::actionCbLieDownObject(const hubero_ros_msgs::LieDownObjectG
 }
 
 void TaskRequestRos::actionCbMoveAround(const hubero_ros_msgs::MoveAroundGoalConstPtr& goal) {
-	bool request_processed_ok = false; // request(TASK_MOVE_AROUND, goal->...);
+	// request task
+	bool request_processed_ok = request(TASK_MOVE_AROUND);
 	actionCbHandler<hubero_ros_msgs::MoveAroundResult, hubero_ros_msgs::MoveAroundFeedback>(
 		request_processed_ok,
 		TASK_MOVE_AROUND,
@@ -216,7 +225,11 @@ void TaskRequestRos::actionCbMoveAround(const hubero_ros_msgs::MoveAroundGoalCon
 }
 
 void TaskRequestRos::actionCbMoveToGoal(const hubero_ros_msgs::MoveToGoalGoalConstPtr& goal) {
-	bool request_processed_ok = false; // request(TASK_MOVE_TO_GOAL, goal->...);
+	// task objective preprocessing
+	Pose3 goal_pose(msgPointToIgnVector(goal->pos), Quaternion());
+	Pose3 goal_world_pose = transformToWorldFrame(goal_pose, goal->frame);
+	// request task
+	bool request_processed_ok = request(TASK_MOVE_TO_GOAL, goal_world_pose);
 	actionCbHandler<hubero_ros_msgs::MoveToGoalResult, hubero_ros_msgs::MoveToGoalFeedback>(
 		request_processed_ok,
 		TASK_MOVE_TO_GOAL,
@@ -225,6 +238,7 @@ void TaskRequestRos::actionCbMoveToGoal(const hubero_ros_msgs::MoveToGoalGoalCon
 }
 
 void TaskRequestRos::actionCbMoveToObject(const hubero_ros_msgs::MoveToObjectGoalConstPtr& goal) {
+	HUBERO_LOG("[CAUTION] MoveToObject task is not supported yet, use plain MoveToGoal instead\r\n");
 	bool request_processed_ok = false; // request(TASK_MOVE_TO_GOAL, goal->...);
 	actionCbHandler<hubero_ros_msgs::MoveToObjectResult, hubero_ros_msgs::MoveToObjectFeedback>(
 		request_processed_ok,
@@ -234,7 +248,11 @@ void TaskRequestRos::actionCbMoveToObject(const hubero_ros_msgs::MoveToObjectGoa
 }
 
 void TaskRequestRos::actionCbRun(const hubero_ros_msgs::RunGoalConstPtr& goal) {
-	bool request_processed_ok = false; // request(TASK_RUN, goal->...);
+	// task objective preprocessing
+	Pose3 goal_pose(msgPointToIgnVector(goal->pos), Quaternion());
+	Pose3 goal_world_pose = transformToWorldFrame(goal_pose, goal->frame);
+	// request task
+	bool request_processed_ok = request(TASK_RUN, goal_world_pose);
 	actionCbHandler<hubero_ros_msgs::RunResult, hubero_ros_msgs::RunFeedback>(
 		request_processed_ok,
 		TASK_RUN,
@@ -243,7 +261,11 @@ void TaskRequestRos::actionCbRun(const hubero_ros_msgs::RunGoalConstPtr& goal) {
 }
 
 void TaskRequestRos::actionCbSitDown(const hubero_ros_msgs::SitDownGoalConstPtr& goal) {
-	bool request_processed_ok = false; // request(TASK_SIT_DOWN, goal->...);
+	// task objective preprocessing
+	Pose3 goal_pose(msgPointToIgnVector(goal->pos), Quaternion(0.0, 0.0, goal->yaw));
+	Pose3 goal_world_pose = transformToWorldFrame(goal_pose, goal->frame);
+	// request task
+	bool request_processed_ok = request(TASK_SIT_DOWN, goal_world_pose.Pos(), goal_world_pose.Rot().Yaw());
 	actionCbHandler<hubero_ros_msgs::SitDownResult, hubero_ros_msgs::SitDownFeedback>(
 		request_processed_ok,
 		TASK_SIT_DOWN,
@@ -252,6 +274,10 @@ void TaskRequestRos::actionCbSitDown(const hubero_ros_msgs::SitDownGoalConstPtr&
 }
 
 void TaskRequestRos::actionCbSitDownObject(const hubero_ros_msgs::SitDownObjectGoalConstPtr& goal) {
+	HUBERO_LOG("[CAUTION] SitDownObject task is not supported yet, use plain SitDown instead\r\n");
+	// task objective preprocessing
+	Pose3 goal_world_rel_pose(Vector3(0.0, 0.0, goal->height), Quaternion(0.0, 0.0, goal->yaw));
+	// request task
 	bool request_processed_ok = false; // request(TASK_SIT_DOWN, goal->...);
 	actionCbHandler<hubero_ros_msgs::SitDownObjectResult, hubero_ros_msgs::SitDownObjectFeedback>(
 		request_processed_ok,
@@ -261,7 +287,8 @@ void TaskRequestRos::actionCbSitDownObject(const hubero_ros_msgs::SitDownObjectG
 }
 
 void TaskRequestRos::actionCbStand(const hubero_ros_msgs::StandGoalConstPtr& goal) {
-	bool request_processed_ok = false; // request(TASK_STAND, goal->...);
+	// request task
+	bool request_processed_ok = request(TASK_STAND);
 	actionCbHandler<hubero_ros_msgs::StandResult, hubero_ros_msgs::StandFeedback>(
 		request_processed_ok,
 		TASK_STAND,
@@ -270,7 +297,11 @@ void TaskRequestRos::actionCbStand(const hubero_ros_msgs::StandGoalConstPtr& goa
 }
 
 void TaskRequestRos::actionCbTalk(const hubero_ros_msgs::TalkGoalConstPtr& goal) {
-	bool request_processed_ok = false; // request(TASK_TALK, goal->...);
+	// task objective preprocessing
+	Pose3 goal_pose(msgPointToIgnVector(goal->pos), Quaternion());
+	Pose3 goal_world_pose = transformToWorldFrame(goal_pose, goal->frame);
+	// request task
+	bool request_processed_ok = request(TASK_TALK, goal_world_pose);
 	actionCbHandler<hubero_ros_msgs::TalkResult, hubero_ros_msgs::TalkFeedback>(
 		request_processed_ok,
 		TASK_TALK,
@@ -279,6 +310,8 @@ void TaskRequestRos::actionCbTalk(const hubero_ros_msgs::TalkGoalConstPtr& goal)
 }
 
 void TaskRequestRos::actionCbTalkObject(const hubero_ros_msgs::TalkObjectGoalConstPtr& goal) {
+	HUBERO_LOG("[CAUTION] TalkObject task is not supported yet, use plain Talk instead\r\n");
+	// request task
 	bool request_processed_ok = false; // request(TASK_TALK, goal->...);
 	actionCbHandler<hubero_ros_msgs::TalkObjectResult, hubero_ros_msgs::TalkObjectFeedback>(
 		request_processed_ok,
@@ -288,7 +321,8 @@ void TaskRequestRos::actionCbTalkObject(const hubero_ros_msgs::TalkObjectGoalCon
 }
 
 void TaskRequestRos::actionCbTeleop(const hubero_ros_msgs::TeleopGoalConstPtr& goal) {
-	bool request_processed_ok = false; // request(TASK_TELEOP, goal->...);
+	// request task
+	bool request_processed_ok = request(TASK_TELEOP);
 	actionCbHandler<hubero_ros_msgs::TeleopResult, hubero_ros_msgs::TeleopFeedback>(
 		request_processed_ok,
 		TASK_TELEOP,
