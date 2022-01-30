@@ -48,7 +48,7 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 	 * https://www.ros.org/reps/rep-0105.html
 	 */
 	sim_localisation_ptr_->update(actor_ptr_->WorldPose());
-	actor_ptr_->SetWorldPose(sim_localisation_ptr_->getPoseTransformed());
+	actor_ptr_->SetWorldPose(sim_localisation_ptr_->getPoseSimulator());
 
 	/*
 	 * HuBeRo framework task interface initialization

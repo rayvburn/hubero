@@ -13,13 +13,17 @@ TEST(LocalisationActorPlugin, rotationConversion) {
 	const double YAW = -IGN_PI_4;
 
 	Pose3 init_pose(1.0, 2.0, 3.0, ROLL, PITCH, YAW);
-	loc.update(init_pose);
+	loc.updateSimulator(init_pose);
 
 	EXPECT_NEAR(init_pose.Rot().Roll(), ROLL, 1e-03);
 	EXPECT_NEAR(init_pose.Rot().Pitch(), PITCH, 1e-03);
 	EXPECT_NEAR(init_pose.Rot().Yaw(), YAW, 1e-03);
 
-	ASSERT_EQ(loc.getPoseTransformed(), init_pose);
+	ASSERT_EQ(loc.getPoseSimulator(), init_pose);
+
+	// check the other way around
+	loc.update(init_pose);
+	ASSERT_EQ(loc.getPose(), init_pose);
 }
 
 int main(int argc, char** argv) {
