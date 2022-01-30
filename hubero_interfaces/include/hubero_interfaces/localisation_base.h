@@ -56,6 +56,14 @@ public:
 		return pose_;
 	}
 
+	/**
+	 * @brief Additional method useful when character in a simulator uses strange coordinate system
+	 * @details Normally, it does the same as @ref getPose
+	 */
+	inline virtual Pose3 getPoseSimulator() const {
+		return pose_;
+	}
+
 	inline virtual Vector3 getVelocityLinear() const {
 		return vel_lin_;
 	}

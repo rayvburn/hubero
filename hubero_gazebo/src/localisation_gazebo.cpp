@@ -43,7 +43,7 @@ void LocalisationGazebo::update(
 	update(pose);
 }
 
-Pose3 LocalisationGazebo::getPoseTransformed() const {
+Pose3 LocalisationGazebo::getPoseSimulator() const {
 	// need to switch back to ActorPlugin coordinate system (see @ref update for initial transformation)
 	Vector3 rpy_gazebo = getPose().Rot().Euler();
 

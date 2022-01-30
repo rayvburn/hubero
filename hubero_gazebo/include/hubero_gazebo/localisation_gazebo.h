@@ -24,7 +24,7 @@ public:
 		const Vector3& acc_ang
 	) override;
 
-	Pose3 getPoseTransformed() const;
+	virtual Pose3 getPoseSimulator() const override;
 };
 
 } // namespace hubero
