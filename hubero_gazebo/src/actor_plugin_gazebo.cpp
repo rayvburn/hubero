@@ -96,12 +96,6 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo& info) {
 	 */
 	sim_localisation_ptr_->updateSimulator(actor_ptr_->WorldPose());
 	hubero::Time time(info.simTime.Double());
-	// FIXME: move to actor internals
-	ros_nav_ptr_->update(
-		sim_localisation_ptr_->getPose(),
-		sim_localisation_ptr_->getVelocityLinear(),
-		sim_localisation_ptr_->getVelocityAngular()
-	);
 	hubero_actor_.update(time);
 }
 
