@@ -12,11 +12,11 @@ namespace hubero {
  */
 class LocalisationGazebo: public LocalisationBase {
 public:
-    LocalisationGazebo();
+	LocalisationGazebo();
 
-    virtual void update(const Pose3& pose) override;
+	virtual void updateSimulator(const Pose3& pose) override;
 
-    virtual void update(
+	virtual void updateSimulator(
 		const Pose3& pose,
 		const Vector3& vel_lin,
 		const Vector3& vel_ang,

@@ -47,7 +47,7 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 	 * Update pose. Note that coordinate system of the human model is different to ROS REP 105
 	 * https://www.ros.org/reps/rep-0105.html
 	 */
-	sim_localisation_ptr_->update(actor_ptr_->WorldPose());
+	sim_localisation_ptr_->updateSimulator(actor_ptr_->WorldPose());
 	actor_ptr_->SetWorldPose(sim_localisation_ptr_->getPoseSimulator());
 
 	/*
@@ -94,7 +94,7 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo& info) {
 	/*
 	 * Handle simulation update
 	 */
-	sim_localisation_ptr_->update(actor_ptr_->WorldPose());
+	sim_localisation_ptr_->updateSimulator(actor_ptr_->WorldPose());
 	hubero::Time time(info.simTime.Double());
 	// FIXME: move to actor internals
 	ros_nav_ptr_->update(
