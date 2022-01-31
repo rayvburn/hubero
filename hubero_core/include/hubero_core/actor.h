@@ -10,6 +10,8 @@
 #include <hubero_interfaces/animation_control_base.h>
 #include <hubero_interfaces/model_control_base.h>
 
+#include <hubero_core/internal_memory.h>
+
 #include <hubero_core/tasks/task_stand.h>
 #include <hubero_core/tasks/task_move_to_goal.h>
 #include <hubero_core/tasks/task_move_around.h>
@@ -28,6 +30,7 @@ namespace hubero {
 
 /**
  * @brief Control subsystem of the Actor agent
+ * @details Geometric data uses the same coordinate system as the simulator does
  */
 class Actor {
 public:
@@ -48,7 +51,44 @@ public:
 
 	bool isInitialized() const;
 
+	/**
+	 * @brief Move to goal helper method
+	 */
+	static Vector3 computeCommandToGlobalCs(const double& yaw_actor, const Vector3& cmd_vel_local);
+
 protected:
+	/**
+	 * @defgroup taskhelpers Task helper methods
+	 *
+	 * Enable to update Actor's internal memory and provide basic behaviour execution (based on task FSM definition)
+	 */
+	/// @brief Get task objectives (goal variables) and update internal memory accordingly
+	void updateMemoryFromTaskStand(InternalMemory& m);
+	void updateMemoryFromTaskMoveToGoal(InternalMemory& m);
+	void updateMemoryFromTaskMoveAround(InternalMemory& m);
+	void updateMemoryFromTaskLieDown(InternalMemory& m);
+	void updateMemoryFromTaskSitDown(InternalMemory& m);
+	void updateMemoryFromTaskFollowObject(InternalMemory& m);
+	void updateMemoryFromTaskTeleop(InternalMemory& m);
+	void updateMemoryFromTaskRun(InternalMemory& m);
+	void updateMemoryFromTaskTalk(InternalMemory& m);
+
+	/// @brief Prepare FSM predicates update and executes appropriate basic behaviour of an active task
+	void executeTaskStand();
+	void executeTaskMoveToGoal();
+	void executeTaskMoveAround();
+	void executeTaskLieDown();
+	void executeTaskSitDown();
+	void executeTaskFollowObject();
+	void executeTaskTeleop();
+	void executeTaskRun();
+	void executeTaskTalk();
+
+	/// @brief Terminates all tasks (their predicates) except given TaskType
+	void terminateOtherTasks(TaskType task_type_current);
+
+	/// @}
+
 	/**
 	 * @defgroup Basic behaviour methods
 	 * @{
@@ -65,16 +105,20 @@ protected:
 	void bbRun();
 	void bbTalk();
 	void bbTeleop();
+
 	/// @}
+
+	/// @brief Updates predicates of the highest level Finite State Machine
+	void updateFsmSuper();
 
 	/// Name of the actor in simulator
 	std::string actor_sim_name_;
 
-	/// Highest level Finite State Machine that orchestrates Actor activities
+	/// Highest level Finite State Machine that orchestrates Actor tasks
 	FsmSuper fsm_;
 
 	/**
-	 * @defgroup Task classes that orchestrate specific tasks
+	 * @defgroup taskclass Task classes that orchestrate specific tasks
 	 * @note Tasks stored as shared_ptr to pass them to TaskRequest class
 	 * @{
 	 */
@@ -88,8 +132,10 @@ protected:
 	std::shared_ptr<TaskRun> task_run_ptr_;
 	std::shared_ptr<TaskTalk> task_talk_ptr_;
 
+	/// @}
+
 	/**
-	 * @defgroup Interface classes
+	 * @defgroup interface Interface classes
 	 * @{
 	 */
 	std::shared_ptr<hubero::AnimationControlBase> animation_control_ptr_;
@@ -99,6 +145,47 @@ protected:
 	std::shared_ptr<hubero::TaskRequestBase> task_request_ptr_;
 
 	/// @}
+
+	/// @brief Contains essential values of internal memory of the control subsystem
+	InternalMemory mem_;
+
+	/// @brief Map that bond TaskTypes with specific Task class
+	std::map<TaskType, std::shared_ptr<TaskBase>> task_map_;
+
+	/// @brief Map that bonds FSM states with internal memory updaters (this is specific to task/state)
+	std::map<FsmSuper::State, std::function<void(InternalMemory&)>> state_memory_updater_map_;
+
+	/// @brief Map that bonds FSM states with transition function executors (this is specific to task/state)
+	std::map<FsmSuper::State, std::function<void(void)>> state_tf_exec_map_;
+
+	/**
+	 * @defgroup templates Template methods that must be defined in header file
+	 * @{
+	 */
+	/**
+	 * @brief Activates given task ptr, if necessary, fills up shared part of FSM event struct and returns that struct
+	 *
+	 * @tparam Tevent type of the FSM event struct
+	 * @param task_ptr shared pointer to object that derives from TaskBase
+	 */
+	template <typename Tevent>
+	Tevent prepareTaskFsmUpdate(const std::shared_ptr<TaskBase>& task_ptr) {
+		// required in first iteration after state transition
+		if (!task_ptr->isActive()) {
+			task_ptr->activate();
+			terminateOtherTasks(task_ptr->getTaskType());
+		}
+
+		// fill up task predicates - those are used for orchestration of task execution
+		Tevent event {};
+		event.aborted = task_ptr->isAborted();
+		event.active = task_ptr->isActive();
+		event.finished = task_ptr->isFinished();
+		event.requested = task_ptr->isRequested();
+		return event;
+	}
+
+	/// @} // end of templates group
 }; // class Actor
 
 } // namespace hubero
