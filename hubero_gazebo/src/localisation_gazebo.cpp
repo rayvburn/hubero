@@ -5,7 +5,7 @@ namespace hubero {
 
 LocalisationGazebo::LocalisationGazebo(): LocalisationBase::LocalisationBase() {}
 
-void LocalisationGazebo::update(const Pose3& pose) {
+void LocalisationGazebo::updateSimulator(const Pose3& pose) {
 	if (!isInitialized()) {
 		HUBERO_LOG("[LocalisationGazebo] 'update' call could not be processed due to lack of initialization\r\n");
 		return;
@@ -31,7 +31,7 @@ void LocalisationGazebo::update(const Pose3& pose) {
 	LocalisationBase::update(Pose3(pos, Quaternion(rpy)));
 }
 
-void LocalisationGazebo::update(
+void LocalisationGazebo::updateSimulator(
 	const Pose3& pose,
 	const Vector3& vel_lin,
 	const Vector3& vel_ang,
@@ -39,8 +39,8 @@ void LocalisationGazebo::update(
 	const Vector3& acc_ang
 ) {
 	LocalisationBase::update(pose, vel_lin, vel_ang, acc_lin, acc_ang);
-	// overwrite pose according to customized calculations (LocalisationGazebo::update)
-	update(pose);
+	// overwrite pose according to customized calculations (LocalisationGazebo::updateSimulator)
+	updateSimulator(pose);
 }
 
 Pose3 LocalisationGazebo::getPoseSimulator() const {

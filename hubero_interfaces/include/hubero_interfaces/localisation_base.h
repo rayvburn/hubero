@@ -26,6 +26,17 @@ public:
 		pose_ = pose;
 	}
 
+	/**
+	 * @brief This version of update call must be used if simulator uses different coordinate frame compared to HuBeRo
+	 * @details This must be called giving simulator version of @ref pose
+	 * Usually it will be called from inside of the simulator plugin for localisation update
+	 * @note Typically this is not necessary to be in use and only @ref update may be used since
+	 * internally calls @ref update
+	 */
+	virtual void updateSimulator(const Pose3& pose) {
+		update(pose);
+	}
+
 	virtual void update(
 		const Pose3& pose,
 		const Vector3& vel_lin,
@@ -42,6 +53,19 @@ public:
 		vel_ang_ = vel_ang;
 		acc_lin_ = acc_lin;
 		acc_ang_ = acc_ang;
+	}
+
+	/**
+	 * @brief Overloaded, extended version of updateSimulator method
+	 */
+	virtual void updateSimulator(
+		const Pose3& pose,
+		const Vector3& vel_lin,
+		const Vector3& vel_ang,
+		const Vector3& acc_lin,
+		const Vector3& acc_ang
+	) {
+		update(pose, vel_lin, vel_ang, acc_lin, acc_ang);
 	}
 
 	inline bool isInitialized() const {
