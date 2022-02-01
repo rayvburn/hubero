@@ -63,11 +63,12 @@
     <arg name="tf_camera" default="+0.15 +0.00 +0.55 +1.57 +3.14 +1.57"/>
 
     <!-- Topic names related to navigation - each simulated actor is connected to such a topic set -->
-    <arg name="nav_goal_topic" default="nav/goal"/>
-    <arg name="nav_cancel_topic" default="nav/cancel"/>
-    <arg name="nav_get_plan_topic" default="nav/get_plan"/>
-    <arg name="nav_command_topic" default="nav/cmd_vel"/>
-    <arg name="nav_odometry_topic" default="nav/odom"/>
+    <arg name="nav_ns" value="navigation"/>
+    <arg name="nav_goal_topic" default="$(arg nav_ns)/goal"/>
+    <arg name="nav_cancel_topic" default="$(arg nav_ns)/cancel"/>
+    <arg name="nav_get_plan_topic" default="$(arg nav_ns)/get_plan"/>
+    <arg name="nav_command_topic" default="$(arg nav_ns)/cmd_vel"/>
+    <arg name="nav_odometry_topic" default="$(arg nav_ns)/odom"/>
     <arg name="nav_get_plan_tolerance" default="1.0"/>
 
     <!-- Append 'nav' related topics to full topic name that includes specific actor named <actor_name> -->
@@ -129,6 +130,7 @@
 
     <!-- Planning -->
     <include file="$(find hubero_ros)/launch/move_base.launch" ns="$(arg actor_ns)">
+        <arg name="nav_node_name" value="$(arg nav_ns)"/>
         <arg name="config_base_path" value="$(arg config_base_path)"/>
         <arg name="global_planner" value="$(arg global_planner)"/>
         <arg name="global_planner_suffix" value="$(arg global_planner_suffix)"/>

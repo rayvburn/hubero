@@ -11,6 +11,7 @@
 -->
 <launch>
   <!-- launch parameters -->
+  <arg name="nav_node_name" default="move_base"/>
   <arg name="global_planner" default="global_planner"/>
   <arg name="global_planner_suffix" default=""/>
   <arg name="local_planner" default="dwa"/>
@@ -36,9 +37,15 @@
   <arg name="frame_local_plan_ref" default="odom"/>
 
   <!-- launch move_base node -->
-  <node pkg="move_base" type="move_base" name="move_base" clear_params="true" output="screen" respawn="true" launch-prefix="$(arg launch_prefix)">
-    <remap from="odom" to="$(arg odom_topic)"/>
+  <node pkg="move_base" type="move_base" name="$(arg nav_node_name)" clear_params="true" output="screen" respawn="true" launch-prefix="$(arg launch_prefix)">
+    <remap from="odom_topic" to="$(arg odom_topic)"/>
     <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+    <!-- action server rename -->
+    <remap from="move_base" to="$(arg nav_node_name)"/>
+    <remap from="move_base_simple" to="$(arg nav_node_name)_simple"/>
+
+    <!-- DWA-specific -->
+    <remap from="odom" to="$(arg odom_topic)"/>
 
     <!-- load parameters from files -->
     <rosparam command="load" file="$(arg config_base_path)/common/move_base.yaml"/>
@@ -75,4 +82,11 @@
     <param name="local_planner/laser_frame" value="$(arg frame_sensor_laser)"/>
     <param name="local_planner/base_frame" value="$(arg frame_base)"/>
   </node>
+
+  <!-- NOTE: groups cannot be put into node tags -->
+  <!-- TEB local planner specific (these cannot be remapped easily) -->
+  <group if="$(eval arg('local_planner') == 'teb')">
+    <param name="$(arg nav_node_name)/TebLocalPlannerROS/odom_topic" value="$(arg odom_topic)"/>
+    <param name="$(arg nav_node_name)/TebLocalPlannerROS/map_frame" value="$(arg map_topic)"/>
+  </group>
 </launch>

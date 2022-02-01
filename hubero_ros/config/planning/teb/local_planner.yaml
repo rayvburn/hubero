@@ -1,7 +1,9 @@
 base_local_planner: teb_local_planner/TebLocalPlannerROS
 
 TebLocalPlannerROS:
+  # NOTE: 'odom_topic' overwritten by .launch file
   odom_topic: /mobile_base_controller/odom
+  # NOTE: 'map_frame' overwritten by .launch file
   map_frame: map
 
   # Trajectory

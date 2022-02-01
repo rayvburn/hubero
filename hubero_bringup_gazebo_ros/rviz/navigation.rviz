@@ -104,7 +104,7 @@ Visualization Manager:
       Radius: 0.0299999993
       Shaft Diameter: 0.100000001
       Shaft Length: 0.100000001
-      Topic: /hubero/actor4/move_base/GlobalPlanner/plan
+      Topic: /hubero/actor4/navigation/GlobalPlanner/plan
       Unreliable: false
       Value: true
     - Alpha: 0.5
@@ -112,7 +112,7 @@ Visualization Manager:
       Color: 25; 25; 250
       Enabled: true
       Name: GCmFootprint
-      Topic: /hubero/actor4/move_base/global_costmap/footprint
+      Topic: /hubero/actor4/navigation/global_costmap/footprint
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -135,7 +135,7 @@ Visualization Manager:
       Radius: 0.0299999993
       Shaft Diameter: 0.100000001
       Shaft Length: 0.100000001
-      Topic: /hubero/actor4/move_base/DWAPlannerROS/global_plan
+      Topic: /hubero/actor4/navigation/DWAPlannerROS/global_plan
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -158,7 +158,7 @@ Visualization Manager:
       Radius: 0.0299999993
       Shaft Diameter: 0.100000001
       Shaft Length: 0.100000001
-      Topic: /hubero/actor4/move_base/DWAPlannerROS/local_plan
+      Topic: /hubero/actor4/navigation/DWAPlannerROS/local_plan
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -186,7 +186,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.00999999978
       Style: Flat Squares
-      Topic: /hubero/actor4/move_base/DWAPlannerROS/cost_cloud
+      Topic: /hubero/actor4/navigation/DWAPlannerROS/cost_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -216,7 +216,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.00999999978
       Style: Flat Squares
-      Topic: /hubero/actor4/move_base/DWAPlannerROS/trajectory_cloud
+      Topic: /hubero/actor4/navigation/DWAPlannerROS/trajectory_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -226,7 +226,7 @@ Visualization Manager:
       Color: 25; 255; 0
       Enabled: true
       Name: LCmFootprint
-      Topic: /hubero/actor4/move_base/local_costmap/footprint
+      Topic: /hubero/actor4/navigation/local_costmap/footprint
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -241,7 +241,7 @@ Visualization Manager:
       Shaft Length: 1
       Shaft Radius: 0.0500000007
       Shape: Arrow
-      Topic: /hubero/actor4/move_base/current_goal
+      Topic: /hubero/actor4/navigation/current_goal
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -335,7 +335,7 @@ Visualization Manager:
         Shaft Length: 1
         Shaft Radius: 0.0500000007
         Value: Arrow
-      Topic: /hubero/actor4/nav/odom
+      Topic: /hubero/actor4/navigation/odom
       Unreliable: false
       Value: true
     - Alpha: 0.699999988
@@ -354,7 +354,7 @@ Visualization Manager:
       Draw Behind: false
       Enabled: true
       Name: GlobalCostmap
-      Topic: /hubero/actor4/move_base/global_costmap/costmap
+      Topic: /hubero/actor4/navigation/global_costmap/costmap
       Unreliable: false
       Use Timestamp: false
       Value: true
@@ -364,7 +364,7 @@ Visualization Manager:
       Draw Behind: false
       Enabled: true
       Name: LocalCostmap
-      Topic: /hubero/actor4/move_base/local_costmap/costmap
+      Topic: /hubero/actor4/navigation/local_costmap/costmap
       Unreliable: false
       Use Timestamp: false
       Value: true
