@@ -60,7 +60,7 @@ public:
 	 * @return true
 	 * @return false
 	 */
-	virtual bool isPoseAchievable(const Pose3& start, const Pose3& goal, const std::string& frame = "") override;
+	virtual bool isPoseAchievable(const Pose3& start, const Pose3& goal, const std::string& frame) override;
 
 	/**
 	 * @brief Set the pose (localisation)
@@ -79,7 +79,7 @@ public:
 	 * @return true
 	 * @return false
 	 */
-	virtual bool setGoal(const Pose3& pose, const std::string& frame = "") override;
+	virtual bool setGoal(const Pose3& pose, const std::string& frame) override;
 
 	/**
 	 * @brief Cancels current goal (one goal is allowed at once)
