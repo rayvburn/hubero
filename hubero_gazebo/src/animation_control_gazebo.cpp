@@ -17,6 +17,7 @@ const std::map<AnimationType, std::string> AnimationControlGazebo::animation_nam
 AnimationControlGazebo::AnimationControlGazebo(): AnimationControlBase::AnimationControlBase() {}
 
 void AnimationControlGazebo::initialize(
+	std::function<void(gazebo::physics::TrajectoryInfoPtr&)> anim_updater,
 	const gazebo::physics::Actor::SkeletonAnimation_M& anims,
 	const AnimationType& anim_init
 ) {
@@ -53,6 +54,9 @@ void AnimationControlGazebo::initialize(
 		ANIMATION_TALK,
 		std::bind(&AnimationControlGazebo::handlerTalk, this)
 	);
+
+	// save function
+	trajectory_updater_ = anim_updater;
 
 	// configure
 	skeleton_anims_ = anims;
@@ -123,12 +127,15 @@ void AnimationControlGazebo::setupAnimation(AnimationType animation_type) {
 	// compute animation duration
 	Time duration = Time::computeDuration(time_begin_, time_finish_);
 
-	// Create custom trajectory
+	// create custom trajectory
 	trajectory_info_ptr_.reset(new gazebo::physics::TrajectoryInfo());
 	trajectory_info_ptr_->type = animation;
 	trajectory_info_ptr_->duration = duration.getTime();
 
 	animation_configured_recently_ = true;
+
+	// apply new trajectory
+	trajectory_updater_(trajectory_info_ptr_);
 }
 
 void AnimationControlGazebo::handlerStand() {
