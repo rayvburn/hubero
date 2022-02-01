@@ -277,7 +277,7 @@ void Actor::bbAlignToTarget() {
 void Actor::bbMoveToGoal() {
 	if (mem_.didBasicBehaviourChange()) {
 		animation_control_ptr_->start(AnimationType::ANIMATION_WALK, mem_.getTimeCurrent());
-		navigation_ptr_->setGoal(mem_.getPoseGoal());
+		navigation_ptr_->setGoal(mem_.getPoseGoal(), navigation_ptr_->getWorldFrame());
 	}
 	// retrieve current pose from internal memory
 	auto pose = mem_.getPoseCurrent();
@@ -304,7 +304,15 @@ void Actor::bbChooseNewGoal() {
 	if (mem_.didBasicBehaviourChange()) {
 		animation_control_ptr_->start(AnimationType::ANIMATION_STAND, mem_.getTimeCurrent());
 	}
-	navigation_ptr_->isPoseAchievable(mem_.getPoseCurrent(), Pose3(Vector3(2.0, 3.0, 0.0), Quaternion()));
+	// dummy pose here to evaluate operation
+	navigation_ptr_->isPoseAchievable(
+		mem_.getPoseCurrent(),
+		Pose3(
+			Vector3(2.0, 3.0, 0.0),
+			Quaternion()
+		),
+		navigation_ptr_->getWorldFrame()
+	);
 }
 
 void Actor::bbAwaitObjectMovement() {

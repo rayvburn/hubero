@@ -31,7 +31,7 @@ public:
 	 *
 	 * @note could be const, but ROS version uses non-const serviceclient::call inside
 	 */
-	inline virtual bool isPoseAchievable(const Pose3& start, const Pose3& goal, const std::string& frame = "") {
+	inline virtual bool isPoseAchievable(const Pose3& start, const Pose3& goal, const std::string& frame) {
 		return false;
 	}
 
@@ -45,7 +45,7 @@ public:
 	/**
 	 * @brief Related to simplest navigation task (moving to goal pose)
 	 */
-	virtual bool setGoal(const Pose3& pose, const std::string& frame = "") {
+	virtual bool setGoal(const Pose3& pose, const std::string& frame) {
 		goal_pose_ = pose;
 		goal_frame_ = frame;
 		return true;
@@ -91,6 +91,13 @@ public:
 	 */
 	inline virtual std::string getGoalFrame() const {
 		return goal_frame_;
+	}
+
+	/**
+	 * @brief Retrieves name of the world (simulator) frame
+	 */
+	inline virtual std::string getWorldFrame() const {
+		return world_frame_name_;
 	}
 
 protected:
