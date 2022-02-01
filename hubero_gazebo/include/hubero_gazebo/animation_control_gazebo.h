@@ -12,7 +12,11 @@ class AnimationControlGazebo: public AnimationControlBase {
 public:
     AnimationControlGazebo();
 
-    void initialize(const gazebo::physics::Actor::SkeletonAnimation_M& anims, const AnimationType& anim_init);
+    void initialize(
+        std::function<void(gazebo::physics::TrajectoryInfoPtr&)> anim_updater,
+        const gazebo::physics::Actor::SkeletonAnimation_M& anims,
+        const AnimationType& anim_init
+    );
 
     virtual void adjustPose(Pose3& pose, const Time& time_current) override;
 
@@ -49,6 +53,9 @@ protected:
 
     /// Custom trajectory info
     gazebo::physics::TrajectoryInfoPtr trajectory_info_ptr_;
+
+    /// Functor that takes trajectory info and updates animation in the simulator
+    std::function<void(gazebo::physics::TrajectoryInfoPtr&)> trajectory_updater_;
 
 }; // class AnimationControlGazebo
 
