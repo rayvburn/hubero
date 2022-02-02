@@ -22,9 +22,9 @@ public:
 		};
 	}
 
-	void request(const Pose3& goal) {
+	virtual bool request(const Pose3& goal) override {
 		goal_ = goal;
-		TaskEssentials::request(goal);
+		return TaskEssentials::request(goal);
 	}
 
 	inline Pose3 getGoal() const {

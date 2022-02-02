@@ -20,8 +20,8 @@ public:
 		};
 	}
 
-	void request() {
-		TaskEssentials::request();
+	virtual bool request() override {
+		return TaskEssentials::request();
 	}
 }; // TaskStand
 

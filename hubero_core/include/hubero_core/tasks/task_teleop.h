@@ -17,8 +17,8 @@ public:
 		};
 	}
 
-	void request() {
-		TaskEssentials::request();
+	virtual bool request() override {
+		return TaskEssentials::request();
 	}
 
 	void setCommand(const Vector3& cmd) {
