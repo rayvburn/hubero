@@ -19,7 +19,7 @@ public:
 		};
 	}
 
-	bool request(const std::string& object_name) {
+	virtual bool request(const std::string& object_name) override {
 		object_name_ = object_name;
 		return TaskEssentials::request(object_name);
 	}

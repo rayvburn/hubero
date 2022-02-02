@@ -25,7 +25,7 @@ public:
 		};
 	}
 
-	bool request(const Vector3& pos, const double& yaw) {
+	virtual bool request(const Vector3& pos, const double& yaw) override {
 		position_ = pos;
 		yaw_ = yaw;
 		return TaskEssentials::request(pos, yaw);

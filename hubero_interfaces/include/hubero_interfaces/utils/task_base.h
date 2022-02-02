@@ -1,6 +1,7 @@
 #pragma once
 
 #include <hubero_common/defines.h>
+#include <hubero_common/typedefs.h>
 
 #include <functional>
 #include <map>
@@ -64,6 +65,43 @@ public:
         requested_ = true;
         feedback_type_ = TASK_FEEDBACK_PENDING;
     }
+
+    /**
+     * @defgroup hack This group contains virtual specification of the request template method
+     *
+     * @details This is an ugly hack (hopefully only temporary) to workaround the issue of template method lacking
+     * `virtual` keyword in C++. Therefore, derived class could not mark its @ref request method as virtual.
+     * This causes classes from @ref TaskRequestBase family call @ref TaskBase 's request instead of request
+     * implemented by target class.
+     *
+     * How to create methods in this group:
+     *   - put @ref request declaration that is present in each task derived from @ref TaskBase interface
+     *
+     * @note Consider visitor pattern here (not checked thoroughly if it is applicable)
+     *
+     * @{
+     */
+    /// @brief Request for follow object
+    virtual bool request(const std::string& s) {
+        return request<const std::string&>(s);
+    }
+
+    /// @brief Request for lie down, sit down
+    virtual bool request(const Vector3& v, const double& n) {
+        return request<const Vector3&, const double&>(v, n);
+    }
+
+    /// @brief Request for move around, stand, teleop
+    virtual bool request() {
+        return request<>();
+    }
+
+    /// @brief Request for move to goal, run, talk
+    virtual bool request(const Pose3& p) {
+        return request<const Pose3&>(p);
+    }
+
+    /// @}
 
     /**
      * @brief Must be called at the end of each @ref abort in dervied class

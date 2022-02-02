@@ -18,7 +18,7 @@ public:
 		};
 	}
 
-	bool request() {
+	virtual bool request() override {
 		return TaskEssentials::request();
 	}
 
