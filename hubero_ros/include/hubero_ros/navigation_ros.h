@@ -10,6 +10,8 @@
 #include <nav_msgs/GetPlan.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
+#include <move_base_msgs/MoveBaseActionFeedback.h>
+#include <move_base_msgs/MoveBaseActionResult.h>
 #include <mutex>
 
 namespace hubero {
@@ -102,11 +104,26 @@ public:
 	 */
 	static void setIdealCovariance(boost::array<double, 36>& cov);
 
+	/**
+	 * @brief Transforms actionlib_msgs::GoalStatus enum to hubero::TaskFeedbackType enum
+	 */
+	static TaskFeedbackType convertActionStatusToTaskFeedback(const uint8_t& status);
+
 protected:
 	/**
 	 * @brief Callback for velocity command retrieval
 	 */
 	void callbackCmdVel(const geometry_msgs::Twist::ConstPtr& msg);
+
+	/**
+	 * @brief Callback for movement action result retrieval
+	 */
+	void callbackFeedback(const move_base_msgs::MoveBaseActionFeedback::ConstPtr& msg);
+
+	/**
+	 * @brief Callback for movement action result retrieval
+	 */
+	void callbackResult(const move_base_msgs::MoveBaseActionResult::ConstPtr& msg);
 
 	/**
 	 * @defgroup rosinterface ROS interface
@@ -116,6 +133,10 @@ protected:
 	ros::Subscriber sub_cmd_vel_;
 	ros::ServiceClient srv_mb_get_plan_;
 	ros::Publisher pub_odom_;
+	/// @brief Subscriber of the move_base simple action server's feedback topic
+	ros::Subscriber sub_feedback_;
+	/// @brief Subscriber of the move_base simple action server's result topic
+	ros::Subscriber sub_result_;
 	/// @}
 
 	/**

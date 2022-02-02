@@ -75,6 +75,14 @@ bool NavigationRos::initialize(
 	nh.searchParam("/hubero_ros/navigation/odometry_topic", topic_nav_odometry);
 	nh.param(topic_nav_odometry, topic_nav_odometry, std::string("nav/odom"));
 
+	std::string topic_nav_feedback;
+	nh.searchParam("/hubero_ros/navigation/feedback_topic", topic_nav_feedback);
+	nh.param(topic_nav_feedback, topic_nav_feedback, std::string("nav/feedback"));
+
+	std::string topic_nav_result;
+	nh.searchParam("/hubero_ros/navigation/result_topic", topic_nav_result);
+	nh.param(topic_nav_result, topic_nav_result, std::string("nav/result"));
+
 	// nav config
 	std::string param_nav_get_plan_tolerance;
 	nh.searchParam("/hubero_ros/navigation/nav_get_plan_tolerance", param_nav_get_plan_tolerance);
@@ -107,16 +115,34 @@ bool NavigationRos::initialize(
 		PUBLISHER_QUEUE_SIZE
 	);
 
+	sub_feedback_ = node_ptr->getNodeHandlePtr()->subscribe(
+		topic_nav_feedback,
+		SUBSCRIBER_QUEUE_SIZE,
+		&NavigationRos::callbackFeedback,
+		this
+	);
+
+	sub_result_ = node_ptr->getNodeHandlePtr()->subscribe(
+		topic_nav_result,
+		SUBSCRIBER_QUEUE_SIZE,
+		&NavigationRos::callbackResult,
+		this
+	);
+
 	HUBERO_LOG("[%s].[NavigationRos] Initialized ROS navigation stack interface\r\n"
 		"\t(pub) goal request topic  at '%s'\r\n"
 		"\t(pub) goal cancel  topic  at '%s'\r\n"
 		"\t(srv) get plan     client at '%s'\r\n"
-		"\t(sub) cmd vel      topic  at '%s'\r\n",
+		"\t(sub) cmd vel      topic  at '%s'\r\n"
+		"\t(sub) feedback     topic  at '%s'\r\n"
+		"\t(sub) result       topic  at '%s'\r\n",
 		actor_name.c_str(),
 		topic_nav_goal.c_str(),
 		topic_nav_cancel.c_str(),
 		srv_nav_get_plan.c_str(),
-		topic_nav_cmd.c_str()
+		topic_nav_cmd.c_str(),
+		topic_nav_feedback.c_str(),
+		topic_nav_result.c_str()
 	);
 
 	return true;
@@ -274,11 +300,59 @@ void NavigationRos::setIdealCovariance(boost::array<double, 36>& cov) {
 	}
 }
 
+// static
+TaskFeedbackType NavigationRos::convertActionStatusToTaskFeedback(const uint8_t& status) {
+	// NOTE: basically GoalStatus matches TaskFeedbackType, but this allows to maintain proper operation
+	// even if API changes
+	switch (status) {
+		case actionlib_msgs::GoalStatus::ABORTED:
+			return TaskFeedbackType::TASK_FEEDBACK_ABORTED;
+		case actionlib_msgs::GoalStatus::ACTIVE:
+			return TaskFeedbackType::TASK_FEEDBACK_ACTIVE;
+		case actionlib_msgs::GoalStatus::LOST:
+			return TaskFeedbackType::TASK_FEEDBACK_LOST;
+		case actionlib_msgs::GoalStatus::PENDING:
+			return TaskFeedbackType::TASK_FEEDBACK_PENDING;
+		case actionlib_msgs::GoalStatus::PREEMPTED:
+			return TaskFeedbackType::TASK_FEEDBACK_PREEMPTED;
+		case actionlib_msgs::GoalStatus::PREEMPTING:
+			return TaskFeedbackType::TASK_FEEDBACK_PREEMPTING;
+		case actionlib_msgs::GoalStatus::RECALLED:
+			return TaskFeedbackType::TASK_FEEDBACK_RECALLED;
+		case actionlib_msgs::GoalStatus::RECALLING:
+			return TaskFeedbackType::TASK_FEEDBACK_RECALLING;
+		case actionlib_msgs::GoalStatus::REJECTED:
+			return TaskFeedbackType::TASK_FEEDBACK_REJECTED;
+		case actionlib_msgs::GoalStatus::SUCCEEDED:
+			return TaskFeedbackType::TASK_FEEDBACK_SUCCEEDED;
+		default:
+			return TaskFeedbackType::TASK_FEEDBACK_UNDEFINED;
+	}
+}
+
 void NavigationRos::callbackCmdVel(const geometry_msgs::Twist::ConstPtr& msg) {
 	const std::lock_guard<std::mutex> lock(mutex_callback_);
 	cmd_vel_.X(msg->linear.x);
 	cmd_vel_.Y(msg->linear.y);
 	cmd_vel_.Z(msg->angular.z);
+}
+
+void NavigationRos::callbackFeedback(const move_base_msgs::MoveBaseActionFeedback::ConstPtr& msg) {
+	const std::lock_guard<std::mutex> lock(mutex_callback_);
+	auto fb_type = NavigationRos::convertActionStatusToTaskFeedback(msg->status.status);
+	if (fb_type == TASK_FEEDBACK_UNDEFINED) {
+		return;
+	}
+	feedback_ = fb_type;
+}
+
+void NavigationRos::callbackResult(const move_base_msgs::MoveBaseActionResult::ConstPtr& msg) {
+	const std::lock_guard<std::mutex> lock(mutex_callback_);
+	auto fb_type = NavigationRos::convertActionStatusToTaskFeedback(msg->status.status);
+	if (fb_type == TASK_FEEDBACK_UNDEFINED) {
+		return;
+	}
+	feedback_ = fb_type;
 }
 
 } // namespace hubero
