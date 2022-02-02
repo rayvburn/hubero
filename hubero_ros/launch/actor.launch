@@ -69,6 +69,8 @@
     <arg name="nav_get_plan_topic" default="$(arg nav_ns)/get_plan"/>
     <arg name="nav_command_topic" default="$(arg nav_ns)/cmd_vel"/>
     <arg name="nav_odometry_topic" default="$(arg nav_ns)/odom"/>
+    <arg name="nav_feedback_topic" default="$(arg nav_ns)/feedback"/>
+    <arg name="nav_result_topic" default="$(arg nav_ns)/result"/>
     <arg name="nav_get_plan_tolerance" default="1.0"/>
 
     <!-- Append 'nav' related topics to full topic name that includes specific actor named <actor_name> -->
@@ -77,6 +79,8 @@
     <arg name="actor_nav_get_plan_topic" value="$(arg actor_ns)/$(arg nav_get_plan_topic)"/>
     <arg name="actor_nav_command_topic" value="$(arg actor_ns)/$(arg nav_command_topic)"/>
     <arg name="actor_nav_odometry_topic" value="$(arg actor_ns)/$(arg nav_odometry_topic)"/>
+    <arg name="actor_nav_feedback_topic" value="$(arg actor_ns)/$(arg nav_feedback_topic)"/>
+    <arg name="actor_nav_result_topic" value="$(arg actor_ns)/$(arg nav_result_topic)"/>
 
     <!-- Sensor data launch parameters -->
     <!-- NOTE: these must be used with caution - see details in 'actor_<sensor>_scan_topic' below -->
@@ -101,6 +105,8 @@
     <param name="hubero_ros/navigation/command_topic" value="$(arg actor_nav_command_topic)"/>
     <param name="hubero_ros/navigation/odometry_topic" value="$(arg actor_nav_odometry_topic)"/>
     <param name="hubero_ros/navigation/nav_get_plan_tolerance" value="$(arg nav_get_plan_tolerance)"/>
+    <param name="hubero_ros/navigation/feedback_topic" value="$(arg actor_nav_feedback_topic)"/>
+    <param name="hubero_ros/navigation/result_topic" value="$(arg actor_nav_result_topic)"/>
 
     <param name="hubero_ros/actor_frames/base" value="$(arg actor_base_frame)"/>
     <param name="hubero_ros/actor_frames/global_ref" value="$(arg actor_map_frame)"/>
