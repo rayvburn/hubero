@@ -2,7 +2,7 @@
 
 #include <hubero_common/typedefs.h>
 #include <hubero_core/tasks/task_essentials.h>
-#include <hubero_core/tasks/fsm_follow_object.h>
+#include <hubero_core/fsm/fsm_follow_object.h>
 
 namespace hubero {
 

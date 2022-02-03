@@ -1,7 +1,7 @@
 #pragma once
 
 #include <hubero_core/tasks/task_essentials.h>
-#include <hubero_core/tasks/fsm_move_around.h>
+#include <hubero_core/fsm/fsm_move_around.h>
 
 namespace hubero {
 

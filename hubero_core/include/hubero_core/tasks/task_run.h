@@ -2,7 +2,7 @@
 
 #include <hubero_common/typedefs.h>
 #include <hubero_core/tasks/task_essentials.h>
-#include <hubero_core/tasks/fsm_basic.h>
+#include <hubero_core/fsm/fsm_basic.h>
 
 namespace hubero {
 
@@ -18,7 +18,8 @@ public:
 	{
 		task_args_num_ = countArgumentsNum(&TaskRun::request);
 		state_bb_map_ = {
-			{FsmBasic::State::ACTIVE, BasicBehaviourType::BB_RUN}
+			{FsmBasic::State::ACTIVE, BasicBehaviourType::BB_RUN},
+			{FsmBasic::State::FINISHED, BasicBehaviourType::BB_STAND}
 		};
 	}
 

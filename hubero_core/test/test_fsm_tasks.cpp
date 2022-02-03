@@ -1,13 +1,47 @@
 #include <gtest/gtest.h>
 
-#include <hubero_core/tasks/fsm_basic.h>
-#include <hubero_core/tasks/fsm_follow_object.h>
-#include <hubero_core/tasks/fsm_lie_down.h>
-#include <hubero_core/tasks/fsm_move_around.h>
-#include <hubero_core/tasks/fsm_sit_down.h>
-#include <hubero_core/tasks/fsm_talk.h>
+#include <hubero_core/fsm/fsm_basic.h>
+#include <hubero_core/fsm/fsm_follow_object.h>
+#include <hubero_core/fsm/fsm_lie_down.h>
+#include <hubero_core/fsm/fsm_move_around.h>
+#include <hubero_core/fsm/fsm_sit_down.h>
+#include <hubero_core/fsm/fsm_talk.h>
 
 using namespace hubero;
+
+TEST(HuberoFsmTask, eventFsmBasic) {
+	EventFsmBasic pdef {};
+	ASSERT_EQ(pdef.aborted, false);
+	ASSERT_EQ(pdef.active, false);
+	ASSERT_EQ(pdef.finished, false);
+	ASSERT_EQ(pdef.requested, false);
+	ASSERT_EQ(pdef.nav_active, false);
+	ASSERT_EQ(pdef.nav_cancelled, false);
+	ASSERT_EQ(pdef.nav_rejected, false);
+	ASSERT_EQ(pdef.nav_succeeded, false);
+
+	TaskPredicates pt {};
+	pt.aborted = true;
+	pt.active = true;
+	pt.finished = true;
+	pt.requested = true;
+
+	NavPredicates pn {};
+	pn.nav_active = true;
+	pn.nav_cancelled = true;
+	pn.nav_rejected = true;
+	pn.nav_succeeded = true;
+
+	EventFsmBasic pparam(pt, pn);
+	ASSERT_EQ(pparam.aborted, true);
+	ASSERT_EQ(pparam.active, true);
+	ASSERT_EQ(pparam.finished, true);
+	ASSERT_EQ(pparam.requested, true);
+	ASSERT_EQ(pparam.nav_active, true);
+	ASSERT_EQ(pparam.nav_cancelled, true);
+	ASSERT_EQ(pparam.nav_rejected, true);
+	ASSERT_EQ(pparam.nav_succeeded, true);
+}
 
 /// single state 'fsm'
 TEST(HuberoFsmTasks, basic) {
@@ -15,6 +49,35 @@ TEST(HuberoFsmTasks, basic) {
 	EventFsmBasic event {};
 	ASSERT_EQ(fsm.current_state(), FsmBasic::State::ACTIVE);
 	fsm.process_event(event);
+	ASSERT_EQ(fsm.current_state(), FsmBasic::State::ACTIVE);
+
+	EventFsmBasic eventNavSucceded {};
+	eventNavSucceded.nav_succeeded = true;
+	fsm.process_event(eventNavSucceded);
+	ASSERT_EQ(fsm.current_state(), FsmBasic::State::FINISHED);
+
+	EventFsmBasic eventTaskActivation {};
+	eventTaskActivation.active = true;
+	fsm.process_event(eventTaskActivation);
+	ASSERT_EQ(fsm.current_state(), FsmBasic::State::ACTIVE);
+
+	EventFsmBasic eventNavCancelled {};
+	eventNavCancelled.nav_cancelled = true;
+	fsm.process_event(eventNavCancelled);
+	ASSERT_EQ(fsm.current_state(), FsmBasic::State::FINISHED);
+
+	fsm.process_event(eventTaskActivation);
+	ASSERT_EQ(fsm.current_state(), FsmBasic::State::ACTIVE);
+
+	EventFsmBasic eventNavRejected {};
+	eventNavRejected.nav_rejected = true;
+	fsm.process_event(eventNavRejected);
+	ASSERT_EQ(fsm.current_state(), FsmBasic::State::FINISHED);
+
+	fsm.process_event(eventTaskActivation);
+	ASSERT_EQ(fsm.current_state(), FsmBasic::State::ACTIVE);
+
+	fsm.process_event(eventTaskActivation);
 	ASSERT_EQ(fsm.current_state(), FsmBasic::State::ACTIVE);
 }
 

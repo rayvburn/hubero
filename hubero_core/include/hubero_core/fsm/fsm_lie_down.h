@@ -1,30 +1,14 @@
 #pragma once
 
-#include <hubero_core/tasks/task_predicates.h>
-#include <hubero_common/logger.h>
+#include <hubero_core/fsm/fsm_essentials.h>
+#include <hubero_core/events/event_fsm_lie_down.h>
 
 // fsmlite
 #include <fsm.h>
 
-#include <algorithm>
-#include <string>
-
 namespace hubero {
 
-struct EventFsmLieDown: public TaskPredicates {
-	bool goal_reached;
-	bool lied_down;
-	bool stood_up;
-
-	std::string toString() const {
-		return TaskPredicates::toString()
-			+ " goalReached: " + std::to_string(goal_reached)
-			+ " liedDown: " + std::to_string(lied_down)
-			+ " stoodUp: " + std::to_string(stood_up);
-	}
-};
-
-class FsmLieDown: public fsmlite::fsm<FsmLieDown> {
+class FsmLieDown: public fsmlite::fsm<FsmLieDown>, public FsmEssentials {
 public:
 	enum State {
 		MOVING_TO_GOAL = 0,
@@ -34,29 +18,9 @@ public:
 		STANDING
 	};
 
-	FsmLieDown(State state_init = State::MOVING_TO_GOAL):
-		fsm(state_init),
-		logging_verbose_(false) {}
-
-	void setLoggingVerbosity(bool enable_verbose) {
-		logging_verbose_ = enable_verbose;
-	}
-
-	void setLoggerPreamble(const std::string& text) {
-		logger_text_ = text;
-	}
+	FsmLieDown(State state_init = State::MOVING_TO_GOAL): fsm(state_init), FsmEssentials("FsmLieDown") {}
 
 protected:
-	/**
-	 * @brief Logs @ref event details if @ref logging_verbose_ was set to true
-	 */
-	void logTransition(const EventFsmLieDown& event) const {
-		if (!logging_verbose_) {
-			return;
-		}
-		HUBERO_LOG("[%s].[FsmLieDown] transition conditions\r\n%s\r\n", logger_text_.c_str(), event.toString().c_str());
-	}
-
 	/**
 	 * @defgroup guards FSM transition guards
 	 * @{
@@ -84,23 +48,19 @@ protected:
 	 * @{
 	 */
 	void transHandlerMovingToGoal2LyingDown(const EventFsmLieDown& event) {
-		HUBERO_LOG("[%s].[FsmLieDown] transition from MOVING TO POSITION to LYING DOWN\r\n", logger_text_.c_str());
-		logTransition(event);
+		logTransition("MOVING TO POSITION", "LYING DOWN", event);
 	}
 
 	void transHandlerLyingDown2Lying(const EventFsmLieDown& event) {
-		HUBERO_LOG("[%s].[FsmLieDown] transition from LYING DOWN to LYING\r\n", logger_text_.c_str());
-		logTransition(event);
+		logTransition("LYING DOWN", "LYING", event);
 	}
 
 	void transHandlerLying2StandingUp(const EventFsmLieDown& event) {
-		HUBERO_LOG("[%s].[FsmLieDown] transition from LYING to STANDING UP\r\n", logger_text_.c_str());
-		logTransition(event);
+		logTransition("LYING", "STANDING UP", event);
 	}
 
 	void transHandlerStandingUp2Standing(const EventFsmLieDown& event) {
-		HUBERO_LOG("[%s].[FsmLieDown] transition from STANDING UP to STANDING\r\n", logger_text_.c_str());
-		logTransition(event);
+		logTransition("STANDING UP", "STANDING", event);
 	}
 	/** @} */ // end of transition handlers group
 
@@ -114,9 +74,6 @@ protected:
 		mem_fn_row<State::LYING, EventFsmLieDown, State::STANDING_UP, &FsmLieDown::transHandlerLying2StandingUp, &FsmLieDown::guardLying2StandingUp>,
 		mem_fn_row<State::STANDING_UP, EventFsmLieDown, State::STANDING, &FsmLieDown::transHandlerStandingUp2Standing, &FsmLieDown::guardStandingUp2Standing>
 	>;
-
-	bool logging_verbose_;
-	std::string logger_text_;
 
 	friend class fsmlite::fsm<FsmLieDown>;
 };

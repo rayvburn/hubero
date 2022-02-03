@@ -1,6 +1,7 @@
 #pragma once
 
-#include <hubero_core/tasks/task_predicates.h>
+#include <hubero_core/events/event_fsm_super.h>
+#include <hubero_core/fsm/fsm_essentials.h>
 
 // fsmlite
 #include <fsm.h>
@@ -11,38 +12,9 @@
 namespace hubero {
 
 /**
- * @brief Struct with predicates of each task
- * @details It is assumed that start of task execution erases 'requested' flag from @ref TaskPredicates
- */
-struct EventFsmSuper {
-	TaskPredicates stand;
-	TaskPredicates move_to_goal;
-	TaskPredicates move_around;
-	TaskPredicates follow_object;
-	TaskPredicates lie_down;
-	TaskPredicates sit_down;
-	TaskPredicates run;
-	TaskPredicates talk;
-	TaskPredicates teleop;
-
-	std::string toString() const {
-		return "\tstand:        " + stand.toString() + "\r\n"
-			+ "\tmoveToGoal:   " + move_to_goal.toString() + "\r\n"
-			+ "\tmoveAround:   " + move_around.toString() + "\r\n"
-			+ "\tfollowObject: " + follow_object.toString() + "\r\n"
-			+ "\tlieDown:      " + lie_down.toString() + "\r\n"
-			+ "\tsitDown:      " + sit_down.toString() + "\r\n"
-			+ "\trun:          " + run.toString() + "\r\n"
-			+ "\ttalk:         " + talk.toString() + "\r\n"
-			+ "\tteleop:       " + teleop.toString()
-		;
-	}
-};
-
-/**
  * @brief Super FSM - orchestrates highest layer of the Hierarchical Finite State Machine (HFSM)
  */
-class FsmSuper: public fsmlite::fsm<FsmSuper> {
+class FsmSuper: public fsmlite::fsm<FsmSuper>, public FsmEssentials {
 public:
 	/**
 	 * @brief Enum with super-states definitions
@@ -61,16 +33,7 @@ public:
 
 	FsmSuper(State state_init = State::STAND);
 
-	void setLoggingVerbosity(bool enable_verbose);
-
-	void setLoggerPreamble(const std::string& text);
-
 protected:
-	/**
-	 * @brief Logs @ref event details if @ref logging_verbose_ was set to true
-	 */
-	void logTransition(const EventFsmSuper& event) const;
-
 	/**
 	 * @defgroup terminalconditions Terminal conditions
 	 * @{
@@ -88,21 +51,7 @@ protected:
 	 * @brief Evaluates request predicate in 'self' (caller task) and checks how many requests there are in @ref event.
 	 * @details Aim is to find whether there is another task requested currently.
 	 */
-	static bool anotherTaskRequested(const EventFsmSuper& event, const TaskPredicates& task_self) {
-		std::vector<bool> tasks_requested;
-		tasks_requested.push_back(event.follow_object.requested);
-		tasks_requested.push_back(event.lie_down.requested);
-		tasks_requested.push_back(event.move_around.requested);
-		tasks_requested.push_back(event.move_to_goal.requested);
-		tasks_requested.push_back(event.run.requested);
-		tasks_requested.push_back(event.sit_down.requested);
-		tasks_requested.push_back(event.stand.requested);
-		tasks_requested.push_back(event.talk.requested);
-		tasks_requested.push_back(event.teleop.requested);
-		int tasks_requested_num = std::count(tasks_requested.cbegin(), tasks_requested.cend(), true);
-		// return true if there is another requested task
-		return (tasks_requested_num - static_cast<int>(task_self.requested)) > 0;
-	}
+	static bool anotherTaskRequested(const EventFsmSuper& event, const TaskPredicates& task_self);
 
 	/** @} */ // end of terminalconditions group
 
@@ -253,9 +202,6 @@ protected:
 		mem_fn_row<TELEOP, EventFsmSuper, STAND, &FsmSuper::transHandlerTeleop2Stand, &FsmSuper::guardTeleop2Stand>
 
 	>;
-
-	bool logging_verbose_;
-	std::string logger_text_;
 
 	friend class fsmlite::fsm<FsmSuper>;
 };
