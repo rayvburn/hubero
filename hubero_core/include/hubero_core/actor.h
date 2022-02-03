@@ -176,13 +176,10 @@ protected:
 			terminateOtherTasks(task_ptr->getTaskType());
 		}
 
-		// fill up task predicates - those are used for orchestration of task execution
-		Tevent event {};
-		event.aborted = task_ptr->isAborted();
-		event.active = task_ptr->isActive();
-		event.finished = task_ptr->isFinished();
-		event.requested = task_ptr->isRequested();
-		return event;
+		// fill up task and navigation predicates - those are used for orchestration of task execution
+		TaskPredicates task_predicates(*task_ptr);
+		NavPredicates nav_predicates(navigation_ptr_->getFeedback());
+		return Tevent(task_predicates, nav_predicates);
 	}
 
 	/// @} // end of templates group

@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <hubero_core/fsm_super.h>
+#include <hubero_core/fsm/fsm_super.h>
 
 #include <iostream>
 

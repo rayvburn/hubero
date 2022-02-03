@@ -1,95 +1,82 @@
-#include <hubero_core/fsm_super.h>
+#include <hubero_core/fsm/fsm_super.h>
 #include <hubero_common/logger.h>
 
 namespace hubero {
 
-FsmSuper::FsmSuper(State state_init): fsm(state_init), logging_verbose_(false) {
+FsmSuper::FsmSuper(State state_init): fsm(state_init), FsmEssentials("FsmSuper") {
 
 }
 
-void FsmSuper::setLoggingVerbosity(bool enable_verbose) {
-	logging_verbose_ = enable_verbose;
-}
-
-void FsmSuper::setLoggerPreamble(const std::string& text) {
-	logger_text_ = text;
-}
-
-void FsmSuper::logTransition(const EventFsmSuper& event) const {
-	if (!logging_verbose_) {
-		return;
-	}
-	HUBERO_LOG("[%s].[FsmSuper] transition conditions\r\n%s\r\n", logger_text_.c_str(), event.toString().c_str());
+bool FsmSuper::anotherTaskRequested(const EventFsmSuper& event, const TaskPredicates& task_self) {
+	std::vector<bool> tasks_requested;
+	tasks_requested.push_back(event.follow_object.requested);
+	tasks_requested.push_back(event.lie_down.requested);
+	tasks_requested.push_back(event.move_around.requested);
+	tasks_requested.push_back(event.move_to_goal.requested);
+	tasks_requested.push_back(event.run.requested);
+	tasks_requested.push_back(event.sit_down.requested);
+	tasks_requested.push_back(event.stand.requested);
+	tasks_requested.push_back(event.talk.requested);
+	tasks_requested.push_back(event.teleop.requested);
+	int tasks_requested_num = std::count(tasks_requested.cbegin(), tasks_requested.cend(), true);
+	// return true if there is another requested task
+	return (tasks_requested_num - static_cast<int>(task_self.requested)) > 0;
 }
 
 void FsmSuper::transHandlerStand2MoveToGoal(const EventFsmSuper& event) {
-	HUBERO_LOG("[%s].[FsmSuper] transition from STAND to MOVE TO GOAL\r\n", logger_text_.c_str());
-	logTransition(event);
+	logTransition("STAND", "MOVE TO GOAL", event);
 }
 
 void FsmSuper::transHandlerStand2MoveAround(const EventFsmSuper& event) {
-	HUBERO_LOG("[%s].[FsmSuper] transition from STAND to MOVE AROUND\r\n", logger_text_.c_str());
-	logTransition(event);
+	logTransition("STAND", "MOVE AROUND", event);
 }
 
 void FsmSuper::transHandlerStand2FollowObject(const EventFsmSuper& event) {
-	HUBERO_LOG("[%s].[FsmSuper] transition from STAND to FOLLOW OBJECT\r\n", logger_text_.c_str());
-	logTransition(event);
+	logTransition("STAND", "FOLLOW OBJECT", event);
 }
 
 void FsmSuper::transHandlerStand2LieDown(const EventFsmSuper& event) {
-	HUBERO_LOG("[%s].[FsmSuper] transition from STAND to LIE DOWN\r\n", logger_text_.c_str());
-	logTransition(event);
+	logTransition("STAND", "LIE DOWN", event);
 }
 
 void FsmSuper::transHandlerStand2Run(const EventFsmSuper& event) {
-	HUBERO_LOG("[%s].[FsmSuper] transition from STAND to RUN\r\n", logger_text_.c_str());
-	logTransition(event);
+	logTransition("STAND", "RUN", event);
 }
 
 void FsmSuper::transHandlerStand2Talk(const EventFsmSuper& event) {
-	HUBERO_LOG("[%s].[FsmSuper] transition from STAND to TALK\r\n", logger_text_.c_str());
-	logTransition(event);
+	logTransition("STAND", "TALK", event);
 }
 
 void FsmSuper::transHandlerStand2Teleop(const EventFsmSuper& event) {
-	HUBERO_LOG("[%s].[FsmSuper] transition from STAND to TELEOP\r\n", logger_text_.c_str());
-	logTransition(event);
+	logTransition("STAND", "TELEOP", event);
 }
 
 void FsmSuper::transHandlerMoveToGoal2Stand(const EventFsmSuper& event) {
-	HUBERO_LOG("[%s].[FsmSuper] transition from MOVE TO GOAL to STAND\r\n", logger_text_.c_str());
-	logTransition(event);
+	logTransition("MOVE TO GOAL", "STAND", event);
 }
 
 void FsmSuper::transHandlerMoveAround2Stand(const EventFsmSuper& event) {
-	HUBERO_LOG("[%s].[FsmSuper] transition from MOVE AROUND to STAND\r\n", logger_text_.c_str());
-	logTransition(event);
+	logTransition("MOVE AROUND", "STAND", event);
 }
 
 void FsmSuper::transHandlerFollowObject2Stand(const EventFsmSuper& event) {
-	HUBERO_LOG("[%s].[FsmSuper] transition from FOLLOW OBJECT to STAND\r\n", logger_text_.c_str());
-	logTransition(event);
+	logTransition("FOLLOW OBJECT", "STAND", event);
 }
 
 void FsmSuper::transHandlerLieDown2Stand(const EventFsmSuper& event) {
-	HUBERO_LOG("[%s].[FsmSuper] transition from LIE DOWN to STAND\r\n", logger_text_.c_str());
-	logTransition(event);
+	logTransition("LIE DOWN", "STAND", event);
 }
 
 void FsmSuper::transHandlerRun2Stand(const EventFsmSuper& event) {
-	HUBERO_LOG("[%s].[FsmSuper] transition from RUN to STAND\r\n", logger_text_.c_str());
-	logTransition(event);
+	logTransition("RUN", "STAND", event);
 }
 
 void FsmSuper::transHandlerTalk2Stand(const EventFsmSuper& event) {
-	HUBERO_LOG("[%s].[FsmSuper] transition from TALK to STAND\r\n", logger_text_.c_str());
-	logTransition(event);
+	logTransition("TALK", "STAND", event);
 }
 
 void FsmSuper::transHandlerTeleop2Stand(const EventFsmSuper& event) {
-	HUBERO_LOG("[%s].[FsmSuper] transition from TELEOP to STAND\r\n", logger_text_.c_str());
-	logTransition(event);
+	logTransition("TELEOP", "STAND", event);
 }
 
 } // namespace hubero
