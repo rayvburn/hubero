@@ -273,6 +273,7 @@ bool NavigationRos::cancelGoal() {
 		return false;
 	}
 
+	NavigationBase::cancelGoal();
 	actionlib_msgs::GoalID goal_cancel;
 	pub_mb_cancel_.publish(goal_cancel);
 	HUBERO_LOG(
