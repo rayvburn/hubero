@@ -13,7 +13,40 @@ Actor::Actor():
 	task_follow_object_ptr_(std::make_shared<TaskFollowObject>()),
 	task_teleop_ptr_(std::make_shared<TaskTeleop>()),
 	task_run_ptr_(std::make_shared<TaskRun>()),
-	task_talk_ptr_(std::make_shared<TaskTalk>())
+	task_talk_ptr_(std::make_shared<TaskTalk>()),
+	task_map_({
+		{TaskType::TASK_FOLLOW_OBJECT, task_follow_object_ptr_},
+		{TaskType::TASK_LIE_DOWN, task_lie_down_ptr_},
+		{TaskType::TASK_MOVE_AROUND, task_move_around_ptr_},
+		{TaskType::TASK_MOVE_TO_GOAL, task_move_to_goal_ptr_},
+		{TaskType::TASK_RUN, task_run_ptr_},
+		{TaskType::TASK_SIT_DOWN, task_sit_down_ptr_},
+		{TaskType::TASK_STAND, task_stand_ptr_},
+		{TaskType::TASK_TALK, task_talk_ptr_},
+		{TaskType::TASK_TELEOP, task_teleop_ptr_}
+	}),
+	state_memory_updater_map_({
+		{FsmSuper::State::STAND, std::bind(&Actor::updateMemoryFromTaskStand, this, std::placeholders::_1)},
+		{FsmSuper::State::MOVE_TO_GOAL, std::bind(&Actor::updateMemoryFromTaskMoveToGoal, this, std::placeholders::_1)},
+		{FsmSuper::State::MOVE_AROUND, std::bind(&Actor::updateMemoryFromTaskMoveAround, this, std::placeholders::_1)},
+		{FsmSuper::State::LIE_DOWN, std::bind(&Actor::updateMemoryFromTaskLieDown, this, std::placeholders::_1)},
+		{FsmSuper::State::SIT_DOWN, std::bind(&Actor::updateMemoryFromTaskSitDown, this, std::placeholders::_1)},
+		{FsmSuper::State::FOLLOW_OBJECT, std::bind(&Actor::updateMemoryFromTaskFollowObject, this, std::placeholders::_1)},
+		{FsmSuper::State::TELEOP, std::bind(&Actor::updateMemoryFromTaskTeleop, this, std::placeholders::_1)},
+		{FsmSuper::State::RUN, std::bind(&Actor::updateMemoryFromTaskRun, this, std::placeholders::_1)},
+		{FsmSuper::State::TALK, std::bind(&Actor::updateMemoryFromTaskTalk, this, std::placeholders::_1)}
+	}),
+	state_tf_exec_map_({
+		{FsmSuper::State::STAND, std::bind(&Actor::executeTaskStand, this)},
+		{FsmSuper::State::MOVE_TO_GOAL, std::bind(&Actor::executeTaskMoveToGoal, this)},
+		{FsmSuper::State::MOVE_AROUND, std::bind(&Actor::executeTaskMoveAround, this)},
+		{FsmSuper::State::LIE_DOWN, std::bind(&Actor::executeTaskLieDown, this)},
+		{FsmSuper::State::SIT_DOWN, std::bind(&Actor::executeTaskSitDown, this)},
+		{FsmSuper::State::FOLLOW_OBJECT, std::bind(&Actor::executeTaskFollowObject, this)},
+		{FsmSuper::State::TELEOP, std::bind(&Actor::executeTaskTeleop, this)},
+		{FsmSuper::State::RUN, std::bind(&Actor::executeTaskRun, this)},
+		{FsmSuper::State::TALK, std::bind(&Actor::executeTaskTalk, this)}
+	})
 {
 	TaskBase::addBasicBehaviourHandler(BB_STAND, std::bind(&Actor::bbStand, this));
 	TaskBase::addBasicBehaviourHandler(BB_ALIGN_TO_TARGET, std::bind(&Actor::bbAlignToTarget, this));
@@ -27,30 +60,6 @@ Actor::Actor():
 	TaskBase::addBasicBehaviourHandler(BB_RUN, std::bind(&Actor::bbRun, this));
 	TaskBase::addBasicBehaviourHandler(BB_TALK, std::bind(&Actor::bbTalk, this));
 	TaskBase::addBasicBehaviourHandler(BB_TELEOP, std::bind(&Actor::bbTeleop, this));
-
-	state_memory_updater_map_ = decltype(state_memory_updater_map_){
-		{FsmSuper::State::STAND, std::bind(&Actor::updateMemoryFromTaskStand, this, std::placeholders::_1)},
-		{FsmSuper::State::MOVE_TO_GOAL, std::bind(&Actor::updateMemoryFromTaskMoveToGoal, this, std::placeholders::_1)},
-		{FsmSuper::State::MOVE_AROUND, std::bind(&Actor::updateMemoryFromTaskMoveAround, this, std::placeholders::_1)},
-		{FsmSuper::State::LIE_DOWN, std::bind(&Actor::updateMemoryFromTaskLieDown, this, std::placeholders::_1)},
-		{FsmSuper::State::SIT_DOWN, std::bind(&Actor::updateMemoryFromTaskSitDown, this, std::placeholders::_1)},
-		{FsmSuper::State::FOLLOW_OBJECT, std::bind(&Actor::updateMemoryFromTaskFollowObject, this, std::placeholders::_1)},
-		{FsmSuper::State::TELEOP, std::bind(&Actor::updateMemoryFromTaskTeleop, this, std::placeholders::_1)},
-		{FsmSuper::State::RUN, std::bind(&Actor::updateMemoryFromTaskRun, this, std::placeholders::_1)},
-		{FsmSuper::State::TALK, std::bind(&Actor::updateMemoryFromTaskTalk, this, std::placeholders::_1)}
-	};
-
-	state_tf_exec_map_ = decltype(state_tf_exec_map_){
-		{FsmSuper::State::STAND, std::bind(&Actor::executeTaskStand, this)},
-		{FsmSuper::State::MOVE_TO_GOAL, std::bind(&Actor::executeTaskMoveToGoal, this)},
-		{FsmSuper::State::MOVE_AROUND, std::bind(&Actor::executeTaskMoveAround, this)},
-		{FsmSuper::State::LIE_DOWN, std::bind(&Actor::executeTaskLieDown, this)},
-		{FsmSuper::State::SIT_DOWN, std::bind(&Actor::executeTaskSitDown, this)},
-		{FsmSuper::State::FOLLOW_OBJECT, std::bind(&Actor::executeTaskFollowObject, this)},
-		{FsmSuper::State::TELEOP, std::bind(&Actor::executeTaskTeleop, this)},
-		{FsmSuper::State::RUN, std::bind(&Actor::executeTaskRun, this)},
-		{FsmSuper::State::TALK, std::bind(&Actor::executeTaskTalk, this)}
-	};
 }
 
 void Actor::initializeSim(
@@ -83,18 +92,6 @@ void Actor::initializeTask(std::shared_ptr<hubero::TaskRequestBase> task_request
 	task_request_ptr_->addTask(task_teleop_ptr_->getTaskType(), task_teleop_ptr_);
 	task_request_ptr_->addTask(task_run_ptr_->getTaskType(), task_run_ptr_);
 	task_request_ptr_->addTask(task_talk_ptr_->getTaskType(), task_talk_ptr_);
-
-	task_map_ = decltype(task_map_){
-		{TaskType::TASK_FOLLOW_OBJECT, task_follow_object_ptr_},
-		{TaskType::TASK_LIE_DOWN, task_lie_down_ptr_},
-		{TaskType::TASK_MOVE_AROUND, task_move_around_ptr_},
-		{TaskType::TASK_MOVE_TO_GOAL, task_move_to_goal_ptr_},
-		{TaskType::TASK_RUN, task_run_ptr_},
-		{TaskType::TASK_SIT_DOWN, task_sit_down_ptr_},
-		{TaskType::TASK_STAND, task_stand_ptr_},
-		{TaskType::TASK_TALK, task_talk_ptr_},
-		{TaskType::TASK_TELEOP, task_teleop_ptr_}
-	};
 }
 
 void Actor::update(const Time& time) {
