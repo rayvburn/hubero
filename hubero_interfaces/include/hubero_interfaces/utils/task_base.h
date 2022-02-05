@@ -64,6 +64,7 @@ public:
         finished_ = false;
         requested_ = true;
         feedback_type_ = TASK_FEEDBACK_PENDING;
+        return true;
     }
 
     /**
