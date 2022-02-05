@@ -1,16 +1,25 @@
 #pragma once
 
 #include <hubero_common/logger.h>
+#include <functional>
+#include <map>
 #include <string>
 
 namespace hubero {
 
 class FsmEssentials {
 public:
+    void addTransitionHandler(const int& state_src, const int& state_dst, std::function<void()> handler) {
+        transition_handlers_map_.insert({std::make_pair(state_src, state_dst), std::move(handler)});
+    }
+
     void setLoggingVerbosity(bool enable_verbose) {
 		logging_verbose_ = enable_verbose;
 	}
 
+    /**
+     * @brief Updates logger preamble - typically actor name will be put there
+     */
 	void setLoggerPreamble(const std::string& text) {
 		logger_preamble_ = text;
 	}
@@ -32,7 +41,27 @@ protected:
         logTransitionConditions(event);
     }
 
+    int transitionHandler(const int& state_src, const int& state_dst) {
+        int calls_counter = 0;
+
+        // first, try to find handler with a given key, defined by state_src and state_dst
+        auto it_handler = transition_handlers_map_.find(std::make_pair(state_src, state_dst));
+        if (it_handler == transition_handlers_map_.end()) {
+            return calls_counter;
+        }
+
+        // key basically was found, so now find set of entries matching given key
+        auto range = transition_handlers_map_.equal_range(std::make_pair(state_src, state_dst));
+        for (auto i = range.first; i != range.second; ++i) {
+            i->second();
+            calls_counter++;
+        }
+        return calls_counter;
+    }
+
     std::string fsm_name_;
+    std::multimap<std::pair<int, int>, std::function<void()>> transition_handlers_map_;
+
     bool logging_verbose_;
 	std::string logger_preamble_;
 
