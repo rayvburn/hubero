@@ -27,11 +27,12 @@ protected:
 	 * @{
 	 */
 	bool guardMovingToGoal2Talking(const EventFsmTalk& event) const {
-		return event.goal_reached;
+		return event.isNavigationSucceeded();
 	}
 
 	bool guardTalking2MovingToGoal(const EventFsmTalk& event) const {
-		return !event.goal_reached;
+		// FIXME: this is not the best solution if task will be dynamic-object-oriented
+		return event.isEnded();
 	}
 	/** @} */ // end of guards group
 
@@ -41,10 +42,12 @@ protected:
 	 */
 	void transHandlerMovingToGoal2Talking(const EventFsmTalk& event) {
 		logTransition("MOVING TO POSITION", "TALKING", event);
+		transitionHandler(State::MOVING_TO_GOAL, State::TALKING);
 	}
 
 	void transHandlerTalking2MovingToGoal(const EventFsmTalk& event) {
 		logTransition("TALKING", "MOVING TO POSITION", event);
+		transitionHandler(State::TALKING, State::MOVING_TO_GOAL);
 	}
 	/** @} */ // end of transition handlers group
 

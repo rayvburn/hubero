@@ -7,7 +7,7 @@ namespace hubero {
 
 struct EventFsmBasic: public TaskPredicates, public NavPredicates {
 	std::string toString() const {
-		return TaskPredicates::toString() + NavPredicates::toString();
+		return "task {" + TaskPredicates::toString() + "} nav {" + NavPredicates::toString() + "}";
 	}
 
 	EventFsmBasic(): TaskPredicates(), NavPredicates() {}

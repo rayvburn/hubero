@@ -69,15 +69,21 @@ if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_fsm_tasks test/test_fsm_tasks.cpp)
   target_link_libraries(test_fsm_tasks ${ACTOR_LIB_NAME})
 
-  catkin_add_gtest(test_task_base test/test_task_base.cpp)
-  target_link_libraries(test_task_base ${ACTOR_LIB_NAME})
+  catkin_add_gtest(test_task_predicates test/test_task_predicates.cpp)
+  target_link_libraries(test_task_predicates ${ACTOR_LIB_NAME})
 
-  catkin_add_gtest(test_tasks test/test_tasks.cpp)
-  target_link_libraries(test_tasks ${ACTOR_LIB_NAME})
+  catkin_add_gtest(test_task_status test/test_task_status.cpp)
+  target_link_libraries(test_task_status ${ACTOR_LIB_NAME})
 
-  catkin_add_gtest(test_task_request test/test_task_request.cpp)
-  target_link_libraries(test_task_request ${ACTOR_LIB_NAME})
+  catkin_add_gtest(test_task_request_objectives test/test_task_request_objectives.cpp)
+  target_link_libraries(test_task_request_objectives ${ACTOR_LIB_NAME})
+
+  catkin_add_gtest(test_task_request_arg_validity test/test_task_request_arg_validity.cpp)
+  target_link_libraries(test_task_request_arg_validity ${ACTOR_LIB_NAME})
 
   catkin_add_gtest(test_navigation_base test/test_navigation_base.cpp)
   target_link_libraries(test_navigation_base ${ACTOR_LIB_NAME})
+
+  catkin_add_gtest(test_navigation_predicates test/test_navigation_predicates.cpp)
+  target_link_libraries(test_navigation_predicates ${ACTOR_LIB_NAME})
 endif()

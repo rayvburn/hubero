@@ -23,11 +23,11 @@ protected:
 	 * @{
 	 */
 	bool guardMoveToObject2Wait(const EventFsmFollowObject& event) const {
-		return event.object_nearby;
+		return event.isObjectNearby();
 	}
 
 	bool guardWait2MoveToObject(const EventFsmFollowObject& event) const {
-		return !event.object_nearby;
+		return !event.isObjectNearby();
 	}
 	/** @} */ // end of guards group
 
@@ -37,10 +37,12 @@ protected:
 	 */
 	void transHandlerMoveToObject2Wait(const EventFsmFollowObject& event) {
 		logTransition("MOVING TO OBJECT", "WAITING FOR MOVEMENT", event);
+		transitionHandler(State::MOVING_TO_GOAL, State::WAITING_FOR_MOVEMENT);
 	}
 
 	void transHandlerWait2MoveToObject(const EventFsmFollowObject& event) {
 		logTransition("WAITING FOR MOVEMENT", "MOVING TO OBJECT", event);
+		transitionHandler(State::WAITING_FOR_MOVEMENT, State::MOVING_TO_GOAL);
 	}
 	/** @} */ // end of transition handlers group
 

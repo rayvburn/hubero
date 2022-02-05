@@ -5,27 +5,46 @@
 namespace hubero {
 
 struct EventFsmSitDown: public EventFsmBasic {
-	bool goal_reached;
-	bool sat_down;
-	bool stood_up;
-
-	std::string toString() const {
-		return EventFsmBasic::toString()
-			+ " goalReached: " + std::to_string(goal_reached)
-			+ " liedDown: " + std::to_string(sat_down)
-			+ " stoodUp: " + std::to_string(stood_up);
-	}
-
-    EventFsmSitDown() = default;
+	EventFsmSitDown() = default;
 
     EventFsmSitDown(const EventFsmBasic& basic):
         EventFsmBasic(basic),
-        goal_reached(false),
-        sat_down(false),
-        stood_up(false) {}
+        sat_down_(false),
+        stood_up_(false) {}
 
-    EventFsmSitDown(const TaskPredicates& task, const NavPredicates& nav):
+	EventFsmSitDown(const TaskPredicates& task, const NavPredicates& nav):
         EventFsmSitDown(EventFsmBasic(task, nav)) {}
+
+    EventFsmSitDown(const TaskPredicates& task, const NavPredicates& nav, bool sat_down, bool stood_up):
+        EventFsmBasic(task, nav),
+		sat_down_(sat_down),
+		stood_up_(stood_up) {}
+
+	std::string toString() const {
+		return EventFsmBasic::toString()
+			+ " liedDown: " + std::to_string(sat_down_)
+			+ " stoodUp: " + std::to_string(stood_up_);
+	}
+
+	void setSatDown(bool sat_down) {
+		sat_down_ = sat_down;
+	}
+
+	void setStoodUp(bool stood_up) {
+		stood_up_ = stood_up;
+	}
+
+	bool hasSatDown() const {
+		return sat_down_;
+	}
+
+	bool hasStoodUp() const {
+		return stood_up_;
+	}
+
+protected:
+	bool sat_down_;
+	bool stood_up_;
 };
 
 } // namespace hubero

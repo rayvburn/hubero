@@ -44,7 +44,7 @@ protected:
 	 * @param task: task of which terminal condition is being evaluated
 	 */
 	static bool helperTerminalCondition(const EventFsmSuper& event, const TaskPredicates& task) {
-		return task.finished || task.aborted || FsmSuper::anotherTaskRequested(event, task);
+		return task.isSucceeded() || task.isAborted() || FsmSuper::anotherTaskRequested(event, task);
 	}
 
 	/**
@@ -62,7 +62,7 @@ protected:
 	 * @{
 	 */
 	static bool helperTransCondStand2Task(const TaskPredicates& predicates) {
-		return predicates.requested;
+		return predicates.isPending();
 	}
 
 	static bool helperTransCondTask2Stand(const TaskPredicates& /* predicates */) {

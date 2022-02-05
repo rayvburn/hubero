@@ -5,24 +5,17 @@
 namespace hubero {
 
 struct EventFsmMoveAround: public EventFsmBasic {
-	bool goal_reached;
-	bool goal_selected;
-
-	std::string toString() const {
-		return EventFsmBasic::toString()
-			+ " goalReached: " + std::to_string(goal_reached)
-			+ " goalSelected: " + std::to_string(goal_selected);
-	}
-
     EventFsmMoveAround() = default;
 
     EventFsmMoveAround(const EventFsmBasic& basic):
-        EventFsmBasic(basic),
-        goal_reached(false),
-        goal_selected(false) {}
+        EventFsmBasic(basic) {}
 
     EventFsmMoveAround(const TaskPredicates& task, const NavPredicates& nav):
         EventFsmMoveAround(EventFsmBasic(task, nav)) {}
+
+    std::string toString() const {
+		return EventFsmBasic::toString();
+	}
 };
 
 } // namespace hubero
