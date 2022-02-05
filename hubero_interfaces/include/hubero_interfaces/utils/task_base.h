@@ -104,9 +104,10 @@ public:
     /// @}
 
     /**
-     * @brief Must be called at the end of each @ref abort in dervied class
+     * @brief Updates task flags so they show that task was aborted, active flag is not erased
+     * @note Must be called at the end of each @ref abort in dervied class
      */
-    bool abort() {
+    virtual bool abort() {
         bool actual_abort_call = requested_;
         aborted_ = true;
         finished_ = false;
@@ -115,7 +116,11 @@ public:
         return actual_abort_call;
     }
 
-    virtual inline void activate() {
+    /**
+     * @brief Updates task flags so it is known that it actively executes
+     * @note Must be called at the end of each @ref activate in dervied class
+     */
+    virtual void activate() {
         active_ = true;
         aborted_ = false;
         // leave finished_ as it is
@@ -123,11 +128,29 @@ public:
         feedback_type_ = TASK_FEEDBACK_ACTIVE;
     }
 
-    virtual inline void terminate() {
+    /**
+     * @brief Marks task as finished (succeeded)
+     * @note Must be called at the end of each @ref finish in dervied class
+     */
+    virtual void finish() {
+        active_ = false;
+        // aborted may be either true or false
+        finished_ = true;
+        requested_ = false;
+        feedback_type_ = TASK_FEEDBACK_SUCCEEDED;
+    }
+
+    /**
+     * @brief Clears all task flags so it is ready for next execution
+     * @details After call to this, task can no longer notify about status of last execution
+     * @note Must be called at the end of each @ref terminate in dervied class
+     */
+    virtual void terminate() {
         active_ = false;
         aborted_ = false;
         finished_ = false;
-        feedback_type_ = TASK_FEEDBACK_SUCCEEDED;
+        requested_ = false;
+        feedback_type_ = TASK_FEEDBACK_TERMINATED;
     }
 
     TaskType getTaskType() const {
