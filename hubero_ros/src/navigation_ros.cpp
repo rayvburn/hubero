@@ -177,7 +177,8 @@ void NavigationRos::update(const Pose3& pose, const Vector3& vel_lin, const Vect
 		return;
 	}
 
-	NavigationBase::update(pose);
+	// do not call base class update - let Navigation stack take care about feedback update and goal reaching
+	current_pose_ = pose;
 
 	// publish odom
 	nav_msgs::Odometry odometry {};

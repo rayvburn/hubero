@@ -12,6 +12,8 @@ namespace hubero {
  */
 class NavigationBase {
 public:
+	const double GOAL_REACHED_TOLERANCE_DEFAULT = 0.1;
+
 	/**
 	 * @brief Default constructor
 	 */
@@ -37,9 +39,20 @@ public:
 
 	/**
 	 * @brief Related to localisation
+	 *
+	 * @note @ref pose must be expressed in the same frame as goal pose in @setGoal
+	 * @note Basic implementation mainly for unit testing purposes
 	 */
 	virtual void update(const Pose3& pose, const Vector3& vel_lin = Vector3(), const Vector3& vel_ang = Vector3()) {
 		current_pose_ = pose;
+		Vector3 goal_xy(goal_pose_.Pos().X(), goal_pose_.Pos().Y(), 0.0);
+		Vector3 curr_xy(current_pose_.Pos().X(), current_pose_.Pos().Y(), 0.0);
+		double dist_to_goal = (curr_xy - goal_xy).Length();
+		if (dist_to_goal <= NavigationBase::GOAL_REACHED_TOLERANCE_DEFAULT) {
+			feedback_ = TaskFeedbackType::TASK_FEEDBACK_SUCCEEDED;
+		} else if (getFeedback() == TaskFeedbackType::TASK_FEEDBACK_PENDING) {
+			feedback_ = TaskFeedbackType::TASK_FEEDBACK_ACTIVE;
+		}
 	}
 
 	/**
@@ -48,6 +61,7 @@ public:
 	virtual bool setGoal(const Pose3& pose, const std::string& frame) {
 		goal_pose_ = pose;
 		goal_frame_ = frame;
+		feedback_ = TaskFeedbackType::TASK_FEEDBACK_PENDING;
 		return true;
 	}
 
@@ -55,7 +69,17 @@ public:
 	 * @brief Tries to abort the movement goal, returns true if successful
 	 */
 	virtual bool cancelGoal() {
+		feedback_ = TaskFeedbackType::TASK_FEEDBACK_ABORTED;
 		return false;
+	}
+
+	/**
+	 * @brief Sets feedback to UNDEFINED
+	 *
+	 * @details It is wise to call it once last goal was reached, otherwise it will keep succeeded state
+	 */
+	virtual void finish() {
+		feedback_ = TaskFeedbackType::TASK_FEEDBACK_TERMINATED;
 	}
 
 	/**
