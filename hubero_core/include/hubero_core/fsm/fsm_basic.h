@@ -13,11 +13,17 @@ public:
 	enum State {
         /// normal operation - motion execution based on plan
 		ACTIVE = 0,
-        /// some navigation-related predicate triggered task finishing
+        /// some navigation-related predicate notify task finished; kind of an interface between low level FSM and HFSM
         FINISHED
 	};
 
-	FsmBasic(State state_init = State::ACTIVE): fsm(state_init), FsmEssentials("FsmBasic") {}
+	/**
+	 * @brief Basic FSM (active/finished manner) constructor
+	 *
+	 * @note default initial state set to FINISHED as it will produce typical operation from the start (1st execution
+	 * not needed to be handled separately)
+	 */
+	FsmBasic(State state_init = State::FINISHED): fsm(state_init), FsmEssentials("FsmBasic") {}
 
 protected:
 	/**
@@ -25,11 +31,14 @@ protected:
 	 * @{
 	 */
 	bool guardActive2Finished(const EventFsmBasic& event) const {
-		return event.nav_succeeded || event.nav_cancelled || event.nav_rejected;
+		return event.isNavigationSucceeded()
+			|| event.isNavigationGoalCancelled()
+			|| event.isNavigationGoalRejected()
+			|| event.isNavigationEnded();
 	}
 
 	bool guardFinished2Active(const EventFsmBasic& event) const {
-		return event.active;// && (event.nav_succeeded || event.nav_cancelled || event.nav_rejected);
+		return event.isNavigationActive();
 	}
 
 	/** @} */ // end of guards group
@@ -40,10 +49,12 @@ protected:
 	 */
 	void transHandlerActive2Finished(const EventFsmBasic& event) {
 		logTransition("ACTIVE", "FINISHED", event);
+		transitionHandler(State::ACTIVE, State::FINISHED);
 	}
 
 	void transHandlerFinished2Active(const EventFsmBasic& event) {
 		logTransition("FINISHED", "ACTIVE", event);
+		transitionHandler(State::FINISHED, State::ACTIVE);
 	}
 
 	/** @} */ // end of transition handlers group

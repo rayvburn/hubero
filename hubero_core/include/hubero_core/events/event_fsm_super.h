@@ -31,6 +31,29 @@ struct EventFsmSuper {
 			+ "\tteleop:       " + teleop.toString()
 		;
 	}
+
+	EventFsmSuper() = default;
+
+	EventFsmSuper(
+		const std::shared_ptr<const TaskBase> task_follow_object_ptr,
+		const std::shared_ptr<const TaskBase> task_lie_down_ptr,
+		const std::shared_ptr<const TaskBase> task_move_around_ptr,
+		const std::shared_ptr<const TaskBase> task_move_to_goal_ptr,
+		const std::shared_ptr<const TaskBase> task_run_ptr,
+		const std::shared_ptr<const TaskBase> task_sit_down_ptr,
+		const std::shared_ptr<const TaskBase> task_stand_ptr,
+		const std::shared_ptr<const TaskBase> task_talk_ptr,
+		const std::shared_ptr<const TaskBase> task_teleop_ptr
+	):
+		follow_object(TaskPredicates(task_follow_object_ptr)),
+		lie_down(TaskPredicates(task_lie_down_ptr)),
+		move_around(TaskPredicates(task_move_around_ptr)),
+		move_to_goal(TaskPredicates(task_move_to_goal_ptr)),
+		run(TaskPredicates(task_run_ptr)),
+		sit_down(TaskPredicates(task_sit_down_ptr)),
+		stand(TaskPredicates(task_stand_ptr)),
+		talk(TaskPredicates(task_talk_ptr)),
+		teleop(TaskPredicates(task_teleop_ptr)) {}
 };
 
 } // namespace hubero

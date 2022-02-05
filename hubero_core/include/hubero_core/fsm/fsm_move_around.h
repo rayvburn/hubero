@@ -23,11 +23,11 @@ protected:
 	 * @{
 	 */
 	bool guardMovingToGoal2ChoosingGoal(const EventFsmMoveAround& event) const {
-		return event.goal_reached && !event.goal_selected;
+		return event.isNavigationSucceeded() || event.isNavigationEnded(); // event.goal_reached && !event.goal_selected;
 	}
 
 	bool guardChoosingGoal2MovingToGoal(const EventFsmMoveAround& event) const {
-		return !event.goal_reached && event.goal_selected;
+		return event.isNavigationActive();
 	}
 	/** @} */ // end of guards group
 
@@ -37,10 +37,12 @@ protected:
 	 */
 	void transHandlerMovingToGoal2ChoosingGoal(const EventFsmMoveAround& event) {
 		logTransition("MOVING TO POSITION", "CHOOSING GOAL", event);
+		transitionHandler(State::MOVING_TO_GOAL, State::CHOOSING_GOAL);
 	}
 
 	void transHandlerChoosingGoal2MovingToGoal(const EventFsmMoveAround& event) {
 		logTransition("CHOOSING GOAL", "MOVING TO POSITION", event);
+		transitionHandler(State::CHOOSING_GOAL, State::MOVING_TO_GOAL);
 	}
 	/** @} */ // end of transition handlers group
 

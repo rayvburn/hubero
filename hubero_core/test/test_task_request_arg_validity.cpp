@@ -18,9 +18,9 @@ using namespace hubero;
  * @brief try to request tasks via TaskRequest interface class
  * @details prepares TaskRequestBase so all available tasks are added to its internal map
  */
-class TaskRequestTest: public ::testing::Test {
+class HuberoTaskRequestArgValidityTest: public ::testing::Test {
 protected:
-	TaskRequestTest():
+	HuberoTaskRequestArgValidityTest():
 		tfo_ptr(std::make_shared<TaskFollowObject>()),
 		tld_ptr(std::make_shared<TaskLieDown>()),
 		tma_ptr(std::make_shared<TaskMoveAround>()),
@@ -58,7 +58,7 @@ protected:
 	TaskRequestBase task_req;
 };
 
-TEST_F(TaskRequestTest, trFollowObject) {
+TEST_F(HuberoTaskRequestArgValidityTest, trFollowObject) {
 	// follow object
 	ASSERT_FALSE(tfo_ptr->isRequested());
 	// wrong request
@@ -69,7 +69,7 @@ TEST_F(TaskRequestTest, trFollowObject) {
 	ASSERT_TRUE(tfo_ptr->isRequested());
 }
 
-TEST_F(TaskRequestTest, trLieDown) {
+TEST_F(HuberoTaskRequestArgValidityTest, trLieDown) {
 	// lie down
 	ASSERT_FALSE(tld_ptr->isRequested());
 	// wrong request
@@ -82,7 +82,7 @@ TEST_F(TaskRequestTest, trLieDown) {
 	ASSERT_TRUE(tld_ptr->isRequested());
 }
 
-TEST_F(TaskRequestTest, trMoveAround) {
+TEST_F(HuberoTaskRequestArgValidityTest, trMoveAround) {
 	// move around
 	ASSERT_FALSE(tma_ptr->isRequested());
 	// wrong request
@@ -93,7 +93,7 @@ TEST_F(TaskRequestTest, trMoveAround) {
 	ASSERT_TRUE(tma_ptr->isRequested());
 }
 
-TEST_F(TaskRequestTest, trMoveToGoal) {
+TEST_F(HuberoTaskRequestArgValidityTest, trMoveToGoal) {
 	// move to goal
 	ASSERT_FALSE(tmtg_ptr->isRequested());
 	// wrong request
@@ -105,7 +105,7 @@ TEST_F(TaskRequestTest, trMoveToGoal) {
 	ASSERT_TRUE(tmtg_ptr->isRequested());
 }
 
-TEST_F(TaskRequestTest, trRun) {
+TEST_F(HuberoTaskRequestArgValidityTest, trRun) {
 	// run
 	ASSERT_FALSE(tr_ptr->isRequested());
 	// wrong request
@@ -117,7 +117,7 @@ TEST_F(TaskRequestTest, trRun) {
 	ASSERT_TRUE(tr_ptr->isRequested());
 }
 
-TEST_F(TaskRequestTest, trSitDown) {
+TEST_F(HuberoTaskRequestArgValidityTest, trSitDown) {
 	// sit down
 	ASSERT_FALSE(tsd_ptr->isRequested());
 	// wrong request
@@ -128,7 +128,7 @@ TEST_F(TaskRequestTest, trSitDown) {
 	ASSERT_TRUE(tsd_ptr->isRequested());
 }
 
-TEST_F(TaskRequestTest, trStand) {
+TEST_F(HuberoTaskRequestArgValidityTest, trStand) {
 	// stand
 	ASSERT_FALSE(ts_ptr->isRequested());
 	// wrong request
@@ -139,7 +139,7 @@ TEST_F(TaskRequestTest, trStand) {
 	ASSERT_TRUE(ts_ptr->isRequested());
 }
 
-TEST_F(TaskRequestTest, trTalk) {
+TEST_F(HuberoTaskRequestArgValidityTest, trTalk) {
 	// talk
 	ASSERT_FALSE(tt_ptr->isRequested());
 	// wrong request
@@ -150,7 +150,7 @@ TEST_F(TaskRequestTest, trTalk) {
 	ASSERT_TRUE(tt_ptr->isRequested());
 }
 
-TEST_F(TaskRequestTest, trTeleop) {
+TEST_F(HuberoTaskRequestArgValidityTest, trTeleop) {
 	// teleop
 	ASSERT_FALSE(ttel_ptr->isRequested());
 	// wrong request

@@ -13,7 +13,7 @@
 using namespace hubero;
 
 /// These tests evaluate whether specific task was successfully requested and also check task objective
-TEST(HuberoTasks, requestfollowObject) {
+TEST(HuberoTaskRequestObjective, requestfollowObject) {
     TaskFollowObject task;
 	ASSERT_EQ(task.getTaskType(), TaskType::TASK_FOLLOW_OBJECT);
 	ASSERT_FALSE(task.isRequested());
@@ -22,7 +22,7 @@ TEST(HuberoTasks, requestfollowObject) {
 	ASSERT_EQ(task.getFollowedObjectName(), "robot");
 }
 
-TEST(HuberoTasks, requestLieDown) {
+TEST(HuberoTaskRequestObjective, requestLieDown) {
 	TaskLieDown task;
 	ASSERT_EQ(task.getTaskType(), TaskType::TASK_LIE_DOWN);
 	ASSERT_FALSE(task.isRequested());
@@ -33,7 +33,7 @@ TEST(HuberoTasks, requestLieDown) {
 	ASSERT_EQ(task.getGoalYaw(), 1.5707);
 }
 
-TEST(HuberoTasks, requestMoveAround) {
+TEST(HuberoTaskRequestObjective, requestMoveAround) {
 	TaskMoveAround task(3.0);
 	ASSERT_EQ(task.getTaskType(), TaskType::TASK_MOVE_AROUND);
 	ASSERT_FALSE(task.isRequested());
@@ -42,7 +42,7 @@ TEST(HuberoTasks, requestMoveAround) {
 	ASSERT_EQ(task.getDistanceGoalReached(), 3.0);
 }
 
-TEST(HuberoTasks, requestMoveToGoal) {
+TEST(HuberoTaskRequestObjective, requestMoveToGoal) {
 	TaskMoveToGoal task(2.5);
 	ASSERT_EQ(task.getTaskType(), TaskType::TASK_MOVE_TO_GOAL);
 	ASSERT_FALSE(task.isRequested());
@@ -55,7 +55,7 @@ TEST(HuberoTasks, requestMoveToGoal) {
 	ASSERT_EQ(task.getGoal().Rot(), q);
 }
 
-TEST(HuberoTasks, requestRun) {
+TEST(HuberoTaskRequestObjective, requestRun) {
 	TaskRun task(1.5);
 	ASSERT_EQ(task.getTaskType(), TaskType::TASK_RUN);
 	ASSERT_FALSE(task.isRequested());
@@ -68,7 +68,7 @@ TEST(HuberoTasks, requestRun) {
 	ASSERT_EQ(task.getGoal().Rot(), q);
 }
 
-TEST(HuberoTasks, requestSitDown) {
+TEST(HuberoTaskRequestObjective, requestSitDown) {
 	TaskSitDown task;
 	ASSERT_EQ(task.getTaskType(), TaskType::TASK_SIT_DOWN);
 	ASSERT_FALSE(task.isRequested());
@@ -78,7 +78,7 @@ TEST(HuberoTasks, requestSitDown) {
 	ASSERT_EQ(task.getGoalYaw(), 0.8);
 }
 
-TEST(HuberoTasks, requestStand) {
+TEST(HuberoTaskRequestObjective, requestStand) {
 	TaskStand task;
 	ASSERT_EQ(task.getTaskType(), TaskType::TASK_STAND);
 	ASSERT_FALSE(task.isRequested());
@@ -86,7 +86,7 @@ TEST(HuberoTasks, requestStand) {
 	ASSERT_TRUE(task.isRequested());
 }
 
-TEST(HuberoTasks, requestTalk) {
+TEST(HuberoTaskRequestObjective, requestTalk) {
 	TaskTalk task;
 	ASSERT_EQ(task.getTaskType(), TaskType::TASK_TALK);
 	ASSERT_FALSE(task.isRequested());
@@ -98,7 +98,7 @@ TEST(HuberoTasks, requestTalk) {
 	ASSERT_EQ(task.getGoal().Rot(), q);
 }
 
-TEST(HuberoTasks, requestTeleop) {
+TEST(HuberoTaskRequestObjective, requestTeleop) {
 	TaskTeleop task;
 	ASSERT_EQ(task.getTaskType(), TaskType::TASK_TELEOP);
 	ASSERT_FALSE(task.isRequested());

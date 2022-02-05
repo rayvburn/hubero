@@ -22,7 +22,7 @@
 #include <hubero_core/tasks/task_run.h>
 #include <hubero_core/tasks/task_talk.h>
 
-#include <hubero_core/fsm_super.h>
+#include <hubero_core/fsm/fsm_super.h>
 
 #include <memory>
 
@@ -50,6 +50,27 @@ public:
 	void update(const Time& time);
 
 	bool isInitialized() const;
+
+	/**
+	 * @brief Adds transition handlers for FsmSuper
+	 * @details Transition handlers aim to update tasks state so tasks can properly report their state as active
+	 * or finished
+	 * @details Static method in Actor instead of making tasks arguments to @ref FsmSuper class to avoid circular
+	 * dependency
+	 */
+	static void addFsmSuperTransitionHandlers(
+		FsmSuper& fsm,
+		std::shared_ptr<TaskStand> task_stand_ptr,
+		std::shared_ptr<TaskMoveToGoal> task_move_to_goal_ptr,
+		std::shared_ptr<TaskMoveAround> task_move_around_ptr,
+		std::shared_ptr<TaskLieDown> task_lie_down_ptr,
+		std::shared_ptr<TaskSitDown> task_sit_down_ptr,
+		std::shared_ptr<TaskFollowObject> task_follow_object_ptr,
+		std::shared_ptr<TaskTeleop> task_teleop_ptr,
+		std::shared_ptr<TaskRun> task_run_ptr,
+		std::shared_ptr<TaskTalk> task_talk_ptr,
+		std::shared_ptr<NavigationBase> navigation_ptr
+	);
 
 	/**
 	 * @brief Move to goal helper method
@@ -170,12 +191,6 @@ protected:
 	 */
 	template <typename Tevent>
 	Tevent prepareTaskFsmUpdate(const std::shared_ptr<TaskBase>& task_ptr) {
-		// required in first iteration after state transition
-		if (!task_ptr->isActive()) {
-			task_ptr->activate();
-			terminateOtherTasks(task_ptr->getTaskType());
-		}
-
 		// fill up task and navigation predicates - those are used for orchestration of task execution
 		TaskPredicates task_predicates(*task_ptr);
 		NavPredicates nav_predicates(navigation_ptr_->getFeedback());

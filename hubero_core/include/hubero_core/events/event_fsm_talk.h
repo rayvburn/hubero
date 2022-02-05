@@ -5,21 +5,17 @@
 namespace hubero {
 
 struct EventFsmTalk: public EventFsmBasic {
-	bool goal_reached;
-
-	std::string toString() const {
-		return EventFsmBasic::toString()
-			+ " goalReached: " + std::to_string(goal_reached);
-	}
-
     EventFsmTalk() = default;
 
     EventFsmTalk(const EventFsmBasic& basic):
-        EventFsmBasic(basic),
-        goal_reached(false) {}
+        EventFsmBasic(basic) {}
 
     EventFsmTalk(const TaskPredicates& task, const NavPredicates& nav):
         EventFsmTalk(EventFsmBasic(task, nav)) {}
+
+    std::string toString() const {
+		return EventFsmBasic::toString();
+	}
 };
 
 } // namespace hubero

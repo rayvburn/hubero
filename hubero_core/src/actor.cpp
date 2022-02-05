@@ -79,6 +79,21 @@ void Actor::initializeSim(
 
 void Actor::initializeNav(std::shared_ptr<hubero::NavigationBase> navigation_ptr) {
 	navigation_ptr_ = navigation_ptr;
+
+	// navigation_ptr_ updated with a valid object, so FsmSuper's transition handlers can be updated
+	Actor::addFsmSuperTransitionHandlers(
+		fsm_,
+		task_stand_ptr_,
+		task_move_to_goal_ptr_,
+		task_move_around_ptr_,
+		task_lie_down_ptr_,
+		task_sit_down_ptr_,
+		task_follow_object_ptr_,
+		task_teleop_ptr_,
+		task_run_ptr_,
+		task_talk_ptr_,
+		navigation_ptr_
+	);
 }
 
 void Actor::initializeTask(std::shared_ptr<hubero::TaskRequestBase> task_request_ptr) {
@@ -150,6 +165,69 @@ bool Actor::isInitialized() const {
 }
 
 // static
+void Actor::addFsmSuperTransitionHandlers(
+	FsmSuper& fsm,
+	std::shared_ptr<TaskStand> task_stand_ptr,
+	std::shared_ptr<TaskMoveToGoal> task_move_to_goal_ptr,
+	std::shared_ptr<TaskMoveAround> task_move_around_ptr,
+	std::shared_ptr<TaskLieDown> task_lie_down_ptr,
+	std::shared_ptr<TaskSitDown> task_sit_down_ptr,
+	std::shared_ptr<TaskFollowObject> task_follow_object_ptr,
+	std::shared_ptr<TaskTeleop> task_teleop_ptr,
+	std::shared_ptr<TaskRun> task_run_ptr,
+	std::shared_ptr<TaskTalk> task_talk_ptr,
+	std::shared_ptr<NavigationBase> navigation_ptr
+) {
+	// terminate
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::MOVE_TO_GOAL, std::bind(&TaskStand::terminate, task_stand_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::MOVE_AROUND, std::bind(&TaskStand::terminate, task_stand_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::FOLLOW_OBJECT, std::bind(&TaskStand::terminate, task_stand_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::LIE_DOWN, std::bind(&TaskStand::terminate, task_stand_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::SIT_DOWN, std::bind(&TaskStand::terminate, task_stand_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::RUN, std::bind(&TaskStand::terminate, task_stand_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::TALK, std::bind(&TaskStand::terminate, task_stand_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::TELEOP, std::bind(&TaskStand::terminate, task_stand_ptr));
+
+	fsm.addTransitionHandler(FsmSuper::State::MOVE_TO_GOAL, FsmSuper::State::STAND, std::bind(&TaskMoveToGoal::terminate, task_move_to_goal_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::MOVE_AROUND, FsmSuper::State::STAND, std::bind(&TaskMoveAround::terminate, task_move_around_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::FOLLOW_OBJECT, FsmSuper::State::STAND, std::bind(&TaskFollowObject::terminate, task_follow_object_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::LIE_DOWN, FsmSuper::State::STAND, std::bind(&TaskLieDown::terminate, task_lie_down_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::SIT_DOWN, FsmSuper::State::STAND, std::bind(&TaskSitDown::terminate, task_sit_down_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::RUN, FsmSuper::State::STAND, std::bind(&TaskRun::terminate, task_run_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::TALK, FsmSuper::State::STAND, std::bind(&TaskTalk::terminate, task_talk_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::TELEOP, FsmSuper::State::STAND, std::bind(&TaskTeleop::terminate, task_teleop_ptr));
+
+	// activate
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::MOVE_TO_GOAL, std::bind(&TaskMoveToGoal::activate, task_move_to_goal_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::MOVE_AROUND, std::bind(&TaskMoveAround::activate, task_move_around_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::FOLLOW_OBJECT, std::bind(&TaskFollowObject::activate, task_follow_object_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::LIE_DOWN, std::bind(&TaskLieDown::activate, task_lie_down_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::SIT_DOWN, std::bind(&TaskSitDown::activate, task_sit_down_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::RUN, std::bind(&TaskRun::activate, task_run_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::TALK, std::bind(&TaskTalk::activate, task_talk_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::STAND, FsmSuper::State::TELEOP, std::bind(&TaskTeleop::activate, task_teleop_ptr));
+
+	fsm.addTransitionHandler(FsmSuper::State::MOVE_TO_GOAL, FsmSuper::State::STAND, std::bind(&TaskStand::activate, task_stand_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::MOVE_AROUND, FsmSuper::State::STAND, std::bind(&TaskStand::activate, task_stand_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::FOLLOW_OBJECT, FsmSuper::State::STAND, std::bind(&TaskStand::activate, task_stand_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::LIE_DOWN, FsmSuper::State::STAND, std::bind(&TaskStand::activate, task_stand_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::SIT_DOWN, FsmSuper::State::STAND, std::bind(&TaskStand::activate, task_stand_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::RUN, FsmSuper::State::STAND, std::bind(&TaskStand::activate, task_stand_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::TALK, FsmSuper::State::STAND, std::bind(&TaskStand::activate, task_stand_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::TELEOP, FsmSuper::State::STAND, std::bind(&TaskStand::activate, task_stand_ptr));
+
+	// finish navigation
+	fsm.addTransitionHandler(FsmSuper::State::MOVE_TO_GOAL, FsmSuper::State::STAND, std::bind(&NavigationBase::finish, navigation_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::MOVE_AROUND, FsmSuper::State::STAND, std::bind(&NavigationBase::finish, navigation_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::FOLLOW_OBJECT, FsmSuper::State::STAND, std::bind(&NavigationBase::finish, navigation_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::LIE_DOWN, FsmSuper::State::STAND, std::bind(&NavigationBase::finish, navigation_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::SIT_DOWN, FsmSuper::State::STAND, std::bind(&NavigationBase::finish, navigation_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::RUN, FsmSuper::State::STAND, std::bind(&NavigationBase::finish, navigation_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::TALK, FsmSuper::State::STAND, std::bind(&NavigationBase::finish, navigation_ptr));
+	fsm.addTransitionHandler(FsmSuper::State::TELEOP, FsmSuper::State::STAND, std::bind(&NavigationBase::finish, navigation_ptr));
+}
+
+// static
 Vector3 Actor::computeCommandToGlobalCs(const double& yaw_actor, const Vector3& cmd_vel_local) {
 	// slide 38 at https://www.cs.princeton.edu/courses/archive/fall11/cos495/COS495-Lecture3-RobotMotion.pdf
 	ignition::math::Matrix3d r(
@@ -209,30 +287,26 @@ void Actor::executeTaskMoveToGoal() {
 
 void Actor::executeTaskMoveAround() {
 	auto event = prepareTaskFsmUpdate<EventFsmMoveAround>(task_move_around_ptr_);
-	event.goal_reached = mem_.getDistanceToGoal() <= task_move_around_ptr_->getDistanceGoalReached();
-	event.goal_selected = mem_.getDistanceToGoal() > task_move_around_ptr_->getDistanceGoalReached();
 	task_move_around_ptr_->execute(event);
 }
 
 void Actor::executeTaskLieDown() {
 	auto event = prepareTaskFsmUpdate<EventFsmLieDown>(task_lie_down_ptr_);
-	event.goal_reached = navigation_ptr_->getFeedback() == TaskFeedbackType::TASK_FEEDBACK_SUCCEEDED;
-	event.lied_down = animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_LIE_DOWN;
-	event.stood_up = animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_STAND;
+	event.setLiedDown(animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_LIE_DOWN);
+	event.setStoodUp(animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_STAND);
 	task_lie_down_ptr_->execute(event);
 }
 
 void Actor::executeTaskSitDown() {
 	auto event = prepareTaskFsmUpdate<EventFsmSitDown>(task_sit_down_ptr_);
-	event.goal_reached = navigation_ptr_->getFeedback() == TaskFeedbackType::TASK_FEEDBACK_SUCCEEDED;
-	event.sat_down = animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_SITTING;
-	event.stood_up = animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_STAND;
+	event.setSatDown(animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_SITTING);
+	event.setStoodUp(animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_STAND);
 	task_sit_down_ptr_->execute(event);
 }
 
 void Actor::executeTaskFollowObject() {
 	auto event = prepareTaskFsmUpdate<EventFsmFollowObject>(task_follow_object_ptr_);
-	event.object_nearby = mem_.getDistanceToGoal() <= task_follow_object_ptr_->getDistanceNearby();
+	event.setObjectNearby(mem_.getDistanceToGoal() <= task_follow_object_ptr_->getDistanceNearby());
 	task_follow_object_ptr_->execute(event);
 }
 
@@ -248,7 +322,6 @@ void Actor::executeTaskRun() {
 
 void Actor::executeTaskTalk() {
 	auto event = prepareTaskFsmUpdate<EventFsmTalk>(task_talk_ptr_);
-	event.goal_reached = navigation_ptr_->getFeedback() == TaskFeedbackType::TASK_FEEDBACK_SUCCEEDED;
 	task_talk_ptr_->execute(event);
 }
 
