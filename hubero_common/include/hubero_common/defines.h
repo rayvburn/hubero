@@ -50,6 +50,8 @@ enum TaskFeedbackType {
 	TASK_FEEDBACK_RECALLED,
 	/// An action client can determine that a goal is LOST
 	TASK_FEEDBACK_LOST,
+	/// The task was terminated (due to abort or normal finish)
+	TASK_FEEDBACK_TERMINATED = 126,
 	/// Undefined state
 	TASK_FEEDBACK_UNDEFINED = 127
 };
