@@ -166,6 +166,7 @@ protected:
 	void transHandlerStand2MoveAround(const EventFsmSuper& event);
 	void transHandlerStand2FollowObject(const EventFsmSuper& event);
 	void transHandlerStand2LieDown(const EventFsmSuper& event);
+	void transHandlerStand2SitDown(const EventFsmSuper& event);
 	void transHandlerStand2Run(const EventFsmSuper& event);
 	void transHandlerStand2Talk(const EventFsmSuper& event);
 	void transHandlerStand2Teleop(const EventFsmSuper& event);
@@ -173,6 +174,7 @@ protected:
 	void transHandlerMoveAround2Stand(const EventFsmSuper& event);
 	void transHandlerFollowObject2Stand(const EventFsmSuper& event);
 	void transHandlerLieDown2Stand(const EventFsmSuper& event);
+	void transHandlerSitDown2Stand(const EventFsmSuper& event);
 	void transHandlerRun2Stand(const EventFsmSuper& event);
 	void transHandlerTalk2Stand(const EventFsmSuper& event);
 	void transHandlerTeleop2Stand(const EventFsmSuper& event);
@@ -189,6 +191,7 @@ protected:
 		mem_fn_row<STAND, EventFsmSuper, MOVE_AROUND, &FsmSuper::transHandlerStand2MoveAround, &FsmSuper::guardStand2MoveAround>,
 		mem_fn_row<STAND, EventFsmSuper, FOLLOW_OBJECT, &FsmSuper::transHandlerStand2FollowObject, &FsmSuper::guardStand2FollowObject>,
 		mem_fn_row<STAND, EventFsmSuper, LIE_DOWN, &FsmSuper::transHandlerStand2LieDown, &FsmSuper::guardStand2LieDown>,
+		mem_fn_row<STAND, EventFsmSuper, SIT_DOWN, &FsmSuper::transHandlerStand2SitDown, &FsmSuper::guardStand2SitDown>,
 		mem_fn_row<STAND, EventFsmSuper, RUN, &FsmSuper::transHandlerStand2Run, &FsmSuper::guardStand2Run>,
 		mem_fn_row<STAND, EventFsmSuper, TALK, &FsmSuper::transHandlerStand2Talk, &FsmSuper::guardStand2Talk>,
 		mem_fn_row<STAND, EventFsmSuper, TELEOP, &FsmSuper::transHandlerStand2Teleop, &FsmSuper::guardStand2Teleop>,
@@ -197,6 +200,7 @@ protected:
 		mem_fn_row<MOVE_AROUND, EventFsmSuper, STAND, &FsmSuper::transHandlerMoveAround2Stand, &FsmSuper::guardMoveAround2Stand>,
 		mem_fn_row<FOLLOW_OBJECT, EventFsmSuper, STAND, &FsmSuper::transHandlerFollowObject2Stand, &FsmSuper::guardFollowObject2Stand>,
 		mem_fn_row<LIE_DOWN, EventFsmSuper, STAND, &FsmSuper::transHandlerLieDown2Stand, &FsmSuper::guardLieDown2Stand>,
+		mem_fn_row<SIT_DOWN, EventFsmSuper, STAND, &FsmSuper::transHandlerSitDown2Stand, &FsmSuper::guardSitDown2Stand>,
 		mem_fn_row<RUN, EventFsmSuper, STAND, &FsmSuper::transHandlerRun2Stand, &FsmSuper::guardRun2Stand>,
 		mem_fn_row<TALK, EventFsmSuper, STAND, &FsmSuper::transHandlerTalk2Stand, &FsmSuper::guardTalk2Stand>,
 		mem_fn_row<TELEOP, EventFsmSuper, STAND, &FsmSuper::transHandlerTeleop2Stand, &FsmSuper::guardTeleop2Stand>

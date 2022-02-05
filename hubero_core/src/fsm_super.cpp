@@ -39,6 +39,10 @@ void FsmSuper::transHandlerStand2LieDown(const EventFsmSuper& event) {
 	logTransition("STAND", "LIE DOWN", event);
 }
 
+void FsmSuper::transHandlerStand2SitDown(const EventFsmSuper& event) {
+	logTransition("STAND", "SIT DOWN", event);
+}
+
 void FsmSuper::transHandlerStand2Run(const EventFsmSuper& event) {
 	logTransition("STAND", "RUN", event);
 }
@@ -65,6 +69,10 @@ void FsmSuper::transHandlerFollowObject2Stand(const EventFsmSuper& event) {
 
 void FsmSuper::transHandlerLieDown2Stand(const EventFsmSuper& event) {
 	logTransition("LIE DOWN", "STAND", event);
+}
+
+void FsmSuper::transHandlerSitDown2Stand(const EventFsmSuper& event) {
+	logTransition("SIT DOWN", "STAND", event);
 }
 
 void FsmSuper::transHandlerRun2Stand(const EventFsmSuper& event) {
