@@ -241,17 +241,6 @@ void Actor::addFsmSuperTransitionHandlers(
 	);
 }
 
-// static
-Vector3 Actor::computeCommandToGlobalCs(const double& yaw_actor, const Vector3& cmd_vel_local) {
-	// slide 38 at https://www.cs.princeton.edu/courses/archive/fall11/cos495/COS495-Lecture3-RobotMotion.pdf
-	ignition::math::Matrix3d r(
-		cos(yaw_actor), 0.0, 0.0,
-		sin(yaw_actor), 0.0, 0.0,
-		0.0, 0.0, 1.0
-	);
-	return r * cmd_vel_local;
-}
-
 void Actor::executeTaskStand() {
 	auto event = prepareTaskFsmUpdate<EventFsmBasic>(task_stand_ptr_);
 	task_stand_ptr_->execute(event);
@@ -325,9 +314,8 @@ void Actor::bbMoveToGoal() {
 	// retrieve current pose from internal memory
 	auto pose = mem_.getPoseCurrent();
 
-	// get command calculated by navigation and convert it to a global coordinate system
-	auto cmd_local = navigation_ptr_->getVelocityCmd();
-	auto cmd_global = computeCommandToGlobalCs(pose.Rot().Yaw(), cmd_local);
+	// process navigation command - compute displacement
+	auto cmd_global = navigation_ptr_->getVelocityCmd();
 	auto dt = Time::computeDuration(mem_.getTimePrevious(), mem_.getTimeCurrent()).getTime();
 	auto path_global_int = cmd_global * dt;
 	auto pose_new = Pose3(

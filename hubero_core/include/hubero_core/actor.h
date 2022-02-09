@@ -72,11 +72,6 @@ public:
 		std::shared_ptr<NavigationBase> navigation_ptr
 	);
 
-	/**
-	 * @brief Move to goal helper method
-	 */
-	static Vector3 computeCommandToGlobalCs(const double& yaw_actor, const Vector3& cmd_vel_local);
-
 protected:
 	/**
 	 * @defgroup taskhelpers Task helper methods
