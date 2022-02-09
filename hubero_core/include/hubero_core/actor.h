@@ -9,6 +9,7 @@
 #include <hubero_interfaces/task_request_base.h>
 #include <hubero_interfaces/animation_control_base.h>
 #include <hubero_interfaces/model_control_base.h>
+#include <hubero_interfaces/world_geometry_base.h>
 
 #include <hubero_core/internal_memory.h>
 
@@ -36,16 +37,15 @@ class Actor {
 public:
 	Actor();
 
-	void initializeSim(
+	void initialize(
 		const std::string& actor_sim_name,
 		std::shared_ptr<hubero::AnimationControlBase> animation_control_ptr,
 		std::shared_ptr<hubero::ModelControlBase> model_control_ptr,
-		std::shared_ptr<hubero::LocalisationBase> localisation_ptr
+		std::shared_ptr<hubero::WorldGeometryBase> world_geometry_ptr,
+		std::shared_ptr<hubero::LocalisationBase> localisation_ptr,
+		std::shared_ptr<hubero::NavigationBase> navigation_ptr,
+		std::shared_ptr<hubero::TaskRequestBase> task_request_ptr
 	);
-
-	void initializeNav(std::shared_ptr<hubero::NavigationBase> navigation_ptr);
-
-	void initializeTask(std::shared_ptr<hubero::TaskRequestBase> task_request_ptr);
 
 	void update(const Time& time);
 
@@ -175,6 +175,7 @@ protected:
 	std::shared_ptr<hubero::LocalisationBase> localisation_ptr_;
 	std::shared_ptr<hubero::NavigationBase> navigation_ptr_;
 	std::shared_ptr<hubero::TaskRequestBase> task_request_ptr_;
+	std::shared_ptr<hubero::WorldGeometryBase> world_geometry_ptr_;
 
 	/// @}
 

@@ -44,9 +44,6 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 	sim_model_control_ptr_->initialize(actor_ptr_, ros_node_ptr_->getSimulatorFrame());
 	sim_world_geometry_ptr_->initialize(ros_node_ptr_->getSimulatorFrame(), world_ptr_, actor_ptr_->GetName());
 
-	// setup simulator interfaces
-	hubero_actor_.initializeSim(actor_ptr_->GetName(), sim_animation_control_ptr_, sim_model_control_ptr_, sim_localisation_ptr_);
-
 	/*
 	 * Update pose. Note that coordinate system of the human model is different to ROS REP 105
 	 * https://www.ros.org/reps/rep-0105.html
@@ -58,7 +55,6 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 	 * HuBeRo framework task interface initialization
 	 */
 	ros_task_ptr_->initialize(ros_node_ptr_, actor_ptr_->GetName(), ros_node_ptr_->getSimulatorFrame());
-	hubero_actor_.initializeTask(ros_task_ptr_);
 
 	/*
 	 * HuBeRo framework navigation interface initialization
@@ -68,7 +64,19 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 		ros_node_ptr_->getSimulatorFrame(),
 		sim_localisation_ptr_->getPose()
 	);
-	hubero_actor_.initializeNav(ros_nav_ptr_);
+
+	/*
+	 * Initialize HuBeRo - provide interface classes
+	 */
+	hubero_actor_.initialize(
+		actor_ptr_->GetName(),
+		sim_animation_control_ptr_,
+		sim_model_control_ptr_,
+		sim_world_geometry_ptr_,
+		sim_localisation_ptr_,
+		ros_nav_ptr_,
+		ros_task_ptr_
+	);
 
 	/*
 	 * Enable specific trajectory of actor

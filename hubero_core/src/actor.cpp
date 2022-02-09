@@ -62,23 +62,43 @@ Actor::Actor():
 	TaskBase::addBasicBehaviourHandler(BB_TELEOP, std::bind(&Actor::bbTeleop, this));
 }
 
-void Actor::initializeSim(
+void Actor::initialize(
 	const std::string& actor_sim_name,
 	std::shared_ptr<hubero::AnimationControlBase> animation_control_ptr,
 	std::shared_ptr<hubero::ModelControlBase> model_control_ptr,
-	std::shared_ptr<hubero::LocalisationBase> localisation_ptr
+	std::shared_ptr<hubero::WorldGeometryBase> world_geometry_ptr,
+	std::shared_ptr<hubero::LocalisationBase> localisation_ptr,
+	std::shared_ptr<hubero::NavigationBase> navigation_ptr,
+	std::shared_ptr<hubero::TaskRequestBase> task_request_ptr
 ) {
 	actor_sim_name_ = actor_sim_name;
+
 	animation_control_ptr_ = animation_control_ptr;
 	model_control_ptr_ = model_control_ptr;
+	world_geometry_ptr_ = world_geometry_ptr;
 	localisation_ptr_  = localisation_ptr;
-
-	// since name was set, update FSM logger preamble too
-	fsm_.setLoggerPreamble(actor_sim_name_);
-}
-
-void Actor::initializeNav(std::shared_ptr<hubero::NavigationBase> navigation_ptr) {
 	navigation_ptr_ = navigation_ptr;
+	task_request_ptr_ = task_request_ptr;
+
+	// check if valid pointers were given
+	if (!isInitialized()) {
+		HUBERO_LOG("Actor class initialization failure\r\n");
+		return;
+	}
+
+	// add tasks that are requestable
+	task_request_ptr_->addTask(task_stand_ptr_->getTaskType(), task_stand_ptr_);
+	task_request_ptr_->addTask(task_move_to_goal_ptr_->getTaskType(), task_move_to_goal_ptr_);
+	task_request_ptr_->addTask(task_move_around_ptr_->getTaskType(), task_move_around_ptr_);
+	task_request_ptr_->addTask(task_lie_down_ptr_->getTaskType(), task_lie_down_ptr_);
+	task_request_ptr_->addTask(task_sit_down_ptr_->getTaskType(), task_sit_down_ptr_);
+	task_request_ptr_->addTask(task_follow_object_ptr_->getTaskType(), task_follow_object_ptr_);
+	task_request_ptr_->addTask(task_teleop_ptr_->getTaskType(), task_teleop_ptr_);
+	task_request_ptr_->addTask(task_run_ptr_->getTaskType(), task_run_ptr_);
+	task_request_ptr_->addTask(task_talk_ptr_->getTaskType(), task_talk_ptr_);
+
+	// name is set, update FSM logger preamble
+	fsm_.setLoggerPreamble(actor_sim_name_);
 
 	// navigation_ptr_ updated with a valid object, so FsmSuper's transition handlers can be updated
 	Actor::addFsmSuperTransitionHandlers(
@@ -101,19 +121,6 @@ void Actor::initializeNav(std::shared_ptr<hubero::NavigationBase> navigation_ptr
 		TaskMoveToGoal::State::ACTIVE,
 		std::bind(&Actor::prepareNavigationWalk, this)
 	);
-}
-
-void Actor::initializeTask(std::shared_ptr<hubero::TaskRequestBase> task_request_ptr) {
-	task_request_ptr_ = task_request_ptr;
-	task_request_ptr_->addTask(task_stand_ptr_->getTaskType(), task_stand_ptr_);
-	task_request_ptr_->addTask(task_move_to_goal_ptr_->getTaskType(), task_move_to_goal_ptr_);
-	task_request_ptr_->addTask(task_move_around_ptr_->getTaskType(), task_move_around_ptr_);
-	task_request_ptr_->addTask(task_lie_down_ptr_->getTaskType(), task_lie_down_ptr_);
-	task_request_ptr_->addTask(task_sit_down_ptr_->getTaskType(), task_sit_down_ptr_);
-	task_request_ptr_->addTask(task_follow_object_ptr_->getTaskType(), task_follow_object_ptr_);
-	task_request_ptr_->addTask(task_teleop_ptr_->getTaskType(), task_teleop_ptr_);
-	task_request_ptr_->addTask(task_run_ptr_->getTaskType(), task_run_ptr_);
-	task_request_ptr_->addTask(task_talk_ptr_->getTaskType(), task_talk_ptr_);
 }
 
 void Actor::update(const Time& time) {
@@ -166,6 +173,7 @@ void Actor::update(const Time& time) {
 bool Actor::isInitialized() const {
 	return animation_control_ptr_ != nullptr
 		&& model_control_ptr_ != nullptr
+		&& world_geometry_ptr_ != nullptr
 		&& localisation_ptr_ != nullptr
 		&& navigation_ptr_ != nullptr
 		&& task_request_ptr_ != nullptr;
