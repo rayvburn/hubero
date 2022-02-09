@@ -81,19 +81,8 @@ protected:
 	/**
 	 * @defgroup taskhelpers Task helper methods
 	 *
-	 * Enable to update Actor's internal memory and provide basic behaviour execution (based on task FSM definition)
+	 * Methods provide basic behaviour execution (based on task FSM definition)
 	 */
-	/// @brief Get task objectives (goal variables) and update internal memory accordingly
-	void updateMemoryFromTaskStand(InternalMemory& m);
-	void updateMemoryFromTaskMoveToGoal(InternalMemory& m);
-	void updateMemoryFromTaskMoveAround(InternalMemory& m);
-	void updateMemoryFromTaskLieDown(InternalMemory& m);
-	void updateMemoryFromTaskSitDown(InternalMemory& m);
-	void updateMemoryFromTaskFollowObject(InternalMemory& m);
-	void updateMemoryFromTaskTeleop(InternalMemory& m);
-	void updateMemoryFromTaskRun(InternalMemory& m);
-	void updateMemoryFromTaskTalk(InternalMemory& m);
-
 	/// @brief Prepare FSM predicates update and executes appropriate basic behaviour of an active task
 	void executeTaskStand();
 	void executeTaskMoveToGoal();
@@ -111,7 +100,7 @@ protected:
 	/// @}
 
 	/**
-	 * @defgroup Basic behaviour methods
+	 * @defgroup bbs Basic behaviour methods
 	 * @{
 	 */
 	void bbStand();
@@ -129,11 +118,23 @@ protected:
 
 	/// @}
 
+	/**
+	 * @defgroup bbhelpers Basic behaviour helper methods
+	 * @details Methods usually used to setup some actions at task startup
+	 * @{
+	 */
+	void prepareNavigationWalk();
+
+	/// @}
+
 	/// @brief Updates predicates of the highest level Finite State Machine
 	void updateFsmSuper();
 
 	/// Name of the actor in simulator
 	std::string actor_sim_name_;
+
+	/// @brief Contains essential values of internal memory of the control subsystem
+	InternalMemory mem_;
 
 	/// Highest level Finite State Machine that orchestrates Actor tasks
 	FsmSuper fsm_;
@@ -156,6 +157,21 @@ protected:
 	/// @}
 
 	/**
+	 * @defgroup maps Maps to prevent switch-case pattern while invoking calls of a currently active task
+	 * @{
+	 */
+	/// @brief Map that bonds FSM states with internal memory updaters (this is specific to task/state)
+	std::map<FsmSuper::State, std::function<void(InternalMemory&)>> state_memory_updater_map_;
+
+	/// @brief Map that bonds FSM states with transition function executors (this is specific to task/state)
+	std::map<FsmSuper::State, std::function<void(void)>> state_tf_exec_map_;
+
+	/// @brief Map that bond TaskTypes with specific Task class
+	std::map<TaskType, std::shared_ptr<TaskBase>> task_map_;
+
+	/// @}
+
+	/**
 	 * @defgroup interface Interface classes
 	 * @{
 	 */
@@ -166,18 +182,6 @@ protected:
 	std::shared_ptr<hubero::TaskRequestBase> task_request_ptr_;
 
 	/// @}
-
-	/// @brief Contains essential values of internal memory of the control subsystem
-	InternalMemory mem_;
-
-	/// @brief Map that bond TaskTypes with specific Task class
-	std::map<TaskType, std::shared_ptr<TaskBase>> task_map_;
-
-	/// @brief Map that bonds FSM states with internal memory updaters (this is specific to task/state)
-	std::map<FsmSuper::State, std::function<void(InternalMemory&)>> state_memory_updater_map_;
-
-	/// @brief Map that bonds FSM states with transition function executors (this is specific to task/state)
-	std::map<FsmSuper::State, std::function<void(void)>> state_tf_exec_map_;
 
 	/**
 	 * @defgroup templates Template methods that must be defined in header file
