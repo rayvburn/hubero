@@ -3,6 +3,7 @@
 #include <hubero_common/defines.h>
 #include <hubero_common/logger.h>
 #include <hubero_interfaces/utils/task_base.h>
+#include <hubero_core/internal_memory.h>
 
 namespace hubero {
 
@@ -16,6 +17,18 @@ namespace hubero {
 template <typename Tfsm, typename Tstate, typename Tevent>
 class TaskEssentials: public TaskBase {
 public:
+	// enum alias for easier use in orchestrating class
+	using State = Tstate;
+
+	void addStateTransitionHandler(const int& state_src, const int& state_dst, std::function<void()> handler) {
+		fsm_.addTransitionHandler(state_src, state_dst, handler);
+	}
+
+	// NOTE: putting virtual here produces segfaults (most likely cause the method is not defined in derived function)
+	void updateMemory(InternalMemory& memory) {
+		memory.setBasicBehaviour(getBasicBehaviour());
+	}
+
 	bool execute(const Tevent& event) {
 		BasicBehaviourType bb_type = getBasicBehaviour();
 		auto bb_handler_it = basic_behaviour_handlers_.find(bb_type);
