@@ -334,9 +334,11 @@ TaskFeedbackType NavigationRos::convertActionStatusToTaskFeedback(const uint8_t&
 
 void NavigationRos::callbackCmdVel(const geometry_msgs::Twist::ConstPtr& msg) {
 	const std::lock_guard<std::mutex> lock(mutex_callback_);
-	cmd_vel_.X(msg->linear.x);
-	cmd_vel_.Y(msg->linear.y);
-	cmd_vel_.Z(msg->angular.z);
+	Vector3 cmd_vel_local;
+	cmd_vel_local.X(msg->linear.x);
+	cmd_vel_local.Y(msg->linear.y);
+	cmd_vel_local.Z(msg->angular.z);
+	cmd_vel_ = NavigationBase::convertCommandToGlobalCs(current_pose_.Rot().Yaw(), cmd_vel_local);
 }
 
 void NavigationRos::callbackFeedback(const move_base_msgs::MoveBaseActionFeedback::ConstPtr& msg) {

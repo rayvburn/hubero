@@ -124,6 +124,19 @@ public:
 		return world_frame_name_;
 	}
 
+	/**
+	 * @brief Transforms local velocity (typically received as velocity command) to a global coordinate system
+	 */
+	static Vector3 convertCommandToGlobalCs(const double& yaw_actor, const Vector3& cmd_vel_local) {
+		// slide 38 at https://www.cs.princeton.edu/courses/archive/fall11/cos495/COS495-Lecture3-RobotMotion.pdf
+		ignition::math::Matrix3d r(
+			cos(yaw_actor), 0.0, 0.0,
+			sin(yaw_actor), 0.0, 0.0,
+			0.0, 0.0, 1.0
+		);
+		return r * cmd_vel_local;
+	}
+
 protected:
 	/// @brief Stores initialization indicator flag
 	bool initialized_;
