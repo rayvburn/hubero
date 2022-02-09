@@ -21,6 +21,18 @@ public:
 			{FsmBasic::State::ACTIVE, BasicBehaviourType::BB_MOVE_TO_GOAL},
 			{FsmBasic::State::FINISHED, BasicBehaviourType::BB_STAND}
 		};
+
+		// this task should not be looped infinitely - once goal is achieved, task should be finished
+		fsm_.addTransitionHandler(
+			FsmBasic::State::ACTIVE,
+			FsmBasic::State::FINISHED,
+			std::bind(&TaskMoveToGoal::finish, this)
+		);
+	}
+
+	void updateMemory(InternalMemory& memory) {
+		memory.setGoal(getGoal());
+		TaskEssentials::updateMemory(memory);
 	}
 
 	virtual bool request(const Pose3& goal) override {
