@@ -37,6 +37,7 @@ public:
     TaskBase(TaskType task):
         task_type_(task),
         requested_(false),
+        active_(false),
         aborted_(false),
         finished_(false),
         feedback_type_(TASK_FEEDBACK_UNDEFINED),
