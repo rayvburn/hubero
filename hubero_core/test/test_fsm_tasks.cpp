@@ -21,7 +21,7 @@ using namespace hubero;
  * Tests related to internal FSMs of tasks
  */
 
-/// Basic FSM
+/// Basic FSM - move to goal example; TaskFeedbackType relates to state of the navigation task
 TEST(HuberoFsmTasks, fsmBasicNormal) {
 	TaskBase task(TaskType::TASK_MOVE_TO_GOAL);
 	FsmBasic fsm;
@@ -31,13 +31,22 @@ TEST(HuberoFsmTasks, fsmBasicNormal) {
 	// pending navigation task will not trigger active state
 	task.request(Pose3(5.0, 5.0, 0.0, 0.0, 0.0, 0.0));
 
-	EventFsmBasic e1(task, TaskFeedbackType::TASK_FEEDBACK_PENDING);
+	EventFsmBasic e1(task, TaskFeedbackType::TASK_FEEDBACK_TERMINATED);
 	fsm.process_event(e1);
 	ASSERT_EQ(fsm.current_state(), FsmBasic::State::FINISHED);
 
-	EventFsmBasic e2(task, TaskFeedbackType::TASK_FEEDBACK_ACTIVE);
+	// request noted by HFSM, state switched
+	task.activate();
+	EventFsmBasic e2(task, TaskFeedbackType::TASK_FEEDBACK_TERMINATED);
 	fsm.process_event(e2);
 	ASSERT_EQ(fsm.current_state(), FsmBasic::State::ACTIVE);
+
+	// NOTE: goal send for navigation is executed independently from request, so navigation task feedback will
+	// update after activate
+	EventFsmBasic e2b(task, TaskFeedbackType::TASK_FEEDBACK_ACTIVE);
+	fsm.process_event(e2b);
+	ASSERT_EQ(fsm.current_state(), FsmBasic::State::ACTIVE);
+
 	// refresh
 	fsm.process_event(e2);
 	ASSERT_EQ(fsm.current_state(), FsmBasic::State::ACTIVE);
@@ -49,13 +58,23 @@ TEST(HuberoFsmTasks, fsmBasicNormal) {
 	fsm.process_event(e3);
 	ASSERT_EQ(fsm.current_state(), FsmBasic::State::FINISHED);
 
-	fsm.process_event(e3);
+	// active -> finished, navigation succeeded so task is finished
+	task.finish();
+	EventFsmBasic e3b(task, TaskFeedbackType::TASK_FEEDBACK_SUCCEEDED);
+	fsm.process_event(e3b);
 	ASSERT_EQ(fsm.current_state(), FsmBasic::State::FINISHED);
 
-	// new goal received
+	// let's say that the new goal was received just after previous navigation succeeded (i.e. actor already started "standing")
 	task.request(Pose3(-5.0, -5.0, 0.0, 0.0, 0.0, 0.0));
-	EventFsmBasic e4(task, TaskFeedbackType::TASK_FEEDBACK_PENDING);
+	EventFsmBasic e4(task, TaskFeedbackType::TASK_FEEDBACK_SUCCEEDED);
 	fsm.process_event(e4);
+	ASSERT_EQ(fsm.current_state(), FsmBasic::State::FINISHED);
+
+	// NOTE: task activation is required here, otherwise, status will mark task as `finished`
+	task.activate();
+	EventFsmBasic e5a(task, TaskFeedbackType::TASK_FEEDBACK_TERMINATED);
+	fsm.process_event(e5a);
+	ASSERT_EQ(fsm.current_state(), FsmBasic::State::ACTIVE);
 
 	EventFsmBasic e5(task, TaskFeedbackType::TASK_FEEDBACK_ACTIVE);
 	fsm.process_event(e5);
@@ -67,14 +86,16 @@ TEST(HuberoFsmTasks, fsmBasicNormal) {
 	EventFsmBasic e6(task, TaskFeedbackType::TASK_FEEDBACK_SUCCEEDED);
 	fsm.process_event(e6);
 	ASSERT_EQ(fsm.current_state(), FsmBasic::State::FINISHED);
+	task.finish();
 
 	// new goal that will be aborted
 	task.request(Pose3(-5.0, -5.0, 0.0, 0.0, 0.0, 0.0));
-	EventFsmBasic e8(task, TaskFeedbackType::TASK_FEEDBACK_PENDING);
+	EventFsmBasic e8(task, TaskFeedbackType::TASK_FEEDBACK_TERMINATED);
 	fsm.process_event(e8);
 	ASSERT_EQ(fsm.current_state(), FsmBasic::State::FINISHED);
 
-	EventFsmBasic e9(task, TaskFeedbackType::TASK_FEEDBACK_ACTIVE);
+	task.activate();
+	EventFsmBasic e9(task, TaskFeedbackType::TASK_FEEDBACK_TERMINATED);
 	fsm.process_event(e9);
 	ASSERT_EQ(fsm.current_state(), FsmBasic::State::ACTIVE);
 

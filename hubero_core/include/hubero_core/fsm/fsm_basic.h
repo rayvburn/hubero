@@ -31,14 +31,15 @@ protected:
 	 * @{
 	 */
 	bool guardActive2Finished(const EventFsmBasic& event) const {
+		// NOTE: isNavigationEnded deleted since it will produce periodic state changes in tasks that not use
+		// navigation goal as a finish rule
 		return event.isNavigationSucceeded()
 			|| event.isNavigationGoalCancelled()
-			|| event.isNavigationGoalRejected()
-			|| event.isNavigationEnded();
+			|| event.isNavigationGoalRejected();
 	}
 
 	bool guardFinished2Active(const EventFsmBasic& event) const {
-		return event.isNavigationActive();
+		return !event.isNavigationActive() && event.isActive();
 	}
 
 	/** @} */ // end of guards group
