@@ -76,7 +76,7 @@ private:
 		}
 
 		HUBERO_LOG(
-            "%s[%s] transition conditions\r\n%s\r\n",
+            "%s[%s] transition conditions: %s\r\n",
             prepareLogPreamble().c_str(),
             fsm_name_.c_str(),
             event.toString().c_str()
