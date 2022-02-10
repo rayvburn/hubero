@@ -72,6 +72,13 @@ public:
 		std::shared_ptr<NavigationBase> navigation_ptr
 	);
 
+	/**
+	 * @brief Returns displacement (in meters) made in the most recent update
+	 */
+	inline double getDisplacement() const {
+		return mem_.getDisplacement();
+	}
+
 protected:
 	/**
 	 * @defgroup taskhelpers Task helper methods
