@@ -38,7 +38,7 @@ void WorldGeometryGazebo::updateActor(
     it->second = ModelGeometry(actor_name_, WorldGeometryBase::getFrame(), pose, vel_ang, vel_lin, acc_ang, acc_lin, box);
 }
 
-ModelGeometry WorldGeometryGazebo::getModel(const std::string& name) {
+ModelGeometry WorldGeometryGazebo::getModel(const std::string& name) const {
     auto it = WorldGeometryGazebo::world_actor_data_.find(name);
     if (it != WorldGeometryGazebo::world_actor_data_.end()) {
         return it->second;
@@ -46,7 +46,7 @@ ModelGeometry WorldGeometryGazebo::getModel(const std::string& name) {
     return getModel(world_ptr_->ModelByName(name));
 }
 
-ModelGeometry WorldGeometryGazebo::getModel(const gazebo::physics::ModelPtr& model_ptr) {
+ModelGeometry WorldGeometryGazebo::getModel(const gazebo::physics::ModelPtr& model_ptr) const {
     return ModelGeometry(
         actor_name_,
         WorldGeometryBase::getFrame(),

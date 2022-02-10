@@ -20,11 +20,11 @@ public:
 		initialized_ = true;
 	}
 
-	inline std::string getFrame() {
+	inline std::string getFrame() const {
 		return frame_id_;
 	}
 
-	virtual ModelGeometry getModel(const std::string& name) {
+	virtual ModelGeometry getModel(const std::string& name) const {
 		if (!isInitialized()) {
 			HUBERO_LOG("[WorldGeometryBase] 'getModel' call could not be processed due to lack of initialization\r\n");
 			return ModelGeometry();
