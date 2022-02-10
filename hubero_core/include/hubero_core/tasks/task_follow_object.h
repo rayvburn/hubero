@@ -15,7 +15,8 @@ public:
 		task_args_num_ = countArgumentsNum(&TaskFollowObject::request);
 		state_bb_map_ = {
 			{FsmFollowObject::State::MOVING_TO_GOAL, BasicBehaviourType::BB_MOVE_TO_GOAL},
-			{FsmFollowObject::State::WAITING_FOR_MOVEMENT, BasicBehaviourType::BB_STAND}
+			{FsmFollowObject::State::WAITING_FOR_MOVEMENT, BasicBehaviourType::BB_STAND},
+			{FsmFollowObject::State::FINISHED, BasicBehaviourType::BB_STAND}
 		};
 	}
 

@@ -121,6 +121,12 @@ void Actor::initialize(
 		TaskMoveToGoal::State::ACTIVE,
 		std::bind(&Actor::prepareNavigationWalk, this)
 	);
+
+	task_follow_object_ptr_->addStateTransitionHandler(
+		TaskFollowObject::State::FINISHED,
+		TaskFollowObject::State::MOVING_TO_GOAL,
+		std::bind(&Actor::prepareNavigationWalk, this)
+	);
 }
 
 void Actor::update(const Time& time) {
