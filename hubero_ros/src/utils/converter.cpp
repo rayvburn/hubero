@@ -67,4 +67,16 @@ Vector3 msgPointToIgnVector(const geometry_msgs::Point& point) {
 	return Vector3(point.x, point.y, point.z);
 }
 
+Pose3 msgPoseToIgnPose(const geometry_msgs::Pose& pose) {
+	return Pose3(
+		pose.position.x,
+		pose.position.y,
+		pose.position.z,
+		pose.orientation.w,
+		pose.orientation.x,
+		pose.orientation.y,
+		pose.orientation.z
+	);
+}
+
 } // namespace hubero

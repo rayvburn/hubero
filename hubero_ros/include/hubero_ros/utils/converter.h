@@ -16,5 +16,6 @@ geometry_msgs::Twist ignVectorsToMsgTwist(const Vector3& vel_lin, const Vector3&
 Vector3 msgTwistToIgnVector(const geometry_msgs::Twist& twist);
 Pose3 msgTfToPose(const geometry_msgs::Transform& tf);
 Vector3 msgPointToIgnVector(const geometry_msgs::Point& point);
+Pose3 msgPoseToIgnPose(const geometry_msgs::Pose& pose);
 
 } // namespace hubero
