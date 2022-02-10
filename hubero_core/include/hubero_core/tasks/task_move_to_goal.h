@@ -30,9 +30,9 @@ public:
 		);
 	}
 
-	void updateMemory(InternalMemory& memory) {
+	void updateMemory(InternalMemory& memory, const std::shared_ptr<const WorldGeometryBase> world_geometry_ptr) {
 		memory.setGoal(getGoal());
-		TaskEssentials::updateMemory(memory);
+		TaskEssentials::updateMemory(memory, world_geometry_ptr);
 	}
 
 	virtual bool request(const Pose3& goal) override {

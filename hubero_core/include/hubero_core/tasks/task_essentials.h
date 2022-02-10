@@ -3,6 +3,7 @@
 #include <hubero_common/defines.h>
 #include <hubero_common/logger.h>
 #include <hubero_interfaces/utils/task_base.h>
+#include <hubero_interfaces/world_geometry_base.h>
 #include <hubero_core/internal_memory.h>
 
 namespace hubero {
@@ -24,8 +25,14 @@ public:
 		fsm_.addTransitionHandler(state_src, state_dst, handler);
 	}
 
-	// NOTE: putting virtual here produces segfaults (most likely cause the method is not defined in derived function)
-	void updateMemory(InternalMemory& memory) {
+	/**
+	 * @brief Method that updates given memory buffer with typical data stored inside this class
+	 * @param memory object whose data will be updated
+	 * @param world_geometry arg reserved for object-oriented tasks - object's current pose can be set as goal
+	 *
+	 * @note Putting virtual here produces segfaults (most likely cause the method is not defined in derived function
+	 */
+	void updateMemory(InternalMemory& memory, const std::shared_ptr<const WorldGeometryBase> /*world_geometry_ptr*/) {
 		memory.setBasicBehaviour(getBasicBehaviour());
 	}
 

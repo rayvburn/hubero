@@ -19,6 +19,12 @@ public:
 		};
 	}
 
+	void updateMemory(InternalMemory& memory, const std::shared_ptr<const WorldGeometryBase> world_geometry_ptr) {
+		auto object = world_geometry_ptr->getModel(object_name_);
+		memory.setGoal(object.getPose());
+		TaskEssentials::updateMemory(memory, world_geometry_ptr);
+	}
+
 	virtual bool request(const std::string& object_name) override {
 		object_name_ = object_name;
 		return TaskEssentials::request(object_name);
