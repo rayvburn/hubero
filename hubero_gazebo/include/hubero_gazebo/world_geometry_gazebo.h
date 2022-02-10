@@ -29,10 +29,10 @@ public:
         const BBox& box
     );
 
-	virtual ModelGeometry getModel(const std::string& name) override;
+	virtual ModelGeometry getModel(const std::string& name) const override;
 
 protected:
-    ModelGeometry getModel(const gazebo::physics::ModelPtr& model_ptr);
+    ModelGeometry getModel(const gazebo::physics::ModelPtr& model_ptr) const;
 
     boost::shared_ptr<const gazebo::physics::World> world_ptr_;
 
