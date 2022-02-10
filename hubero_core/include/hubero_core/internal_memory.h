@@ -77,6 +77,10 @@ public:
 		return (pose_current_.Pos() - pose_goal_.Pos()).Length();
 	}
 
+	double getDisplacement() const {
+		return (pose_current_.Pos() - pose_previous_.Pos()).Length();
+	}
+
 	bool didBasicBehaviourChange() const {
 		return bb_type_current_ != bb_type_previous_;
 	}
