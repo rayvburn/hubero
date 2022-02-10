@@ -109,6 +109,10 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo& info) {
 	sim_localisation_ptr_->updateSimulator(actor_ptr_->WorldPose());
 	hubero::Time time(info.simTime.Double());
 	hubero_actor_.update(time);
+
+	// TODO: parameterize animation factor, e.g. take from SDF
+	// update script time to set proper animation speed
+	actor_ptr_->SetScriptTime(actor_ptr_->ScriptTime() + (hubero_actor_.getDisplacement() * ANIMATION_FACTOR_DEFAULT));
 }
 
 } // namespace gazebo

@@ -32,6 +32,9 @@ namespace gazebo {
 
 class GAZEBO_VISIBLE ActorPlugin: public ModelPlugin {
 public:
+	/// @brief Defines multiplier that adjusts animation speed (>1 is related to speed-up)
+	const double ANIMATION_FACTOR_DEFAULT = 5.0;
+
 	/// @brief Constructor
 	ActorPlugin();
 
