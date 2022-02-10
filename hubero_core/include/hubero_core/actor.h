@@ -163,7 +163,7 @@ protected:
 	 * @{
 	 */
 	/// @brief Map that bonds FSM states with internal memory updaters (this is specific to task/state)
-	std::map<FsmSuper::State, std::function<void(InternalMemory&)>> state_memory_updater_map_;
+	std::map<FsmSuper::State, std::function<void(InternalMemory&, const std::shared_ptr<const WorldGeometryBase>)>> state_memory_updater_map_;
 
 	/// @brief Map that bonds FSM states with transition function executors (this is specific to task/state)
 	std::map<FsmSuper::State, std::function<void(void)>> state_tf_exec_map_;

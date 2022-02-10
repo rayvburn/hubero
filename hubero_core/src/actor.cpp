@@ -38,15 +38,15 @@ Actor::Actor():
 	})
 {
 	// NOTE: cannot put these into initialization list
-	state_memory_updater_map_.insert({FsmSuper::State::STAND, std::bind(&TaskStand::updateMemory, task_stand_ptr_, std::placeholders::_1)});
-	state_memory_updater_map_.insert({FsmSuper::State::MOVE_TO_GOAL, std::bind(&TaskMoveToGoal::updateMemory, task_move_to_goal_ptr_, std::placeholders::_1)});
-	state_memory_updater_map_.insert({FsmSuper::State::MOVE_AROUND, std::bind(&TaskMoveAround::updateMemory, task_move_around_ptr_, std::placeholders::_1)});
-	state_memory_updater_map_.insert({FsmSuper::State::LIE_DOWN, std::bind(&TaskLieDown::updateMemory, task_lie_down_ptr_, std::placeholders::_1)});
-	state_memory_updater_map_.insert({FsmSuper::State::SIT_DOWN, std::bind(&TaskSitDown::updateMemory, task_sit_down_ptr_, std::placeholders::_1)});
-	state_memory_updater_map_.insert({FsmSuper::State::FOLLOW_OBJECT, std::bind(&TaskFollowObject::updateMemory, task_follow_object_ptr_, std::placeholders::_1)});
-	state_memory_updater_map_.insert({FsmSuper::State::TELEOP, std::bind(&TaskTeleop::updateMemory, task_teleop_ptr_, std::placeholders::_1)});
-	state_memory_updater_map_.insert({FsmSuper::State::RUN, std::bind(&TaskRun::updateMemory, task_run_ptr_, std::placeholders::_1)});
-	state_memory_updater_map_.insert({FsmSuper::State::TALK, std::bind(&TaskTalk::updateMemory, task_talk_ptr_, std::placeholders::_1)});
+	state_memory_updater_map_.insert({FsmSuper::State::STAND, std::bind(&TaskStand::updateMemory, task_stand_ptr_, std::placeholders::_1, std::placeholders::_2)});
+	state_memory_updater_map_.insert({FsmSuper::State::MOVE_TO_GOAL, std::bind(&TaskMoveToGoal::updateMemory, task_move_to_goal_ptr_, std::placeholders::_1, std::placeholders::_2)});
+	state_memory_updater_map_.insert({FsmSuper::State::MOVE_AROUND, std::bind(&TaskMoveAround::updateMemory, task_move_around_ptr_, std::placeholders::_1, std::placeholders::_2)});
+	state_memory_updater_map_.insert({FsmSuper::State::LIE_DOWN, std::bind(&TaskLieDown::updateMemory, task_lie_down_ptr_, std::placeholders::_1, std::placeholders::_2)});
+	state_memory_updater_map_.insert({FsmSuper::State::SIT_DOWN, std::bind(&TaskSitDown::updateMemory, task_sit_down_ptr_, std::placeholders::_1, std::placeholders::_2)});
+	state_memory_updater_map_.insert({FsmSuper::State::FOLLOW_OBJECT, std::bind(&TaskFollowObject::updateMemory, task_follow_object_ptr_, std::placeholders::_1, std::placeholders::_2)});
+	state_memory_updater_map_.insert({FsmSuper::State::TELEOP, std::bind(&TaskTeleop::updateMemory, task_teleop_ptr_, std::placeholders::_1, std::placeholders::_2)});
+	state_memory_updater_map_.insert({FsmSuper::State::RUN, std::bind(&TaskRun::updateMemory, task_run_ptr_, std::placeholders::_1, std::placeholders::_2)});
+	state_memory_updater_map_.insert({FsmSuper::State::TALK, std::bind(&TaskTalk::updateMemory, task_talk_ptr_, std::placeholders::_1, std::placeholders::_2)});
 
 	TaskBase::addBasicBehaviourHandler(BB_STAND, std::bind(&Actor::bbStand, this));
 	TaskBase::addBasicBehaviourHandler(BB_ALIGN_TO_TARGET, std::bind(&Actor::bbAlignToTarget, this));
@@ -136,7 +136,7 @@ void Actor::update(const Time& time) {
 	// update internal memory, based on internal buffer content that is specific to a certain task
 	auto mem_update_it = state_memory_updater_map_.find(static_cast<FsmSuper::State>(fsm_.current_state()));
 	if (mem_update_it != state_memory_updater_map_.end()) {
-		mem_update_it->second(mem_);
+		mem_update_it->second(mem_, world_geometry_ptr_);
 	} else {
 		HUBERO_LOG("FsmSuper has a state that Actor class is not aware of! Cannot update internal memory buffer\r\n");
 	}
