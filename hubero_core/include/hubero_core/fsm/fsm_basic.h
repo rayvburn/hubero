@@ -33,9 +33,11 @@ protected:
 	bool guardActive2Finished(const EventFsmBasic& event) const {
 		// NOTE: isNavigationEnded deleted since it will produce periodic state changes in tasks that not use
 		// navigation goal as a finish rule
+		// NOTE2: isNavigationGoalCancelled deleted since it's called each time goal gets updated; nevertheless, task
+		// will be terminated by higher level FSM
 		return event.isNavigationSucceeded()
-			|| event.isNavigationGoalCancelled()
-			|| event.isNavigationGoalRejected();
+			|| event.isNavigationGoalRejected()
+			|| event.isAborted();
 	}
 
 	bool guardFinished2Active(const EventFsmBasic& event) const {
