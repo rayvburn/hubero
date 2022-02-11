@@ -83,6 +83,13 @@ public:
 	}
 
 	/**
+	 * @brief Computes reachable pose that is closest to the given pose, starting from current pose from update call
+	 */
+	virtual Pose3 computeClosestAchievablePose(const Pose3& pose, const std::string& frame) {
+		return pose;
+	}
+
+	/**
 	 * @brief Returns TaskFeedbackType
 	 */
 	inline TaskFeedbackType getFeedback() const {

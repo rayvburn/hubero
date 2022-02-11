@@ -64,18 +64,14 @@
 
     <!-- Topic names related to navigation - each simulated actor is connected to such a topic set -->
     <arg name="nav_ns" value="navigation"/>
-    <arg name="nav_goal_topic" default="$(arg nav_ns)/goal"/>
-    <arg name="nav_cancel_topic" default="$(arg nav_ns)/cancel"/>
-    <arg name="nav_get_plan_topic" default="$(arg nav_ns)/get_plan"/>
+    <arg name="nav_get_plan_topic" default="$(arg nav_ns)/make_plan"/>
     <arg name="nav_command_topic" default="$(arg nav_ns)/cmd_vel"/>
     <arg name="nav_odometry_topic" default="$(arg nav_ns)/odom"/>
     <arg name="nav_feedback_topic" default="$(arg nav_ns)/feedback"/>
     <arg name="nav_result_topic" default="$(arg nav_ns)/result"/>
-    <arg name="nav_get_plan_tolerance" default="1.0"/>
+    <arg name="nav_get_plan_tolerance" default="1.5"/>
 
     <!-- Append 'nav' related topics to full topic name that includes specific actor named <actor_name> -->
-    <arg name="actor_nav_goal_topic" value="$(arg actor_ns)/$(arg nav_goal_topic)"/>
-    <arg name="actor_nav_cancel_topic" value="$(arg actor_ns)/$(arg nav_cancel_topic)"/>
     <arg name="actor_nav_get_plan_topic" value="$(arg actor_ns)/$(arg nav_get_plan_topic)"/>
     <arg name="actor_nav_command_topic" value="$(arg actor_ns)/$(arg nav_command_topic)"/>
     <arg name="actor_nav_odometry_topic" value="$(arg actor_ns)/$(arg nav_odometry_topic)"/>
@@ -99,8 +95,6 @@
     <param name="hubero_ros/simulator_frame" value="$(arg simulator_global_frame)"/>
     <param name="hubero_ros/namespace" value="$(arg main_ns)"/>
 
-    <param name="hubero_ros/navigation/goal_topic" value="$(arg actor_nav_goal_topic)"/>
-    <param name="hubero_ros/navigation/cancel_topic" value="$(arg actor_nav_cancel_topic)"/>
     <param name="hubero_ros/navigation/get_plan_srv" value="$(arg actor_nav_get_plan_topic)"/>
     <param name="hubero_ros/navigation/command_topic" value="$(arg actor_nav_command_topic)"/>
     <param name="hubero_ros/navigation/odometry_topic" value="$(arg actor_nav_odometry_topic)"/>

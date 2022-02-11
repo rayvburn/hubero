@@ -4,14 +4,18 @@
 #include <hubero_ros/node.h>
 
 #include <ros/ros.h>
+#include <actionlib/client/simple_action_client.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <nav_msgs/GetPlan.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
+#include <move_base_msgs/MoveBaseAction.h>
 #include <move_base_msgs/MoveBaseActionFeedback.h>
 #include <move_base_msgs/MoveBaseActionResult.h>
+
+#include <memory>
 #include <mutex>
 #include <tuple>
 
@@ -93,6 +97,11 @@ public:
 	virtual bool cancelGoal() override;
 
 	/**
+	 * @brief Computes reachable pose that is closest to the given pose, starting from current pose from update call
+	 */
+	virtual Pose3 computeClosestAchievablePose(const Pose3& pose, const std::string& frame) override;
+
+	/**
 	 * @brief Get the velocity command
 	 *
 	 * @return Vector3
@@ -110,12 +119,21 @@ public:
 	 */
 	static TaskFeedbackType convertActionStatusToTaskFeedback(const uint8_t& status);
 
+	/**
+	 * @brief Transforms actionlib::SimpleClientGoalState::StateEnum enum to hubero::TaskFeedbackType enum
+	 */
+	static TaskFeedbackType convertSimpleClientStateToTaskFeedback(const uint8_t& status);
+
 protected:
 	/**
 	 * @brief Callback for velocity command retrieval
 	 */
 	void callbackCmdVel(const geometry_msgs::Twist::ConstPtr& msg);
 
+	/**
+	 * @defgroup mbinterfacetopic ROS move_base topic interface callbacks
+	 * @{
+	 */
 	/**
 	 * @brief Callback for movement action result retrieval
 	 */
@@ -125,6 +143,20 @@ protected:
 	 * @brief Callback for movement action result retrieval
 	 */
 	void callbackResult(const move_base_msgs::MoveBaseActionResult::ConstPtr& msg);
+	/// @}
+
+	/**
+	 * @defgroup mbinterfaceaction ROS move_base action interface callbacks
+	 * @{
+	 */
+	/**
+	 * @brief Called when action is done
+	 */
+	void callbackActionDone(
+		const actionlib::SimpleClientGoalState& state,
+		const move_base_msgs::MoveBaseResultConstPtr& msg
+	);
+	/// @}
 
 	/**
 	 * @brief Finds transform between coordinate systems using ROS TF buffer
@@ -133,10 +165,19 @@ protected:
 	std::tuple<bool, Pose3> findTransform(const std::string& frame_source, const std::string& frame_target) const;
 
 	/**
-	 * @defgroup rosinterface ROS interface
+	 * @brief Computes plan from start to goal using ROS service call
 	 */
-	ros::Publisher pub_mb_goal_;
-	ros::Publisher pub_mb_cancel_;
+	nav_msgs::Path computePlan(
+		const Pose3& start_pose,
+		const std::string& start_frame,
+		const Pose3& goal_pose,
+		const std::string& goal_frame
+	);
+
+	/**
+	 * @defgroup rosinterface ROS interface
+	 * @{
+	 */
 	ros::Subscriber sub_cmd_vel_;
 	ros::ServiceClient srv_mb_get_plan_;
 	ros::Publisher pub_odom_;
@@ -144,10 +185,32 @@ protected:
 	ros::Subscriber sub_feedback_;
 	/// @brief Subscriber of the move_base simple action server's result topic
 	ros::Subscriber sub_result_;
+
+	/// Helper typedefs
+	typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseActionClient;
+	typedef std::shared_ptr<MoveBaseActionClient> MoveBaseActionClientPtr;
+
+	/// @brief actionlib client of ROS move_base action server
+	MoveBaseActionClientPtr nav_action_client_ptr_;
+	/// @}
+
+	/**
+	 * @defgroup rosinterfacehelpers ROS Interface helpers
+	 * @{
+	 */
+	/// @brief Flag that turns true when connection with action server was detected
+	bool nav_action_server_connected_;
+
+	/// @brief Flag that turns true when connection with service server was established
+	bool nav_srv_mb_get_plan_exists_;
+
+	/// @brief Stores most recent navigation goal, helps goal restoration
+	move_base_msgs::MoveBaseGoal nav_goal_;
 	/// @}
 
 	/**
 	 * @defgroup tf Transform frames
+	 * @{
 	 */
 	tf2_ros::Buffer tf_buffer_;
 	tf2_ros::TransformListener tf_listener_;
@@ -161,6 +224,7 @@ protected:
 
 	/**
 	 * @defgroup cmdvel Velocity commands
+	 * @{
 	 */
 	Vector3 cmd_vel_;
 	std::mutex mutex_callback_;
