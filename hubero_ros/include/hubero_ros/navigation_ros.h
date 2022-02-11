@@ -13,6 +13,7 @@
 #include <move_base_msgs/MoveBaseActionFeedback.h>
 #include <move_base_msgs/MoveBaseActionResult.h>
 #include <mutex>
+#include <tuple>
 
 namespace hubero {
 
@@ -124,6 +125,12 @@ protected:
 	 * @brief Callback for movement action result retrieval
 	 */
 	void callbackResult(const move_base_msgs::MoveBaseActionResult::ConstPtr& msg);
+
+	/**
+	 * @brief Finds transform between coordinate systems using ROS TF buffer
+	 * @return std::tuple<bool, Pose3> first element is true if transform (second elem) is valid
+	 */
+	std::tuple<bool, Pose3> findTransform(const std::string& frame_source, const std::string& frame_target) const;
 
 	/**
 	 * @defgroup rosinterface ROS interface

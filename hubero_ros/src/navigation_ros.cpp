@@ -202,19 +202,9 @@ void NavigationRos::update(const Pose3& pose, const Vector3& vel_lin, const Vect
 	 * These computations aim to create a separate TF tree for each actor. All actor trees derive from the one common
 	 * frame (typically - "world").
 	 */
+	bool transform_valid = false;
 	Pose3 global_ref_shift;
-	try {
-		auto tf_world_global_ref = tf_buffer_.lookupTransform(frame_global_ref_, world_frame_name_, ros::Time(0));
-		global_ref_shift = msgTfToPose(tf_world_global_ref.transform);
-	} catch (tf2::TransformException& ex) {
-		HUBERO_LOG(
-			"[%s].[NavigationRos] Could not transform '%s' to '%s' - exception: '%s'",
-			actor_name_.c_str(),
-			world_frame_name_.c_str(),
-			frame_global_ref_.c_str(),
-			ex.what()
-		);
-	}
+	std::tie(transform_valid, global_ref_shift) = findTransform(world_frame_name_, frame_global_ref_);
 
 	// publish odom TF
 	geometry_msgs::TransformStamped transform_odom {};
@@ -357,6 +347,25 @@ void NavigationRos::callbackResult(const move_base_msgs::MoveBaseActionResult::C
 		return;
 	}
 	feedback_ = fb_type;
+}
+
+std::tuple<bool, Pose3> NavigationRos::findTransform(const std::string& frame_source, const std::string& frame_target) const {
+	Pose3 transform;
+	bool success = false;
+	try {
+		auto tf_msg = tf_buffer_.lookupTransform(frame_target, frame_source, ros::Time(0));
+		transform = msgTfToPose(tf_msg.transform);
+		success = true;
+	} catch (tf2::TransformException& ex) {
+		HUBERO_LOG(
+			"[%s].[NavigationRos] Could not transform '%s' to '%s' - exception: '%s'",
+			actor_name_.c_str(),
+			world_frame_name_.c_str(),
+			frame_global_ref_.c_str(),
+			ex.what()
+		);
+	}
+	return std::make_tuple(success, transform);
 }
 
 } // namespace hubero
