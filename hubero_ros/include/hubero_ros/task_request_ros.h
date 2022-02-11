@@ -140,6 +140,29 @@ protected:
 	/// @}
 
 	/**
+	 * @defgroup goalupdates Request calls for each action to handle them from template callback handler
+	 * @details These calls perform preprocessing (if required) and execute request to specific tasks
+	 * @note In fact these are overloaded @ref TaskRequestBase::request but template method from base class
+	 * would never be called if @ref requestActionGoal -> @ref request
+	 * @{
+	 */
+	bool requestActionGoal(const hubero_ros_msgs::FollowObjectGoalConstPtr& goal);
+	bool requestActionGoal(const hubero_ros_msgs::LieDownGoalConstPtr& goal);
+	bool requestActionGoal(const hubero_ros_msgs::LieDownObjectGoalConstPtr& goal);
+	bool requestActionGoal(const hubero_ros_msgs::MoveAroundGoalConstPtr& goal);
+	bool requestActionGoal(const hubero_ros_msgs::MoveToGoalGoalConstPtr& goal);
+	bool requestActionGoal(const hubero_ros_msgs::MoveToObjectGoalConstPtr& goal);
+	bool requestActionGoal(const hubero_ros_msgs::RunGoalConstPtr& goal);
+	bool requestActionGoal(const hubero_ros_msgs::SitDownGoalConstPtr& goal);
+	bool requestActionGoal(const hubero_ros_msgs::SitDownObjectGoalConstPtr& goal);
+	bool requestActionGoal(const hubero_ros_msgs::StandGoalConstPtr& goal);
+	bool requestActionGoal(const hubero_ros_msgs::TalkGoalConstPtr& goal);
+	bool requestActionGoal(const hubero_ros_msgs::TalkObjectGoalConstPtr& goal);
+	bool requestActionGoal(const hubero_ros_msgs::TeleopGoalConstPtr& goal);
+
+	/// @}
+
+	/**
 	 * @brief Handler of the action goal callback
 	 *
 	 * @tparam Tresult type of the action result structure
@@ -171,6 +194,26 @@ protected:
 			Tfeedback feedback;
 			feedback.feedback.status = feedback_type;
 			as_ptr->publishFeedback(feedback);
+
+			// check if new goal was selected and execute procedure after new goal received (once)
+			if (as_ptr->isNewGoalAvailable()) {
+				auto goal = as_ptr->acceptNewGoal();
+				bool new_request_ok = requestActionGoal(goal);
+				// wait until request is initially processed and we'll know if it's already active
+				if (new_request_ok) {
+					std::this_thread::sleep_for(TASK_FEEDBACK_PERIOD);
+					auto feedback_new_request = getTaskFeedbackType(task_type);
+					if (feedback_new_request != TASK_FEEDBACK_ACTIVE || feedback_new_request != TASK_FEEDBACK_PENDING) {
+						// invalid feedback state, aborting HuBeRo task and action server
+						abort(task_type);
+					}
+				}
+			}
+
+			// check if aborting this goal was requested
+			if (as_ptr->isPreemptRequested()) {
+				abort(task_type);
+			}
 			std::this_thread::sleep_for(TASK_FEEDBACK_PERIOD);
 		}
 
