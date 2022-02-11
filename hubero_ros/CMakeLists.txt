@@ -11,9 +11,11 @@ find_package(catkin REQUIRED
 		cmake_modules
 		nav_core
 		move_base
+		move_base_msgs
 		nav_msgs
 		roscpp
 		actionlib
+		actionlib_msgs
 		tf2
 		tf2_ros
 )
@@ -44,9 +46,11 @@ catkin_package(
 		hubero_common
 		hubero_interfaces
 		hubero_ros_msgs
+		move_base_msgs
 		nav_msgs
 		roscpp
 		actionlib
+		actionlib_msgs
 		tf2
 		tf2_ros
 )
