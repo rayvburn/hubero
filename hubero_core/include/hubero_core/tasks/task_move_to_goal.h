@@ -12,10 +12,7 @@ namespace hubero {
  */
 class TaskMoveToGoal: public TaskEssentials<FsmBasic, FsmBasic::State, EventFsmBasic> {
 public:
-	TaskMoveToGoal(double goal_reached_distance = 1.0):
-		TaskEssentials::TaskEssentials(TASK_MOVE_TO_GOAL),
-		goal_reached_distance_(goal_reached_distance)
-	{
+	TaskMoveToGoal(): TaskEssentials::TaskEssentials(TASK_MOVE_TO_GOAL) {
 		task_args_num_ = countArgumentsNum(&TaskMoveToGoal::request);
 		state_bb_map_ = {
 			{FsmBasic::State::ACTIVE, BasicBehaviourType::BB_MOVE_TO_GOAL},
@@ -44,14 +41,8 @@ public:
 		return goal_;
 	}
 
-	double getDistanceGoalReached() const {
-		return goal_reached_distance_;
-	}
-
 protected:
 	Pose3 goal_;
-
-	double goal_reached_distance_;
 }; // class TaskStand
 
 } // namespace hubero
