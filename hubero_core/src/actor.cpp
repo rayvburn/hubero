@@ -52,6 +52,7 @@ Actor::Actor():
 	TaskBase::addBasicBehaviourHandler(BB_ALIGN_TO_TARGET, std::bind(&Actor::bbAlignToTarget, this));
 	TaskBase::addBasicBehaviourHandler(BB_MOVE_TO_GOAL, std::bind(&Actor::bbMoveToGoal, this));
 	TaskBase::addBasicBehaviourHandler(BB_CHOOSE_NEW_GOAL, std::bind(&Actor::bbChooseNewGoal, this));
+	TaskBase::addBasicBehaviourHandler(BB_FOLLOW_OBJECT, std::bind(&Actor::bbFollowObject, this));
 	TaskBase::addBasicBehaviourHandler(BB_AWAIT_OBJECT_MOVEMENT, std::bind(&Actor::bbAwaitObjectMovement, this));
 	TaskBase::addBasicBehaviourHandler(BB_LIE_DOWN, std::bind(&Actor::bbLieDown, this));
 	TaskBase::addBasicBehaviourHandler(BB_STAND_UP_FROM_LYING, std::bind(&Actor::bbStandUpFromLying, this));
@@ -119,13 +120,31 @@ void Actor::initialize(
 	task_move_to_goal_ptr_->addStateTransitionHandler(
 		TaskMoveToGoal::State::FINISHED,
 		TaskMoveToGoal::State::ACTIVE,
-		std::bind(&Actor::prepareNavigationWalk, this)
+		std::bind(&Actor::thSetupNavigation, this)
+	);
+
+	task_move_to_goal_ptr_->addStateTransitionHandler(
+		TaskMoveToGoal::State::FINISHED,
+		TaskMoveToGoal::State::ACTIVE,
+		std::bind(&Actor::thSetupAnimationWalk, this)
 	);
 
 	task_follow_object_ptr_->addStateTransitionHandler(
 		TaskFollowObject::State::FINISHED,
 		TaskFollowObject::State::MOVING_TO_GOAL,
-		std::bind(&Actor::prepareNavigationWalk, this)
+		std::bind(&Actor::thSetupNavigation, this)
+	);
+
+	task_follow_object_ptr_->addStateTransitionHandler(
+		TaskFollowObject::State::FINISHED,
+		TaskFollowObject::State::MOVING_TO_GOAL,
+		std::bind(&Actor::thSetupAnimationWalk, this)
+	);
+
+	task_follow_object_ptr_->addStateTransitionHandler(
+		TaskFollowObject::State::WAITING_FOR_MOVEMENT,
+		TaskFollowObject::State::MOVING_TO_GOAL,
+		std::bind(&Actor::thSetupAnimationWalk, this)
 	);
 }
 
@@ -255,6 +274,21 @@ void Actor::addFsmSuperTransitionHandlers(
 	);
 }
 
+// static
+Pose3 Actor::computeNewPose(const Pose3& pose_current, const Vector3& cmd_vel, const Time& dt) {
+	// process velocity command - compute displacement
+	auto path_global_int = cmd_vel * dt.getTime();
+	auto pose_new = Pose3(
+		pose_current.Pos().X() + path_global_int.X(),
+		pose_current.Pos().Y() + path_global_int.Y(),
+		pose_current.Pos().Z(),
+		pose_current.Rot().Roll(),
+		pose_current.Rot().Pitch(),
+		pose_current.Rot().Yaw() + path_global_int.Z()
+	);
+	return pose_new;
+}
+
 void Actor::executeTaskStand() {
 	auto event = prepareTaskFsmUpdate<EventFsmBasic>(task_stand_ptr_);
 	task_stand_ptr_->execute(event);
@@ -286,7 +320,7 @@ void Actor::executeTaskSitDown() {
 
 void Actor::executeTaskFollowObject() {
 	auto event = prepareTaskFsmUpdate<EventFsmFollowObject>(task_follow_object_ptr_);
-	event.setObjectNearby(mem_.getDistanceToGoal() <= task_follow_object_ptr_->getDistanceNearby());
+	event.setObjectNearby(mem_.getPlanarDistanceToGoal() <= navigation_ptr_->getGoalTolerance());
 	task_follow_object_ptr_->execute(event);
 }
 
@@ -325,20 +359,35 @@ void Actor::bbAlignToTarget() {
 }
 
 void Actor::bbMoveToGoal() {
-	// retrieve current pose from internal memory
-	auto pose = mem_.getPoseCurrent();
+	// process navigation command - compute displacement
+	auto pose_new = Actor::computeNewPose(
+		mem_.getPoseCurrent(),
+		navigation_ptr_->getVelocityCmd(),
+		Time::computeDuration(mem_.getTimePrevious(), mem_.getTimeCurrent()).getTime()
+	);
+
+	// update pose in the internal memory
+	mem_.setPose(pose_new);
+}
+
+void Actor::bbFollowObject() {
+	// evaluate, if plan is outdated and re-generation is required
+	auto time_since_goal_update = Time::computeDuration(mem_.getGoalPoseUpdateTime(), mem_.getTimeCurrent());
+	if (time_since_goal_update.getTime() >= GOAL_UPDATE_PERIOD_DEFAULT) {
+		auto goal_pose = navigation_ptr_->computeClosestAchievablePose(
+			mem_.getPoseGoal(),
+			navigation_ptr_->getWorldFrame()
+		);
+		mem_.setGoal(goal_pose);
+		mem_.setGoalPoseUpdateTime(mem_.getTimeCurrent());
+		navigation_ptr_->setGoal(mem_.getPoseGoal(), navigation_ptr_->getWorldFrame());
+	}
 
 	// process navigation command - compute displacement
-	auto cmd_global = navigation_ptr_->getVelocityCmd();
-	auto dt = Time::computeDuration(mem_.getTimePrevious(), mem_.getTimeCurrent()).getTime();
-	auto path_global_int = cmd_global * dt;
-	auto pose_new = Pose3(
-		pose.Pos().X() + path_global_int.X(),
-		pose.Pos().Y() + path_global_int.Y(),
-		pose.Pos().Z(),
-		pose.Rot().Roll(),
-		pose.Rot().Pitch(),
-		pose.Rot().Yaw() + path_global_int.Z()
+	auto pose_new = Actor::computeNewPose(
+		mem_.getPoseCurrent(),
+		navigation_ptr_->getVelocityCmd(),
+		Time::computeDuration(mem_.getTimePrevious(), mem_.getTimeCurrent()).getTime()
 	);
 
 	// update pose in the internal memory
@@ -396,11 +445,17 @@ void Actor::bbTalk() {
 
 void Actor::bbTeleop() {
 
+void Actor::thSetupNavigation() {
+	navigation_ptr_->setGoal(mem_.getPoseGoal(), navigation_ptr_->getWorldFrame());
+	mem_.setGoalPoseUpdateTime(mem_.getTimeCurrent());
 }
 
-void Actor::prepareNavigationWalk() {
+void Actor::thSetupAnimationWalk() {
 	animation_control_ptr_->start(AnimationType::ANIMATION_WALK, mem_.getTimeCurrent());
-	navigation_ptr_->setGoal(mem_.getPoseGoal(), navigation_ptr_->getWorldFrame());
+}
+
+void Actor::thSetupAnimationStand() {
+	animation_control_ptr_->start(AnimationType::ANIMATION_STAND, mem_.getTimeCurrent());
 }
 
 void Actor::updateFsmSuper() {
