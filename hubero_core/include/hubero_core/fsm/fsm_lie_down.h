@@ -42,7 +42,7 @@ protected:
 	}
 
 	bool guardStanding2MovingToGoal(const EventFsmLieDown& event) const {
-		return event.isEnded() || (event.isActive() && !event.isNavigationActive());
+		return event.isActive() && !event.isNavigationActive();
 	}
 	/** @} */ // end of guards group
 

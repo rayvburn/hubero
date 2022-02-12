@@ -256,6 +256,12 @@ void Actor::addFsmSuperTransitionHandlers(
 		TaskMoveToGoal::State::FINISHED,
 		std::bind(&NavigationBase::finish, navigation_ptr)
 	);
+
+	task_lie_down_ptr->addStateTransitionHandler(
+		TaskLieDown::State::MOVING_TO_GOAL,
+		TaskLieDown::State::LYING_DOWN,
+		std::bind(&NavigationBase::finish, navigation_ptr)
+	);
 }
 
 // static
