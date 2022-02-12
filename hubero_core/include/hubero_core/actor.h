@@ -35,6 +35,9 @@ namespace hubero {
  */
 class Actor {
 public:
+	/// Defines how often goal will be updated during execution of a navigation task (in seconds)
+	const double GOAL_UPDATE_PERIOD_DEFAULT = 5.0;
+
 	Actor();
 
 	void initialize(
@@ -79,6 +82,15 @@ public:
 		return mem_.getDisplacement();
 	}
 
+	/**
+	 * @brief Computes pose in a global coordinate system
+	 *
+	 * @param pose_current pose in global coordinate system
+	 * @param cmd_vel velocity in global coordinate system
+	 * @param dt integration period
+	 */
+	static Pose3 computeNewPose(const Pose3& pose_current, const Vector3& cmd_vel, const Time& dt);
+
 protected:
 	/**
 	 * @defgroup taskhelpers Task helper methods
@@ -108,6 +120,7 @@ protected:
 	void bbStand();
 	void bbAlignToTarget();
 	void bbMoveToGoal();
+	void bbFollowObject();
 	void bbChooseNewGoal();
 	void bbAwaitObjectMovement();
 	void bbLieDown();
@@ -121,11 +134,13 @@ protected:
 	/// @}
 
 	/**
-	 * @defgroup bbhelpers Basic behaviour helper methods
+	 * @defgroup bbhelpers Basic behaviour helper methods, transition handlers
 	 * @details Methods usually used to setup some actions at task startup
 	 * @{
 	 */
-	void prepareNavigationWalk();
+	void thSetupNavigation();
+	void thSetupAnimationWalk();
+	void thSetupAnimationStand();
 
 	/// @}
 

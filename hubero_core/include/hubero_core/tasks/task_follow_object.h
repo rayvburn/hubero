@@ -8,13 +8,10 @@ namespace hubero {
 
 class TaskFollowObject: public TaskEssentials<FsmFollowObject, FsmFollowObject::State, EventFsmFollowObject> {
 public:
-	TaskFollowObject(const double& nearby_distance = 1.0):
-		TaskEssentials::TaskEssentials(TASK_FOLLOW_OBJECT),
-		nearby_distance_(nearby_distance)
-	{
+	TaskFollowObject(): TaskEssentials::TaskEssentials(TASK_FOLLOW_OBJECT) {
 		task_args_num_ = countArgumentsNum(&TaskFollowObject::request);
 		state_bb_map_ = {
-			{FsmFollowObject::State::MOVING_TO_GOAL, BasicBehaviourType::BB_MOVE_TO_GOAL},
+			{FsmFollowObject::State::MOVING_TO_GOAL, BasicBehaviourType::BB_FOLLOW_OBJECT},
 			{FsmFollowObject::State::WAITING_FOR_MOVEMENT, BasicBehaviourType::BB_STAND},
 			{FsmFollowObject::State::FINISHED, BasicBehaviourType::BB_STAND}
 		};
@@ -35,16 +32,9 @@ public:
 		return object_name_;
 	}
 
-	inline double getDistanceNearby() const {
-		return nearby_distance_;
-	}
-
 protected:
 	/// @brief Name of the object that was requested to follow
 	std::string object_name_;
-
-	/// @brief How close from human object must be located to consider it as 'nearby'
-	double nearby_distance_;
 }; // TaskFollowObject
 
 } // namespace hubero
