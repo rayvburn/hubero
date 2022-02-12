@@ -204,6 +204,15 @@ protected:
 
 			// check if new goal was selected and execute procedure after new goal received (once)
 			if (as_ptr->isNewGoalAvailable()) {
+				// make sure that current goal is aborted
+				abort(task_type);
+				/*
+				 * NOTE: this sleep must be longer than Actor class update period (FSM must be updated to catch
+				 * the trigger of abort->request->activation)
+				 * // FIXME: work out a cleaner/nicer solution
+				 */
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
 				auto goal = as_ptr->acceptNewGoal();
 				bool new_request_ok = requestActionGoal(goal);
 				HUBERO_LOG(
