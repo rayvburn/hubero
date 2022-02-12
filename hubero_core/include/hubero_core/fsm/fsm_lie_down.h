@@ -18,7 +18,7 @@ public:
 		STANDING
 	};
 
-	FsmLieDown(State state_init = State::MOVING_TO_GOAL): fsm(state_init), FsmEssentials("FsmLieDown") {}
+	FsmLieDown(State state_init = State::STANDING): fsm(state_init), FsmEssentials("FsmLieDown") {}
 
 protected:
 	/**
@@ -42,7 +42,7 @@ protected:
 	}
 
 	bool guardStanding2MovingToGoal(const EventFsmLieDown& event) const {
-		return event.isEnded();
+		return event.isEnded() || (event.isActive() && !event.isNavigationActive());
 	}
 	/** @} */ // end of guards group
 

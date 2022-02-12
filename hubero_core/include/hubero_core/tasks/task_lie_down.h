@@ -18,11 +18,15 @@ public:
 		state_bb_map_ = {
 			{FsmLieDown::State::MOVING_TO_GOAL, BasicBehaviourType::BB_MOVE_TO_GOAL},
 			{FsmLieDown::State::LYING_DOWN, BasicBehaviourType::BB_LIE_DOWN},
-			// FIXME: add basic behaviour
-			{FsmLieDown::State::LYING, BasicBehaviourType::BB_STAND},
+			{FsmLieDown::State::LYING, BasicBehaviourType::BB_LIE},
 			{FsmLieDown::State::STANDING_UP, BasicBehaviourType::BB_STAND_UP_FROM_LYING},
 			{FsmLieDown::State::STANDING, BasicBehaviourType::BB_STAND}
 		};
+	}
+
+	void updateMemory(InternalMemory& memory, const std::shared_ptr<const WorldGeometryBase> world_geometry_ptr) {
+		memory.setGoal(Pose3(getGoalPosition(), Quaternion(0.0, 0.0, getGoalYaw())));
+		TaskEssentials::updateMemory(memory, world_geometry_ptr);
 	}
 
 	virtual bool request(const Vector3& pos, const double& yaw) override {

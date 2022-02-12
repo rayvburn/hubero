@@ -48,6 +48,18 @@ protected:
 	}
 
 	/**
+	 * @brief Calculation of terminal condition for tasks that stay active for some additional operations after abort
+	 * @details applicable to not terminatable anytime
+	 */
+	static bool helperTerminalConditionActiveAfterCancel(const EventFsmSuper& /*event*/, const TaskPredicates& task) {
+		/*
+		 * isSucceeded() is not used here as isEnded() allows task to be aborted and in most cases tasks that
+		 * are 'ActiveAfterCancel' expect abort call to be finished
+		 */
+		return task.isEnded();
+	}
+
+	/**
 	 * @brief Evaluates request predicate in 'self' (caller task) and checks how many requests there are in @ref event.
 	 * @details Aim is to find whether there is another task requested currently.
 	 */
@@ -112,7 +124,7 @@ protected:
 	}
 
 	inline bool guardLieDown2Stand(const EventFsmSuper& event) const {
-		return FsmSuper::helperTerminalCondition(event, event.lie_down)
+		return FsmSuper::helperTerminalConditionActiveAfterCancel(event, event.lie_down)
 			&& FsmSuper::helperTransCondTask2Stand(event.stand);
 	}
 
@@ -122,7 +134,7 @@ protected:
 	}
 
 	inline bool guardSitDown2Stand(const EventFsmSuper& event) const {
-		return FsmSuper::helperTerminalCondition(event, event.sit_down)
+		return FsmSuper::helperTerminalConditionActiveAfterCancel(event, event.sit_down)
 			&& FsmSuper::helperTransCondTask2Stand(event.stand);
 	}
 

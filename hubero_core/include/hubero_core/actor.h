@@ -148,6 +148,7 @@ protected:
 	void thSetupNavigation();
 	void thSetupAnimationWalk();
 	void thSetupAnimationStand();
+	void thSetupAnimationLieDown();
 
 	/// @}
 
