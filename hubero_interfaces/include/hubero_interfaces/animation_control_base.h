@@ -27,7 +27,10 @@ struct AnimationData {
  */
 class AnimationControlBase {
 public:
-    AnimationControlBase(): initialized_(false), anim_finished_(true) {}
+    AnimationControlBase():
+        initialized_(false),
+        anim_finished_(true),
+        anim_active_(AnimationType::ANIMATION_UNDEFINED) {}
 
     void addAnimationHandler(
         AnimationType anim_type,
