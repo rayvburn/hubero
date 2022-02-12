@@ -15,7 +15,8 @@ public:
     void initialize(
         std::function<void(gazebo::physics::TrajectoryInfoPtr&)> anim_updater,
         const gazebo::physics::Actor::SkeletonAnimation_M& anims,
-        const AnimationType& anim_init
+        const AnimationType& anim_init,
+        const double& standing_height
     );
 
     virtual void adjustPose(Pose3& pose, const Time& time_current) override;
@@ -47,6 +48,9 @@ protected:
 
     /// Initial height of the actor with the current animation
     double animation_height_initial_;
+
+    /// Height of the actor (Z component of position) while he is standing still
+    double standing_height_;
 
     /// A dictionary of skeleton animations
     gazebo::physics::Actor::SkeletonAnimation_M skeleton_anims_;

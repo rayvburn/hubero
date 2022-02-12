@@ -14,52 +14,33 @@ const std::map<AnimationType, std::string> AnimationControlGazebo::animation_nam
 	{ANIMATION_TALK, "talk_a"}
 };
 
-AnimationControlGazebo::AnimationControlGazebo(): AnimationControlBase::AnimationControlBase() {}
+AnimationControlGazebo::AnimationControlGazebo():
+	AnimationControlBase::AnimationControlBase(),
+	animation_configured_recently_(false),
+	animation_height_initial_(1.0),
+	standing_height_(1.0) {}
 
 void AnimationControlGazebo::initialize(
 	std::function<void(gazebo::physics::TrajectoryInfoPtr&)> anim_updater,
 	const gazebo::physics::Actor::SkeletonAnimation_M& anims,
-	const AnimationType& anim_init
+	const AnimationType& anim_init,
+	const double& standing_height
 ) {
 	// add supported animations handlers
-	addAnimationHandler(
-		ANIMATION_STAND,
-		std::bind(&AnimationControlGazebo::handlerStand, this)
-	);
-	addAnimationHandler(
-		ANIMATION_WALK,
-		std::bind(&AnimationControlGazebo::handlerWalk, this)
-	);
-	addAnimationHandler(
-		ANIMATION_LIE_DOWN,
-		std::bind(&AnimationControlGazebo::handlerLieDown, this)
-	);
-	addAnimationHandler(
-		ANIMATION_SIT_DOWN,
-		std::bind(&AnimationControlGazebo::handlerSitDown, this)
-	);
-	addAnimationHandler(
-		ANIMATION_SITTING,
-		std::bind(&AnimationControlGazebo::handlerSitting, this)
-	);
-	addAnimationHandler(
-		ANIMATION_STAND_UP,
-		std::bind(&AnimationControlGazebo::handlerStandUp, this)
-	);
-	addAnimationHandler(
-		ANIMATION_RUN,
-		std::bind(&AnimationControlGazebo::handlerRun, this)
-	);
-	addAnimationHandler(
-		ANIMATION_TALK,
-		std::bind(&AnimationControlGazebo::handlerTalk, this)
-	);
+	addAnimationHandler(ANIMATION_STAND, std::bind(&AnimationControlGazebo::handlerStand, this));
+	addAnimationHandler(ANIMATION_WALK, std::bind(&AnimationControlGazebo::handlerWalk, this));
+	addAnimationHandler(ANIMATION_LIE_DOWN, std::bind(&AnimationControlGazebo::handlerLieDown, this));
+	addAnimationHandler(ANIMATION_SIT_DOWN, std::bind(&AnimationControlGazebo::handlerSitDown, this));
+	addAnimationHandler(ANIMATION_SITTING, std::bind(&AnimationControlGazebo::handlerSitting, this));
+	addAnimationHandler(ANIMATION_STAND_UP, std::bind(&AnimationControlGazebo::handlerStandUp, this));
+	addAnimationHandler(ANIMATION_RUN, std::bind(&AnimationControlGazebo::handlerRun, this));
+	addAnimationHandler(ANIMATION_TALK, std::bind(&AnimationControlGazebo::handlerTalk, this));
 
-	// save function
 	trajectory_updater_ = anim_updater;
+	standing_height_ = standing_height;
+	skeleton_anims_ = anims;
 
 	// configure
-	skeleton_anims_ = anims;
 	setupAnimation(anim_init);
 }
 
@@ -72,10 +53,9 @@ void AnimationControlGazebo::adjustPose(Pose3& pose, const Time& time_current) {
 	Vector3 pos = pose.Pos();
 	Vector3 rpy = pose.Rot().Euler();
 
-	if (getActiveAnimation() == ANIMATION_STAND) {
-		rpy.X(IGN_PI_2);
-	} else if (getActiveAnimation() == ANIMATION_LIE_DOWN) {
-		rpy.X(0.0);
+	if (getActiveAnimation() == ANIMATION_LIE_DOWN) {
+		rpy.X(-IGN_PI / 2);
+		pos.Z(0.1);
 	} else if (getActiveAnimation() == ANIMATION_SIT_DOWN || getActiveAnimation() == ANIMATION_STAND_UP) {
 		Time time_so_far = Time::computeDuration(time_begin_, time_current);
 		Time time_range = Time::computeDuration(time_begin_, time_finish_);
@@ -95,6 +75,10 @@ void AnimationControlGazebo::adjustPose(Pose3& pose, const Time& time_current) {
 		} else if (getActiveAnimation() == ANIMATION_STAND_UP) {
 			pos.Z(animation_height_initial_ - time_progress * 0.2);
 		}
+	} else {
+		// i.e. stand, run etc.
+		pos.Z(standing_height_);
+		rpy.X(0.0);
 	}
 
 	pose.Pos() = pos;

@@ -38,7 +38,8 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 	sim_animation_control_ptr_->initialize(
 		std::bind(&gazebo::physics::Actor::SetCustomTrajectory, actor_ptr_, std::placeholders::_1),
 		actor_ptr_->SkeletonAnimations(),
-		hubero::AnimationType::ANIMATION_STAND
+		hubero::AnimationType::ANIMATION_STAND,
+		actor_ptr_->WorldPose().Pos().Z()
 	);
 	sim_localisation_ptr_->initialize(ros_node_ptr_->getSimulatorFrame());
 	sim_model_control_ptr_->initialize(actor_ptr_, ros_node_ptr_->getSimulatorFrame());
