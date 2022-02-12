@@ -437,6 +437,28 @@ void Actor::addTasksFsmTransitionHandlers() {
 		TaskFollowObject::State::MOVING_TO_GOAL,
 		std::bind(&Actor::thSetupAnimationWalk, this)
 	);
+
+	// lie down
+	task_lie_down_ptr_->addStateTransitionHandler(
+		TaskLieDown::State::STANDING,
+		TaskLieDown::State::MOVING_TO_GOAL,
+		std::bind(&Actor::thSetupNavigation, this)
+	);
+	task_lie_down_ptr_->addStateTransitionHandler(
+		TaskLieDown::State::STANDING,
+		TaskLieDown::State::MOVING_TO_GOAL,
+		std::bind(&Actor::thSetupAnimationWalk, this)
+	);
+	task_lie_down_ptr_->addStateTransitionHandler(
+		TaskLieDown::State::MOVING_TO_GOAL,
+		TaskLieDown::State::LYING_DOWN,
+		std::bind(&Actor::thSetupAnimationLieDown, this)
+	);
+	task_lie_down_ptr_->addStateTransitionHandler(
+		TaskLieDown::State::LYING,
+		TaskLieDown::State::STANDING_UP,
+		std::bind(&Actor::thSetupAnimationStand, this)
+	);
 }
 
 void Actor::thSetupNavigation() {
@@ -450,6 +472,10 @@ void Actor::thSetupAnimationWalk() {
 
 void Actor::thSetupAnimationStand() {
 	animation_control_ptr_->start(AnimationType::ANIMATION_STAND, mem_.getTimeCurrent());
+}
+
+void Actor::thSetupAnimationLieDown() {
+	animation_control_ptr_->start(AnimationType::ANIMATION_LIE_DOWN, mem_.getTimeCurrent());
 }
 
 void Actor::updateFsmSuper() {
