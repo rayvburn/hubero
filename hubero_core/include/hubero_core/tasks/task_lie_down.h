@@ -22,6 +22,12 @@ public:
 			{FsmLieDown::State::STANDING_UP, BasicBehaviourType::BB_STAND_UP_FROM_LYING},
 			{FsmLieDown::State::STANDING, BasicBehaviourType::BB_STAND}
 		};
+
+		fsm_.addTransitionHandler(
+			FsmLieDown::State::STANDING_UP,
+			FsmLieDown::State::STANDING,
+			std::bind(&TaskLieDown::finish, this)
+		);
 	}
 
 	void updateMemory(InternalMemory& memory, const std::shared_ptr<const WorldGeometryBase> world_geometry_ptr) {
