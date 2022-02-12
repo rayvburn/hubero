@@ -269,6 +269,11 @@ protected:
 			// check if aborting this goal was requested
 			if (as_ptr->isPreemptRequested()) {
 				abort(task_type);
+				HUBERO_LOG(
+					"[%s].[TaskRequestRos] Task (%d) preempt requested, aborting\r\n",
+					actor_name_.c_str(),
+					task_type
+				);
 			}
 			std::this_thread::sleep_for(TASK_FEEDBACK_PERIOD);
 		}
@@ -276,13 +281,29 @@ protected:
 		auto final_feedback_type = getTaskFeedbackType(task_type);
 		if (final_feedback_type == TASK_FEEDBACK_SUCCEEDED) {
 			as_ptr->setSucceeded();
+			HUBERO_LOG(
+				"[%s].[TaskRequestRos] Finishing task (%d) with SUCCEEDED state\r\n",
+				actor_name_.c_str(),
+				task_type
+			);
 			return;
 		} else if (final_feedback_type == TASK_FEEDBACK_ABORTED) {
 			as_ptr->setAborted();
+			HUBERO_LOG(
+				"[%s].[TaskRequestRos] Finishing task (%d) with ABORTED state\r\n",
+				actor_name_.c_str(),
+				task_type
+			);
 			return;
 		} else if (final_feedback_type == TASK_FEEDBACK_TERMINATED) {
 			// terminated without abort -> most likely the same task was requested with new objectives
 			as_ptr->setPreempted();
+			HUBERO_LOG(
+				"[%s].[TaskRequestRos] Finishing task (%d) with PREEMPTED state: a) the same task "
+				"was requested with a new goal, b) current task did not finish immediately despite 'abort'\r\n",
+				actor_name_.c_str(),
+				task_type
+			);
 			return;
 		}
 
