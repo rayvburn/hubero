@@ -72,6 +72,24 @@ public:
         return request(TaskRequestBase::getTaskType(task_name), std::forward<Args>(task_args)...);
     }
 
+    /**
+     * @brief Activates given task
+     *
+     * @note This may be useful while handling one task and the same task was requested to be executed with 
+     * different objectives
+     */
+    void activate(TaskType task) {
+        auto it = tasks_map_.find(task);
+        if (it != tasks_map_.end()) {
+            if (it->second == nullptr) {
+                HUBERO_LOG("[TaskRequestBase] Cannot activate task since its class was not defined\r\n");
+                return;
+            }
+            return it->second->activate();
+        }
+        HUBERO_LOG("[TaskRequestBase] Cannot activate task since it was not defined\r\n");
+    }
+
     bool abort(TaskType task) {
         auto it = tasks_map_.find(task);
         if (it != tasks_map_.end()) {
