@@ -180,6 +180,13 @@ protected:
 			result.result.text = "Rejected after initial check";
 			result.result.status = actionlib_msgs::GoalStatus::REJECTED;
 			as_ptr->setAborted(result);
+			HUBERO_LOG(
+				"[%s].[TaskRequestRos] Goal for task %d rejected after initial check (processed ok %d, feedback %d)\r\n",
+				actor_name_.c_str(),
+				task_type,
+				request_processed_ok,
+				getTaskFeedbackType(task_type)
+			);
 			return;
 		}
 
@@ -199,13 +206,40 @@ protected:
 			if (as_ptr->isNewGoalAvailable()) {
 				auto goal = as_ptr->acceptNewGoal();
 				bool new_request_ok = requestActionGoal(goal);
+				HUBERO_LOG(
+					"[%s].[TaskRequestRos] Checking potential new goal while executing previous one\r\n",
+					actor_name_.c_str()
+				);
 				// wait until request is initially processed and we'll know if it's already active
 				if (new_request_ok) {
+					HUBERO_LOG(
+						"[%s].[TaskRequestRos] New goal requested successfully\r\n",
+						actor_name_.c_str()
+					);
 					std::this_thread::sleep_for(TASK_FEEDBACK_PERIOD);
 					auto feedback_new_request = getTaskFeedbackType(task_type);
-					if (feedback_new_request != TASK_FEEDBACK_ACTIVE || feedback_new_request != TASK_FEEDBACK_PENDING) {
+					if (feedback_new_request != TASK_FEEDBACK_ACTIVE && feedback_new_request != TASK_FEEDBACK_PENDING) {
 						// invalid feedback state, aborting HuBeRo task and action server
+						HUBERO_LOG(
+							"[%s].[TaskRequestRos] New goal has invalid initial feedback state (%d),"
+							"aborting the whole task (enum %d)\r\n",
+							actor_name_.c_str(),
+							feedback_new_request,
+							task_type
+						);
 						abort(task_type);
+						// no need to 'as_ptr->setAborted()' and 'return' here as the task itself will return 'abort'
+						// feedback type in next iteration
+					} else if (feedback_new_request == TASK_FEEDBACK_PENDING) {
+						// the new goal seems to be pending, let's start processing from the start
+						HUBERO_LOG(
+							"[%s].[TaskRequestRos] New goal is pending execution, activating task (%d) and restarting callback handler\r\n",
+							actor_name_.c_str(),
+							task_type
+						);
+						// task must be activated here, otherwise, it will be stuck 'pending'
+						activate(task_type);
+						return actionCbHandler<Tresult, Tfeedback, Taction>(new_request_ok, task_type, as_ptr);
 					}
 				}
 			}
@@ -224,12 +258,15 @@ protected:
 		} else if (final_feedback_type == TASK_FEEDBACK_ABORTED) {
 			as_ptr->setAborted();
 			return;
+		} else if (final_feedback_type == TASK_FEEDBACK_TERMINATED) {
+			// terminated without abort -> most likely the same task was requested with new objectives
+			as_ptr->setPreempted();
+			return;
 		}
 
 		std::runtime_error(
-			"failed to safely terminate requested task, finished with "
-			+ std::to_string(final_feedback_type)
-			+ " feedback type"
+			"failed to safely terminate requested task " + std::to_string(task_type)
+			+ ", finished with " + std::to_string(final_feedback_type) + " feedback type"
 		);
 	}
 }; // class TaskRequestRos
