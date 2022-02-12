@@ -41,6 +41,10 @@ public:
 		pose_current_ = pose;
 	}
 
+	void setGoalPoseUpdateTime(const Time& time) {
+		time_goal_update_ = time;
+	}
+
 	Pose3 getPoseInitial() const {
 		return pose_initial_;
 	}
@@ -73,8 +77,18 @@ public:
 		return bb_type_previous_;
 	}
 
+	Time getGoalPoseUpdateTime() const {
+		return time_goal_update_;
+	}
+
 	double getDistanceToGoal() const {
 		return (pose_current_.Pos() - pose_goal_.Pos()).Length();
+	}
+
+	double getPlanarDistanceToGoal() const {
+		auto pos_curr_xy = Vector3(pose_current_.Pos().X(), pose_current_.Pos().Y(), 0.0);
+		auto pos_goal_xy = Vector3(pose_goal_.Pos().X(), pose_goal_.Pos().Y(), 0.0);
+		return (pos_curr_xy - pos_goal_xy).Length();
 	}
 
 	double getDisplacement() const {
@@ -94,6 +108,9 @@ protected:
 
 	Time time_previous_;
 	Time time_current_;
+
+	/// last time of the navigation goal update
+	Time time_goal_update_;
 
 	BasicBehaviourType bb_type_previous_;
 	BasicBehaviourType bb_type_current_;
