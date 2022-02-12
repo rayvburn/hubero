@@ -618,6 +618,18 @@ nav_msgs::Path NavigationRos::computePlan(
 		);
 		return nav_msgs::Path();
 	}
+	HUBERO_LOG(
+		"[%s].[NavigationRos] Computed plan with %lu poses (goal: {%2.2f, %2.2f}, "
+		"lastElem: {%2.2f, %2.2f}, secToLastElem: {%2.2f, %2.2f}\r\n",
+		actor_name_.c_str(),
+		resp.plan.poses.size(),
+		pose_goal_global_ref_plane.Pos().X(),
+		pose_goal_global_ref_plane.Pos().Y(),
+		resp.plan.poses.back().pose.position.x,
+		resp.plan.poses.back().pose.position.y,
+		resp.plan.poses.end()[-2].pose.position.x,
+		resp.plan.poses.end()[-2].pose.position.y
+	);
 	return resp.plan;
 }
 
