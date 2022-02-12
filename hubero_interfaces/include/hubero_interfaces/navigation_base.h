@@ -132,6 +132,13 @@ public:
 	}
 
 	/**
+	 * @brief Retrieves how far from the goal the actor can be located to accept the global plan
+	 */
+	inline virtual double getGoalTolerance() const {
+		return 1e-03;
+	}
+
+	/**
 	 * @brief Transforms local velocity (typically received as velocity command) to a global coordinate system
 	 */
 	static Vector3 convertCommandToGlobalCs(const double& yaw_actor, const Vector3& cmd_vel_local) {

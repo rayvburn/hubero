@@ -112,6 +112,13 @@ public:
 	virtual Vector3 getVelocityCmd() const override;
 
 	/**
+	 * @brief How far from the goal (in meters) the actor can be located to treat goal as reached
+	 */
+	virtual double getGoalTolerance() const override {
+		return nav_get_plan_tolerance_;
+	}
+
+	/**
 	 * @brief Sets ideal covariance in the @ref cov array
 	 * @details boost array used here to comply with ROS messages
 	 */
