@@ -36,6 +36,9 @@ public:
 	/// Defines default size of the queue used for subscriber
 	static const int SUBSCRIBER_QUEUE_SIZE;
 
+	/// Defines how many times the plan computation will be repeated if no valid plan was found
+	static const int PLAN_COMPUTATION_RETRY_NUM;
+
 	/**
 	 * @brief Constructor
 	 */

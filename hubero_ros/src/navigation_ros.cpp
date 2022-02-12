@@ -12,6 +12,7 @@ namespace hubero {
 
 const int NavigationRos::SUBSCRIBER_QUEUE_SIZE = 10;
 const int NavigationRos::PUBLISHER_QUEUE_SIZE = 15;
+const int NavigationRos::PLAN_COMPUTATION_RETRY_NUM = 5;
 
 NavigationRos::NavigationRos():
 	NavigationBase::NavigationBase(),
@@ -337,7 +338,8 @@ Pose3 NavigationRos::computeClosestAchievablePose(const Pose3& pose, const std::
 	// compute plan
 	auto path = computePlan(current_pose_, world_frame_name_, pose, frame);
 
-	// when goal pose is not reachable, then plan consists of set of valid poses + goal pose at the back of vector
+	// when goal pose is not reachable, then plan consists of set of valid poses + goal pose at the back of vector;
+	// NOTE: this is parameterized and can be disabled
 	if (path.poses.size() >= 2) {
 		// seconds to last element in a vector
 		return msgPoseToIgnPose(path.poses.end()[-2].pose);
@@ -559,13 +561,20 @@ nav_msgs::Path NavigationRos::computePlan(
 	/*
 	 * wait for action client to become free (LOST -> after cancel) to ask for a plan, ROS ERROR:
 	 * move_base must be in an inactive state to make a plan for an external user
+	 * LOST: when goals are canceled
+	 * ABORT: when e.g. goal could not be reached and was aborted
 	 */
-	while (nav_action_client_ptr_->getState() != actionlib::SimpleClientGoalState::LOST) {
+	while (
+		nav_action_client_ptr_->getState() != actionlib::SimpleClientGoalState::LOST
+		&& nav_action_client_ptr_->getState() != actionlib::SimpleClientGoalState::ABORTED
+		&& nav_action_client_ptr_->getState() != actionlib::SimpleClientGoalState::SUCCEEDED
+	) {
 		HUBERO_LOG(
-			"[%s].[NavigationRos] Waiting for navigation action client to compute a plan\r\n",
+			"[%s].[NavigationRos] Waiting for navigation action client to compute a plan. Client state: %s\r\n",
 			actor_name_.c_str(),
+			nav_action_client_ptr_->getState().toString().c_str()
 		);
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 
 	/*
@@ -574,15 +583,16 @@ nav_msgs::Path NavigationRos::computePlan(
 	 * Experiments show that the plan will be generated in first srv call or during next iteration
 	 */
 	bool success = false;
-	for (unsigned int i = 0; i < 25; i++) {
+	for (unsigned int i = 0; i < PLAN_COMPUTATION_RETRY_NUM; i++) {
 		success = srv_mb_get_plan_.call(req, resp);
 		if (success) {
 			break;
 		} else if (i > 0) {
 			HUBERO_LOG(
-				"[%s].[NavigationRos] Retrying to compute a valid plan for a %d time\r\n",
+				"[%s].[NavigationRos] Retrying to compute a valid plan for the %d/%d time\r\n",
 				actor_name_.c_str(),
-				i + 1
+				i + 1,
+				PLAN_COMPUTATION_RETRY_NUM
 			);
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
