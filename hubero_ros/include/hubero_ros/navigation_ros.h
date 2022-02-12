@@ -156,19 +156,6 @@ protected:
 	/// @}
 
 	/**
-	 * @defgroup mbinterfaceaction ROS move_base action interface callbacks
-	 * @{
-	 */
-	/**
-	 * @brief Called when action is done
-	 */
-	void callbackActionDone(
-		const actionlib::SimpleClientGoalState& state,
-		const move_base_msgs::MoveBaseResultConstPtr& msg
-	);
-	/// @}
-
-	/**
 	 * @brief Finds transform between coordinate systems using ROS TF buffer
 	 * @return std::tuple<bool, Pose3> first element is true if transform (second elem) is valid
 	 */
