@@ -322,7 +322,26 @@ bool NavigationRos::cancelGoal() {
 
 	NavigationBase::cancelGoal();
 	nav_action_client_ptr_->cancelGoal();
+	HUBERO_LOG("[%s].[NavigationRos] Trying to cancel all navigation goals\r\n", actor_name_.c_str());
 	return true;
+}
+
+void NavigationRos::finish() {
+	if (!isInitialized()) {
+		HUBERO_LOG("[%s].[NavigationRos] Not initialized, call `initialize` first\r\n", actor_name_.c_str());
+		return;
+	}
+
+	if (!nav_action_server_connected_) {
+		HUBERO_LOG(
+			"[%s].[NavigationRos] Did not manage to connect to ROS action server yet, ignoring 'finish' call\r\n",
+			actor_name_.c_str()
+		);
+		return;
+	}
+
+	nav_action_client_ptr_->cancelAllGoals();
+	NavigationBase::finish();
 }
 
 Pose3 NavigationRos::computeClosestAchievablePose(const Pose3& pose, const std::string& frame) {
