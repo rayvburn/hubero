@@ -74,7 +74,7 @@ public:
 	}
 
 	/**
-	 * @brief Sets feedback to UNDEFINED
+	 * @brief Sets feedback to TERMINATED
 	 *
 	 * @details It is wise to call it once last goal was reached, otherwise it will keep succeeded state
 	 */

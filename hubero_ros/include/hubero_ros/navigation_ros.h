@@ -100,6 +100,11 @@ public:
 	virtual bool cancelGoal() override;
 
 	/**
+	 * @brief Cancels all goals and sets feedback state to TERMINATED
+	 */
+	virtual void finish() override;
+
+	/**
 	 * @brief Computes reachable pose that is closest to the given pose, starting from current pose from update call
 	 */
 	virtual Pose3 computeClosestAchievablePose(const Pose3& pose, const std::string& frame) override;
