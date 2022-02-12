@@ -272,6 +272,12 @@ void Actor::addFsmSuperTransitionHandlers(
 		TaskMoveToGoal::State::FINISHED,
 		std::bind(&TaskMoveToGoal::finish, task_move_to_goal_ptr)
 	);
+
+	task_move_to_goal_ptr->addStateTransitionHandler(
+		TaskMoveToGoal::State::ACTIVE,
+		TaskMoveToGoal::State::FINISHED,
+		std::bind(&NavigationBase::finish, navigation_ptr)
+	);
 }
 
 // static

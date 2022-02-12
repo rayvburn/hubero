@@ -283,11 +283,15 @@ bool NavigationRos::setGoal(const Pose3& pose, const std::string& frame) {
 	nav_goal_.target_pose.header.stamp = ros::Time::now();
 	nav_goal_.target_pose.pose = ignPoseToMsgPose(pose);
 
-	// SimpleActiveCallback: we subscribe more extensive action state feedback
-	// SimpleFeedbackCallback: feedback returns current pose of the 'base', which we know quite well
+	/*
+	 * - SimpleDoneCallback: returns action status with a big delay (compared to topic data) that interferes HuBeRo
+	 * task-switching logic
+	 * - SimpleActiveCallback: we subscribe more extensive action state feedback
+	 * - SimpleFeedbackCallback: feedback returns current pose of the 'base', which we know quite well
+	 */
 	nav_action_client_ptr_->sendGoal(
 		nav_goal_,
-		std::bind(&NavigationRos::callbackActionDone, this, std::placeholders::_1, std::placeholders::_2),
+		MoveBaseActionClient::SimpleDoneCallback(),
 		MoveBaseActionClient::SimpleActiveCallback(),
 		MoveBaseActionClient::SimpleFeedbackCallback()
 	);
@@ -467,17 +471,6 @@ void NavigationRos::callbackResult(const move_base_msgs::MoveBaseActionResult::C
 	feedback_ = fb_type;
 }
 
-void NavigationRos::callbackActionDone(
-	const actionlib::SimpleClientGoalState& state,
-	const move_base_msgs::MoveBaseResultConstPtr& msg
-) {
-	auto fb_type = NavigationRos::convertSimpleClientStateToTaskFeedback(state.state_);
-	if (fb_type == TASK_FEEDBACK_UNDEFINED) {
-		return;
-	}
-	feedback_ = fb_type;
-}
-
 std::tuple<bool, Pose3> NavigationRos::findTransform(const std::string& frame_source, const std::string& frame_target) const {
 	Pose3 transform;
 	bool success = false;
@@ -601,7 +594,7 @@ nav_msgs::Path NavigationRos::computePlan(
 	// restore previous goal
 	nav_action_client_ptr_->sendGoal(
 		nav_goal_,
-		std::bind(&NavigationRos::callbackActionDone, this, std::placeholders::_1, std::placeholders::_2),
+		MoveBaseActionClient::SimpleDoneCallback(),
 		MoveBaseActionClient::SimpleActiveCallback(),
 		MoveBaseActionClient::SimpleFeedbackCallback()
 	);
