@@ -55,7 +55,8 @@ public:
 	bool isInitialized() const;
 
 	/**
-	 * @brief Adds transition handlers for FsmSuper
+	 * @brief Adds transition handlers to FsmSuper and adds additional handlers for tasks finishes
+	 *
 	 * @details Transition handlers aim to update tasks state so tasks can properly report their state as active
 	 * or finished
 	 * @details Static method in Actor instead of making tasks arguments to @ref FsmSuper class to avoid circular
@@ -108,9 +109,6 @@ protected:
 	void executeTaskRun();
 	void executeTaskTalk();
 
-	/// @brief Terminates all tasks (their predicates) except given TaskType
-	void terminateOtherTasks(TaskType task_type_current);
-
 	/// @}
 
 	/**
@@ -122,10 +120,11 @@ protected:
 	void bbMoveToGoal();
 	void bbFollowObject();
 	void bbChooseNewGoal();
-	void bbAwaitObjectMovement();
 	void bbLieDown();
+	void bbLie();
 	void bbStandUpFromLying();
 	void bbSitDown();
+	void bbSit();
 	void bbStandUpFromSitting();
 	void bbRun();
 	void bbTalk();
@@ -138,6 +137,14 @@ protected:
 	 * @details Methods usually used to setup some actions at task startup
 	 * @{
 	 */
+	/**
+	 * @brief Adds handlers to transitions of task's FSM, see thSetup* methods
+	 *
+	 * @details Differs from @ref addFsmSuperTransitionHandlers cause it is related to navigation, animations etc.,
+	 * whereas @ref addFsmSuperTransitionHandlers updates on-entry and on-exit operations of tasks.
+	 */
+	void addTasksFsmTransitionHandlers();
+
 	void thSetupNavigation();
 	void thSetupAnimationWalk();
 	void thSetupAnimationStand();

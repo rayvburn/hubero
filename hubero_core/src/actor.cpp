@@ -53,10 +53,11 @@ Actor::Actor():
 	TaskBase::addBasicBehaviourHandler(BB_MOVE_TO_GOAL, std::bind(&Actor::bbMoveToGoal, this));
 	TaskBase::addBasicBehaviourHandler(BB_CHOOSE_NEW_GOAL, std::bind(&Actor::bbChooseNewGoal, this));
 	TaskBase::addBasicBehaviourHandler(BB_FOLLOW_OBJECT, std::bind(&Actor::bbFollowObject, this));
-	TaskBase::addBasicBehaviourHandler(BB_AWAIT_OBJECT_MOVEMENT, std::bind(&Actor::bbAwaitObjectMovement, this));
 	TaskBase::addBasicBehaviourHandler(BB_LIE_DOWN, std::bind(&Actor::bbLieDown, this));
+	TaskBase::addBasicBehaviourHandler(BB_LIE, std::bind(&Actor::bbLie, this));
 	TaskBase::addBasicBehaviourHandler(BB_STAND_UP_FROM_LYING, std::bind(&Actor::bbStandUpFromLying, this));
 	TaskBase::addBasicBehaviourHandler(BB_SIT_DOWN, std::bind(&Actor::bbSitDown, this));
+	TaskBase::addBasicBehaviourHandler(BB_SIT, std::bind(&Actor::bbSit, this));
 	TaskBase::addBasicBehaviourHandler(BB_STAND_UP_FROM_SITTING, std::bind(&Actor::bbStandUpFromSitting, this));
 	TaskBase::addBasicBehaviourHandler(BB_RUN, std::bind(&Actor::bbRun, this));
 	TaskBase::addBasicBehaviourHandler(BB_TALK, std::bind(&Actor::bbTalk, this));
@@ -116,36 +117,8 @@ void Actor::initialize(
 		navigation_ptr_
 	);
 
-	// additional, actor-related (data flow independent) handlers of transitions in tasks internal FSM
-	task_move_to_goal_ptr_->addStateTransitionHandler(
-		TaskMoveToGoal::State::FINISHED,
-		TaskMoveToGoal::State::ACTIVE,
-		std::bind(&Actor::thSetupNavigation, this)
-	);
-
-	task_move_to_goal_ptr_->addStateTransitionHandler(
-		TaskMoveToGoal::State::FINISHED,
-		TaskMoveToGoal::State::ACTIVE,
-		std::bind(&Actor::thSetupAnimationWalk, this)
-	);
-
-	task_follow_object_ptr_->addStateTransitionHandler(
-		TaskFollowObject::State::FINISHED,
-		TaskFollowObject::State::MOVING_TO_GOAL,
-		std::bind(&Actor::thSetupNavigation, this)
-	);
-
-	task_follow_object_ptr_->addStateTransitionHandler(
-		TaskFollowObject::State::FINISHED,
-		TaskFollowObject::State::MOVING_TO_GOAL,
-		std::bind(&Actor::thSetupAnimationWalk, this)
-	);
-
-	task_follow_object_ptr_->addStateTransitionHandler(
-		TaskFollowObject::State::WAITING_FOR_MOVEMENT,
-		TaskFollowObject::State::MOVING_TO_GOAL,
-		std::bind(&Actor::thSetupAnimationWalk, this)
-	);
+	// setup handlers of transitions in tasks internal FSM
+	addTasksFsmTransitionHandlers();
 }
 
 void Actor::update(const Time& time) {
@@ -156,7 +129,12 @@ void Actor::update(const Time& time) {
 
 	// input data
 	mem_.setTime(time);
-	mem_.setPose(localisation_ptr_->getPose());
+
+	// pose post-processing for smooth animation (this is specific to implementation and simulator)
+	auto pose_adjusted = localisation_ptr_->getPose();
+	animation_control_ptr_->adjustPose(pose_adjusted, mem_.getTimeCurrent());
+	// NOTE: InternalMemory::setPose updates history, so it cannot be called twice - otherwise displacement will be 0
+	mem_.setPose(pose_adjusted);
 
 	// update internal memory, based on internal buffer content that is specific to a certain task
 	auto mem_update_it = state_memory_updater_map_.find(static_cast<FsmSuper::State>(fsm_.current_state()));
@@ -345,19 +323,7 @@ void Actor::executeTaskTalk() {
 	task_talk_ptr_->execute(event);
 }
 
-void Actor::terminateOtherTasks(TaskType task_type_current) {
-	for (const auto& task: task_map_) {
-		if (task.first != task_type_current) {
-			task.second->terminate();
-		}
-	}
-}
-
 void Actor::bbStand() {
-	// make sure that animation was triggered and do nothing
-	if (mem_.didBasicBehaviourChange()) {
-		animation_control_ptr_->start(AnimationType::ANIMATION_STAND, mem_.getTimeCurrent());
-	}
 }
 
 void Actor::bbAlignToTarget() {
@@ -401,55 +367,77 @@ void Actor::bbFollowObject() {
 }
 
 void Actor::bbChooseNewGoal() {
-	if (mem_.didBasicBehaviourChange()) {
-		animation_control_ptr_->start(AnimationType::ANIMATION_STAND, mem_.getTimeCurrent());
-	}
-	// dummy pose here to evaluate operation
-	navigation_ptr_->isPoseAchievable(
-		mem_.getPoseCurrent(),
-		Pose3(
-			Vector3(2.0, 3.0, 0.0),
-			Quaternion()
-		),
-		navigation_ptr_->getWorldFrame()
-	);
-}
-
-void Actor::bbAwaitObjectMovement() {
-	if (mem_.didBasicBehaviourChange()) {
-		animation_control_ptr_->start(AnimationType::ANIMATION_STAND, mem_.getTimeCurrent());
-	}
 }
 
 void Actor::bbLieDown() {
-	if (mem_.didBasicBehaviourChange()) {
-		animation_control_ptr_->start(AnimationType::ANIMATION_LIE_DOWN, mem_.getTimeCurrent());
-	}
+}
+
+void Actor::bbLie() {
 }
 
 void Actor::bbStandUpFromLying() {
-	auto pose_adjust = mem_.getPoseCurrent();
-	animation_control_ptr_->adjustPose(pose_adjust, mem_.getTimeCurrent());
-	mem_.setPose(pose_adjust);
 }
 
 void Actor::bbSitDown() {
+}
 
+void Actor::bbSit() {
 }
 
 void Actor::bbStandUpFromSitting() {
-
 }
 
 void Actor::bbRun() {
-
 }
 
 void Actor::bbTalk() {
-
 }
 
 void Actor::bbTeleop() {
+}
+
+void Actor::addTasksFsmTransitionHandlers() {
+	// stand
+	task_stand_ptr_->addStateTransitionHandler(
+		TaskMoveToGoal::State::FINISHED,
+		TaskMoveToGoal::State::ACTIVE,
+		std::bind(&Actor::thSetupAnimationStand, this)
+	);
+
+	// move to goal
+	task_move_to_goal_ptr_->addStateTransitionHandler(
+		TaskMoveToGoal::State::FINISHED,
+		TaskMoveToGoal::State::ACTIVE,
+		std::bind(&Actor::thSetupNavigation, this)
+	);
+	task_move_to_goal_ptr_->addStateTransitionHandler(
+		TaskMoveToGoal::State::FINISHED,
+		TaskMoveToGoal::State::ACTIVE,
+		std::bind(&Actor::thSetupAnimationWalk, this)
+	);
+	task_move_to_goal_ptr_->addStateTransitionHandler(
+		TaskMoveToGoal::State::ACTIVE,
+		TaskMoveToGoal::State::FINISHED,
+		std::bind(&Actor::thSetupAnimationStand, this)
+	);
+
+	// follow object
+	task_follow_object_ptr_->addStateTransitionHandler(
+		TaskFollowObject::State::FINISHED,
+		TaskFollowObject::State::MOVING_TO_GOAL,
+		std::bind(&Actor::thSetupNavigation, this)
+	);
+	task_follow_object_ptr_->addStateTransitionHandler(
+		TaskFollowObject::State::FINISHED,
+		TaskFollowObject::State::MOVING_TO_GOAL,
+		std::bind(&Actor::thSetupAnimationWalk, this)
+	);
+	task_follow_object_ptr_->addStateTransitionHandler(
+		TaskFollowObject::State::WAITING_FOR_MOVEMENT,
+		TaskFollowObject::State::MOVING_TO_GOAL,
+		std::bind(&Actor::thSetupAnimationWalk, this)
+	);
+}
 
 void Actor::thSetupNavigation() {
 	navigation_ptr_->setGoal(mem_.getPoseGoal(), navigation_ptr_->getWorldFrame());
