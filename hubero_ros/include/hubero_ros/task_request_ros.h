@@ -52,6 +52,9 @@ public:
 	/// How often task feedback should be published
 	static const std::chrono::milliseconds TASK_FEEDBACK_PERIOD;
 
+	/// How many times a pending goal is allowed to be queried (each TASK_FEEDBACK_PERIOD)
+	static const int TASK_PENDING_COUNTER_LIMIT;
+
 	/**
 	 * @brief Default constructor
 	 */
@@ -191,7 +194,17 @@ protected:
 		}
 
 		// wait until accepted
+		int pending_counter = 0;
 		while (getTaskFeedbackType(task_type) == TASK_FEEDBACK_PENDING) {
+			if (pending_counter++ >= TASK_PENDING_COUNTER_LIMIT) {
+				HUBERO_LOG(
+					"[%s].[TaskRequestRos] Pending status of task (type %d) is staying for too long, aborting task\r\n",
+					actor_name_.c_str(),
+					task_type
+				);
+				as_ptr->setAborted();
+				return;
+			}
 			std::this_thread::sleep_for(TASK_FEEDBACK_PERIOD);
 		}
 

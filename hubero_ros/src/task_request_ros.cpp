@@ -5,6 +5,7 @@ namespace hubero {
 
 const std::string TaskRequestRos::OBJECT_ORIENTED_TASK_SUFFIX = "_name";
 const std::chrono::milliseconds TaskRequestRos::TASK_FEEDBACK_PERIOD = std::chrono::milliseconds(500);
+const int TaskRequestRos::TASK_PENDING_COUNTER_LIMIT = 5;
 
 TaskRequestRos::TaskRequestRos():
 	TaskRequestBase::TaskRequestBase(),
