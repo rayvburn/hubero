@@ -69,7 +69,7 @@
 
     <!-- ===================== activities specific to the selected world ====================== -->
     <group if="$(eval world == 'parking')">
-        <include file="$(find hubero_ros)/launch/actor.launch">
+        <arg name="map_bounds" default="[-6.90, 22.06, -7.45, 21.74]"/>
             <arg name="actor_name" value="actor1"/>
         </include>
         <include file="$(find hubero_ros)/launch/actor.launch">
@@ -88,6 +88,7 @@
             <arg name="simulator_global_frame" value="$(arg simulator_global_frame)"/>
             <!-- passing 'tf_world_map' is excessive when 'shared_map' is set to true -->
             <arg name="tf_world_map" value="$(arg tf_world_map)"/>
+            <arg name="map_bounds" value="$(arg map_bounds)"/>
         </include>
     </group>
 </launch>

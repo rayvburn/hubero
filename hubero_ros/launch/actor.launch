@@ -34,6 +34,9 @@
     <!-- map_topic_name is set to map_topic if shared map was selected to use; 'actor_ns' because of 'ns' of the map_server -->
     <arg name="map_topic_name" value="$(arg map_topic)" if="$(arg use_shared_map)"/>
     <arg name="map_topic_name" value="$(arg actor_ns)/map" unless="$(arg use_shared_map)"/>
+    <!-- Map bounds define how far the actor can move around. Run rviz with a required map and use "Publish Point" tool,
+    subscribing to "/clicked_point" topic. Format: [xmin, xmax, ymin, ymax] -->
+    <arg name="map_bounds" default="[-1.0 1.0 -1.1 1.1]"/>
 
     <!-- TF frame naming pattern for each actor namespace, e.g. "/actor1/<actor_frames/base>" etc. -->
     <arg name="map_frame" default="map"/>
@@ -95,6 +98,8 @@
     <param name="hubero_ros/simulator_frame" value="$(arg simulator_global_frame)"/>
     <param name="hubero_ros/namespace" value="$(arg main_ns)"/>
 
+    <!-- This is a hack for Kinetic: https://answers.ros.org/question/194592/ -->
+    <rosparam param="hubero_ros/navigation/map_bounds" subst_value="True">$(arg map_bounds)</rosparam>
     <param name="hubero_ros/navigation/get_plan_srv" value="$(arg actor_nav_get_plan_topic)"/>
     <param name="hubero_ros/navigation/command_topic" value="$(arg actor_nav_command_topic)"/>
     <param name="hubero_ros/navigation/odometry_topic" value="$(arg actor_nav_odometry_topic)"/>

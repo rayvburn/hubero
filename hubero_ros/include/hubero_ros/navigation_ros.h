@@ -201,6 +201,17 @@ protected:
 	/// @}
 
 	/**
+	 * @defgroup maparea Coordinates of reachable map area
+	 * @{
+	 */
+	double map_x_min_;
+	double map_x_max_;
+	double map_y_min_;
+	double map_y_max_;
+
+	/// @}
+
+	/**
 	 * @defgroup tf Transform frames
 	 * @{
 	 */
