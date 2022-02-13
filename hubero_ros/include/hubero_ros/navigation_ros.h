@@ -129,16 +129,6 @@ public:
 	 */
 	static void setIdealCovariance(boost::array<double, 36>& cov);
 
-	/**
-	 * @brief Transforms actionlib_msgs::GoalStatus enum to hubero::TaskFeedbackType enum
-	 */
-	static TaskFeedbackType convertActionStatusToTaskFeedback(const uint8_t& status);
-
-	/**
-	 * @brief Transforms actionlib::SimpleClientGoalState::StateEnum enum to hubero::TaskFeedbackType enum
-	 */
-	static TaskFeedbackType convertSimpleClientStateToTaskFeedback(const uint8_t& status);
-
 protected:
 	/**
 	 * @brief Callback for velocity command retrieval
