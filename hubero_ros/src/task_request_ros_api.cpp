@@ -19,79 +19,92 @@ TaskRequestRosApi::TaskRequestRosApi(const std::string& actor_name):
 
 	ac_follow_object_ptr_ = std::make_shared<ActionClient<
 		hubero_ros_msgs::FollowObjectAction,
-		hubero_ros_msgs::FollowObjectActionFeedbackConstPtr>
+		hubero_ros_msgs::FollowObjectActionFeedbackConstPtr,
+		hubero_ros_msgs::FollowObjectActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_FOLLOW_OBJECT)
 	);
 
 	ac_lie_down_ptr_ = std::make_shared<ActionClient<
 		hubero_ros_msgs::LieDownAction,
-		hubero_ros_msgs::LieDownActionFeedbackConstPtr>
+		hubero_ros_msgs::LieDownActionFeedbackConstPtr,
+		hubero_ros_msgs::LieDownActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_LIE_DOWN)
 	);
 
 	ac_lie_down_object_ptr_ = std::make_shared<ActionClient<
 		hubero_ros_msgs::LieDownObjectAction,
-		hubero_ros_msgs::LieDownObjectActionFeedbackConstPtr>
+		hubero_ros_msgs::LieDownObjectActionFeedbackConstPtr,
+		hubero_ros_msgs::LieDownObjectActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_LIE_DOWN) + TaskRequestRos::OBJECT_ORIENTED_TASK_SUFFIX
 	);
 
 	ac_move_around_ptr_ = std::make_shared<ActionClient<
 		hubero_ros_msgs::MoveAroundAction,
-		hubero_ros_msgs::MoveAroundActionFeedbackConstPtr>
+		hubero_ros_msgs::MoveAroundActionFeedbackConstPtr,
+		hubero_ros_msgs::MoveAroundActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_MOVE_AROUND)
 	);
 
 	ac_move_to_goal_ptr_ = std::make_shared<ActionClient<
 		hubero_ros_msgs::MoveToGoalAction,
-		hubero_ros_msgs::MoveToGoalActionFeedbackConstPtr>
+		hubero_ros_msgs::MoveToGoalActionFeedbackConstPtr,
+		hubero_ros_msgs::MoveToGoalActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_MOVE_TO_GOAL)
 	);
 
 	ac_move_to_object_ptr_ = std::make_shared<ActionClient<
 		hubero_ros_msgs::MoveToObjectAction,
-		hubero_ros_msgs::MoveToObjectActionFeedbackConstPtr>
+		hubero_ros_msgs::MoveToObjectActionFeedbackConstPtr,
+		hubero_ros_msgs::MoveToObjectActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_MOVE_TO_GOAL) + TaskRequestRos::OBJECT_ORIENTED_TASK_SUFFIX
 	);
 
 	ac_run_ptr_ = std::make_shared<ActionClient<
 		hubero_ros_msgs::RunAction,
-		hubero_ros_msgs::RunActionFeedbackConstPtr>
+		hubero_ros_msgs::RunActionFeedbackConstPtr,
+		hubero_ros_msgs::RunActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_RUN)
 	);
 
 	ac_sit_down_ptr_ = std::make_shared<ActionClient<
 		hubero_ros_msgs::SitDownAction,
-		hubero_ros_msgs::SitDownActionFeedbackConstPtr>
+		hubero_ros_msgs::SitDownActionFeedbackConstPtr,
+		hubero_ros_msgs::SitDownActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_SIT_DOWN)
 	);
 
 	ac_sit_down_object_ptr_ = std::make_shared<ActionClient<
 		hubero_ros_msgs::SitDownObjectAction,
-		hubero_ros_msgs::SitDownObjectActionFeedbackConstPtr>
+		hubero_ros_msgs::SitDownObjectActionFeedbackConstPtr,
+		hubero_ros_msgs::SitDownObjectActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_SIT_DOWN) + TaskRequestRos::OBJECT_ORIENTED_TASK_SUFFIX
 	);
 
 	ac_stand_ptr_ = std::make_shared<ActionClient<
 		hubero_ros_msgs::StandAction,
-		hubero_ros_msgs::StandActionFeedbackConstPtr>
+		hubero_ros_msgs::StandActionFeedbackConstPtr,
+		hubero_ros_msgs::StandActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_STAND)
 	);
 
 	ac_talk_ptr_ = std::make_shared<ActionClient<
 		hubero_ros_msgs::TalkAction,
-		hubero_ros_msgs::TalkActionFeedbackConstPtr>
+		hubero_ros_msgs::TalkActionFeedbackConstPtr,
+		hubero_ros_msgs::TalkActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_TALK)
 	);
 
 	ac_talk_object_ptr_ = std::make_shared<ActionClient<
 		hubero_ros_msgs::TalkObjectAction,
-		hubero_ros_msgs::TalkObjectActionFeedbackConstPtr>
+		hubero_ros_msgs::TalkObjectActionFeedbackConstPtr,
+		hubero_ros_msgs::TalkObjectActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_TALK) + TaskRequestRos::OBJECT_ORIENTED_TASK_SUFFIX
 	);
 
 	ac_teleop_ptr_ = std::make_shared<ActionClient<
 		hubero_ros_msgs::TeleopAction,
-		hubero_ros_msgs::TeleopActionFeedbackConstPtr>
+		hubero_ros_msgs::TeleopActionFeedbackConstPtr,
+		hubero_ros_msgs::TeleopActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_TELEOP)
 	);
 }

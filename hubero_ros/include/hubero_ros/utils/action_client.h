@@ -19,8 +19,9 @@ namespace hubero {
  *
  * @tparam Taction type of the action
  * @tparam Tfeedback type of the feedback message
+ * @tparam Tresult type of the result message
  */
-template <typename Taction, typename Tfeedback>
+template <typename Taction, typename Tfeedback, typename Tresult>
 class ActionClient: public actionlib::SimpleActionClient<Taction> {
 public:
 	// TODO: would look cleaner with C++17 'static constexpr'
@@ -38,10 +39,16 @@ public:
 		const std::string& action_task_ns):
 		actionlib::SimpleActionClient<Taction>(action_task_ns, true)
 	{
-		feedback_sub_ = node_ptr->getNodeHandlePtr()->subscribe(
+		// action status subscribers
+		sub_feedback_ = node_ptr->getNodeHandlePtr()->subscribe(
 			action_task_ns + "/" + "feedback",
 			SUBSCRIBER_QUEUE_SIZE,
 			&ActionClient::callbackFeedback, this
+		);
+		sub_result_ = node_ptr->getNodeHandlePtr()->subscribe(
+			action_task_ns + "/" + "result",
+			SUBSCRIBER_QUEUE_SIZE,
+			&ActionClient::callbackResult, this
 		);
 		feedback_status_ = TaskFeedbackType::TASK_FEEDBACK_UNDEFINED;
 
@@ -79,13 +86,19 @@ public:
 	/// @}
 
 protected:
-	ros::Subscriber feedback_sub_;
-	std::string feedback_txt_;
-	TaskFeedbackType feedback_status_;
-
 	void callbackFeedback(const Tfeedback& msg) {
 		feedback_txt_ = std::string(msg->feedback.feedback.text);
 		feedback_status_ = static_cast<TaskFeedbackType>(msg->feedback.feedback.status);
 	}
+
+	void callbackResult(const Tresult& msg) {
+		feedback_txt_ = std::string(msg->result.result.text);
+		feedback_status_ = static_cast<TaskFeedbackType>(msg->result.result.status);
+	}
+
+	ros::Subscriber sub_feedback_;
+	ros::Subscriber sub_result_;
+	TaskFeedbackType feedback_status_;
+	std::string feedback_txt_;
 }; // class ActionClient
 } // namespace hubero

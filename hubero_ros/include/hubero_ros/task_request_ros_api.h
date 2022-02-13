@@ -181,21 +181,61 @@ protected:
 	std::shared_ptr<Node> node_ptr_;
 
 	/// Alias declaration
-	template <typename Taction, typename Tfeedback>
-	using ActionClientPtr = std::shared_ptr<ActionClient<Taction, Tfeedback>>;
+	template <typename Taction, typename Tfeedback, typename Tresult>
+	using ActionClientPtr = std::shared_ptr<ActionClient<Taction, Tfeedback, Tresult>>;
 
-	ActionClientPtr<hubero_ros_msgs::FollowObjectAction, hubero_ros_msgs::FollowObjectActionFeedbackConstPtr> ac_follow_object_ptr_;
-	ActionClientPtr<hubero_ros_msgs::LieDownAction, hubero_ros_msgs::LieDownActionFeedbackConstPtr> ac_lie_down_ptr_;
-	ActionClientPtr<hubero_ros_msgs::LieDownObjectAction, hubero_ros_msgs::LieDownObjectActionFeedbackConstPtr> ac_lie_down_object_ptr_;
-	ActionClientPtr<hubero_ros_msgs::MoveAroundAction, hubero_ros_msgs::MoveAroundActionFeedbackConstPtr> ac_move_around_ptr_;
-	ActionClientPtr<hubero_ros_msgs::MoveToGoalAction, hubero_ros_msgs::MoveToGoalActionFeedbackConstPtr> ac_move_to_goal_ptr_;
-	ActionClientPtr<hubero_ros_msgs::MoveToObjectAction, hubero_ros_msgs::MoveToObjectActionFeedbackConstPtr> ac_move_to_object_ptr_;
-	ActionClientPtr<hubero_ros_msgs::RunAction, hubero_ros_msgs::RunActionFeedbackConstPtr> ac_run_ptr_;
-	ActionClientPtr<hubero_ros_msgs::SitDownAction, hubero_ros_msgs::SitDownActionFeedbackConstPtr> ac_sit_down_ptr_;
-	ActionClientPtr<hubero_ros_msgs::SitDownObjectAction, hubero_ros_msgs::SitDownObjectActionFeedbackConstPtr> ac_sit_down_object_ptr_;
-	ActionClientPtr<hubero_ros_msgs::StandAction, hubero_ros_msgs::StandActionFeedbackConstPtr> ac_stand_ptr_;
-	ActionClientPtr<hubero_ros_msgs::TalkAction, hubero_ros_msgs::TalkActionFeedbackConstPtr> ac_talk_ptr_;
-	ActionClientPtr<hubero_ros_msgs::TalkObjectAction, hubero_ros_msgs::TalkObjectActionFeedbackConstPtr> ac_talk_object_ptr_;
-	ActionClientPtr<hubero_ros_msgs::TeleopAction, hubero_ros_msgs::TeleopActionFeedbackConstPtr> ac_teleop_ptr_;
+	ActionClientPtr<
+		hubero_ros_msgs::FollowObjectAction,
+		hubero_ros_msgs::FollowObjectActionFeedbackConstPtr,
+		hubero_ros_msgs::FollowObjectActionResultConstPtr> ac_follow_object_ptr_;
+	ActionClientPtr<
+		hubero_ros_msgs::LieDownAction,
+		hubero_ros_msgs::LieDownActionFeedbackConstPtr,
+		hubero_ros_msgs::LieDownActionResultConstPtr> ac_lie_down_ptr_;
+	ActionClientPtr<
+		hubero_ros_msgs::LieDownObjectAction,
+		hubero_ros_msgs::LieDownObjectActionFeedbackConstPtr,
+		hubero_ros_msgs::LieDownObjectActionResultConstPtr> ac_lie_down_object_ptr_;
+	ActionClientPtr<
+		hubero_ros_msgs::MoveAroundAction,
+		hubero_ros_msgs::MoveAroundActionFeedbackConstPtr,
+		hubero_ros_msgs::MoveAroundActionResultConstPtr> ac_move_around_ptr_;
+	ActionClientPtr<
+		hubero_ros_msgs::MoveToGoalAction,
+		hubero_ros_msgs::MoveToGoalActionFeedbackConstPtr,
+		hubero_ros_msgs::MoveToGoalActionResultConstPtr> ac_move_to_goal_ptr_;
+	ActionClientPtr<
+		hubero_ros_msgs::MoveToObjectAction,
+		hubero_ros_msgs::MoveToObjectActionFeedbackConstPtr,
+		hubero_ros_msgs::MoveToObjectActionResultConstPtr> ac_move_to_object_ptr_;
+	ActionClientPtr<
+		hubero_ros_msgs::RunAction,
+		hubero_ros_msgs::RunActionFeedbackConstPtr,
+		hubero_ros_msgs::RunActionResultConstPtr> ac_run_ptr_;
+	ActionClientPtr<
+		hubero_ros_msgs::SitDownAction,
+		hubero_ros_msgs::SitDownActionFeedbackConstPtr,
+		hubero_ros_msgs::SitDownActionResultConstPtr> ac_sit_down_ptr_;
+	ActionClientPtr<
+		hubero_ros_msgs::SitDownObjectAction,
+		hubero_ros_msgs::SitDownObjectActionFeedbackConstPtr,
+		hubero_ros_msgs::SitDownObjectActionResultConstPtr> ac_sit_down_object_ptr_;
+	ActionClientPtr<
+		hubero_ros_msgs::StandAction,
+		hubero_ros_msgs::StandActionFeedbackConstPtr,
+		hubero_ros_msgs::StandActionResultConstPtr> ac_stand_ptr_;
+	ActionClientPtr<
+		hubero_ros_msgs::TalkAction,
+		hubero_ros_msgs::TalkActionFeedbackConstPtr,
+		hubero_ros_msgs::TalkActionResultConstPtr> ac_talk_ptr_;
+	ActionClientPtr<
+		hubero_ros_msgs::TalkObjectAction,
+		hubero_ros_msgs::TalkObjectActionFeedbackConstPtr,
+		hubero_ros_msgs::TalkObjectActionResultConstPtr> ac_talk_object_ptr_;
+	ActionClientPtr<
+		hubero_ros_msgs::TeleopAction,
+		hubero_ros_msgs::TeleopActionFeedbackConstPtr,
+		hubero_ros_msgs::TeleopActionResultConstPtr> ac_teleop_ptr_;
+
 }; // class TaskRequestRosApi
 } // namespace hubero
