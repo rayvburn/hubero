@@ -18,6 +18,10 @@ NavigationRos::NavigationRos():
 	NavigationBase::NavigationBase(),
 	nav_action_server_connected_(false),
 	nav_srv_mb_get_plan_exists_(false),
+	map_x_min_(0.0),
+	map_x_max_(0.0),
+	map_y_min_(0.0),
+	map_y_max_(0.0),
 	tf_listener_(tf_buffer_) {}
 
 bool NavigationRos::initialize(
@@ -58,6 +62,22 @@ bool NavigationRos::initialize(
 	std::string frame_camera_param;
 	nh.searchParam("/hubero_ros/actor_frames/camera", frame_camera_param);
 	nh.param(frame_camera_param, frame_camera_, std::string("base_camera_link"));
+
+	// nav parameters
+	std::string param_map_bounds;
+	std::vector<double> map_bounds;
+	nh.searchParam("/hubero_ros/navigation/map_bounds", param_map_bounds);
+	if (!nh.param(param_map_bounds, map_bounds, std::vector<double>{-1.0, 1.0, -1.0, +1.0})) {
+		HUBERO_LOG(
+			"[%s].[NavigationRos] Could not read map bounds from Parameter Server (key: '%s')\r\n",
+			actor_name.c_str(),
+			param_map_bounds.c_str()
+		);
+	}
+	map_x_min_ = map_bounds.at(0);
+	map_x_max_ = map_bounds.at(1);
+	map_y_min_ = map_bounds.at(2);
+	map_y_max_ = map_bounds.at(3);
 
 	// nav topics
 	std::string srv_nav_get_plan;
