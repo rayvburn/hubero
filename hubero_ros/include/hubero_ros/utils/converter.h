@@ -1,11 +1,15 @@
 #pragma once
 
+#include <hubero_common/defines.h>
 #include <hubero_common/typedefs.h>
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Transform.h>
 #include <geometry_msgs/Twist.h>
+
+#include <actionlib_msgs/GoalStatus.h>
+#include <actionlib/client/simple_client_goal_state.h>
 
 namespace hubero {
 
@@ -17,5 +21,15 @@ Vector3 msgTwistToIgnVector(const geometry_msgs::Twist& twist);
 Pose3 msgTfToPose(const geometry_msgs::Transform& tf);
 Vector3 msgPointToIgnVector(const geometry_msgs::Point& point);
 Pose3 msgPoseToIgnPose(const geometry_msgs::Pose& pose);
+
+/**
+ * @brief Transforms actionlib_msgs::GoalStatus enum to hubero::TaskFeedbackType enum
+ */
+TaskFeedbackType convertActionStatusToTaskFeedback(const uint8_t& status);
+
+/**
+ * @brief Transforms actionlib::SimpleClientGoalState::StateEnum enum to hubero::TaskFeedbackType enum
+ */
+TaskFeedbackType convertSimpleClientStateToTaskFeedback(const actionlib::SimpleClientGoalState::StateEnum& status);
 
 } // namespace hubero

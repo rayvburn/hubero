@@ -409,60 +409,6 @@ void NavigationRos::setIdealCovariance(boost::array<double, 36>& cov) {
 	}
 }
 
-// static
-TaskFeedbackType NavigationRos::convertActionStatusToTaskFeedback(const uint8_t& status) {
-	// NOTE: basically GoalStatus matches TaskFeedbackType, but this allows to maintain proper operation
-	// even if API changes
-	switch (status) {
-		case actionlib_msgs::GoalStatus::ABORTED:
-			return TaskFeedbackType::TASK_FEEDBACK_ABORTED;
-		case actionlib_msgs::GoalStatus::ACTIVE:
-			return TaskFeedbackType::TASK_FEEDBACK_ACTIVE;
-		case actionlib_msgs::GoalStatus::LOST:
-			return TaskFeedbackType::TASK_FEEDBACK_LOST;
-		case actionlib_msgs::GoalStatus::PENDING:
-			return TaskFeedbackType::TASK_FEEDBACK_PENDING;
-		case actionlib_msgs::GoalStatus::PREEMPTED:
-			return TaskFeedbackType::TASK_FEEDBACK_PREEMPTED;
-		case actionlib_msgs::GoalStatus::PREEMPTING:
-			return TaskFeedbackType::TASK_FEEDBACK_PREEMPTING;
-		case actionlib_msgs::GoalStatus::RECALLED:
-			return TaskFeedbackType::TASK_FEEDBACK_RECALLED;
-		case actionlib_msgs::GoalStatus::RECALLING:
-			return TaskFeedbackType::TASK_FEEDBACK_RECALLING;
-		case actionlib_msgs::GoalStatus::REJECTED:
-			return TaskFeedbackType::TASK_FEEDBACK_REJECTED;
-		case actionlib_msgs::GoalStatus::SUCCEEDED:
-			return TaskFeedbackType::TASK_FEEDBACK_SUCCEEDED;
-		default:
-			return TaskFeedbackType::TASK_FEEDBACK_UNDEFINED;
-	}
-}
-
-// static
-TaskFeedbackType NavigationRos::convertSimpleClientStateToTaskFeedback(const uint8_t& status) {
-	switch (status) {
-		case actionlib::SimpleClientGoalState::StateEnum::ABORTED:
-			return TaskFeedbackType::TASK_FEEDBACK_ABORTED;
-		case actionlib::SimpleClientGoalState::StateEnum::ACTIVE:
-			return TaskFeedbackType::TASK_FEEDBACK_ACTIVE;
-		case actionlib::SimpleClientGoalState::StateEnum::LOST:
-			return TaskFeedbackType::TASK_FEEDBACK_LOST;
-		case actionlib::SimpleClientGoalState::StateEnum::PENDING:
-			return TaskFeedbackType::TASK_FEEDBACK_PENDING;
-		case actionlib::SimpleClientGoalState::StateEnum::PREEMPTED:
-			return TaskFeedbackType::TASK_FEEDBACK_PREEMPTED;
-		case actionlib::SimpleClientGoalState::StateEnum::RECALLED:
-			return TaskFeedbackType::TASK_FEEDBACK_RECALLED;
-		case actionlib::SimpleClientGoalState::StateEnum::REJECTED:
-			return TaskFeedbackType::TASK_FEEDBACK_REJECTED;
-		case actionlib::SimpleClientGoalState::StateEnum::SUCCEEDED:
-			return TaskFeedbackType::TASK_FEEDBACK_SUCCEEDED;
-		default:
-			return TaskFeedbackType::TASK_FEEDBACK_UNDEFINED;
-	}
-}
-
 void NavigationRos::callbackCmdVel(const geometry_msgs::Twist::ConstPtr& msg) {
 	const std::lock_guard<std::mutex> lock(mutex_callback_);
 	Vector3 cmd_vel_local;
@@ -474,7 +420,7 @@ void NavigationRos::callbackCmdVel(const geometry_msgs::Twist::ConstPtr& msg) {
 
 void NavigationRos::callbackFeedback(const move_base_msgs::MoveBaseActionFeedback::ConstPtr& msg) {
 	const std::lock_guard<std::mutex> lock(mutex_callback_);
-	auto fb_type = NavigationRos::convertActionStatusToTaskFeedback(msg->status.status);
+	auto fb_type = convertActionStatusToTaskFeedback(msg->status.status);
 	if (fb_type == TASK_FEEDBACK_UNDEFINED) {
 		return;
 	}
@@ -483,7 +429,7 @@ void NavigationRos::callbackFeedback(const move_base_msgs::MoveBaseActionFeedbac
 
 void NavigationRos::callbackResult(const move_base_msgs::MoveBaseActionResult::ConstPtr& msg) {
 	const std::lock_guard<std::mutex> lock(mutex_callback_);
-	auto fb_type = NavigationRos::convertActionStatusToTaskFeedback(msg->status.status);
+	auto fb_type = convertActionStatusToTaskFeedback(msg->status.status);
 	if (fb_type == TASK_FEEDBACK_UNDEFINED) {
 		return;
 	}

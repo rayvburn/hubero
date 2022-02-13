@@ -79,4 +79,56 @@ Pose3 msgPoseToIgnPose(const geometry_msgs::Pose& pose) {
 	);
 }
 
+TaskFeedbackType convertActionStatusToTaskFeedback(const uint8_t& status) {
+	// NOTE: basically GoalStatus matches TaskFeedbackType, but this allows to maintain proper operation
+	// even if API changes
+	switch (status) {
+		case actionlib_msgs::GoalStatus::ABORTED:
+			return TaskFeedbackType::TASK_FEEDBACK_ABORTED;
+		case actionlib_msgs::GoalStatus::ACTIVE:
+			return TaskFeedbackType::TASK_FEEDBACK_ACTIVE;
+		case actionlib_msgs::GoalStatus::LOST:
+			return TaskFeedbackType::TASK_FEEDBACK_LOST;
+		case actionlib_msgs::GoalStatus::PENDING:
+			return TaskFeedbackType::TASK_FEEDBACK_PENDING;
+		case actionlib_msgs::GoalStatus::PREEMPTED:
+			return TaskFeedbackType::TASK_FEEDBACK_PREEMPTED;
+		case actionlib_msgs::GoalStatus::PREEMPTING:
+			return TaskFeedbackType::TASK_FEEDBACK_PREEMPTING;
+		case actionlib_msgs::GoalStatus::RECALLED:
+			return TaskFeedbackType::TASK_FEEDBACK_RECALLED;
+		case actionlib_msgs::GoalStatus::RECALLING:
+			return TaskFeedbackType::TASK_FEEDBACK_RECALLING;
+		case actionlib_msgs::GoalStatus::REJECTED:
+			return TaskFeedbackType::TASK_FEEDBACK_REJECTED;
+		case actionlib_msgs::GoalStatus::SUCCEEDED:
+			return TaskFeedbackType::TASK_FEEDBACK_SUCCEEDED;
+		default:
+			return TaskFeedbackType::TASK_FEEDBACK_UNDEFINED;
+	}
+}
+
+TaskFeedbackType convertSimpleClientStateToTaskFeedback(const actionlib::SimpleClientGoalState::StateEnum& status) {
+	switch (status) {
+		case actionlib::SimpleClientGoalState::StateEnum::ABORTED:
+			return TaskFeedbackType::TASK_FEEDBACK_ABORTED;
+		case actionlib::SimpleClientGoalState::StateEnum::ACTIVE:
+			return TaskFeedbackType::TASK_FEEDBACK_ACTIVE;
+		case actionlib::SimpleClientGoalState::StateEnum::LOST:
+			return TaskFeedbackType::TASK_FEEDBACK_LOST;
+		case actionlib::SimpleClientGoalState::StateEnum::PENDING:
+			return TaskFeedbackType::TASK_FEEDBACK_PENDING;
+		case actionlib::SimpleClientGoalState::StateEnum::PREEMPTED:
+			return TaskFeedbackType::TASK_FEEDBACK_PREEMPTED;
+		case actionlib::SimpleClientGoalState::StateEnum::RECALLED:
+			return TaskFeedbackType::TASK_FEEDBACK_RECALLED;
+		case actionlib::SimpleClientGoalState::StateEnum::REJECTED:
+			return TaskFeedbackType::TASK_FEEDBACK_REJECTED;
+		case actionlib::SimpleClientGoalState::StateEnum::SUCCEEDED:
+			return TaskFeedbackType::TASK_FEEDBACK_SUCCEEDED;
+		default:
+			return TaskFeedbackType::TASK_FEEDBACK_UNDEFINED;
+	}
+}
+
 } // namespace hubero
