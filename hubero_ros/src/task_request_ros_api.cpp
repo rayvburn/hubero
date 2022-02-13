@@ -112,11 +112,23 @@ TaskRequestRosApi::TaskRequestRosApi(const std::string& actor_name):
 bool TaskRequestRosApi::followObject(const std::string& object_name) {
 	hubero_ros_msgs::FollowObjectGoal action_goal;
 	action_goal.object_name = object_name;
-	followObject(action_goal);
+	return followObject(action_goal);
 }
 
 bool TaskRequestRosApi::followObject(const hubero_ros_msgs::FollowObjectGoal& goal) {
-	ac_follow_object_ptr_->sendGoal(goal);
+	return sendActionGoal(ac_follow_object_ptr_, goal);
+}
+
+bool TaskRequestRosApi::stopFollowingObject() {
+	return cancelActionGoals(ac_follow_object_ptr_);
+}
+
+TaskFeedbackType TaskRequestRosApi::getFollowObjectState() const {
+	return getActionStateType(ac_follow_object_ptr_);
+}
+
+std::string TaskRequestRosApi::getFollowObjectStateDescription() const {
+	return getActionStateDescription(ac_follow_object_ptr_);
 }
 
 bool TaskRequestRosApi::lieDown(const Vector3& pos, const double& yaw, const std::string& frame_id) {
@@ -124,11 +136,11 @@ bool TaskRequestRosApi::lieDown(const Vector3& pos, const double& yaw, const std
 	action_goal.pos = ignVectorToMsgPoint(pos);
 	action_goal.yaw = yaw;
 	action_goal.frame = frame_id;
-	lieDown(action_goal);
+	return lieDown(action_goal);
 }
 
 bool TaskRequestRosApi::lieDown(const hubero_ros_msgs::LieDownGoal& goal) {
-	ac_lie_down_ptr_->sendGoal(goal);
+	return sendActionGoal(ac_lie_down_ptr_, goal);
 }
 
 bool TaskRequestRosApi::lieDownObject(const std::string& object_name, const double& height, const double& yaw) {
@@ -136,52 +148,124 @@ bool TaskRequestRosApi::lieDownObject(const std::string& object_name, const doub
 	action_goal.object_name = object_name;
 	action_goal.height = height;
 	action_goal.yaw = yaw;
-	lieDownObject(action_goal);
+	return lieDownObject(action_goal);
 }
 
 bool TaskRequestRosApi::lieDownObject(const hubero_ros_msgs::LieDownObjectGoal& goal) {
-	ac_lie_down_object_ptr_->sendGoal(goal);
+	return sendActionGoal(ac_lie_down_object_ptr_, goal);
+}
+
+bool TaskRequestRosApi::stopLyingDown() {
+	return cancelActionGoals(ac_lie_down_ptr_);
+}
+
+bool TaskRequestRosApi::stopLyingDownObject() {
+	return cancelActionGoals(ac_lie_down_object_ptr_);
+}
+
+TaskFeedbackType TaskRequestRosApi::getLieDownState() const {
+	return getActionStateType(ac_lie_down_ptr_);
+}
+
+TaskFeedbackType TaskRequestRosApi::getLieDownObjectState() const {
+	return getActionStateType(ac_lie_down_object_ptr_);
+}
+
+std::string TaskRequestRosApi::getLieDownStateDescription() const {
+	return getActionStateDescription(ac_lie_down_ptr_);
+}
+
+std::string TaskRequestRosApi::getLieDownObjectStateDescription() const {
+	return getActionStateDescription(ac_lie_down_object_ptr_);
 }
 
 bool TaskRequestRosApi::moveAround() {
 	hubero_ros_msgs::MoveAroundGoal action_goal;
-	moveAround(action_goal);
+	return moveAround(action_goal);
 }
 
 bool TaskRequestRosApi::moveAround(const hubero_ros_msgs::MoveAroundGoal& goal) {
-	ac_move_around_ptr_->sendGoal(goal);
+	return sendActionGoal(ac_move_around_ptr_, goal);
+}
+
+bool TaskRequestRosApi::stopMovingAround() {
+	return cancelActionGoals(ac_move_around_ptr_);
+}
+
+TaskFeedbackType TaskRequestRosApi::getMoveAroundState() const {
+	return getActionStateType(ac_move_around_ptr_);
+}
+
+std::string TaskRequestRosApi::getMoveAroundStateDescription() const {
+	return getActionStateDescription(ac_move_around_ptr_);
 }
 
 bool TaskRequestRosApi::moveToGoal(const Vector3& pos, const std::string& frame_id) {
 	hubero_ros_msgs::MoveToGoalGoal action_goal;
 	action_goal.pos = ignVectorToMsgPoint(pos);
 	action_goal.frame = frame_id;
-	moveToGoal(action_goal);
+	return moveToGoal(action_goal);
 }
 
 bool TaskRequestRosApi::moveToGoal(const hubero_ros_msgs::MoveToGoalGoal& goal) {
-	ac_move_to_goal_ptr_->sendGoal(goal);
+	return sendActionGoal(ac_move_to_goal_ptr_, goal);
 }
 
 bool TaskRequestRosApi::moveToObject(const std::string& object_name) {
 	hubero_ros_msgs::MoveToObjectGoal action_goal;
 	action_goal.object_name = object_name;
-	moveToObject(action_goal);
+	return moveToObject(action_goal);
 }
 
 bool TaskRequestRosApi::moveToObject(const hubero_ros_msgs::MoveToObjectGoal& goal) {
-	ac_move_to_object_ptr_->sendGoal(goal);
+	return sendActionGoal(ac_move_to_object_ptr_, goal);
+}
+
+bool TaskRequestRosApi::stopMovingToGoal() {
+	return cancelActionGoals(ac_move_to_goal_ptr_);
+}
+
+bool TaskRequestRosApi::stopMovingToObject() {
+	return cancelActionGoals(ac_move_to_object_ptr_);
+}
+
+TaskFeedbackType TaskRequestRosApi::getMoveToGoalState() const {
+	return getActionStateType(ac_move_to_goal_ptr_);
+}
+
+TaskFeedbackType TaskRequestRosApi::getMoveToObjectState() const {
+	return getActionStateType(ac_move_to_object_ptr_);
+}
+
+std::string TaskRequestRosApi::getMoveToGoalStateDescription() const {
+	return getActionStateDescription(ac_move_to_goal_ptr_);
+}
+
+std::string TaskRequestRosApi::getMoveToObjectStateDescription() const {
+	return getActionStateDescription(ac_move_to_object_ptr_);
 }
 
 bool TaskRequestRosApi::run(const Vector3& pos, const std::string& frame_id) {
 	hubero_ros_msgs::RunGoal action_goal;
 	action_goal.pos = ignVectorToMsgPoint(pos);
 	action_goal.frame = frame_id;
-	run(action_goal);
+	return run(action_goal);
 }
 
 bool TaskRequestRosApi::run(const hubero_ros_msgs::RunGoal& goal) {
-	ac_run_ptr_->sendGoal(goal);
+	return sendActionGoal(ac_run_ptr_, goal);
+}
+
+bool TaskRequestRosApi::stopRunning() {
+	return cancelActionGoals(ac_run_ptr_);
+}
+
+TaskFeedbackType TaskRequestRosApi::getRunState() const {
+	return getActionStateType(ac_run_ptr_);
+}
+
+std::string TaskRequestRosApi::getRunStateDescription() const {
+	return getActionStateDescription(ac_run_ptr_);
 }
 
 bool TaskRequestRosApi::sitDown(const Vector3& pos, const double& yaw, const std::string& frame_id) {
@@ -189,11 +273,11 @@ bool TaskRequestRosApi::sitDown(const Vector3& pos, const double& yaw, const std
 	action_goal.pos = ignVectorToMsgPoint(pos);
 	action_goal.yaw = yaw;
 	action_goal.frame = frame_id;
-	sitDown(action_goal);
+	return sitDown(action_goal);
 }
 
 bool TaskRequestRosApi::sitDown(const hubero_ros_msgs::SitDownGoal& goal) {
-	ac_sit_down_ptr_->sendGoal(goal);
+	return sendActionGoal(ac_sit_down_ptr_, goal);
 }
 
 bool TaskRequestRosApi::sitDownObject(const std::string& object_name, const double& height, const double& yaw) {
@@ -201,50 +285,118 @@ bool TaskRequestRosApi::sitDownObject(const std::string& object_name, const doub
 	action_goal.object_name = object_name;
 	action_goal.height = height;
 	action_goal.yaw = yaw;
-	sitDownObject(action_goal);
+	return sitDownObject(action_goal);
 }
 
 bool TaskRequestRosApi::sitDownObject(const hubero_ros_msgs::SitDownObjectGoal& goal) {
-	ac_sit_down_object_ptr_->sendGoal(goal);
+	return sendActionGoal(ac_sit_down_object_ptr_, goal);
+}
+
+bool TaskRequestRosApi::stopSittingDown() {
+	return cancelActionGoals(ac_sit_down_ptr_);
+}
+
+bool TaskRequestRosApi::stopSittingDownObject() {
+	return cancelActionGoals(ac_sit_down_object_ptr_);
+}
+
+TaskFeedbackType TaskRequestRosApi::getSitDownState() const {
+	return getActionStateType(ac_sit_down_ptr_);
+}
+
+TaskFeedbackType TaskRequestRosApi::getSitDownObjectState() const {
+	return getActionStateType(ac_sit_down_object_ptr_);
+}
+
+std::string TaskRequestRosApi::getSitDownStateDescription() const {
+	return getActionStateDescription(ac_sit_down_ptr_);
+}
+
+std::string TaskRequestRosApi::getSitDownObjectStateDescription() const {
+	return getActionStateDescription(ac_sit_down_object_ptr_);
 }
 
 bool TaskRequestRosApi::stand() {
 	hubero_ros_msgs::StandGoal action_goal;
-	stand(action_goal);
+	return stand(action_goal);
 }
 
 bool TaskRequestRosApi::stand(const hubero_ros_msgs::StandGoal& goal) {
-	ac_stand_ptr_->sendGoal(goal);
+	return sendActionGoal(ac_stand_ptr_, goal);
+}
+
+TaskFeedbackType TaskRequestRosApi::getStandState() const {
+	return getActionStateType(ac_stand_ptr_);
+}
+
+std::string TaskRequestRosApi::getStandStateDescription() const {
+	return getActionStateDescription(ac_stand_ptr_);
 }
 
 bool TaskRequestRosApi::talk(const Vector3& pos, const std::string& frame_id) {
 	hubero_ros_msgs::TalkGoal action_goal;
 	action_goal.pos = ignVectorToMsgPoint(pos);
 	action_goal.frame = frame_id;
-	talk(action_goal);
+	return talk(action_goal);
 }
 
 bool TaskRequestRosApi::talk(const hubero_ros_msgs::TalkGoal& goal) {
-	ac_talk_ptr_->sendGoal(goal);
+	return sendActionGoal(ac_talk_ptr_, goal);
 }
 
 bool TaskRequestRosApi::talkObject(const std::string& object_name) {
 	hubero_ros_msgs::TalkObjectGoal action_goal;
 	action_goal.object_name = object_name;
-	talkObject(action_goal);
+	return talkObject(action_goal);
 }
 
 bool TaskRequestRosApi::talkObject(const hubero_ros_msgs::TalkObjectGoal& goal) {
-	ac_talk_object_ptr_->sendGoal(goal);
+	return sendActionGoal(ac_talk_object_ptr_, goal);
+}
+
+bool TaskRequestRosApi::stopTalking() {
+	return cancelActionGoals(ac_talk_ptr_);
+}
+
+bool TaskRequestRosApi::stopTalkingObject() {
+	return cancelActionGoals(ac_talk_object_ptr_);
+}
+
+TaskFeedbackType TaskRequestRosApi::getTalkState() const {
+	return getActionStateType(ac_talk_ptr_);
+}
+
+TaskFeedbackType TaskRequestRosApi::getTalkObjectState() const {
+	return getActionStateType(ac_talk_object_ptr_);
+}
+
+std::string TaskRequestRosApi::getTalkStateDescription() const {
+	return getActionStateDescription(ac_talk_ptr_);
+}
+
+std::string TaskRequestRosApi::getTalkObjectStateDescription() const {
+	return getActionStateDescription(ac_talk_object_ptr_);
 }
 
 bool TaskRequestRosApi::teleop() {
 	hubero_ros_msgs::TeleopGoal action_goal;
-	teleop(action_goal);
+	return teleop(action_goal);
 }
 
 bool TaskRequestRosApi::teleop(const hubero_ros_msgs::TeleopGoal& goal) {
-	ac_teleop_ptr_->sendGoal(goal);
+	return sendActionGoal(ac_teleop_ptr_, goal);
+}
+
+bool TaskRequestRosApi::stopTeleop() {
+	return cancelActionGoals(ac_teleop_ptr_);
+}
+
+TaskFeedbackType TaskRequestRosApi::getTeleopState() const {
+	return getActionStateType(ac_teleop_ptr_);
+}
+
+std::string TaskRequestRosApi::getTeleopStateDescription() const {
+	return getActionStateDescription(ac_teleop_ptr_);
 }
 
 } // namespace hubero
