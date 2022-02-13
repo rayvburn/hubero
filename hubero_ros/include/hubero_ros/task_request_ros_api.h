@@ -44,6 +44,9 @@ public:
 	 * @{
 	 */
 	/**
+	 * @defgroup followobject Operations related to follow object task
+	 */
+	/**
 	 * @brief Requests actor to follow object that in simulation is recognized by @ref object_name
 	 */
 	bool followObject(const std::string& object_name);
@@ -53,6 +56,28 @@ public:
 	 */
 	bool followObject(const hubero_ros_msgs::FollowObjectGoal& goal);
 
+	/**
+	 * @brief Aborts task execution
+	 */
+	bool stopFollowingObject();
+
+	/**
+	 * @brief Returns most recent state of the task
+	 *
+	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
+	 */
+	TaskFeedbackType getFollowObjectState() const;
+
+	/**
+	 * @brief Returns most recent state of the task expressed as string
+	 */
+	std::string getFollowObjectStateDescription() const;
+
+	/** @} */ // end of followobject group
+
+	/**
+	 * @defgroup liedown Operations related to lie down task
+	 */
 	/**
 	 * @brief Requests actor to lie down at @ref pos point with orientation @ref yaw
 	 * @details @ref pos frame (coordinate system) of reference is given by @ref frame_id
@@ -75,6 +100,33 @@ public:
 	bool lieDownObject(const hubero_ros_msgs::LieDownObjectGoal& goal);
 
 	/**
+	 * @brief Aborts task execution
+	 */
+	bool stopLyingDown();
+	bool stopLyingDownObject();
+
+	/**
+	 * @brief Returns most recent state of the task
+	 *
+	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
+	 *
+	 * @note Currently: preempted -> finished
+	 */
+	TaskFeedbackType getLieDownState() const;
+	TaskFeedbackType getLieDownObjectState() const;
+
+	/**
+	 * @brief Returns most recent state of the task expressed as string
+	 */
+	std::string getLieDownStateDescription() const;
+	std::string getLieDownObjectStateDescription() const;
+
+	/** @} */ // end of liedown group
+
+	/**
+	 * @defgroup movearound Operations related to move around task
+	 */
+	/**
 	 * @brief Requests actor to move around (choose his navigation goals randomly)
 	 */
 	bool moveAround();
@@ -84,6 +136,28 @@ public:
 	 */
 	bool moveAround(const hubero_ros_msgs::MoveAroundGoal& goal);
 
+	/**
+	 * @brief Aborts task execution
+	 */
+	bool stopMovingAround();
+
+	/**
+	 * @brief Returns most recent state of the task
+	 *
+	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
+	 */
+	TaskFeedbackType getMoveAroundState() const;
+
+	/**
+	 * @brief Returns most recent state of the task expressed as string
+	 */
+	std::string getMoveAroundStateDescription() const;
+
+	/** @} */ // end of movearound group
+
+	/**
+	 * @defgroup movetogoal Operations related to move to goal task
+	 */
 	/**
 	 * @brief Requests actor to move to @ref pos point, where @ref pos frame of reference is given by @ref frame_id
 	 */
@@ -105,6 +179,31 @@ public:
 	bool moveToObject(const hubero_ros_msgs::MoveToObjectGoal& goal);
 
 	/**
+	 * @brief Aborts task execution
+	 */
+	bool stopMovingToGoal();
+	bool stopMovingToObject();
+
+	/**
+	 * @brief Returns most recent state of the task
+	 *
+	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
+	 */
+	TaskFeedbackType getMoveToGoalState() const;
+	TaskFeedbackType getMoveToObjectState() const;
+
+	/**
+	 * @brief Returns most recent state of the task expressed as string
+	 */
+	std::string getMoveToGoalStateDescription() const;
+	std::string getMoveToObjectStateDescription() const;
+
+	/** @} */ // end of movetogoal group
+
+	/**
+	 * @defgroup run Operations related to run task
+	 */
+	/**
 	 * @brief Requests actor to run to @ref pos point, where @ref pos frame of reference is given by @ref frame_id
 	 */
 	bool run(const Vector3& pos, const std::string& frame_id);
@@ -114,6 +213,28 @@ public:
 	 */
 	bool run(const hubero_ros_msgs::RunGoal& goal);
 
+	/**
+	 * @brief Aborts task execution
+	 */
+	bool stopRunning();
+
+	/**
+	 * @brief Returns most recent state of the task
+	 *
+	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
+	 */
+	TaskFeedbackType getRunState() const;
+
+	/**
+	 * @brief Returns most recent state of the task expressed as string
+	 */
+	std::string getRunStateDescription() const;
+
+	/** @} */ // end of run group
+
+	/**
+	 * @defgroup sitdown Operations related to sit down task
+	 */
 	/**
 	 * @brief Requests actor to sit down at @ref pos point with orientation @ref yaw
 	 * @details @ref pos frame (coordinate system) of reference is given by @ref frame_id
@@ -136,15 +257,58 @@ public:
 	bool sitDownObject(const hubero_ros_msgs::SitDownObjectGoal& goal);
 
 	/**
+	 * @brief Aborts task execution
+	 */
+	bool stopSittingDown();
+	bool stopSittingDownObject();
+
+	/**
+	 * @brief Returns most recent state of the task
+	 *
+	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
+	 */
+	TaskFeedbackType getSitDownState() const;
+	TaskFeedbackType getSitDownObjectState() const;
+
+	/**
+	 * @brief Returns most recent state of the task expressed as string
+	 */
+	std::string getSitDownStateDescription() const;
+	std::string getSitDownObjectStateDescription() const;
+
+	/** @} */ // end of sitdown group
+
+	/**
+	 * @defgroup stand Operations related to stand task
+	 */
+	/**
 	 * @brief Requests actor to stand still
 	 */
 	bool stand();
 
 	/**
 	 * @brief Requests actor to stand still according to @ref goal
+	 * @details Stand cannot be stopped, it is treated as 'idle' state
 	 */
 	bool stand(const hubero_ros_msgs::StandGoal& goal);
 
+	/**
+	 * @brief Returns most recent state of the task
+	 *
+	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
+	 */
+	TaskFeedbackType getStandState() const;
+
+	/**
+	 * @brief Returns most recent state of the task expressed as string
+	 */
+	std::string getStandStateDescription() const;
+
+	/** @} */ // end of stand group
+
+	/**
+	 * @defgroup talk Operations related to talk task
+	 */
 	/**
 	 * @brief Requests actor to talk, but first let it move to @ref pos position expressed in @ref frame_id frame
 	 */
@@ -167,6 +331,31 @@ public:
 	bool talkObject(const hubero_ros_msgs::TalkObjectGoal& goal);
 
 	/**
+	 * @brief Aborts task execution
+	 */
+	bool stopTalking();
+	bool stopTalkingObject();
+
+	/**
+	 * @brief Returns most recent state of the task
+	 *
+	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
+	 */
+	TaskFeedbackType getTalkState() const;
+	TaskFeedbackType getTalkObjectState() const;
+
+	/**
+	 * @brief Returns most recent state of the task expressed as string
+	 */
+	std::string getTalkStateDescription() const;
+	std::string getTalkObjectStateDescription() const;
+
+	/** @} */ // end of talk group
+
+	/**
+	 * @defgroup talk Operations related to talk task
+	 */
+	/**
 	 * @brief Requests actor to teleoperate
 	 */
 	bool teleop();
@@ -175,7 +364,26 @@ public:
 	 * @brief Requests actor to teleoperate according to @ref goal
 	 */
 	bool teleop(const hubero_ros_msgs::TeleopGoal& goal);
-	/// @}
+
+	/**
+	 * @brief Aborts task execution
+	 */
+	bool stopTeleop();
+
+	/**
+	 * @brief Returns most recent state of the task
+	 *
+	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
+	 */
+	TaskFeedbackType getTeleopState() const;
+
+	/**
+	 * @brief Returns most recent state of the task expressed as string
+	 */
+	std::string getTeleopStateDescription() const;
+
+	/** @} */ // end of talk group
+	/** @} */ // end of tasks group
 
 protected:
 	std::shared_ptr<Node> node_ptr_;
@@ -237,5 +445,50 @@ protected:
 		hubero_ros_msgs::TeleopActionFeedbackConstPtr,
 		hubero_ros_msgs::TeleopActionResultConstPtr> ac_teleop_ptr_;
 
+	/**
+	 * @brief Sends action goal via given action client
+	 */
+	template <typename Tacptr, typename Tgoal>
+	bool sendActionGoal(Tacptr& action_client_ptr, const Tgoal& action_goal) {
+		if (action_client_ptr == nullptr) {
+			return false;
+		}
+		action_client_ptr->sendGoal(action_goal);
+		return true;
+	}
+
+	/**
+	 * @brief Cancels all action goals
+	 */
+	template <typename Tacptr>
+	bool cancelActionGoals(Tacptr& action_client_ptr) {
+		if (action_client_ptr == nullptr) {
+			return false;
+		}
+		action_client_ptr->cancelAllGoals();
+		return true;
+	}
+
+	/**
+	 * @brief Queries given action action client for feedback in enum form
+	 */
+	template <typename Tacptr>
+	TaskFeedbackType getActionStateType(Tacptr& action_client_ptr) const {
+		if (action_client_ptr == nullptr) {
+			return TASK_FEEDBACK_UNDEFINED;
+		}
+		return action_client_ptr->getFeedbackStatus();
+	}
+
+	/**
+	 * @brief Queries given action action client for feedback in text form
+	 */
+	template <typename Tacptr>
+	std::string getActionStateDescription(Tacptr& action_client_ptr) const {
+		if (action_client_ptr == nullptr) {
+			return std::string("Action client is not operational (nullptr)");
+		}
+		return action_client_ptr->getFeedbackText();
+	}
 }; // class TaskRequestRosApi
 } // namespace hubero
