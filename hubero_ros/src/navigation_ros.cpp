@@ -6,6 +6,7 @@
 #include <actionlib_msgs/GoalID.h>
 #include <move_base_msgs/MoveBaseActionGoal.h>
 
+#include <random>
 #include <thread>
 
 namespace hubero {
@@ -13,6 +14,7 @@ namespace hubero {
 const int NavigationRos::SUBSCRIBER_QUEUE_SIZE = 10;
 const int NavigationRos::PUBLISHER_QUEUE_SIZE = 15;
 const int NavigationRos::PLAN_COMPUTATION_RETRY_NUM = 5;
+const int NavigationRos::QUATERNION_RANDOM_RETRY_NUM = 10;
 
 NavigationRos::NavigationRos():
 	NavigationBase::NavigationBase(),
@@ -401,6 +403,82 @@ Pose3 NavigationRos::computeClosestAchievablePose(const Pose3& pose, const std::
 	}
 	// TODO: return tuple
 	return goal_pose_potential;
+}
+
+std::tuple<bool, Pose3> NavigationRos::findRandomReachableGoal() {
+	if (!isInitialized()) {
+		HUBERO_LOG("[%s].[NavigationRos] Not initialized, call `initialize` first\r\n", actor_name_.c_str());
+		return std::make_tuple(false, Pose3());
+	}
+
+	if (!nav_action_server_connected_) {
+		HUBERO_LOG(
+			"[%s].[NavigationRos] Did not manage to connect to ROS action server yet, ignoring request\r\n",
+			actor_name_.c_str()
+		);
+		return std::make_tuple(false, Pose3());
+	}
+
+	// https://stackoverflow.com/questions/7560114/
+	std::random_device rd;
+	std::mt19937 gen(rd());
+
+	std::uniform_real_distribution<> distr_x(map_x_min_, map_x_max_);
+	double x_draw = distr_x(gen);
+
+	std::uniform_real_distribution<> distr_y(map_y_min_, map_y_max_);
+	double y_draw = distr_y(gen);
+
+	// draw yaw
+	std::uniform_real_distribution<> distr_yaw(-IGN_PI, +IGN_PI);
+	double yaw_draw = 0.0;
+	bool quaternion_valid = false;
+
+	/*
+	 * move_base complains about quaternion:
+	 * "Quaternion has length close to zero... discarding as navigation goal"
+	 */
+	for (int i = 0; i < QUATERNION_RANDOM_RETRY_NUM; i++) {
+		yaw_draw = distr_yaw(gen);
+		auto q = Quaternion(current_pose_.Rot().Roll(), current_pose_.Rot().Pitch(), yaw_draw);
+		quaternion_valid = NavigationRos::isQuaternionValid(q);
+		if (quaternion_valid) {
+			break;
+		}
+	}
+
+	// evaluate if the valid quaternion was found - abort further actions if it is not a valid one
+	if (!quaternion_valid) {
+		HUBERO_LOG(
+			"[%s].[NavigationRos] Could not find a valid quaternion for a randomly chosen goal. "
+			"Aborting this attempt\r\n",
+			actor_name_.c_str()
+		);
+		return std::make_tuple(false, Pose3());
+	}
+
+	// compose a potentially new goal based on random generator output and current pose
+	Pose3 goal_potential(
+		x_draw,
+		y_draw,
+		current_pose_.Pos().Z(),
+		current_pose_.Rot().Roll(),
+		current_pose_.Rot().Pitch(),
+		yaw_draw
+	);
+
+	// compute plan
+	auto path = computePlan(current_pose_, getWorldFrame(), goal_potential, getGlobalReferenceFrame());
+
+	// choose goal pose from plan
+	bool goal_pose_ok = false;
+	Pose3 goal_pose_potential;
+	std::tie(goal_pose_ok, goal_pose_potential) = selectGoalFromPlan(path);
+
+	if (!goal_pose_ok) {
+		HUBERO_LOG("[%s].[NavigationRos] Could not randomly choose a goal\r\n", actor_name_.c_str());
+	}
+	return std::make_tuple(goal_pose_ok, goal_pose_potential);
 }
 
 Vector3 NavigationRos::getVelocityCmd() const {

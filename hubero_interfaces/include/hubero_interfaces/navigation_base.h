@@ -3,7 +3,9 @@
 #include <hubero_common/defines.h>
 #include <hubero_common/logger.h>
 #include <hubero_common/typedefs.h>
+
 #include <string>
+#include <tuple>
 
 namespace hubero {
 
@@ -96,6 +98,15 @@ public:
 	 */
 	virtual Pose3 computeClosestAchievablePose(const Pose3& pose, const std::string& frame) {
 		return pose;
+	}
+
+	/**
+	 * @brief Randomly chooses a reachable goal
+	 * @details Goal is expressed in global reference frame, see @ref getGlobalReferenceFrame
+	 * @return Tuple: bool is true if goal is valid, Pose3 is reachable pose
+	 */
+	virtual std::tuple<bool, Pose3> findRandomReachableGoal() {
+		return std::make_tuple(false, Pose3());
 	}
 
 	/**
