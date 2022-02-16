@@ -81,6 +81,13 @@ public:
 		return time_goal_update_;
 	}
 
+	/**
+	 * @brief Returns time in seconds since last goal update call @ref setGoalPoseUpdateTime
+	 */
+	double getTimeSinceLastGoalUpdate() const {
+		return Time::computeDuration(getGoalPoseUpdateTime(), getTimeCurrent()).getTime();
+	}
+
 	double getDistanceToGoal() const {
 		return (pose_current_.Pos() - pose_goal_.Pos()).Length();
 	}
