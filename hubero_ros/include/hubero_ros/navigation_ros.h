@@ -40,6 +40,12 @@ public:
 	static const int PLAN_COMPUTATION_RETRY_NUM;
 
 	/**
+	 * Defines max number of times yaw angle will be randomly chosen
+	 * @details Quaternion must meet requirements of the navigation stack, otherwise the goal will be instantly aborted
+	 */
+	static const int QUATERNION_RANDOM_RETRY_NUM;
+
+	/**
 	 * @brief Constructor
 	 */
 	NavigationRos();
@@ -108,6 +114,11 @@ public:
 	 * @brief Computes reachable pose that is closest to the given pose, starting from current pose from update call
 	 */
 	virtual Pose3 computeClosestAchievablePose(const Pose3& pose, const std::string& frame) override;
+
+	/**
+	 * @brief Randomly chooses a reachable goal
+	 */
+	virtual std::tuple<bool, Pose3> findRandomReachableGoal() override;
 
 	/**
 	 * @brief Get the velocity command
