@@ -429,6 +429,42 @@ void NavigationRos::setIdealCovariance(boost::array<double, 36>& cov) {
 	}
 }
 
+// static
+bool NavigationRos::isQuaternionValid(const Quaternion& q) {
+	// first we need to check if the quaternion has nan's or infs
+	if (!std::isfinite(q.X()) || !std::isfinite(q.Y()) || !std::isfinite(q.Z()) || !std::isfinite(q.W())) {
+		return false;
+	}
+
+	tf2::Quaternion tf_q(q.X(), q.Y(), q.Z(), q.W());
+
+	//next, we need to check if the length of the quaternion is close to zero
+	if(tf_q.length2() < 1e-6){
+		return false;
+	}
+
+	// next, we'll normalize the quaternion and check that it transforms the vertical vector correctly
+	tf_q.normalize();
+
+	tf2::Vector3 up(0, 0, 1);
+
+	double dot = up.dot(up.rotate(tf_q.getAxis(), tf_q.getAngle()));
+
+	if(fabs(dot - 1) > 1e-3){
+		return false;
+	}
+
+	return true;
+}
+
+// static
+bool NavigationRos::isMoveBaseBusy(const actionlib::SimpleClientGoalState& state) {
+	return state != actionlib::SimpleClientGoalState::LOST
+		&& state != actionlib::SimpleClientGoalState::ABORTED
+		&& state != actionlib::SimpleClientGoalState::SUCCEEDED
+		&& state != actionlib::SimpleClientGoalState::PREEMPTED;
+}
+
 void NavigationRos::callbackCmdVel(const geometry_msgs::Twist::ConstPtr& msg) {
 	const std::lock_guard<std::mutex> lock(mutex_callback_);
 	Vector3 cmd_vel_local;

@@ -129,6 +129,18 @@ public:
 	 */
 	static void setIdealCovariance(boost::array<double, 36>& cov);
 
+	/**
+	 * @brief Checks if quaternion is valid and can be applied as a new navigation goal
+	 *
+	 * @details This is a copy of MoveBase::isQuaternionValid from https://github.com/ros-planning/navigation/
+	 */
+	static bool isQuaternionValid(const Quaternion& q);
+
+	/**
+	 * @brief Evaluates if move base is busy
+	 */
+	static bool isMoveBaseBusy(const actionlib::SimpleClientGoalState& state);
+
 protected:
 	/**
 	 * @brief Callback for velocity command retrieval
