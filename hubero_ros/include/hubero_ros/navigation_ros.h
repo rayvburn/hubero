@@ -219,7 +219,7 @@ protected:
 	tf2_ros::TransformListener tf_listener_;
 	tf2_ros::TransformBroadcaster tf_broadcaster_;
 	std::string frame_base_;
-	std::string frame_global_ref_;
+	// NOTE: frame_global_ref_ already defined in the base class
 	std::string frame_local_ref_;
 	std::string frame_laser_;
 	std::string frame_camera_;
