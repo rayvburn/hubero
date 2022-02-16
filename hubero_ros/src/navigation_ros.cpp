@@ -294,7 +294,7 @@ bool NavigationRos::setGoal(const Pose3& pose, const std::string& frame) {
 		return false;
 	}
 
-	NavigationBase::setGoal(pose, frame);
+	auto nav_goal_backup = nav_goal_;
 
 	auto time_current = ros::Time::now();
 	actionlib_msgs::GoalID goal_id;
@@ -302,7 +302,7 @@ bool NavigationRos::setGoal(const Pose3& pose, const std::string& frame) {
 	goal_id.stamp = time_current;
 
 	nav_goal_.target_pose.header.frame_id = frame;
-	nav_goal_.target_pose.header.stamp = ros::Time::now();
+	nav_goal_.target_pose.header.stamp = time_current;
 	nav_goal_.target_pose.pose = ignPoseToMsgPose(pose);
 
 	// evaluate goal quaternion
@@ -311,8 +311,11 @@ bool NavigationRos::setGoal(const Pose3& pose, const std::string& frame) {
 			"[%s].[NavigationRos] New goal will not be set - its quaternion is not valid\r\n",
 			actor_name_.c_str()
 		);
+		nav_goal_ = nav_goal_backup;
 		return false;
 	}
+
+	NavigationBase::setGoal(pose, frame);
 
 	/*
 	 * - SimpleDoneCallback: returns action status with a big delay (compared to topic data) that interferes HuBeRo
