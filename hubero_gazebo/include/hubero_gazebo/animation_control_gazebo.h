@@ -10,6 +10,24 @@ namespace hubero {
 
 class AnimationControlGazebo: public AnimationControlBase {
 public:
+    /**
+     * @defgroup actorplugin Hard-coded values to carry animation transitions for Gazebo ActorPlugin characters
+     * // FIXME
+     */
+    /// Defines typical position.z offset from standing height while lying on the ground
+    const double POS_Z_LYING_GROUND_DELTA = -0.9;
+
+    /// Defines typical position.z offset from standing height while sitting with feet touching the ground
+    const double POS_Z_SITTING_DELTA = -0.25;
+
+    /// Defines roll angle of orientation component while actor is lying on the ground
+    const double ROT_ROLL_LYING_GROUND = -IGN_PI / 2;
+
+    /// Defines roll angle of orientation component while actor is standing straight
+    const double ROT_ROLL_STANDING = 0.0;
+
+    /// @}
+
     AnimationControlGazebo();
 
     void initialize(

@@ -55,10 +55,26 @@ void AnimationControlGazebo::adjustPose(Pose3& pose, const Time& time_current) {
 	Vector3 pos = pose.Pos();
 	Vector3 rpy = pose.Rot().Euler();
 
-	if (getActiveAnimation() == ANIMATION_LIE_DOWN) {
-		rpy.X(-IGN_PI / 2);
-		pos.Z(0.1);
-	} else if (getActiveAnimation() == ANIMATION_SIT_DOWN || getActiveAnimation() == ANIMATION_STAND_UP) {
+	if (getActiveAnimation() == ANIMATION_LYING) {
+		rpy.X(ROT_ROLL_LYING_GROUND);
+		pos.Z(standing_height_ + POS_Z_LYING_GROUND_DELTA);
+	} else if (getActiveAnimation() == ANIMATION_SITTING) {
+		rpy.X(ROT_ROLL_STANDING);
+		pos.Z(standing_height_ + POS_Z_SITTING_DELTA);
+	} else if (
+		getActiveAnimation() == ANIMATION_WALK
+		|| getActiveAnimation() == ANIMATION_RUN
+		|| getActiveAnimation() == ANIMATION_STAND
+		|| getActiveAnimation() == ANIMATION_TALK
+	) {
+		// i.e. stand, run etc.
+		pos.Z(standing_height_);
+		rpy.X(0.0);
+	} else if (
+		getActiveAnimation() == ANIMATION_SIT_DOWN
+		|| getActiveAnimation() == ANIMATION_LIE_DOWN
+		|| getActiveAnimation() == ANIMATION_STAND_UP
+	) {
 		Time time_so_far = Time::computeDuration(time_begin_, time_current);
 		Time time_range = Time::computeDuration(time_begin_, time_finish_);
 
@@ -66,7 +82,7 @@ void AnimationControlGazebo::adjustPose(Pose3& pose, const Time& time_current) {
 		double time_progress = time_so_far.getTime() / time_range.getTime();
 
 		// trim
-		if (time_progress > 1.0) {
+		if (time_progress >= 1.0) {
 			HUBERO_LOG("[AnimationControlGazebo] Animation time progressed out of bounds (%2.3f)\r\n", time_progress);
 			time_progress = 1.0;
 			anim_finished_ = true;
@@ -74,13 +90,17 @@ void AnimationControlGazebo::adjustPose(Pose3& pose, const Time& time_current) {
 
 		// handle each case separately
 		if (getActiveAnimation() == ANIMATION_SIT_DOWN) {
-			pos.Z(animation_pose_initial_.Pos().Z() - time_progress * 0.3);
+			pos.Z(animation_pose_initial_.Pos().Z() + time_progress * POS_Z_SITTING_DELTA);
+		} else if (getActiveAnimation() == ANIMATION_LIE_DOWN) {
+			rpy.X(ROT_ROLL_STANDING + ROT_ROLL_LYING_GROUND * time_progress);
+			double pos_z_diff = (standing_height_ + POS_Z_LYING_GROUND_DELTA)  - animation_pose_initial_.Pos().Z();
+			pos.Z(standing_height_ + (time_progress * pos_z_diff));
 		} else if (getActiveAnimation() == ANIMATION_STAND_UP) {
-			pos.Z(animation_pose_initial_.Pos().Z() - time_progress * 0.2);
-	} else {
-		// i.e. stand, run etc.
-		pos.Z(standing_height_);
-		rpy.X(0.0);
+			double rot_roll_diff = ROT_ROLL_STANDING - animation_pose_initial_.Rot().Roll();
+			double pos_z_diff = standing_height_ - animation_pose_initial_.Pos().Z();
+			rpy.X(animation_pose_initial_.Rot().X() + (time_progress * rot_roll_diff));
+			pos.Z(animation_pose_initial_.Pos().Z() + (time_progress * pos_z_diff));
+		}
 	}
 
 	pose.Pos() = pos;
