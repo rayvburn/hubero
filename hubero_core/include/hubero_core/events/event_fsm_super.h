@@ -20,7 +20,8 @@ struct EventFsmSuper {
 	TaskPredicates teleop;
 
 	std::string toString() const {
-		return "\tstand:        " + stand.toString() + "\r\n"
+		return std::string("\r\n")
+			+ "\tstand:        " + stand.toString() + "\r\n"
 			+ "\tmoveToGoal:   " + move_to_goal.toString() + "\r\n"
 			+ "\tmoveAround:   " + move_around.toString() + "\r\n"
 			+ "\tfollowObject: " + follow_object.toString() + "\r\n"
