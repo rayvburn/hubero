@@ -35,8 +35,11 @@ namespace hubero {
  */
 class Actor {
 public:
-	/// Defines how often goal will be updated during execution of a navigation task (in seconds)
+	/// Defines how often goal will be updated during execution of a "tracking" navigation task (in seconds)
 	const double GOAL_UPDATE_PERIOD_DEFAULT = 5.0;
+
+	/// Defines how often the planning will be executed while looking for a valid navigation goal (in seconds)
+	const double CHOOSE_NEW_GOAL_RETRY_PERIOD_DEFAULT = 0.5;
 
 	Actor();
 
