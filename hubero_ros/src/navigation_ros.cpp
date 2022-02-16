@@ -381,25 +381,15 @@ Pose3 NavigationRos::computeClosestAchievablePose(const Pose3& pose, const std::
 	// compute plan
 	auto path = computePlan(current_pose_, getWorldFrame(), pose, frame);
 
-	// when goal pose is not reachable, then plan consists of set of valid poses + goal pose at the back of vector;
-	// NOTE: this is parameterized and can be disabled
-	if (path.poses.size() >= 2) {
-		// seconds to last element in a vector
-		return msgPoseToIgnPose(path.poses.end()[-2].pose);
-	} else if (path.poses.size() == 0) {
-		HUBERO_LOG(
-			"[%s].[NavigationRos] Computed plan is empty - could not compute pose closest to given pose\r\n",
-			actor_name_.c_str()
-		);
-		return pose;
-	}
+	bool goal_pose_ok = false;
+	Pose3 goal_pose_potential;
+	std::tie(goal_pose_ok, goal_pose_potential) = selectGoalFromPlan(path);
 
-	HUBERO_LOG(
-		"[%s].[NavigationRos] Computed plan is not empty (%d) but most likely contains something strange\r\n",
-		actor_name_.c_str(),
-		static_cast<int>(path.poses.size())
-	);
-	return pose;
+	if (!goal_pose_ok) {
+		HUBERO_LOG("[%s].[NavigationRos] Could not compute pose closest to given pose\r\n", actor_name_.c_str());
+	}
+	// TODO: return tuple
+	return goal_pose_potential;
 }
 
 Vector3 NavigationRos::getVelocityCmd() const {
@@ -645,6 +635,41 @@ nav_msgs::Path NavigationRos::computePlan(
 		resp.plan.poses.end()[-2].pose.position.y
 	);
 	return resp.plan;
+}
+
+std::tuple<bool, Pose3> NavigationRos::selectGoalFromPlan(const nav_msgs::Path& path) {
+	// goal pose is not reachable when plan consists of a set of valid poses + goal pose at the back of vector;
+	// NOTE: this is parameterized and can be disabled
+	if (path.poses.size() >= 2) {
+		// second to last element in a vector
+		auto pose_goal = msgPoseToIgnPose(path.poses.end()[-2].pose);
+		// evaluate quaternion of the new potential goal
+		bool goal_quaternion_valid = NavigationRos::isQuaternionValid(pose_goal.Rot());
+		if (!goal_quaternion_valid) {
+			HUBERO_LOG(
+				"[%s].[NavigationRos] Quaternion of the plan final pose is invalid. Aborting this attempt\r\n",
+				actor_name_.c_str()
+			);
+			// no luck finding goal
+			return std::make_tuple(false, Pose3());
+		}
+		// quaternion is valid, let pose_goal be used elsewhere as new navigation goal
+		return std::make_tuple(true, pose_goal);
+
+	} else if (path.poses.empty()) {
+		HUBERO_LOG(
+			"[%s].[NavigationRos] Computed plan is empty - Aborting this attempt\r\n",
+			actor_name_.c_str()
+		);
+		return std::make_tuple(false, Pose3());
+	}
+
+	HUBERO_LOG(
+		"[%s].[NavigationRos] Computed plan is not empty (%d) but most likely contains something strange\r\n",
+		actor_name_.c_str(),
+		static_cast<int>(path.poses.size())
+	);
+	return std::make_tuple(false, Pose3());
 }
 
 } // namespace hubero
