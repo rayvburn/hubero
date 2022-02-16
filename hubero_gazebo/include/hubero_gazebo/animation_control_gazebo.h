@@ -37,6 +37,7 @@ protected:
     void handlerStand();
     void handlerWalk();
     void handlerLieDown();
+    void handlerLying();
     void handlerSitDown();
     void handlerSitting();
     void handlerStandUp();

@@ -7,6 +7,7 @@ const std::map<AnimationType, std::string> AnimationControlGazebo::animation_nam
 	{ANIMATION_WALK, "walk"},
 	// lying is equal to standing but in a different plane
 	{ANIMATION_LIE_DOWN, "stand"},
+	{ANIMATION_LYING, "stand"},
 	{ANIMATION_SIT_DOWN, "sit_down"},
 	{ANIMATION_SITTING, "sitting"},
 	{ANIMATION_STAND_UP, "stand_up"},
@@ -30,6 +31,7 @@ void AnimationControlGazebo::initialize(
 	addAnimationHandler(ANIMATION_STAND, std::bind(&AnimationControlGazebo::handlerStand, this));
 	addAnimationHandler(ANIMATION_WALK, std::bind(&AnimationControlGazebo::handlerWalk, this));
 	addAnimationHandler(ANIMATION_LIE_DOWN, std::bind(&AnimationControlGazebo::handlerLieDown, this), Time(1.5));
+	addAnimationHandler(ANIMATION_LYING, std::bind(&AnimationControlGazebo::handlerLying, this));
 	addAnimationHandler(ANIMATION_SIT_DOWN, std::bind(&AnimationControlGazebo::handlerSitDown, this), Time(1.5));
 	addAnimationHandler(ANIMATION_SITTING, std::bind(&AnimationControlGazebo::handlerSitting, this));
 	addAnimationHandler(ANIMATION_STAND_UP, std::bind(&AnimationControlGazebo::handlerStandUp, this));
@@ -133,6 +135,10 @@ void AnimationControlGazebo::handlerWalk() {
 
 void AnimationControlGazebo::handlerLieDown() {
 	setupAnimation(ANIMATION_LIE_DOWN);
+}
+
+void AnimationControlGazebo::handlerLying() {
+	setupAnimation(ANIMATION_LYING);
 }
 
 void AnimationControlGazebo::handlerSitDown() {
