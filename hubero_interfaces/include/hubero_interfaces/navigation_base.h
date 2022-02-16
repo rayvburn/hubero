@@ -24,8 +24,17 @@ public:
 	 */
 	inline virtual bool initialize(const std::string& actor_name, const std::string& world_frame_name) {
 		actor_name_ = actor_name;
-		world_frame_name_ = world_frame_name;
+		frame_world_ = world_frame_name;
 		initialized_ = true;
+	}
+
+	inline virtual bool initialize(
+		const std::string& actor_name,
+		const std::string& world_frame_name,
+		const std::string& global_ref_frame_name
+	) {
+		frame_global_ref_ = global_ref_frame_name;
+		initialize(actor_name, world_frame_name);
 	}
 
 	/**
@@ -128,7 +137,14 @@ public:
 	 * @brief Retrieves name of the world (simulator) frame
 	 */
 	inline virtual std::string getWorldFrame() const {
-		return world_frame_name_;
+		return frame_world_;
+	}
+
+	/**
+	 * @brief Retrieves name of the global reference (map) frame
+	 */
+	inline virtual std::string getGlobalReferenceFrame() const {
+		return frame_global_ref_;
 	}
 
 	/**
@@ -162,7 +178,10 @@ protected:
 	TaskFeedbackType feedback_;
 
 	/// @brief Name of the frame that incoming ( @ref update ) poses are referenced in
-	std::string world_frame_name_;
+	std::string frame_world_;
+
+	/// @brief Name of the frame that goals chosen with @ref findRandomReachableGoal are referenced in
+	std::string frame_global_ref_;
 
 	/// @brief Stores most recent pose from localisation
 	Pose3 current_pose_;

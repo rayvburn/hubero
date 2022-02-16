@@ -234,12 +234,12 @@ void NavigationRos::update(const Pose3& pose, const Vector3& vel_lin, const Vect
 	 */
 	bool transform_valid = false;
 	Pose3 global_ref_shift;
-	std::tie(transform_valid, global_ref_shift) = findTransform(world_frame_name_, frame_global_ref_);
+	std::tie(transform_valid, global_ref_shift) = findTransform(getWorldFrame(), getGlobalReferenceFrame());
 
 	// publish odom TF
 	geometry_msgs::TransformStamped transform_odom {};
 	transform_odom.header.stamp = ros::Time::now();
-	transform_odom.header.frame_id = frame_global_ref_;
+	transform_odom.header.frame_id = getGlobalReferenceFrame();
 	transform_odom.child_frame_id = frame_local_ref_;
 	// ignore height of the pose in this step - this will produce odometry frame at the same height as global ref frame
 	Pose3 pose_initial_plane(Vector3(pose_initial_.Pos().X(), pose_initial_.Pos().Y(), 0.0), pose_initial_.Rot());
@@ -379,7 +379,7 @@ Pose3 NavigationRos::computeClosestAchievablePose(const Pose3& pose, const std::
 	}
 
 	// compute plan
-	auto path = computePlan(current_pose_, world_frame_name_, pose, frame);
+	auto path = computePlan(current_pose_, getWorldFrame(), pose, frame);
 
 	// when goal pose is not reachable, then plan consists of set of valid poses + goal pose at the back of vector;
 	// NOTE: this is parameterized and can be disabled
@@ -467,8 +467,8 @@ std::tuple<bool, Pose3> NavigationRos::findTransform(const std::string& frame_so
 		HUBERO_LOG(
 			"[%s].[NavigationRos] Could not transform '%s' to '%s' - exception: '%s'",
 			actor_name_.c_str(),
-			world_frame_name_.c_str(),
-			frame_global_ref_.c_str(),
+			getWorldFrame().c_str(),
+			getGlobalReferenceFrame().c_str(),
 			ex.what()
 		);
 	}
@@ -497,11 +497,11 @@ nav_msgs::Path NavigationRos::computePlan(
 	// service complains if start/goal pose is defined in frame other than the global reference frame
 	bool transform_start_valid = false;
 	Pose3 transform_start;
-	std::tie(transform_start_valid, transform_start) = findTransform(start_frame, frame_global_ref_);
+	std::tie(transform_start_valid, transform_start) = findTransform(start_frame, getGlobalReferenceFrame());
 
 	bool transform_goal_valid = false;
 	Pose3 transform_goal;
-	std::tie(transform_goal_valid, transform_goal) = findTransform(goal_frame, frame_global_ref_);
+	std::tie(transform_goal_valid, transform_goal) = findTransform(goal_frame, getGlobalReferenceFrame());
 
 	if (!transform_start_valid || !transform_goal_valid) {
 		HUBERO_LOG(
@@ -525,12 +525,12 @@ nav_msgs::Path NavigationRos::computePlan(
 	nav_msgs::GetPlan::Response resp;
 	auto ts = ros::Time::now();
 
-	req.start.header.frame_id = frame_global_ref_;
+	req.start.header.frame_id = getGlobalReferenceFrame();
 	req.start.header.stamp = ts;
 	req.start.header.seq = 0;
 	req.start.pose = ignPoseToMsgPose(pose_start_global_ref_plane);
 
-	req.goal.header.frame_id = frame_global_ref_;
+	req.goal.header.frame_id = getGlobalReferenceFrame();
 	req.goal.header.stamp = ts;
 	req.goal.header.seq = 0;
 	req.goal.pose = ignPoseToMsgPose(pose_goal_global_ref_plane);
