@@ -23,11 +23,15 @@ protected:
 	 * @{
 	 */
 	bool guardMovingToGoal2ChoosingGoal(const EventFsmMoveAround& event) const {
-		return event.isNavigationSucceeded() || event.isNavigationEnded(); // event.goal_reached && !event.goal_selected;
+		return event.isNavigationSucceeded()
+			|| event.isNavigationGoalCancelled()
+			|| event.isNavigationGoalRejected()
+			|| event.isNavigationEnded()
+			|| event.isAborted();
 	}
 
 	bool guardChoosingGoal2MovingToGoal(const EventFsmMoveAround& event) const {
-		return event.isNavigationActive();
+		return event.isActive() && event.isNavigationActive();
 	}
 	/** @} */ // end of guards group
 
