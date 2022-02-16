@@ -29,8 +29,8 @@ void AnimationControlGazebo::initialize(
 	// add supported animations handlers
 	addAnimationHandler(ANIMATION_STAND, std::bind(&AnimationControlGazebo::handlerStand, this));
 	addAnimationHandler(ANIMATION_WALK, std::bind(&AnimationControlGazebo::handlerWalk, this));
-	addAnimationHandler(ANIMATION_LIE_DOWN, std::bind(&AnimationControlGazebo::handlerLieDown, this));
-	addAnimationHandler(ANIMATION_SIT_DOWN, std::bind(&AnimationControlGazebo::handlerSitDown, this));
+	addAnimationHandler(ANIMATION_LIE_DOWN, std::bind(&AnimationControlGazebo::handlerLieDown, this), Time(1.5));
+	addAnimationHandler(ANIMATION_SIT_DOWN, std::bind(&AnimationControlGazebo::handlerSitDown, this), Time(1.5));
 	addAnimationHandler(ANIMATION_SITTING, std::bind(&AnimationControlGazebo::handlerSitting, this));
 	addAnimationHandler(ANIMATION_STAND_UP, std::bind(&AnimationControlGazebo::handlerStandUp, this));
 	addAnimationHandler(ANIMATION_RUN, std::bind(&AnimationControlGazebo::handlerRun, this));
@@ -67,6 +67,7 @@ void AnimationControlGazebo::adjustPose(Pose3& pose, const Time& time_current) {
 		if (time_progress > 1.0) {
 			HUBERO_LOG("[AnimationControlGazebo] Animation time progressed out of bounds (%2.3f)\r\n", time_progress);
 			time_progress = 1.0;
+			anim_finished_ = true;
 		}
 
 		// handle each case separately
