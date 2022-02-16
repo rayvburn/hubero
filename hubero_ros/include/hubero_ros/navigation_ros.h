@@ -179,6 +179,13 @@ protected:
 	);
 
 	/**
+	 * @brief Evaluates if a planned path contains a valid goal
+	 *
+	 * @return std::tuple<bool, Pose3> Bool: True if @ref Pose3 element of tuple can be treated as a valid goal
+	 */
+	std::tuple<bool, Pose3> selectGoalFromPlan(const nav_msgs::Path& path);
+
+	/**
 	 * @defgroup rosinterface ROS interface
 	 * @{
 	 */
