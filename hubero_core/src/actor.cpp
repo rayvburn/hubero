@@ -372,6 +372,20 @@ void Actor::bbFollowObject() {
 }
 
 void Actor::bbChooseNewGoal() {
+	// do not trigger planning too often
+	if (mem_.getTimeSinceLastGoalUpdate() <= 0.5) {
+		return;
+	}
+
+	// find a new goal
+	bool goal_valid = false;
+	Pose3 goal;
+	std::tie(goal_valid, goal) = navigation_ptr_->findRandomReachableGoal();
+	if (goal_valid) {
+		navigation_ptr_->setGoal(goal, navigation_ptr_->getGlobalReferenceFrame());
+		mem_.setGoal(goal);
+		mem_.setGoalPoseUpdateTime(mem_.getTimeCurrent());
+	}
 }
 
 void Actor::bbLieDown() {
