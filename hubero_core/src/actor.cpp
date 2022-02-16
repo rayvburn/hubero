@@ -244,19 +244,6 @@ void Actor::addFsmSuperTransitionHandlers(
 	fsm.addTransitionHandler(FsmSuper::State::TALK, FsmSuper::State::STAND, std::bind(&NavigationBase::finish, navigation_ptr));
 	fsm.addTransitionHandler(FsmSuper::State::TELEOP, FsmSuper::State::STAND, std::bind(&NavigationBase::finish, navigation_ptr));
 
-	// call finish once tasks that are executed once and then finished
-	task_move_to_goal_ptr->addStateTransitionHandler(
-		TaskMoveToGoal::State::ACTIVE,
-		TaskMoveToGoal::State::FINISHED,
-		std::bind(&TaskMoveToGoal::finish, task_move_to_goal_ptr)
-	);
-
-	task_move_to_goal_ptr->addStateTransitionHandler(
-		TaskMoveToGoal::State::ACTIVE,
-		TaskMoveToGoal::State::FINISHED,
-		std::bind(&NavigationBase::finish, navigation_ptr)
-	);
-
 	task_lie_down_ptr->addStateTransitionHandler(
 		TaskLieDown::State::MOVING_TO_GOAL,
 		TaskLieDown::State::LYING_DOWN,
@@ -476,6 +463,19 @@ void Actor::addTasksFsmTransitionHandlers() {
 	task_lie_down_ptr_->addStateTransitionHandler(
 		TaskLieDown::State::LYING,
 		TaskLieDown::State::STANDING_UP,
+		std::bind(&Actor::thSetupAnimationStand, this)
+	);
+
+	// move around
+	// no need to setupNavigation as MoveAround triggers goal update itself
+	task_move_around_ptr_->addStateTransitionHandler(
+		TaskMoveAround::State::CHOOSING_GOAL,
+		TaskMoveAround::State::MOVING_TO_GOAL,
+		std::bind(&Actor::thSetupAnimationWalk, this)
+	);
+	task_move_around_ptr_->addStateTransitionHandler(
+		TaskMoveAround::State::MOVING_TO_GOAL,
+		TaskMoveAround::State::CHOOSING_GOAL,
 		std::bind(&Actor::thSetupAnimationStand, this)
 	);
 }
