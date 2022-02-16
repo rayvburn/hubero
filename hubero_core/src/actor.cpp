@@ -288,15 +288,27 @@ void Actor::executeTaskMoveAround() {
 
 void Actor::executeTaskLieDown() {
 	auto event = prepareTaskFsmUpdate<EventFsmLieDown>(task_lie_down_ptr_);
-	event.setLiedDown(animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_LIE_DOWN);
-	event.setStoodUp(animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_STAND);
+	event.setLiedDown(
+		animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_LIE_DOWN
+		&& animation_control_ptr_->isFinished()
+	);
+	event.setStoodUp(
+		animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_STAND_UP
+		&& animation_control_ptr_->isFinished()
+	);
 	task_lie_down_ptr_->execute(event);
 }
 
 void Actor::executeTaskSitDown() {
 	auto event = prepareTaskFsmUpdate<EventFsmSitDown>(task_sit_down_ptr_);
-	event.setSatDown(animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_SITTING);
-	event.setStoodUp(animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_STAND);
+	event.setSatDown(
+		animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_SIT_DOWN
+		&& animation_control_ptr_->isFinished()
+	);
+	event.setStoodUp(
+		animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_STAND_UP
+		&& animation_control_ptr_->isFinished()
+	);
 	task_sit_down_ptr_->execute(event);
 }
 
@@ -466,8 +478,50 @@ void Actor::addTasksFsmTransitionHandlers() {
 		std::bind(&Actor::thSetupAnimationLieDown, this)
 	);
 	task_lie_down_ptr_->addStateTransitionHandler(
+		TaskLieDown::State::LYING_DOWN,
+		TaskLieDown::State::LYING,
+		std::bind(&Actor::thSetupAnimationLying, this)
+	);
+	task_lie_down_ptr_->addStateTransitionHandler(
 		TaskLieDown::State::LYING,
 		TaskLieDown::State::STANDING_UP,
+		std::bind(&Actor::thSetupAnimationStandUp, this)
+	);
+	task_lie_down_ptr_->addStateTransitionHandler(
+		TaskLieDown::State::STANDING_UP,
+		TaskLieDown::State::STANDING,
+		std::bind(&Actor::thSetupAnimationStand, this)
+	);
+
+	// sit down
+	task_sit_down_ptr_->addStateTransitionHandler(
+		TaskSitDown::State::STANDING,
+		TaskSitDown::State::MOVING_TO_GOAL,
+		std::bind(&Actor::thSetupNavigation, this)
+	);
+	task_sit_down_ptr_->addStateTransitionHandler(
+		TaskSitDown::State::STANDING,
+		TaskSitDown::State::MOVING_TO_GOAL,
+		std::bind(&Actor::thSetupAnimationWalk, this)
+	);
+	task_sit_down_ptr_->addStateTransitionHandler(
+		TaskSitDown::State::MOVING_TO_GOAL,
+		TaskSitDown::State::SITTING_DOWN,
+		std::bind(&Actor::thSetupAnimationSitDown, this)
+	);
+	task_sit_down_ptr_->addStateTransitionHandler(
+		TaskSitDown::State::SITTING_DOWN,
+		TaskSitDown::State::SITTING,
+		std::bind(&Actor::thSetupAnimationSitting, this)
+	);
+	task_sit_down_ptr_->addStateTransitionHandler(
+		TaskSitDown::State::SITTING,
+		TaskSitDown::State::STANDING_UP,
+		std::bind(&Actor::thSetupAnimationStandUp, this)
+	);
+	task_sit_down_ptr_->addStateTransitionHandler(
+		TaskSitDown::State::STANDING_UP,
+		TaskSitDown::State::STANDING,
 		std::bind(&Actor::thSetupAnimationStand, this)
 	);
 
