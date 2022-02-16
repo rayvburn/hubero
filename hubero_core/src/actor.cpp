@@ -350,8 +350,7 @@ void Actor::bbMoveToGoal() {
 
 void Actor::bbFollowObject() {
 	// evaluate, if plan is outdated and re-generation is required
-	auto time_since_goal_update = Time::computeDuration(mem_.getGoalPoseUpdateTime(), mem_.getTimeCurrent());
-	if (time_since_goal_update.getTime() >= GOAL_UPDATE_PERIOD_DEFAULT) {
+	if (mem_.getTimeSinceLastGoalUpdate() >= GOAL_UPDATE_PERIOD_DEFAULT) {
 		auto goal_pose = navigation_ptr_->computeClosestAchievablePose(
 			mem_.getPoseGoal(),
 			navigation_ptr_->getWorldFrame()
