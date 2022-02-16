@@ -47,8 +47,8 @@ protected:
     /// Handy for catching initial height
     bool animation_configured_recently_;
 
-    /// Initial height of the actor with the current animation
-    double animation_height_initial_;
+    /// Initial pose of the actor with the current animation
+    Pose3 animation_pose_initial_;
 
     /// Height of the actor (Z component of position) while he is standing still
     double standing_height_;
