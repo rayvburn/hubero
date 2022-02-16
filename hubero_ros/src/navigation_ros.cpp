@@ -303,6 +303,15 @@ bool NavigationRos::setGoal(const Pose3& pose, const std::string& frame) {
 	nav_goal_.target_pose.header.stamp = ros::Time::now();
 	nav_goal_.target_pose.pose = ignPoseToMsgPose(pose);
 
+	// evaluate goal quaternion
+	if (!NavigationRos::isQuaternionValid(pose.Rot())) {
+		HUBERO_LOG(
+			"[%s].[NavigationRos] New goal will not be set - its quaternion is not valid\r\n",
+			actor_name_.c_str()
+		);
+		return false;
+	}
+
 	/*
 	 * - SimpleDoneCallback: returns action status with a big delay (compared to topic data) that interferes HuBeRo
 	 * task-switching logic
@@ -317,11 +326,13 @@ bool NavigationRos::setGoal(const Pose3& pose, const std::string& frame) {
 	);
 
 	HUBERO_LOG(
-		"[%s].[NavigationRos] Trying to set goal: x %1.2f, y %1.2f, z %1.2f\r\n",
+		"[%s].[NavigationRos] Set goal: x %1.2f, y %1.2f, z %1.2f, yaw %1.2f° (frame: %s)\r\n",
 		actor_name_.c_str(),
 		pose.Pos().X(),
 		pose.Pos().Y(),
-		pose.Pos().Z()
+		pose.Pos().Z(),
+		IGN_RTOD(pose.Rot().Yaw()),
+		frame.c_str()
 	);
 	return true;
 }
@@ -568,11 +579,7 @@ nav_msgs::Path NavigationRos::computePlan(
 	 * LOST: when goals are canceled
 	 * ABORT: when e.g. goal could not be reached and was aborted
 	 */
-	while (
-		nav_action_client_ptr_->getState() != actionlib::SimpleClientGoalState::LOST
-		&& nav_action_client_ptr_->getState() != actionlib::SimpleClientGoalState::ABORTED
-		&& nav_action_client_ptr_->getState() != actionlib::SimpleClientGoalState::SUCCEEDED
-	) {
+	while (NavigationRos::isMoveBaseBusy(nav_action_client_ptr_->getState())) {
 		HUBERO_LOG(
 			"[%s].[NavigationRos] Waiting for navigation action client to compute a plan. Client state: %s\r\n",
 			actor_name_.c_str(),
@@ -584,7 +591,7 @@ nav_msgs::Path NavigationRos::computePlan(
 	/*
 	 * // FIXME: process this call in separate thread and set goal according to the generated plan
 	 * sometimes 1 sec of delay is not enough to force plan computation;
-	 * Experiments show that the plan will be generated in first srv call or during next iteration
+	 * Experiments show that the plan will be generated in first srv call or during next computePlan call
 	 */
 	bool success = false;
 	for (unsigned int i = 0; i < PLAN_COMPUTATION_RETRY_NUM; i++) {
@@ -593,22 +600,25 @@ nav_msgs::Path NavigationRos::computePlan(
 			break;
 		} else if (i > 0) {
 			HUBERO_LOG(
-				"[%s].[NavigationRos] Retrying to compute a valid plan for the %d/%d time\r\n",
+				"[%s].[NavigationRos] Retrying to compute a valid plan for the %d/%d time (feedback %d)\r\n",
 				actor_name_.c_str(),
 				i + 1,
-				PLAN_COMPUTATION_RETRY_NUM
+				PLAN_COMPUTATION_RETRY_NUM,
+				getFeedback()
 			);
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
-	// restore previous goal
-	nav_action_client_ptr_->sendGoal(
-		nav_goal_,
-		MoveBaseActionClient::SimpleDoneCallback(),
-		MoveBaseActionClient::SimpleActiveCallback(),
-		MoveBaseActionClient::SimpleFeedbackCallback()
-	);
+	// restore previous goal if it's a valid one
+	auto prev_goal = Pose3(msgPoseToIgnPose(nav_goal_.target_pose.pose));
+	if (NavigationRos::isQuaternionValid(prev_goal.Rot())) {
+		nav_action_client_ptr_->sendGoal(
+			nav_goal_,
+			MoveBaseActionClient::SimpleDoneCallback(),
+			MoveBaseActionClient::SimpleActiveCallback(),
+			MoveBaseActionClient::SimpleFeedbackCallback()
+		);
+	}
 
 	if (!success || resp.plan.poses.size() == 0) {
 		HUBERO_LOG(
@@ -622,6 +632,7 @@ nav_msgs::Path NavigationRos::computePlan(
 		);
 		return nav_msgs::Path();
 	}
+
 	HUBERO_LOG(
 		"[%s].[NavigationRos] Computed plan with %lu poses (goal: {%2.2f, %2.2f}, "
 		"lastElem: {%2.2f, %2.2f}, secToLastElem: {%2.2f, %2.2f}\r\n",
