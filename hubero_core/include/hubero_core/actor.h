@@ -152,6 +152,10 @@ protected:
 	void thSetupAnimationWalk();
 	void thSetupAnimationStand();
 	void thSetupAnimationLieDown();
+	void thSetupAnimationLying();
+	void thSetupAnimationSitDown();
+	void thSetupAnimationSitting();
+	void thSetupAnimationStandUp();
 
 	/// @}
 
