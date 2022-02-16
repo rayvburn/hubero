@@ -502,6 +502,22 @@ void Actor::thSetupAnimationLieDown() {
 	animation_control_ptr_->start(AnimationType::ANIMATION_LIE_DOWN, mem_.getTimeCurrent());
 }
 
+void Actor::thSetupAnimationLying() {
+	animation_control_ptr_->start(AnimationType::ANIMATION_LYING, mem_.getTimeCurrent());
+}
+
+void Actor::thSetupAnimationSitDown() {
+	animation_control_ptr_->start(AnimationType::ANIMATION_SIT_DOWN, mem_.getTimeCurrent());
+}
+
+void Actor::thSetupAnimationSitting() {
+	animation_control_ptr_->start(AnimationType::ANIMATION_SITTING, mem_.getTimeCurrent());
+}
+
+void Actor::thSetupAnimationStandUp() {
+	animation_control_ptr_->start(AnimationType::ANIMATION_STAND_UP, mem_.getTimeCurrent());
+}
+
 void Actor::updateFsmSuper() {
 	EventFsmSuper event {};
 	event.follow_object = TaskPredicates(*task_follow_object_ptr_);
