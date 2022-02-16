@@ -18,11 +18,21 @@ public:
 		state_bb_map_ = {
 			{FsmSitDown::State::MOVING_TO_GOAL, BasicBehaviourType::BB_MOVE_TO_GOAL},
 			{FsmSitDown::State::SITTING_DOWN, BasicBehaviourType::BB_SIT_DOWN},
-			// TODO: add basic behaviour
-			{FsmSitDown::State::SITTING, BasicBehaviourType::BB_SIT_DOWN},
+			{FsmSitDown::State::SITTING, BasicBehaviourType::BB_SIT},
 			{FsmSitDown::State::STANDING_UP, BasicBehaviourType::BB_STAND_UP_FROM_SITTING},
 			{FsmSitDown::State::STANDING, BasicBehaviourType::BB_STAND}
 		};
+
+		fsm_.addTransitionHandler(
+			FsmSitDown::State::STANDING_UP,
+			FsmSitDown::State::STANDING,
+			std::bind(&TaskSitDown::finish, this)
+		);
+	}
+
+	void updateMemory(InternalMemory& memory, const std::shared_ptr<const WorldGeometryBase> world_geometry_ptr) {
+		memory.setGoal(Pose3(getGoalPosition(), Quaternion(0.0, 0.0, getGoalYaw())));
+		TaskEssentials::updateMemory(memory, world_geometry_ptr);
 	}
 
 	virtual bool request(const Vector3& pos, const double& yaw) override {
