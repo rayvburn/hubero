@@ -18,7 +18,7 @@ const std::map<AnimationType, std::string> AnimationControlGazebo::animation_nam
 AnimationControlGazebo::AnimationControlGazebo():
 	AnimationControlBase::AnimationControlBase(),
 	animation_configured_recently_(false),
-	animation_height_initial_(1.0),
+	animation_pose_initial_(Pose3(0.0, 0.0, 1.0, 0.0, 0.0, 0.0)),
 	standing_height_(1.0) {}
 
 void AnimationControlGazebo::initialize(
@@ -34,7 +34,7 @@ void AnimationControlGazebo::initialize(
 	addAnimationHandler(ANIMATION_LYING, std::bind(&AnimationControlGazebo::handlerLying, this));
 	addAnimationHandler(ANIMATION_SIT_DOWN, std::bind(&AnimationControlGazebo::handlerSitDown, this), Time(1.5));
 	addAnimationHandler(ANIMATION_SITTING, std::bind(&AnimationControlGazebo::handlerSitting, this));
-	addAnimationHandler(ANIMATION_STAND_UP, std::bind(&AnimationControlGazebo::handlerStandUp, this));
+	addAnimationHandler(ANIMATION_STAND_UP, std::bind(&AnimationControlGazebo::handlerStandUp, this), Time(1.5));
 	addAnimationHandler(ANIMATION_RUN, std::bind(&AnimationControlGazebo::handlerRun, this));
 	addAnimationHandler(ANIMATION_TALK, std::bind(&AnimationControlGazebo::handlerTalk, this));
 
@@ -48,7 +48,7 @@ void AnimationControlGazebo::initialize(
 
 void AnimationControlGazebo::adjustPose(Pose3& pose, const Time& time_current) {
 	if (animation_configured_recently_) {
-		animation_height_initial_ = pose.Pos().Z();
+		animation_pose_initial_ = pose;
 		animation_configured_recently_ = false;
 	}
 
@@ -74,10 +74,9 @@ void AnimationControlGazebo::adjustPose(Pose3& pose, const Time& time_current) {
 
 		// handle each case separately
 		if (getActiveAnimation() == ANIMATION_SIT_DOWN) {
-			pos.Z(animation_height_initial_ - time_progress * 0.3);
+			pos.Z(animation_pose_initial_.Pos().Z() - time_progress * 0.3);
 		} else if (getActiveAnimation() == ANIMATION_STAND_UP) {
-			pos.Z(animation_height_initial_ - time_progress * 0.2);
-		}
+			pos.Z(animation_pose_initial_.Pos().Z() - time_progress * 0.2);
 	} else {
 		// i.e. stand, run etc.
 		pos.Z(standing_height_);
