@@ -360,7 +360,7 @@ void Actor::bbFollowObject() {
 
 void Actor::bbChooseNewGoal() {
 	// do not trigger planning too often
-	if (mem_.getTimeSinceLastGoalUpdate() <= 0.5) {
+	if (mem_.getTimeSinceLastGoalUpdate() <= CHOOSE_NEW_GOAL_RETRY_PERIOD_DEFAULT) {
 		return;
 	}
 
