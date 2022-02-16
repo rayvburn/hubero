@@ -52,17 +52,7 @@ protected:
 
     void setupAnimation(AnimationType animation_type);
 
-    void handlerStand();
-    void handlerWalk();
-    void handlerLieDown();
-    void handlerLying();
-    void handlerSitDown();
-    void handlerSitting();
-    void handlerStandUp();
-    void handlerRun();
-    void handlerTalk();
-
-    /// Handy for catching initial height
+    /// Handy for catching initial pose
     bool animation_configured_recently_;
 
     /// Initial pose of the actor with the current animation

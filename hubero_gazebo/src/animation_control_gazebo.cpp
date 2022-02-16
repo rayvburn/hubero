@@ -28,15 +28,45 @@ void AnimationControlGazebo::initialize(
 	const double& standing_height
 ) {
 	// add supported animations handlers
-	addAnimationHandler(ANIMATION_STAND, std::bind(&AnimationControlGazebo::handlerStand, this));
-	addAnimationHandler(ANIMATION_WALK, std::bind(&AnimationControlGazebo::handlerWalk, this));
-	addAnimationHandler(ANIMATION_LIE_DOWN, std::bind(&AnimationControlGazebo::handlerLieDown, this), Time(1.5));
-	addAnimationHandler(ANIMATION_LYING, std::bind(&AnimationControlGazebo::handlerLying, this));
-	addAnimationHandler(ANIMATION_SIT_DOWN, std::bind(&AnimationControlGazebo::handlerSitDown, this), Time(1.5));
-	addAnimationHandler(ANIMATION_SITTING, std::bind(&AnimationControlGazebo::handlerSitting, this));
-	addAnimationHandler(ANIMATION_STAND_UP, std::bind(&AnimationControlGazebo::handlerStandUp, this), Time(1.5));
-	addAnimationHandler(ANIMATION_RUN, std::bind(&AnimationControlGazebo::handlerRun, this));
-	addAnimationHandler(ANIMATION_TALK, std::bind(&AnimationControlGazebo::handlerTalk, this));
+	addAnimationHandler(
+		ANIMATION_STAND,
+		std::bind(&AnimationControlGazebo::setupAnimation, this, ANIMATION_STAND)
+	);
+	addAnimationHandler(
+		ANIMATION_WALK,
+		std::bind(&AnimationControlGazebo::setupAnimation, this, ANIMATION_WALK)
+	);
+	addAnimationHandler(
+		ANIMATION_LIE_DOWN,
+		std::bind(&AnimationControlGazebo::setupAnimation, this, ANIMATION_LIE_DOWN),
+		Time(1.5)
+	);
+	addAnimationHandler(
+		ANIMATION_LYING,
+		std::bind(&AnimationControlGazebo::setupAnimation, this, ANIMATION_LYING)
+	);
+	addAnimationHandler(
+		ANIMATION_SIT_DOWN,
+		std::bind(&AnimationControlGazebo::setupAnimation, this, ANIMATION_SIT_DOWN),
+		Time(1.5)
+	);
+	addAnimationHandler(
+		ANIMATION_SITTING,
+		std::bind(&AnimationControlGazebo::setupAnimation, this, ANIMATION_SITTING)
+	);
+	addAnimationHandler(
+		ANIMATION_STAND_UP,
+		std::bind(&AnimationControlGazebo::setupAnimation, this, ANIMATION_STAND_UP),
+		Time(1.5)
+	);
+	addAnimationHandler(
+		ANIMATION_RUN,
+		std::bind(&AnimationControlGazebo::setupAnimation, this, ANIMATION_RUN)
+	);
+	addAnimationHandler(
+		ANIMATION_TALK,
+		std::bind(&AnimationControlGazebo::setupAnimation, this, ANIMATION_TALK)
+	);
 
 	trajectory_updater_ = anim_updater;
 	standing_height_ = standing_height;
@@ -142,42 +172,6 @@ void AnimationControlGazebo::setupAnimation(AnimationType animation_type) {
 
 	// apply new trajectory
 	trajectory_updater_(trajectory_info_ptr_);
-}
-
-void AnimationControlGazebo::handlerStand() {
-	setupAnimation(ANIMATION_STAND);
-}
-
-void AnimationControlGazebo::handlerWalk() {
-	setupAnimation(ANIMATION_WALK);
-}
-
-void AnimationControlGazebo::handlerLieDown() {
-	setupAnimation(ANIMATION_LIE_DOWN);
-}
-
-void AnimationControlGazebo::handlerLying() {
-	setupAnimation(ANIMATION_LYING);
-}
-
-void AnimationControlGazebo::handlerSitDown() {
-	setupAnimation(ANIMATION_SIT_DOWN);
-}
-
-void AnimationControlGazebo::handlerSitting() {
-	setupAnimation(ANIMATION_SITTING);
-}
-
-void AnimationControlGazebo::handlerStandUp() {
-	setupAnimation(ANIMATION_STAND_UP);
-}
-
-void AnimationControlGazebo::handlerRun() {
-	setupAnimation(ANIMATION_RUN);
-}
-
-void AnimationControlGazebo::handlerTalk() {
-	setupAnimation(ANIMATION_TALK);
 }
 
 } // namespace hubero
