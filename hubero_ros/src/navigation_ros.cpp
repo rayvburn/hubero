@@ -222,8 +222,17 @@ void NavigationRos::update(const Pose3& pose, const Vector3& vel_lin, const Vect
 	Pose3 odom_pose = pose - pose_initial_;
 	odometry.pose.pose = ignPoseToMsgPose(odom_pose);
 	setIdealCovariance(odometry.pose.covariance);
-	// twist
-	odometry.twist.twist = ignVectorsToMsgTwist(vel_lin, vel_ang);
+	// twist - velocities expressed in the base frame
+	// pseudoinversion of matrix in NavigationBase::convertCommandToGlobalCs
+	ignition::math::Matrix3d r(
+		cos(pose.Rot().Yaw()), sin(pose.Rot().Yaw()), 0.0,
+		0.0, 0.0, 0.0,
+		0.0, 0.0, 1.0
+	);
+	Vector3 vel_lin_base = r * vel_lin;
+	// assume that Z axis direction matches simulator frame and 'base' frame (typically valid)
+	Vector3 vel_ang_base(0.0, 0.0, vel_ang.Z());
+	odometry.twist.twist = ignVectorsToMsgTwist(vel_lin_base, vel_ang_base);
 	setIdealCovariance(odometry.twist.covariance);
 	pub_odom_.publish(odometry);
 
