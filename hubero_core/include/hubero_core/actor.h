@@ -6,6 +6,7 @@
 
 #include <hubero_interfaces/navigation_base.h>
 #include <hubero_interfaces/localisation_base.h>
+#include <hubero_interfaces/status_base.h>
 #include <hubero_interfaces/task_request_base.h>
 #include <hubero_interfaces/animation_control_base.h>
 #include <hubero_interfaces/model_control_base.h>
@@ -50,6 +51,7 @@ public:
 		std::shared_ptr<hubero::WorldGeometryBase> world_geometry_ptr,
 		std::shared_ptr<hubero::LocalisationBase> localisation_ptr,
 		std::shared_ptr<hubero::NavigationBase> navigation_ptr,
+		std::shared_ptr<hubero::StatusBase> status_ptr,
 		std::shared_ptr<hubero::TaskRequestBase> task_request_ptr
 	);
 
@@ -211,6 +213,7 @@ protected:
 	std::shared_ptr<hubero::ModelControlBase> model_control_ptr_;
 	std::shared_ptr<hubero::LocalisationBase> localisation_ptr_;
 	std::shared_ptr<hubero::NavigationBase> navigation_ptr_;
+	std::shared_ptr<hubero::StatusBase> status_ptr_;
 	std::shared_ptr<hubero::TaskRequestBase> task_request_ptr_;
 	std::shared_ptr<hubero::WorldGeometryBase> world_geometry_ptr_;
 

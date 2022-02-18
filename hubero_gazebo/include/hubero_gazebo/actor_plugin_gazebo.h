@@ -25,6 +25,7 @@
 #include <hubero_ros/node.h>
 #include <hubero_ros/task_request_ros.h>
 #include <hubero_ros/navigation_ros.h>
+#include <hubero_ros/status_ros.h>
 
 #include <hubero_core/actor.h>
 
@@ -68,6 +69,7 @@ protected:
 	std::shared_ptr<hubero::Node> ros_node_ptr_;
 	std::shared_ptr<hubero::TaskRequestRos> ros_task_ptr_;
 	std::shared_ptr<hubero::NavigationRos> ros_nav_ptr_;
+	std::shared_ptr<hubero::StatusRos> ros_status_ptr_;
 	/// @}
 
 private:

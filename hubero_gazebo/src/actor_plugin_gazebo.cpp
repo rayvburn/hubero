@@ -12,7 +12,8 @@ ActorPlugin::ActorPlugin():
 	sim_world_geometry_ptr_(std::make_shared<hubero::WorldGeometryGazebo>()),
 	ros_node_ptr_(std::make_shared<hubero::Node>("hubero_gazebo_ros_node")),
 	ros_task_ptr_(std::make_shared<hubero::TaskRequestRos>()),
-	ros_nav_ptr_(std::make_shared<hubero::NavigationRos>())
+	ros_nav_ptr_(std::make_shared<hubero::NavigationRos>()),
+	ros_status_ptr_(std::make_shared<hubero::StatusRos>())
 {}
 
 void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
@@ -67,6 +68,11 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 	);
 
 	/*
+	 * HuBeRo framework status interface initialization
+	 */
+	ros_status_ptr_->initialize(ros_node_ptr_, actor_ptr_->GetName(), ros_node_ptr_->getSimulatorFrame());
+
+	/*
 	 * Initialize HuBeRo - provide interface classes
 	 */
 	hubero_actor_.initialize(
@@ -76,6 +82,7 @@ void ActorPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf) {
 		sim_world_geometry_ptr_,
 		sim_localisation_ptr_,
 		ros_nav_ptr_,
+		ros_status_ptr_,
 		ros_task_ptr_
 	);
 
