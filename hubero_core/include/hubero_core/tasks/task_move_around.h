@@ -16,10 +16,29 @@ public:
 			{FsmMoveAround::State::MOVING_TO_GOAL, BasicBehaviourType::BB_MOVE_TO_GOAL},
 			{FsmMoveAround::State::CHOOSING_GOAL, BasicBehaviourType::BB_CHOOSE_NEW_GOAL}
 		};
+
+		// move around
+		// no need to setupNavigation as MoveAround triggers goal update itself
+		fsm_.addTransitionHandler(
+			TaskMoveAround::State::CHOOSING_GOAL,
+			TaskMoveAround::State::MOVING_TO_GOAL,
+			std::bind(&TaskMoveAround::thSetupAnimation, this, ANIMATION_WALK)
+		);
+		fsm_.addTransitionHandler(
+			TaskMoveAround::State::MOVING_TO_GOAL,
+			TaskMoveAround::State::CHOOSING_GOAL,
+			std::bind(&TaskMoveAround::thSetupAnimation, this, ANIMATION_STAND)
+		);
 	}
 
 	virtual bool request() override {
 		return TaskEssentials::request();
+	}
+
+	/// Prepare FSM event and call @ref execute
+	void execute() {
+		EventFsmBasic event(*this, navigation_ptr_->getFeedback());
+		TaskEssentials::execute(event);
 	}
 
 	double getDistanceGoalReached() const {

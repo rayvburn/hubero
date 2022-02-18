@@ -25,11 +25,23 @@ public:
 			FsmBasic::State::FINISHED,
 			std::bind(&TaskMoveToGoal::finish, this)
 		);
-	}
 
-	void updateMemory(InternalMemory& memory, const std::shared_ptr<const WorldGeometryBase> world_geometry_ptr) {
-		memory.setGoal(getGoal());
-		TaskEssentials::updateMemory(memory, world_geometry_ptr);
+		// move to goal
+		fsm_.addTransitionHandler(
+			TaskMoveToGoal::State::FINISHED,
+			TaskMoveToGoal::State::ACTIVE,
+			std::bind(&TaskMoveToGoal::thSetupNavigation, this)
+		);
+		fsm_.addTransitionHandler(
+			TaskMoveToGoal::State::FINISHED,
+			TaskMoveToGoal::State::ACTIVE,
+			std::bind(&TaskMoveToGoal::thSetupAnimation, this, ANIMATION_WALK)
+		);
+		fsm_.addTransitionHandler(
+			TaskMoveToGoal::State::ACTIVE,
+			TaskMoveToGoal::State::FINISHED,
+			std::bind(&TaskMoveToGoal::thSetupAnimation, this, ANIMATION_STAND)
+		);
 	}
 
 	virtual bool request(const Pose3& goal) override {
@@ -37,11 +49,22 @@ public:
 		return TaskEssentials::request(goal);
 	}
 
+	/// Prepare FSM event and call @ref execute
+	void execute() {
+		EventFsmBasic event(*this, navigation_ptr_->getFeedback());
+		TaskEssentials::execute(event);
+	}
+
 	inline Pose3 getGoal() const {
 		return goal_;
 	}
 
 protected:
+	virtual void updateMemory() override {
+		memory_ptr_->setGoal(getGoal());
+		TaskEssentials::updateMemory();
+	}
+
 	Pose3 goal_;
 }; // class TaskStand
 

@@ -22,6 +22,12 @@ public:
 		return TaskEssentials::request();
 	}
 
+	/// Prepare FSM event and call @ref execute
+	void execute() {
+		EventFsmBasic event(*this, navigation_ptr_->getFeedback());
+		TaskEssentials::execute(event);
+	}
+
 	void setCommand(const Vector3& cmd) {
 		cmd_ = cmd;
 	}

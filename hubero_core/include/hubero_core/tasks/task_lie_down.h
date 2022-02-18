@@ -28,17 +28,58 @@ public:
 			FsmLieDown::State::STANDING,
 			std::bind(&TaskLieDown::finish, this)
 		);
-	}
 
-	void updateMemory(InternalMemory& memory, const std::shared_ptr<const WorldGeometryBase> world_geometry_ptr) {
-		memory.setGoal(Pose3(getGoalPosition(), Quaternion(0.0, 0.0, getGoalYaw())));
-		TaskEssentials::updateMemory(memory, world_geometry_ptr);
+		// part2
+		fsm_.addTransitionHandler(
+			TaskLieDown::State::STANDING,
+			TaskLieDown::State::MOVING_TO_GOAL,
+			std::bind(&TaskLieDown::thSetupNavigation, this)
+		);
+		fsm_.addTransitionHandler(
+			TaskLieDown::State::STANDING,
+			TaskLieDown::State::MOVING_TO_GOAL,
+			std::bind(&TaskLieDown::thSetupAnimation, this, ANIMATION_WALK)
+		);
+		fsm_.addTransitionHandler(
+			TaskLieDown::State::MOVING_TO_GOAL,
+			TaskLieDown::State::LYING_DOWN,
+			std::bind(&TaskLieDown::thSetupAnimation, this, ANIMATION_LIE_DOWN)
+		);
+		fsm_.addTransitionHandler(
+			TaskLieDown::State::LYING_DOWN,
+			TaskLieDown::State::LYING,
+			std::bind(&TaskLieDown::thSetupAnimation, this, ANIMATION_LYING)
+		);
+		fsm_.addTransitionHandler(
+			TaskLieDown::State::LYING,
+			TaskLieDown::State::STANDING_UP,
+			std::bind(&TaskLieDown::thSetupAnimation, this, ANIMATION_STAND_UP)
+		);
+		fsm_.addTransitionHandler(
+			TaskLieDown::State::STANDING_UP,
+			TaskLieDown::State::STANDING,
+			std::bind(&TaskLieDown::thSetupAnimation, this, ANIMATION_STAND)
+		);
 	}
 
 	virtual bool request(const Vector3& pos, const double& yaw) override {
 		position_ = pos;
 		yaw_ = yaw;
 		return TaskEssentials::request(pos, yaw);
+	}
+
+	/// Prepare FSM event and call @ref execute
+	void execute() {
+		EventFsmLieDown event(*this, navigation_ptr_->getFeedback());
+		event.setLiedDown(
+			animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_LIE_DOWN
+			&& animation_control_ptr_->isFinished()
+		);
+		event.setStoodUp(
+			animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_STAND_UP
+			&& animation_control_ptr_->isFinished()
+		);
+		TaskEssentials::execute(event);
 	}
 
 	inline Vector3 getGoalPosition() const {
@@ -50,6 +91,11 @@ public:
 	}
 
 protected:
+	virtual void updateMemory() override {
+		memory_ptr_->setGoal(Pose3(getGoalPosition(), Quaternion(0.0, 0.0, getGoalYaw())));
+		TaskEssentials::updateMemory();
+	}
+
 	/// @brief Goal position
 	Vector3 position_;
 	/// @brief Yaw component of orientation required at goal position

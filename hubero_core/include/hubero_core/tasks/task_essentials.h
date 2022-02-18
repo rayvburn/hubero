@@ -2,9 +2,13 @@
 
 #include <hubero_common/defines.h>
 #include <hubero_common/logger.h>
-#include <hubero_interfaces/utils/task_base.h>
-#include <hubero_interfaces/world_geometry_base.h>
+
 #include <hubero_core/internal_memory.h>
+
+#include <hubero_interfaces/utils/task_base.h>
+#include <hubero_interfaces/animation_control_base.h>
+#include <hubero_interfaces/navigation_base.h>
+#include <hubero_interfaces/world_geometry_base.h>
 
 namespace hubero {
 
@@ -21,22 +25,36 @@ public:
 	// enum alias for easier use in orchestrating class
 	using State = Tstate;
 
+	void initialize(
+		std::shared_ptr<AnimationControlBase> animation_control_ptr,
+		std::shared_ptr<NavigationBase> navigation_ptr,
+		std::shared_ptr<WorldGeometryBase> world_geometry_ptr,
+		std::shared_ptr<InternalMemory> internal_memory_ptr
+	) {
+		if (
+			animation_control_ptr == nullptr
+			|| navigation_ptr == nullptr
+			|| world_geometry_ptr == nullptr
+			|| internal_memory_ptr == nullptr
+		) {
+			return;
+		}
+
+		animation_control_ptr_ = animation_control_ptr;
+		navigation_ptr_ = navigation_ptr;
+		world_geometry_ptr_ = world_geometry_ptr;
+		memory_ptr_ = internal_memory_ptr;
+		initialized_ = true;
+	}
+
 	void addStateTransitionHandler(const int& state_src, const int& state_dst, std::function<void()> handler) {
 		fsm_.addTransitionHandler(state_src, state_dst, handler);
 	}
 
-	/**
-	 * @brief Method that updates given memory buffer with typical data stored inside this class
-	 * @param memory object whose data will be updated
-	 * @param world_geometry arg reserved for object-oriented tasks - object's current pose can be set as goal
-	 *
-	 * @note Putting virtual here produces segfaults (most likely cause the method is not defined in derived function
-	 */
-	void updateMemory(InternalMemory& memory, const std::shared_ptr<const WorldGeometryBase> /*world_geometry_ptr*/) {
-		memory.setBasicBehaviour(getBasicBehaviour());
-	}
+	virtual bool execute(const Tevent& event) {
+		// update internal memory before execution
+		updateMemory();
 
-	bool execute(const Tevent& event) {
 		BasicBehaviourType bb_type = getBasicBehaviour();
 		auto bb_handler_it = basic_behaviour_handlers_.find(bb_type);
 		if (bb_handler_it == basic_behaviour_handlers_.end()) {
@@ -66,13 +84,61 @@ public:
 		return bb_type_it->second;
 	}
 
+	/**
+	 * @brief Returns true if @ref initialize was called and valid pointers were given
+	 */
+	bool isInitialized() const {
+		return initialized_;
+	}
+
 protected:
-	/// @brief Protected ctor to make it unusable publicly
-	TaskEssentials(TaskType task): TaskBase::TaskBase(task) {}
+	/**
+	 * @brief Protected ctor to make it unusable publicly
+	 *
+	 * @details Note to class extensions: beware of extending FSM transition handlers with shared_ptr members
+	 * as they are initialized later (in @ref initialize)
+	 */
+	TaskEssentials(TaskType task):
+		TaskBase::TaskBase(task),
+		initialized_(false),
+		animation_control_ptr_(nullptr),
+		navigation_ptr_(nullptr),
+		world_geometry_ptr_(nullptr) {}
+
+	/**
+	 * @brief Method that updates given memory buffer with task objectives stored inside a class
+	 */
+	virtual void updateMemory() {
+		memory_ptr_->setBasicBehaviour(getBasicBehaviour());
+	}
+
+	/**
+	 * @brief FSM transition handler
+	 */
+	void thSetupAnimation(AnimationType animation_type) {
+		animation_control_ptr_->start(animation_type, memory_ptr_->getTimeCurrent());
+	}
+
+	/**
+	 * @brief FSM transition handler
+	 *
+	 * @details Use of this method requires Internal Memory to be updated with goal pose
+	 */
+	void thSetupNavigation() {
+		navigation_ptr_->setGoal(memory_ptr_->getPoseGoal(), navigation_ptr_->getWorldFrame());
+		memory_ptr_->setGoalPoseUpdateTime(memory_ptr_->getTimeCurrent());
+	}
 
 	Tfsm fsm_;
 
 	std::map<Tstate, BasicBehaviourType> state_bb_map_;
+
+	bool initialized_;
+
+	std::shared_ptr<AnimationControlBase> animation_control_ptr_;
+	std::shared_ptr<NavigationBase> navigation_ptr_;
+	std::shared_ptr<WorldGeometryBase> world_geometry_ptr_;
+	std::shared_ptr<InternalMemory> memory_ptr_;
 }; // class TaskEssential
 
 } // namespace hubero
