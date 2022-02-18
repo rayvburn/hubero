@@ -8,6 +8,9 @@
 
 namespace hubero {
 
+/**
+ * @brief Basic FSM used for reaching navigation goals
+ */
 class FsmBasic: public fsmlite::fsm<FsmBasic>, public FsmEssentials {
 public:
 	enum State {
