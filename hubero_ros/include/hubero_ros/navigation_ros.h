@@ -135,12 +135,6 @@ public:
 	}
 
 	/**
-	 * @brief Sets ideal covariance in the @ref cov array
-	 * @details boost array used here to comply with ROS messages
-	 */
-	static void setIdealCovariance(boost::array<double, 36>& cov);
-
-	/**
 	 * @brief Checks if quaternion is valid and can be applied as a new navigation goal
 	 *
 	 * @details This is a copy of MoveBase::isQuaternionValid from https://github.com/ros-planning/navigation/
