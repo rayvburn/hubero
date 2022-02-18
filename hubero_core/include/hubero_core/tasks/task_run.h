@@ -21,6 +21,30 @@ public:
 			{FsmBasic::State::ACTIVE, BasicBehaviourType::BB_RUN},
 			{FsmBasic::State::FINISHED, BasicBehaviourType::BB_STAND}
 		};
+
+		// this task should not be looped infinitely - once goal is achieved, task should be finished
+		fsm_.addTransitionHandler(
+			FsmBasic::State::ACTIVE,
+			FsmBasic::State::FINISHED,
+			std::bind(&TaskRun::finish, this)
+		);
+
+		// run to goal
+		fsm_.addTransitionHandler(
+			TaskRun::State::FINISHED,
+			TaskRun::State::ACTIVE,
+			std::bind(&TaskRun::thSetupNavigation, this)
+		);
+		fsm_.addTransitionHandler(
+			TaskRun::State::FINISHED,
+			TaskRun::State::ACTIVE,
+			std::bind(&TaskRun::thSetupAnimation, this, ANIMATION_RUN)
+		);
+		fsm_.addTransitionHandler(
+			TaskRun::State::ACTIVE,
+			TaskRun::State::FINISHED,
+			std::bind(&TaskRun::thSetupAnimation, this, ANIMATION_STAND)
+		);
 	}
 
 	virtual bool request(const Pose3& goal) override {
@@ -43,6 +67,11 @@ public:
 	}
 
 protected:
+	virtual void updateMemory() override {
+		memory_ptr_->setGoal(getGoal());
+		TaskEssentials::updateMemory();
+	}
+
 	Pose3 goal_;
 
 	double goal_reached_distance_;
