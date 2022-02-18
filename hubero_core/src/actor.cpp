@@ -71,6 +71,7 @@ void Actor::initialize(
 	std::shared_ptr<hubero::WorldGeometryBase> world_geometry_ptr,
 	std::shared_ptr<hubero::LocalisationBase> localisation_ptr,
 	std::shared_ptr<hubero::NavigationBase> navigation_ptr,
+	std::shared_ptr<hubero::StatusBase> status_ptr,
 	std::shared_ptr<hubero::TaskRequestBase> task_request_ptr
 ) {
 	actor_sim_name_ = actor_sim_name;
@@ -80,6 +81,7 @@ void Actor::initialize(
 	world_geometry_ptr_ = world_geometry_ptr;
 	localisation_ptr_  = localisation_ptr;
 	navigation_ptr_ = navigation_ptr;
+	status_ptr_ = status_ptr;
 	task_request_ptr_ = task_request_ptr;
 
 	// check if valid pointers were given
@@ -167,6 +169,12 @@ void Actor::update(const Time& time) {
 		localisation_ptr_->getVelocityLinear(),
 		localisation_ptr_->getAccelerationAngular(),
 		localisation_ptr_->getAccelerationLinear()
+	);
+
+	status_ptr_->update(
+		localisation_ptr_->getPose(),
+		localisation_ptr_->getVelocityLinear(),
+		localisation_ptr_->getVelocityAngular()
 	);
 
 	// Task-related FSMs got updated at the end of transition function execution so now update highest level FSM
