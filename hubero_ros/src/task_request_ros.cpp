@@ -308,7 +308,7 @@ bool TaskRequestRos::requestActionGoal(const hubero_ros_msgs::MoveAroundGoalCons
 
 bool TaskRequestRos::requestActionGoal(const hubero_ros_msgs::MoveToGoalGoalConstPtr& goal) {
 	// task objective preprocessing
-	Pose3 goal_pose(msgPointToIgnVector(goal->pos), Quaternion());
+	Pose3 goal_pose(msgPointToIgnVector(goal->pos), Quaternion(0.0, 0.0, goal->yaw));
 	Pose3 goal_world_pose = transformToWorldFrame(goal_pose, goal->frame);
 	return request(TASK_MOVE_TO_GOAL, goal_world_pose);
 }
@@ -320,7 +320,7 @@ bool TaskRequestRos::requestActionGoal(const hubero_ros_msgs::MoveToObjectGoalCo
 
 bool TaskRequestRos::requestActionGoal(const hubero_ros_msgs::RunGoalConstPtr& goal) {
 	// task objective preprocessing
-	Pose3 goal_pose(msgPointToIgnVector(goal->pos), Quaternion());
+	Pose3 goal_pose(msgPointToIgnVector(goal->pos), Quaternion(0.0, 0.0, goal->yaw));
 	Pose3 goal_world_pose = transformToWorldFrame(goal_pose, goal->frame);
 	// request task
 	return request(TASK_RUN, goal_world_pose);
@@ -348,7 +348,7 @@ bool TaskRequestRos::requestActionGoal(const hubero_ros_msgs::StandGoalConstPtr&
 
 bool TaskRequestRos::requestActionGoal(const hubero_ros_msgs::TalkGoalConstPtr& goal) {
 	// task objective preprocessing
-	Pose3 goal_pose(msgPointToIgnVector(goal->pos), Quaternion());
+	Pose3 goal_pose(msgPointToIgnVector(goal->pos), Quaternion(0.0, 0.0, goal->yaw));
 	Pose3 goal_world_pose = transformToWorldFrame(goal_pose, goal->frame);
 	// request task
 	return request(TASK_TALK, goal_world_pose);

@@ -200,9 +200,10 @@ std::string TaskRequestRosApi::getMoveAroundStateDescription() const {
 	return getActionStateDescription(ac_move_around_ptr_);
 }
 
-bool TaskRequestRosApi::moveToGoal(const Vector3& pos, const std::string& frame_id) {
+bool TaskRequestRosApi::moveToGoal(const Vector3& pos, const double& yaw, const std::string& frame_id) {
 	hubero_ros_msgs::MoveToGoalGoal action_goal;
 	action_goal.pos = ignVectorToMsgPoint(pos);
+	action_goal.yaw = yaw;
 	action_goal.frame = frame_id;
 	return moveToGoal(action_goal);
 }
@@ -245,9 +246,10 @@ std::string TaskRequestRosApi::getMoveToObjectStateDescription() const {
 	return getActionStateDescription(ac_move_to_object_ptr_);
 }
 
-bool TaskRequestRosApi::run(const Vector3& pos, const std::string& frame_id) {
+bool TaskRequestRosApi::run(const Vector3& pos, const double& yaw, const std::string& frame_id) {
 	hubero_ros_msgs::RunGoal action_goal;
 	action_goal.pos = ignVectorToMsgPoint(pos);
+	action_goal.yaw = yaw;
 	action_goal.frame = frame_id;
 	return run(action_goal);
 }
@@ -333,9 +335,10 @@ std::string TaskRequestRosApi::getStandStateDescription() const {
 	return getActionStateDescription(ac_stand_ptr_);
 }
 
-bool TaskRequestRosApi::talk(const Vector3& pos, const std::string& frame_id) {
+bool TaskRequestRosApi::talk(const Vector3& pos, const double& yaw, const std::string& frame_id) {
 	hubero_ros_msgs::TalkGoal action_goal;
 	action_goal.pos = ignVectorToMsgPoint(pos);
+	action_goal.yaw = yaw;
 	action_goal.frame = frame_id;
 	return talk(action_goal);
 }
