@@ -34,6 +34,7 @@ set(HUBERO_TASK_ROS_API hubero_task_request_ros_api)
 set(HUBERO_NODE_ROS hubero_node_ros)
 set(HUBERO_ROS_TYPECONV hubero_converter_ros)
 set(HUBERO_ROS_MISC hubero_misc_ros)
+set(HUBERO_ROS_STATUS hubero_status_ros)
 
 catkin_package(
 	INCLUDE_DIRS
@@ -43,6 +44,7 @@ catkin_package(
 		${HUBERO_TASK_ROS}
 		${HUBERO_TASK_ROS_API}
 		${HUBERO_NODE_ROS}
+		${HUBERO_ROS_STATUS}
 	CATKIN_DEPENDS
 		hubero_common
 		hubero_interfaces
@@ -81,6 +83,21 @@ add_library(${HUBERO_ROS_MISC}
 	src/utils/misc.cpp
 )
 target_link_libraries(${HUBERO_ROS_MISC}
+	${catkin_LIBRARIES}
+)
+
+## Status library
+add_library(${HUBERO_ROS_STATUS}
+	include/${PROJECT_NAME}/status_ros.h
+	src/status_ros.cpp
+)
+target_link_libraries(${HUBERO_ROS_STATUS}
+	${hubero_common_LIBRARIES}
+	${hubero_interfaces_LIBRARIES}
+	${hubero_ros_msgs_INCLUDE_DIRS}
+	${HUBERO_NODE_ROS}
+	${HUBERO_ROS_TYPECONV}
+	${HUBERO_ROS_MISC}
 	${catkin_LIBRARIES}
 )
 
@@ -125,7 +142,7 @@ target_link_libraries(${HUBERO_TASK_ROS_API}
 )
 
 ## Install
-install(TARGETS ${HUBERO_NAV_ROS} ${HUBERO_TASK_ROS} ${HUBERO_TASK_ROS_API} ${HUBERO_NODE_ROS}
+install(TARGETS ${HUBERO_NAV_ROS} ${HUBERO_TASK_ROS} ${HUBERO_TASK_ROS_API} ${HUBERO_NODE_ROS} ${HUBERO_ROS_STATUS}
 	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 	RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
