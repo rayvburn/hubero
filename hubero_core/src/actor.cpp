@@ -338,6 +338,20 @@ void Actor::bbStandUpFromSitting() {
 }
 
 void Actor::bbRun() {
+	// process navigation command - compute displacement
+	// FIXME: note the hack for faster movement!
+	auto pose_new = Actor::computeNewPose(
+		mem_ptr_->getPoseCurrent(),
+		Vector3(
+			2.0 * navigation_ptr_->getVelocityCmd().X(),
+			navigation_ptr_->getVelocityCmd().Y(),
+			navigation_ptr_->getVelocityCmd().Z()
+		),
+		Time::computeDuration(mem_ptr_->getTimePrevious(), mem_ptr_->getTimeCurrent()).getTime()
+	);
+
+	// update pose in the internal memory
+	mem_ptr_->setPose(pose_new);
 }
 
 void Actor::bbTalk() {
