@@ -28,6 +28,12 @@ public:
 		return TaskEssentials::request(goal);
 	}
 
+	/// Prepare FSM event and call @ref execute
+	void execute() {
+		EventFsmBasic event(*this, navigation_ptr_->getFeedback());
+		TaskEssentials::execute(event);
+	}
+
 	inline Pose3 getGoal() const {
 		return goal_;
 	}

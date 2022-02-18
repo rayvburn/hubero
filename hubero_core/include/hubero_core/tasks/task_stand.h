@@ -19,10 +19,23 @@ public:
 			{FsmBasic::State::ACTIVE, BasicBehaviourType::BB_STAND},
 			{FsmBasic::State::FINISHED, BasicBehaviourType::BB_STAND}
 		};
+
+		// extra operations required on state changes
+		fsm_.addTransitionHandler(
+			TaskStand::State::FINISHED,
+			TaskStand::State::ACTIVE,
+			std::bind(&TaskStand::thSetupAnimation, this, ANIMATION_STAND)
+		);
 	}
 
 	virtual bool request() override {
 		return TaskEssentials::request();
+	}
+
+	/// Prepare FSM event and call @ref execute
+	void execute() {
+		EventFsmBasic event(*this, navigation_ptr_->getFeedback());
+		TaskEssentials::execute(event);
 	}
 }; // TaskStand
 

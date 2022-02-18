@@ -5,17 +5,7 @@ namespace hubero {
 
 Actor::Actor():
 	actor_sim_name_("unnamed"),
-	state_tf_exec_map_({
-		{FsmSuper::State::STAND, std::bind(&Actor::executeTaskStand, this)},
-		{FsmSuper::State::MOVE_TO_GOAL, std::bind(&Actor::executeTaskMoveToGoal, this)},
-		{FsmSuper::State::MOVE_AROUND, std::bind(&Actor::executeTaskMoveAround, this)},
-		{FsmSuper::State::LIE_DOWN, std::bind(&Actor::executeTaskLieDown, this)},
-		{FsmSuper::State::SIT_DOWN, std::bind(&Actor::executeTaskSitDown, this)},
-		{FsmSuper::State::FOLLOW_OBJECT, std::bind(&Actor::executeTaskFollowObject, this)},
-		{FsmSuper::State::TELEOP, std::bind(&Actor::executeTaskTeleop, this)},
-		{FsmSuper::State::RUN, std::bind(&Actor::executeTaskRun, this)},
-		{FsmSuper::State::TALK, std::bind(&Actor::executeTaskTalk, this)}
-	}),
+	mem_ptr_(std::make_shared<InternalMemory>()),
 	task_stand_ptr_(std::make_shared<TaskStand>()),
 	task_move_to_goal_ptr_(std::make_shared<TaskMoveToGoal>()),
 	task_move_around_ptr_(std::make_shared<TaskMoveAround>()),
@@ -37,17 +27,6 @@ Actor::Actor():
 		{TaskType::TASK_TELEOP, task_teleop_ptr_}
 	})
 {
-	// NOTE: cannot put these into initialization list
-	state_memory_updater_map_.insert({FsmSuper::State::STAND, std::bind(&TaskStand::updateMemory, task_stand_ptr_, std::placeholders::_1, std::placeholders::_2)});
-	state_memory_updater_map_.insert({FsmSuper::State::MOVE_TO_GOAL, std::bind(&TaskMoveToGoal::updateMemory, task_move_to_goal_ptr_, std::placeholders::_1, std::placeholders::_2)});
-	state_memory_updater_map_.insert({FsmSuper::State::MOVE_AROUND, std::bind(&TaskMoveAround::updateMemory, task_move_around_ptr_, std::placeholders::_1, std::placeholders::_2)});
-	state_memory_updater_map_.insert({FsmSuper::State::LIE_DOWN, std::bind(&TaskLieDown::updateMemory, task_lie_down_ptr_, std::placeholders::_1, std::placeholders::_2)});
-	state_memory_updater_map_.insert({FsmSuper::State::SIT_DOWN, std::bind(&TaskSitDown::updateMemory, task_sit_down_ptr_, std::placeholders::_1, std::placeholders::_2)});
-	state_memory_updater_map_.insert({FsmSuper::State::FOLLOW_OBJECT, std::bind(&TaskFollowObject::updateMemory, task_follow_object_ptr_, std::placeholders::_1, std::placeholders::_2)});
-	state_memory_updater_map_.insert({FsmSuper::State::TELEOP, std::bind(&TaskTeleop::updateMemory, task_teleop_ptr_, std::placeholders::_1, std::placeholders::_2)});
-	state_memory_updater_map_.insert({FsmSuper::State::RUN, std::bind(&TaskRun::updateMemory, task_run_ptr_, std::placeholders::_1, std::placeholders::_2)});
-	state_memory_updater_map_.insert({FsmSuper::State::TALK, std::bind(&TaskTalk::updateMemory, task_talk_ptr_, std::placeholders::_1, std::placeholders::_2)});
-
 	TaskBase::addBasicBehaviourHandler(BB_STAND, std::bind(&Actor::bbStand, this));
 	TaskBase::addBasicBehaviourHandler(BB_ALIGN_TO_TARGET, std::bind(&Actor::bbAlignToTarget, this));
 	TaskBase::addBasicBehaviourHandler(BB_MOVE_TO_GOAL, std::bind(&Actor::bbMoveToGoal, this));
@@ -90,6 +69,30 @@ void Actor::initialize(
 		return;
 	}
 
+	// initialize tasks
+	task_stand_ptr_->initialize(animation_control_ptr_, navigation_ptr_, world_geometry_ptr_, mem_ptr_);
+	task_move_to_goal_ptr_->initialize(animation_control_ptr_, navigation_ptr_, world_geometry_ptr_, mem_ptr_);
+	task_move_around_ptr_->initialize(animation_control_ptr_, navigation_ptr_, world_geometry_ptr_, mem_ptr_);
+	task_lie_down_ptr_->initialize(animation_control_ptr_, navigation_ptr_, world_geometry_ptr_, mem_ptr_);
+	task_sit_down_ptr_->initialize(animation_control_ptr_, navigation_ptr_, world_geometry_ptr_, mem_ptr_);
+	task_follow_object_ptr_->initialize(animation_control_ptr_, navigation_ptr_, world_geometry_ptr_, mem_ptr_);
+	task_teleop_ptr_->initialize(animation_control_ptr_, navigation_ptr_, world_geometry_ptr_, mem_ptr_);
+	task_run_ptr_->initialize(animation_control_ptr_, navigation_ptr_, world_geometry_ptr_, mem_ptr_);
+	task_talk_ptr_->initialize(animation_control_ptr_, navigation_ptr_, world_geometry_ptr_, mem_ptr_);
+
+	// initialize map with task executors
+	state_tf_exec_map_ = decltype(state_tf_exec_map_)({
+		{FsmSuper::State::STAND, std::bind(&TaskStand::execute, task_stand_ptr_)},
+		{FsmSuper::State::MOVE_TO_GOAL, std::bind(&TaskMoveToGoal::execute, task_move_to_goal_ptr_)},
+		{FsmSuper::State::MOVE_AROUND, std::bind(&TaskMoveAround::execute, task_move_around_ptr_)},
+		{FsmSuper::State::LIE_DOWN, std::bind(&TaskLieDown::execute, task_lie_down_ptr_)},
+		{FsmSuper::State::SIT_DOWN, std::bind(&TaskSitDown::execute, task_sit_down_ptr_)},
+		{FsmSuper::State::FOLLOW_OBJECT, std::bind(&TaskFollowObject::execute, task_follow_object_ptr_)},
+		{FsmSuper::State::TELEOP, std::bind(&TaskTeleop::execute, task_teleop_ptr_)},
+		{FsmSuper::State::RUN, std::bind(&TaskRun::execute, task_run_ptr_)},
+		{FsmSuper::State::TALK, std::bind(&TaskTalk::execute, task_talk_ptr_)}
+	});
+
 	// add tasks that are requestable
 	task_request_ptr_->addTask(task_stand_ptr_->getTaskType(), task_stand_ptr_);
 	task_request_ptr_->addTask(task_move_to_goal_ptr_->getTaskType(), task_move_to_goal_ptr_);
@@ -118,9 +121,6 @@ void Actor::initialize(
 		task_talk_ptr_,
 		navigation_ptr_
 	);
-
-	// setup handlers of transitions in tasks internal FSM
-	addTasksFsmTransitionHandlers();
 }
 
 void Actor::update(const Time& time) {
@@ -130,21 +130,13 @@ void Actor::update(const Time& time) {
 	}
 
 	// input data
-	mem_.setTime(time);
+	mem_ptr_->setTime(time);
 
 	// pose post-processing for smooth animation (this is specific to implementation and simulator)
 	auto pose_adjusted = localisation_ptr_->getPose();
-	animation_control_ptr_->adjustPose(pose_adjusted, mem_.getTimeCurrent());
+	animation_control_ptr_->adjustPose(pose_adjusted, mem_ptr_->getTimeCurrent());
 	// NOTE: InternalMemory::setPose updates history, so it cannot be called twice - otherwise displacement will be 0
-	mem_.setPose(pose_adjusted);
-
-	// update internal memory, based on internal buffer content that is specific to a certain task
-	auto mem_update_it = state_memory_updater_map_.find(static_cast<FsmSuper::State>(fsm_.current_state()));
-	if (mem_update_it != state_memory_updater_map_.end()) {
-		mem_update_it->second(mem_, world_geometry_ptr_);
-	} else {
-		HUBERO_LOG("FsmSuper has a state that Actor class is not aware of! Cannot update internal memory buffer\r\n");
-	}
+	mem_ptr_->setPose(pose_adjusted);
 
 	// execute transition function of the specific task and update FSM predicates
 	auto tf_exec_it = state_tf_exec_map_.find(static_cast<FsmSuper::State>(fsm_.current_state()));
@@ -155,7 +147,7 @@ void Actor::update(const Time& time) {
 	}
 
 	// output data
-	localisation_ptr_->update(mem_.getPoseCurrent());
+	localisation_ptr_->update(mem_ptr_->getPoseCurrent());
 
 	navigation_ptr_->update(
 		localisation_ptr_->getPose(),
@@ -251,17 +243,6 @@ void Actor::addFsmSuperTransitionHandlers(
 	fsm.addTransitionHandler(FsmSuper::State::RUN, FsmSuper::State::STAND, std::bind(&NavigationBase::finish, navigation_ptr));
 	fsm.addTransitionHandler(FsmSuper::State::TALK, FsmSuper::State::STAND, std::bind(&NavigationBase::finish, navigation_ptr));
 	fsm.addTransitionHandler(FsmSuper::State::TELEOP, FsmSuper::State::STAND, std::bind(&NavigationBase::finish, navigation_ptr));
-
-	task_lie_down_ptr->addStateTransitionHandler(
-		TaskLieDown::State::MOVING_TO_GOAL,
-		TaskLieDown::State::LYING_DOWN,
-		std::bind(&NavigationBase::finish, navigation_ptr)
-	);
-	task_sit_down_ptr->addStateTransitionHandler(
-		TaskSitDown::State::MOVING_TO_GOAL,
-		TaskSitDown::State::SITTING_DOWN,
-		std::bind(&NavigationBase::finish, navigation_ptr)
-	);
 }
 
 // static
@@ -279,68 +260,6 @@ Pose3 Actor::computeNewPose(const Pose3& pose_current, const Vector3& cmd_vel, c
 	return pose_new;
 }
 
-void Actor::executeTaskStand() {
-	auto event = prepareTaskFsmUpdate<EventFsmBasic>(task_stand_ptr_);
-	task_stand_ptr_->execute(event);
-}
-
-void Actor::executeTaskMoveToGoal() {
-	auto event = prepareTaskFsmUpdate<EventFsmBasic>(task_move_to_goal_ptr_);
-	task_move_to_goal_ptr_->execute(event);
-}
-
-void Actor::executeTaskMoveAround() {
-	auto event = prepareTaskFsmUpdate<EventFsmMoveAround>(task_move_around_ptr_);
-	task_move_around_ptr_->execute(event);
-}
-
-void Actor::executeTaskLieDown() {
-	auto event = prepareTaskFsmUpdate<EventFsmLieDown>(task_lie_down_ptr_);
-	event.setLiedDown(
-		animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_LIE_DOWN
-		&& animation_control_ptr_->isFinished()
-	);
-	event.setStoodUp(
-		animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_STAND_UP
-		&& animation_control_ptr_->isFinished()
-	);
-	task_lie_down_ptr_->execute(event);
-}
-
-void Actor::executeTaskSitDown() {
-	auto event = prepareTaskFsmUpdate<EventFsmSitDown>(task_sit_down_ptr_);
-	event.setSatDown(
-		animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_SIT_DOWN
-		&& animation_control_ptr_->isFinished()
-	);
-	event.setStoodUp(
-		animation_control_ptr_->getActiveAnimation() == AnimationType::ANIMATION_STAND_UP
-		&& animation_control_ptr_->isFinished()
-	);
-	task_sit_down_ptr_->execute(event);
-}
-
-void Actor::executeTaskFollowObject() {
-	auto event = prepareTaskFsmUpdate<EventFsmFollowObject>(task_follow_object_ptr_);
-	event.setObjectNearby(mem_.getPlanarDistanceToGoal() <= navigation_ptr_->getGoalTolerance());
-	task_follow_object_ptr_->execute(event);
-}
-
-void Actor::executeTaskTeleop() {
-	auto event = prepareTaskFsmUpdate<EventFsmBasic>(task_teleop_ptr_);
-	task_teleop_ptr_->execute(event);
-}
-
-void Actor::executeTaskRun() {
-	auto event = prepareTaskFsmUpdate<EventFsmBasic>(task_run_ptr_);
-	task_run_ptr_->execute(event);
-}
-
-void Actor::executeTaskTalk() {
-	auto event = prepareTaskFsmUpdate<EventFsmTalk>(task_talk_ptr_);
-	task_talk_ptr_->execute(event);
-}
-
 void Actor::bbStand() {
 }
 
@@ -351,41 +270,41 @@ void Actor::bbAlignToTarget() {
 void Actor::bbMoveToGoal() {
 	// process navigation command - compute displacement
 	auto pose_new = Actor::computeNewPose(
-		mem_.getPoseCurrent(),
+		mem_ptr_->getPoseCurrent(),
 		navigation_ptr_->getVelocityCmd(),
-		Time::computeDuration(mem_.getTimePrevious(), mem_.getTimeCurrent()).getTime()
+		Time::computeDuration(mem_ptr_->getTimePrevious(), mem_ptr_->getTimeCurrent()).getTime()
 	);
 
 	// update pose in the internal memory
-	mem_.setPose(pose_new);
+	mem_ptr_->setPose(pose_new);
 }
 
 void Actor::bbFollowObject() {
 	// evaluate, if plan is outdated and re-generation is required
-	if (mem_.getTimeSinceLastGoalUpdate() >= GOAL_UPDATE_PERIOD_DEFAULT) {
+	if (mem_ptr_->getTimeSinceLastGoalUpdate() >= GOAL_UPDATE_PERIOD_DEFAULT) {
 		auto goal_pose = navigation_ptr_->computeClosestAchievablePose(
-			mem_.getPoseGoal(),
+			mem_ptr_->getPoseGoal(),
 			navigation_ptr_->getWorldFrame()
 		);
-		mem_.setGoal(goal_pose);
-		mem_.setGoalPoseUpdateTime(mem_.getTimeCurrent());
-		navigation_ptr_->setGoal(mem_.getPoseGoal(), navigation_ptr_->getWorldFrame());
+		mem_ptr_->setGoal(goal_pose);
+		mem_ptr_->setGoalPoseUpdateTime(mem_ptr_->getTimeCurrent());
+		navigation_ptr_->setGoal(mem_ptr_->getPoseGoal(), navigation_ptr_->getWorldFrame());
 	}
 
 	// process navigation command - compute displacement
 	auto pose_new = Actor::computeNewPose(
-		mem_.getPoseCurrent(),
+		mem_ptr_->getPoseCurrent(),
 		navigation_ptr_->getVelocityCmd(),
-		Time::computeDuration(mem_.getTimePrevious(), mem_.getTimeCurrent()).getTime()
+		Time::computeDuration(mem_ptr_->getTimePrevious(), mem_ptr_->getTimeCurrent()).getTime()
 	);
 
 	// update pose in the internal memory
-	mem_.setPose(pose_new);
+	mem_ptr_->setPose(pose_new);
 }
 
 void Actor::bbChooseNewGoal() {
 	// do not trigger planning too often
-	if (mem_.getTimeSinceLastGoalUpdate() <= CHOOSE_NEW_GOAL_RETRY_PERIOD_DEFAULT) {
+	if (mem_ptr_->getTimeSinceLastGoalUpdate() <= CHOOSE_NEW_GOAL_RETRY_PERIOD_DEFAULT) {
 		return;
 	}
 
@@ -395,8 +314,8 @@ void Actor::bbChooseNewGoal() {
 	std::tie(goal_valid, goal) = navigation_ptr_->findRandomReachableGoal();
 	if (goal_valid) {
 		navigation_ptr_->setGoal(goal, navigation_ptr_->getGlobalReferenceFrame());
-		mem_.setGoal(goal);
-		mem_.setGoalPoseUpdateTime(mem_.getTimeCurrent());
+		mem_ptr_->setGoal(goal);
+		mem_ptr_->setGoalPoseUpdateTime(mem_ptr_->getTimeCurrent());
 	}
 }
 
@@ -425,159 +344,6 @@ void Actor::bbTalk() {
 }
 
 void Actor::bbTeleop() {
-}
-
-void Actor::addTasksFsmTransitionHandlers() {
-	// stand
-	task_stand_ptr_->addStateTransitionHandler(
-		TaskMoveToGoal::State::FINISHED,
-		TaskMoveToGoal::State::ACTIVE,
-		std::bind(&Actor::thSetupAnimationStand, this)
-	);
-
-	// move to goal
-	task_move_to_goal_ptr_->addStateTransitionHandler(
-		TaskMoveToGoal::State::FINISHED,
-		TaskMoveToGoal::State::ACTIVE,
-		std::bind(&Actor::thSetupNavigation, this)
-	);
-	task_move_to_goal_ptr_->addStateTransitionHandler(
-		TaskMoveToGoal::State::FINISHED,
-		TaskMoveToGoal::State::ACTIVE,
-		std::bind(&Actor::thSetupAnimationWalk, this)
-	);
-	task_move_to_goal_ptr_->addStateTransitionHandler(
-		TaskMoveToGoal::State::ACTIVE,
-		TaskMoveToGoal::State::FINISHED,
-		std::bind(&Actor::thSetupAnimationStand, this)
-	);
-
-	// follow object
-	task_follow_object_ptr_->addStateTransitionHandler(
-		TaskFollowObject::State::FINISHED,
-		TaskFollowObject::State::MOVING_TO_GOAL,
-		std::bind(&Actor::thSetupNavigation, this)
-	);
-	task_follow_object_ptr_->addStateTransitionHandler(
-		TaskFollowObject::State::FINISHED,
-		TaskFollowObject::State::MOVING_TO_GOAL,
-		std::bind(&Actor::thSetupAnimationWalk, this)
-	);
-	task_follow_object_ptr_->addStateTransitionHandler(
-		TaskFollowObject::State::WAITING_FOR_MOVEMENT,
-		TaskFollowObject::State::MOVING_TO_GOAL,
-		std::bind(&Actor::thSetupAnimationWalk, this)
-	);
-
-	// lie down
-	task_lie_down_ptr_->addStateTransitionHandler(
-		TaskLieDown::State::STANDING,
-		TaskLieDown::State::MOVING_TO_GOAL,
-		std::bind(&Actor::thSetupNavigation, this)
-	);
-	task_lie_down_ptr_->addStateTransitionHandler(
-		TaskLieDown::State::STANDING,
-		TaskLieDown::State::MOVING_TO_GOAL,
-		std::bind(&Actor::thSetupAnimationWalk, this)
-	);
-	task_lie_down_ptr_->addStateTransitionHandler(
-		TaskLieDown::State::MOVING_TO_GOAL,
-		TaskLieDown::State::LYING_DOWN,
-		std::bind(&Actor::thSetupAnimationLieDown, this)
-	);
-	task_lie_down_ptr_->addStateTransitionHandler(
-		TaskLieDown::State::LYING_DOWN,
-		TaskLieDown::State::LYING,
-		std::bind(&Actor::thSetupAnimationLying, this)
-	);
-	task_lie_down_ptr_->addStateTransitionHandler(
-		TaskLieDown::State::LYING,
-		TaskLieDown::State::STANDING_UP,
-		std::bind(&Actor::thSetupAnimationStandUp, this)
-	);
-	task_lie_down_ptr_->addStateTransitionHandler(
-		TaskLieDown::State::STANDING_UP,
-		TaskLieDown::State::STANDING,
-		std::bind(&Actor::thSetupAnimationStand, this)
-	);
-
-	// sit down
-	task_sit_down_ptr_->addStateTransitionHandler(
-		TaskSitDown::State::STANDING,
-		TaskSitDown::State::MOVING_TO_GOAL,
-		std::bind(&Actor::thSetupNavigation, this)
-	);
-	task_sit_down_ptr_->addStateTransitionHandler(
-		TaskSitDown::State::STANDING,
-		TaskSitDown::State::MOVING_TO_GOAL,
-		std::bind(&Actor::thSetupAnimationWalk, this)
-	);
-	task_sit_down_ptr_->addStateTransitionHandler(
-		TaskSitDown::State::MOVING_TO_GOAL,
-		TaskSitDown::State::SITTING_DOWN,
-		std::bind(&Actor::thSetupAnimationSitDown, this)
-	);
-	task_sit_down_ptr_->addStateTransitionHandler(
-		TaskSitDown::State::SITTING_DOWN,
-		TaskSitDown::State::SITTING,
-		std::bind(&Actor::thSetupAnimationSitting, this)
-	);
-	task_sit_down_ptr_->addStateTransitionHandler(
-		TaskSitDown::State::SITTING,
-		TaskSitDown::State::STANDING_UP,
-		std::bind(&Actor::thSetupAnimationStandUp, this)
-	);
-	task_sit_down_ptr_->addStateTransitionHandler(
-		TaskSitDown::State::STANDING_UP,
-		TaskSitDown::State::STANDING,
-		std::bind(&Actor::thSetupAnimationStand, this)
-	);
-
-	// move around
-	// no need to setupNavigation as MoveAround triggers goal update itself
-	task_move_around_ptr_->addStateTransitionHandler(
-		TaskMoveAround::State::CHOOSING_GOAL,
-		TaskMoveAround::State::MOVING_TO_GOAL,
-		std::bind(&Actor::thSetupAnimationWalk, this)
-	);
-	task_move_around_ptr_->addStateTransitionHandler(
-		TaskMoveAround::State::MOVING_TO_GOAL,
-		TaskMoveAround::State::CHOOSING_GOAL,
-		std::bind(&Actor::thSetupAnimationStand, this)
-	);
-}
-
-void Actor::thSetupNavigation() {
-	navigation_ptr_->setGoal(mem_.getPoseGoal(), navigation_ptr_->getWorldFrame());
-	mem_.setGoalPoseUpdateTime(mem_.getTimeCurrent());
-}
-
-void Actor::thSetupAnimationWalk() {
-	animation_control_ptr_->start(AnimationType::ANIMATION_WALK, mem_.getTimeCurrent());
-}
-
-void Actor::thSetupAnimationStand() {
-	animation_control_ptr_->start(AnimationType::ANIMATION_STAND, mem_.getTimeCurrent());
-}
-
-void Actor::thSetupAnimationLieDown() {
-	animation_control_ptr_->start(AnimationType::ANIMATION_LIE_DOWN, mem_.getTimeCurrent());
-}
-
-void Actor::thSetupAnimationLying() {
-	animation_control_ptr_->start(AnimationType::ANIMATION_LYING, mem_.getTimeCurrent());
-}
-
-void Actor::thSetupAnimationSitDown() {
-	animation_control_ptr_->start(AnimationType::ANIMATION_SIT_DOWN, mem_.getTimeCurrent());
-}
-
-void Actor::thSetupAnimationSitting() {
-	animation_control_ptr_->start(AnimationType::ANIMATION_SITTING, mem_.getTimeCurrent());
-}
-
-void Actor::thSetupAnimationStandUp() {
-	animation_control_ptr_->start(AnimationType::ANIMATION_STAND_UP, mem_.getTimeCurrent());
 }
 
 void Actor::updateFsmSuper() {

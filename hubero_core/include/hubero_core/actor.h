@@ -85,7 +85,7 @@ public:
 	 * @brief Returns displacement (in meters) made in the most recent update
 	 */
 	inline double getDisplacement() const {
-		return mem_.getDisplacement();
+		return mem_ptr_->getDisplacement();
 	}
 
 	/**
@@ -98,24 +98,6 @@ public:
 	static Pose3 computeNewPose(const Pose3& pose_current, const Vector3& cmd_vel, const Time& dt);
 
 protected:
-	/**
-	 * @defgroup taskhelpers Task helper methods
-	 *
-	 * Methods provide basic behaviour execution (based on task FSM definition)
-	 */
-	/// @brief Prepare FSM predicates update and executes appropriate basic behaviour of an active task
-	void executeTaskStand();
-	void executeTaskMoveToGoal();
-	void executeTaskMoveAround();
-	void executeTaskLieDown();
-	void executeTaskSitDown();
-	void executeTaskFollowObject();
-	void executeTaskTeleop();
-	void executeTaskRun();
-	void executeTaskTalk();
-
-	/// @}
-
 	/**
 	 * @defgroup bbs Basic behaviour methods
 	 * @{
@@ -137,30 +119,6 @@ protected:
 
 	/// @}
 
-	/**
-	 * @defgroup bbhelpers Basic behaviour helper methods, transition handlers
-	 * @details Methods usually used to setup some actions at task startup
-	 * @{
-	 */
-	/**
-	 * @brief Adds handlers to transitions of task's FSM, see thSetup* methods
-	 *
-	 * @details Differs from @ref addFsmSuperTransitionHandlers cause it is related to navigation, animations etc.,
-	 * whereas @ref addFsmSuperTransitionHandlers updates on-entry and on-exit operations of tasks.
-	 */
-	void addTasksFsmTransitionHandlers();
-
-	void thSetupNavigation();
-	void thSetupAnimationWalk();
-	void thSetupAnimationStand();
-	void thSetupAnimationLieDown();
-	void thSetupAnimationLying();
-	void thSetupAnimationSitDown();
-	void thSetupAnimationSitting();
-	void thSetupAnimationStandUp();
-
-	/// @}
-
 	/// @brief Updates predicates of the highest level Finite State Machine
 	void updateFsmSuper();
 
@@ -168,7 +126,7 @@ protected:
 	std::string actor_sim_name_;
 
 	/// @brief Contains essential values of internal memory of the control subsystem
-	InternalMemory mem_;
+	std::shared_ptr<InternalMemory> mem_ptr_;
 
 	/// Highest level Finite State Machine that orchestrates Actor tasks
 	FsmSuper fsm_;
@@ -194,9 +152,6 @@ protected:
 	 * @defgroup maps Maps to prevent switch-case pattern while invoking calls of a currently active task
 	 * @{
 	 */
-	/// @brief Map that bonds FSM states with internal memory updaters (this is specific to task/state)
-	std::map<FsmSuper::State, std::function<void(InternalMemory&, const std::shared_ptr<const WorldGeometryBase>)>> state_memory_updater_map_;
-
 	/// @brief Map that bonds FSM states with transition function executors (this is specific to task/state)
 	std::map<FsmSuper::State, std::function<void(void)>> state_tf_exec_map_;
 
@@ -219,25 +174,6 @@ protected:
 
 	/// @}
 
-	/**
-	 * @defgroup templates Template methods that must be defined in header file
-	 * @{
-	 */
-	/**
-	 * @brief Activates given task ptr, if necessary, fills up shared part of FSM event struct and returns that struct
-	 *
-	 * @tparam Tevent type of the FSM event struct
-	 * @param task_ptr shared pointer to object that derives from TaskBase
-	 */
-	template <typename Tevent>
-	Tevent prepareTaskFsmUpdate(const std::shared_ptr<TaskBase>& task_ptr) {
-		// fill up task and navigation predicates - those are used for orchestration of task execution
-		TaskPredicates task_predicates(*task_ptr);
-		NavPredicates nav_predicates(navigation_ptr_->getFeedback());
-		return Tevent(task_predicates, nav_predicates);
-	}
-
-	/// @} // end of templates group
 }; // class Actor
 
 } // namespace hubero
