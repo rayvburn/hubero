@@ -47,6 +47,16 @@ geometry_msgs::Twist ignVectorsToMsgTwist(const Vector3& vel_lin, const Vector3&
 	return twist;
 }
 
+geometry_msgs::Quaternion ignVectorRpyToMsgQuaternion(const Vector3& rpy) {
+	Quaternion q_in(rpy);
+	geometry_msgs::Quaternion q_out;
+	q_out.x = q_in.X();
+	q_out.y = q_in.Y();
+	q_out.z = q_in.Z();
+	q_out.w = q_in.W();
+	return q_out;
+}
+
 Vector3 msgTwistToIgnVector(const geometry_msgs::Twist& twist) {
 	return Vector3(twist.linear.x, twist.linear.y, twist.angular.z);
 }

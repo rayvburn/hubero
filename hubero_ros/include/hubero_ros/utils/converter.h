@@ -17,6 +17,7 @@ geometry_msgs::Point ignVectorToMsgPoint(const Vector3& position);
 geometry_msgs::Pose ignPoseToMsgPose(const Pose3& pose);
 geometry_msgs::Transform ignPoseToMsgTf(const Pose3& pose);
 geometry_msgs::Twist ignVectorsToMsgTwist(const Vector3& vel_lin, const Vector3& vel_ang);
+geometry_msgs::Quaternion ignVectorRpyToMsgQuaternion(const Vector3& rpy);
 Vector3 msgTwistToIgnVector(const geometry_msgs::Twist& twist);
 Pose3 msgTfToPose(const geometry_msgs::Transform& tf);
 Vector3 msgPointToIgnVector(const geometry_msgs::Point& point);
