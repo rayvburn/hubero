@@ -1,6 +1,7 @@
 #include <hubero_ros/navigation_ros.h>
 
 #include <hubero_ros/utils/converter.h>
+#include <hubero_ros/utils/misc.h>
 #include <hubero_common/logger.h>
 
 #include <actionlib_msgs/GoalID.h>
@@ -508,16 +509,6 @@ Vector3 NavigationRos::getVelocityCmd() const {
 	}
 
 	return cmd_vel_;
-}
-
-// static
-void NavigationRos::setIdealCovariance(boost::array<double, 36>& cov) {
-	// update covariance - note that pose is perfectly known
-	std::fill(cov.begin(), cov.end(), 0);
-	// ones on diagonal
-	for (unsigned int i = 0; i < cov.size(); i += 1 + sqrt(cov.size())) {
-		cov[i] = 1e-06;
-	}
 }
 
 // static

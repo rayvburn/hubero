@@ -33,6 +33,7 @@ set(HUBERO_TASK_ROS hubero_task_request_ros)
 set(HUBERO_TASK_ROS_API hubero_task_request_ros_api)
 set(HUBERO_NODE_ROS hubero_node_ros)
 set(HUBERO_ROS_TYPECONV hubero_converter_ros)
+set(HUBERO_ROS_MISC hubero_misc_ros)
 
 catkin_package(
 	INCLUDE_DIRS
@@ -74,6 +75,15 @@ target_link_libraries(${HUBERO_ROS_TYPECONV}
 	${catkin_LIBRARIES}
 )
 
+## Generic library with free functions
+add_library(${HUBERO_ROS_MISC}
+	include/${PROJECT_NAME}/utils/misc.h
+	src/utils/misc.cpp
+)
+target_link_libraries(${HUBERO_ROS_MISC}
+	${catkin_LIBRARIES}
+)
+
 ## Navigation library for HuBeRo
 add_library(${HUBERO_NAV_ROS}
 	include/${PROJECT_NAME}/navigation_ros.h
@@ -84,6 +94,7 @@ target_link_libraries(${HUBERO_NAV_ROS}
 	${hubero_common_LIBRARIES}
 	${HUBERO_NODE_ROS}
 	${HUBERO_ROS_TYPECONV}
+	${HUBERO_ROS_MISC}
 	${catkin_LIBRARIES}
 )
 
@@ -132,4 +143,7 @@ if (CATKIN_ENABLE_TESTING)
 
 	catkin_add_gtest(test_navigation test/test_navigation.cpp)
 	target_link_libraries(test_navigation ${HUBERO_NAV_ROS})
+
+	catkin_add_gtest(test_misc test/test_misc.cpp)
+	target_link_libraries(test_misc ${HUBERO_ROS_MISC})
 endif()
