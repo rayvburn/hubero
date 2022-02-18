@@ -161,7 +161,7 @@ public:
 	/**
 	 * @brief Requests actor to move to @ref pos point, where @ref pos frame of reference is given by @ref frame_id
 	 */
-	bool moveToGoal(const Vector3& pos, const std::string& frame_id);
+	bool moveToGoal(const Vector3& pos, const double& yaw, const std::string& frame_id);
 
 	/**
 	 * @brief Requests actor to move to goal according to @ref goal
@@ -206,7 +206,7 @@ public:
 	/**
 	 * @brief Requests actor to run to @ref pos point, where @ref pos frame of reference is given by @ref frame_id
 	 */
-	bool run(const Vector3& pos, const std::string& frame_id);
+	bool run(const Vector3& pos, const double& yaw, const std::string& frame_id);
 
 	/**
 	 * @brief Requests actor to run to goal point according to @ref goal
@@ -312,7 +312,7 @@ public:
 	/**
 	 * @brief Requests actor to talk, but first let it move to @ref pos position expressed in @ref frame_id frame
 	 */
-	bool talk(const Vector3& pos, const std::string& frame_id);
+	bool talk(const Vector3& pos, const double& yaw, const std::string& frame_id);
 
 	/**
 	 * @brief Requests actor to talk according to @ref goal
