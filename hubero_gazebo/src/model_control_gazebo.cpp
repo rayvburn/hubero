@@ -37,7 +37,7 @@ void ModelControlGazebo::initialize(gazebo::physics::ActorPtr& actor_ptr, const 
     );
 
     ModelControlBase::initialize(
-        ModelControlBase::getFrame(),
+        frame_id,
         fun_world_pose,
         fun_linear_vel,
         fun_angular_vel,
