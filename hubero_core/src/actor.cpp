@@ -25,23 +25,7 @@ Actor::Actor():
 		{TaskType::TASK_STAND, task_stand_ptr_},
 		{TaskType::TASK_TALK, task_talk_ptr_},
 		{TaskType::TASK_TELEOP, task_teleop_ptr_}
-	})
-{
-	TaskBase::addBasicBehaviourHandler(BB_STAND, std::bind(&Actor::bbStand, this));
-	TaskBase::addBasicBehaviourHandler(BB_ALIGN_TO_TARGET, std::bind(&Actor::bbAlignToTarget, this));
-	TaskBase::addBasicBehaviourHandler(BB_MOVE_TO_GOAL, std::bind(&Actor::bbMoveToGoal, this));
-	TaskBase::addBasicBehaviourHandler(BB_CHOOSE_NEW_GOAL, std::bind(&Actor::bbChooseNewGoal, this));
-	TaskBase::addBasicBehaviourHandler(BB_FOLLOW_OBJECT, std::bind(&Actor::bbFollowObject, this));
-	TaskBase::addBasicBehaviourHandler(BB_LIE_DOWN, std::bind(&Actor::bbLieDown, this));
-	TaskBase::addBasicBehaviourHandler(BB_LIE, std::bind(&Actor::bbLie, this));
-	TaskBase::addBasicBehaviourHandler(BB_STAND_UP_FROM_LYING, std::bind(&Actor::bbStandUpFromLying, this));
-	TaskBase::addBasicBehaviourHandler(BB_SIT_DOWN, std::bind(&Actor::bbSitDown, this));
-	TaskBase::addBasicBehaviourHandler(BB_SIT, std::bind(&Actor::bbSit, this));
-	TaskBase::addBasicBehaviourHandler(BB_STAND_UP_FROM_SITTING, std::bind(&Actor::bbStandUpFromSitting, this));
-	TaskBase::addBasicBehaviourHandler(BB_RUN, std::bind(&Actor::bbRun, this));
-	TaskBase::addBasicBehaviourHandler(BB_TALK, std::bind(&Actor::bbTalk, this));
-	TaskBase::addBasicBehaviourHandler(BB_TELEOP, std::bind(&Actor::bbTeleop, this));
-}
+	}) {}
 
 void Actor::initialize(
 	const std::string& actor_sim_name,
@@ -79,6 +63,17 @@ void Actor::initialize(
 	task_teleop_ptr_->initialize(animation_control_ptr_, navigation_ptr_, world_geometry_ptr_, mem_ptr_);
 	task_run_ptr_->initialize(animation_control_ptr_, navigation_ptr_, world_geometry_ptr_, mem_ptr_);
 	task_talk_ptr_->initialize(animation_control_ptr_, navigation_ptr_, world_geometry_ptr_, mem_ptr_);
+
+	// add basic behaviour handlers to each task
+	addBbHandlers(task_stand_ptr_);
+	addBbHandlers(task_move_to_goal_ptr_);
+	addBbHandlers(task_move_around_ptr_);
+	addBbHandlers(task_lie_down_ptr_);
+	addBbHandlers(task_sit_down_ptr_);
+	addBbHandlers(task_follow_object_ptr_);
+	addBbHandlers(task_teleop_ptr_);
+	addBbHandlers(task_run_ptr_);
+	addBbHandlers(task_talk_ptr_);
 
 	// initialize map with task executors
 	state_tf_exec_map_ = decltype(state_tf_exec_map_)({
@@ -372,6 +367,23 @@ void Actor::updateFsmSuper() {
 	event.talk = TaskPredicates(*task_talk_ptr_);
 	event.teleop = TaskPredicates(*task_teleop_ptr_);
 	fsm_.process_event(event);
+}
+
+void Actor::addBbHandlers(std::shared_ptr<TaskBase> task_ptr) {
+	task_ptr->addBasicBehaviourHandler(BB_STAND, std::bind(&Actor::bbStand, this));
+	task_ptr->addBasicBehaviourHandler(BB_ALIGN_TO_TARGET, std::bind(&Actor::bbAlignToTarget, this));
+	task_ptr->addBasicBehaviourHandler(BB_MOVE_TO_GOAL, std::bind(&Actor::bbMoveToGoal, this));
+	task_ptr->addBasicBehaviourHandler(BB_CHOOSE_NEW_GOAL, std::bind(&Actor::bbChooseNewGoal, this));
+	task_ptr->addBasicBehaviourHandler(BB_FOLLOW_OBJECT, std::bind(&Actor::bbFollowObject, this));
+	task_ptr->addBasicBehaviourHandler(BB_LIE_DOWN, std::bind(&Actor::bbLieDown, this));
+	task_ptr->addBasicBehaviourHandler(BB_LIE, std::bind(&Actor::bbLie, this));
+	task_ptr->addBasicBehaviourHandler(BB_STAND_UP_FROM_LYING, std::bind(&Actor::bbStandUpFromLying, this));
+	task_ptr->addBasicBehaviourHandler(BB_SIT_DOWN, std::bind(&Actor::bbSitDown, this));
+	task_ptr->addBasicBehaviourHandler(BB_SIT, std::bind(&Actor::bbSit, this));
+	task_ptr->addBasicBehaviourHandler(BB_STAND_UP_FROM_SITTING, std::bind(&Actor::bbStandUpFromSitting, this));
+	task_ptr->addBasicBehaviourHandler(BB_RUN, std::bind(&Actor::bbRun, this));
+	task_ptr->addBasicBehaviourHandler(BB_TALK, std::bind(&Actor::bbTalk, this));
+	task_ptr->addBasicBehaviourHandler(BB_TELEOP, std::bind(&Actor::bbTeleop, this));
 }
 
 } // namespace hubero

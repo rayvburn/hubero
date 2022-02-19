@@ -122,6 +122,9 @@ protected:
 	/// @brief Updates predicates of the highest level Finite State Machine
 	void updateFsmSuper();
 
+	/// @brief Adds basic behaviour handlers to a given task
+	void addBbHandlers(std::shared_ptr<TaskBase> task_ptr);
+
 	/// Name of the actor in simulator
 	std::string actor_sim_name_;
 
