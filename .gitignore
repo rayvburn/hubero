@@ -1,18 +1,6 @@
-actor_plugin_social/doc/*
-actor_plugin_social/doxygen/*
-actor_plugin_social/lib/*
-terminator_launch.md
-gazebo_gui_kkr_scenarios.ini
-actor_sim_utils/rviz/actor_groups_map_costmap_ext_vis_turtle_nav1.rviz
+# shared library
+*.so
 
 # vscode
 build/
 .vscode/
-
-# 012 world files
-actor_sim_utils/blender_ws/*
-actor_sim_utils/sweet_home_ws/*
-actor_sim_utils/models/*
-actor_sim_utils/worlds/012.world
-actor_sim_utils/maps/012.pgm
-actor_sim_utils/maps/012.yaml
