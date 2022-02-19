@@ -36,9 +36,6 @@ public:
 	/// Defines default size of the queue used for subscriber
 	static const int SUBSCRIBER_QUEUE_SIZE;
 
-	/// Defines how many times the plan computation will be repeated if no valid plan was found
-	static const int PLAN_COMPUTATION_RETRY_NUM;
-
 	/**
 	 * Defines max number of times yaw angle will be randomly chosen
 	 * @details Quaternion must meet requirements of the navigation stack, otherwise the goal will be instantly aborted
