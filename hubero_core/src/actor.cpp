@@ -277,6 +277,14 @@ void Actor::bbMoveToGoal() {
 void Actor::bbFollowObject() {
 	// evaluate, if plan is outdated and re-generation is required
 	if (mem_ptr_->getTimeSinceLastGoalUpdate() >= GOAL_UPDATE_PERIOD_DEFAULT) {
+		HUBERO_LOG(
+			"[%s] Follow object goal update: '%s' currently located at {x: %2.2f, y: %2.2f}\r\n",
+			actor_sim_name_.c_str(),
+			task_follow_object_ptr_->getFollowedObjectName().c_str(),
+			// task updates goal
+			mem_ptr_->getPoseGoal().Pos().X(),
+			mem_ptr_->getPoseGoal().Pos().Y()
+		);
 		// try to find reachable pose close to the goal
 		bool goal_found = false;
 		Pose3 goal_pose;
