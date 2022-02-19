@@ -65,7 +65,8 @@ void AnimationControlGazebo::initialize(
 	);
 	addAnimationHandler(
 		ANIMATION_TALK,
-		std::bind(&AnimationControlGazebo::setupAnimation, this, ANIMATION_TALK)
+		std::bind(&AnimationControlGazebo::setupAnimation, this, ANIMATION_TALK),
+		Time(1.0)
 	);
 
 	trajectory_updater_ = anim_updater;
