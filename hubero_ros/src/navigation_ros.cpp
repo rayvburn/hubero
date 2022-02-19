@@ -14,7 +14,6 @@ namespace hubero {
 
 const int NavigationRos::SUBSCRIBER_QUEUE_SIZE = 10;
 const int NavigationRos::PUBLISHER_QUEUE_SIZE = 15;
-const int NavigationRos::PLAN_COMPUTATION_RETRY_NUM = 5;
 const int NavigationRos::QUATERNION_RANDOM_RETRY_NUM = 10;
 
 NavigationRos::NavigationRos():
@@ -671,22 +670,15 @@ nav_msgs::Path NavigationRos::computePlan(
 	/*
 	 * // FIXME: process this call in separate thread and set goal according to the generated plan
 	 * sometimes 1 sec of delay is not enough to force plan computation;
-	 * Experiments show that the plan will be generated in first srv call or during next computePlan call
+	 * Experiments show that the plan will be generated in first srv call or during next computePlan call.
+	 * Sometimes delay like below helped, but caused massive lags during simulation:
+	 *
+	 * std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	 *
 	 */
-	bool success = false;
-	for (unsigned int i = 0; i < PLAN_COMPUTATION_RETRY_NUM; i++) {
-		success = srv_mb_get_plan_.call(req, resp);
-		if (success) {
-			break;
-		} else if (i > 0) {
-			HUBERO_LOG(
-				"[%s].[NavigationRos] Retrying to compute a valid plan for the %d/%d time (feedback %d)\r\n",
-				actor_name_.c_str(),
-				i + 1,
-				PLAN_COMPUTATION_RETRY_NUM,
-				getFeedback()
-			);
-		}
+	bool success = srv_mb_get_plan_.call(req, resp);
+	if (!success) {
+		return nav_msgs::Path();;
 	}
 
 	// restore previous goal if it's a valid one
