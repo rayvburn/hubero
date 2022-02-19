@@ -277,13 +277,19 @@ void Actor::bbMoveToGoal() {
 void Actor::bbFollowObject() {
 	// evaluate, if plan is outdated and re-generation is required
 	if (mem_ptr_->getTimeSinceLastGoalUpdate() >= GOAL_UPDATE_PERIOD_DEFAULT) {
-		auto goal_pose = navigation_ptr_->computeClosestAchievablePose(
+		// try to find reachable pose close to the goal
+		bool goal_found = false;
+		Pose3 goal_pose;
+		std::tie(goal_found, goal_pose) = navigation_ptr_->computeClosestAchievablePose(
 			mem_ptr_->getPoseGoal(),
 			navigation_ptr_->getWorldFrame()
 		);
-		mem_ptr_->setGoal(goal_pose);
-		mem_ptr_->setGoalPoseUpdateTime(mem_ptr_->getTimeCurrent());
-		navigation_ptr_->setGoal(mem_ptr_->getPoseGoal(), navigation_ptr_->getWorldFrame());
+		// apply new navigation goal if 'goal_pose' is valid
+		if (goal_found) {
+			mem_ptr_->setGoal(goal_pose);
+			mem_ptr_->setGoalPoseUpdateTime(mem_ptr_->getTimeCurrent());
+			navigation_ptr_->setGoal(mem_ptr_->getPoseGoal(), navigation_ptr_->getWorldFrame());
+		}
 	}
 
 	// process navigation command - compute displacement

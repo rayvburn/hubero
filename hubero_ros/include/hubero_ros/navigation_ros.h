@@ -113,7 +113,7 @@ public:
 	/**
 	 * @brief Computes reachable pose that is closest to the given pose, starting from current pose from update call
 	 */
-	virtual Pose3 computeClosestAchievablePose(const Pose3& pose, const std::string& frame) override;
+	virtual std::tuple<bool, Pose3> computeClosestAchievablePose(const Pose3& pose, const std::string& frame) override;
 
 	/**
 	 * @brief Randomly chooses a reachable goal

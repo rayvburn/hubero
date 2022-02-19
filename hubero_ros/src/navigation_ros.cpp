@@ -390,10 +390,10 @@ void NavigationRos::finish() {
 	NavigationBase::finish();
 }
 
-Pose3 NavigationRos::computeClosestAchievablePose(const Pose3& pose, const std::string& frame) {
+std::tuple<bool, Pose3> NavigationRos::computeClosestAchievablePose(const Pose3& pose, const std::string& frame) {
 	if (!isInitialized()) {
 		HUBERO_LOG("[%s].[NavigationRos] Not initialized, call `initialize` first\r\n", actor_name_.c_str());
-		return pose;
+		return std::make_tuple(false, pose);
 	}
 
 	if (!nav_action_server_connected_) {
@@ -401,7 +401,7 @@ Pose3 NavigationRos::computeClosestAchievablePose(const Pose3& pose, const std::
 			"[%s].[NavigationRos] Did not manage to connect to ROS action server yet, ignoring request\r\n",
 			actor_name_.c_str()
 		);
-		return pose;
+		return std::make_tuple(false, pose);
 	}
 
 	// compute plan
@@ -414,8 +414,7 @@ Pose3 NavigationRos::computeClosestAchievablePose(const Pose3& pose, const std::
 	if (!goal_pose_ok) {
 		HUBERO_LOG("[%s].[NavigationRos] Could not compute pose closest to given pose\r\n", actor_name_.c_str());
 	}
-	// TODO: return tuple
-	return goal_pose_potential;
+	return std::make_tuple(goal_pose_ok, goal_pose_potential);
 }
 
 std::tuple<bool, Pose3> NavigationRos::findRandomReachableGoal() {
