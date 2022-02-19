@@ -64,9 +64,6 @@
         <node name="world_map_tf_static" pkg="tf" type="static_transform_publisher" ns="$(arg main_ns)" args="$(arg tf_world_map) $(arg simulator_global_frame) $(arg map_frame) 50"/>
     </group>
 
-    <!-- ============================== load params =========================================== -->
-    <rosparam file="$(find hubero_ros)/config/params_common.yaml" command="load" />
-
     <!-- ===================== activities specific to the selected world ====================== -->
     <group if="$(eval world == 'parking')">
         <arg name="map_bounds" default="[-6.90, 22.06, -7.45, 21.74]"/>

@@ -47,29 +47,29 @@ bool NavigationRos::initialize(
 
 	// frames
 	std::string frame_base_param;
-	nh.searchParam("/hubero_ros/actor_frames/base", frame_base_param);
+	nh.searchParam("/hubero_ros/" + actor_name + "/actor_frames/base", frame_base_param);
 	nh.param(frame_base_param, frame_base_, std::string("base_footprint"));
 
 	std::string frame_global_ref_param;
-	nh.searchParam("/hubero_ros/actor_frames/global_ref", frame_global_ref_param);
+	nh.searchParam("/hubero_ros/" + actor_name + "/actor_frames/global_ref", frame_global_ref_param);
 	nh.param(frame_global_ref_param, frame_global_ref_, std::string("map"));
 
 	std::string frame_local_ref_param;
-	nh.searchParam("/hubero_ros/actor_frames/local_ref", frame_local_ref_param);
+	nh.searchParam("/hubero_ros/" + actor_name + "/actor_frames/local_ref", frame_local_ref_param);
 	nh.param(frame_local_ref_param, frame_local_ref_, std::string("odom"));
 
 	std::string frame_laser_param;
-	nh.searchParam("/hubero_ros/actor_frames/lidar", frame_laser_param);
+	nh.searchParam("/hubero_ros/" + actor_name + "/actor_frames/lidar", frame_laser_param);
 	nh.param(frame_laser_param, frame_laser_, std::string("base_laser_link"));
 
 	std::string frame_camera_param;
-	nh.searchParam("/hubero_ros/actor_frames/camera", frame_camera_param);
+	nh.searchParam("/hubero_ros/" + actor_name + "/actor_frames/camera", frame_camera_param);
 	nh.param(frame_camera_param, frame_camera_, std::string("base_camera_link"));
 
 	// nav parameters
 	std::string param_map_bounds;
 	std::vector<double> map_bounds;
-	nh.searchParam("/hubero_ros/navigation/map_bounds", param_map_bounds);
+	nh.searchParam("/hubero_ros/" + actor_name + "/navigation/map_bounds", param_map_bounds);
 	if (!nh.param(param_map_bounds, map_bounds, std::vector<double>{-1.0, 1.0, -1.0, +1.0})) {
 		HUBERO_LOG(
 			"[%s].[NavigationRos] Could not read map bounds from Parameter Server (key: '%s')\r\n",
@@ -84,28 +84,28 @@ bool NavigationRos::initialize(
 
 	// nav topics
 	std::string srv_nav_get_plan;
-	nh.searchParam("/hubero_ros/navigation/get_plan_srv", srv_nav_get_plan);
+	nh.searchParam("/hubero_ros/" + actor_name + "/navigation/get_plan_srv", srv_nav_get_plan);
 	nh.param(srv_nav_get_plan, srv_nav_get_plan, std::string("nav/get_plan"));
 
 	std::string topic_nav_cmd;
-	nh.searchParam("/hubero_ros/navigation/command_topic", topic_nav_cmd);
+	nh.searchParam("/hubero_ros/" + actor_name + "/navigation/command_topic", topic_nav_cmd);
 	nh.param(topic_nav_cmd, topic_nav_cmd, std::string("nav/cmd_vel"));
 
 	std::string topic_nav_odometry;
-	nh.searchParam("/hubero_ros/navigation/odometry_topic", topic_nav_odometry);
+	nh.searchParam("/hubero_ros/" + actor_name + "/navigation/odometry_topic", topic_nav_odometry);
 	nh.param(topic_nav_odometry, topic_nav_odometry, std::string("nav/odom"));
 
 	std::string topic_nav_feedback;
-	nh.searchParam("/hubero_ros/navigation/feedback_topic", topic_nav_feedback);
+	nh.searchParam("/hubero_ros/" + actor_name + "/navigation/feedback_topic", topic_nav_feedback);
 	nh.param(topic_nav_feedback, topic_nav_feedback, std::string("nav/feedback"));
 
 	std::string topic_nav_result;
-	nh.searchParam("/hubero_ros/navigation/result_topic", topic_nav_result);
+	nh.searchParam("/hubero_ros/" + actor_name + "/navigation/result_topic", topic_nav_result);
 	nh.param(topic_nav_result, topic_nav_result, std::string("nav/result"));
 
 	// nav config
 	std::string param_nav_get_plan_tolerance;
-	nh.searchParam("/hubero_ros/navigation/nav_get_plan_tolerance", param_nav_get_plan_tolerance);
+	nh.searchParam("/hubero_ros/" + actor_name + "/navigation/nav_get_plan_tolerance", param_nav_get_plan_tolerance);
 	nh.param(param_nav_get_plan_tolerance, nav_get_plan_tolerance_, 1.0);
 
 	// initialize publishers, service clients, subscribers
