@@ -31,6 +31,16 @@ public:
 			TaskFollowObject::State::MOVING_TO_GOAL,
 			std::bind(&TaskFollowObject::thSetupAnimation, this, ANIMATION_WALK)
 		);
+		fsm_.addTransitionHandler(
+			TaskFollowObject::State::MOVING_TO_GOAL,
+			TaskFollowObject::State::FINISHED,
+			std::bind(&TaskFollowObject::thSetupAnimation, this, ANIMATION_STAND)
+		);
+		fsm_.addTransitionHandler(
+			TaskFollowObject::State::MOVING_TO_GOAL,
+			TaskFollowObject::State::WAITING_FOR_MOVEMENT,
+			std::bind(&TaskFollowObject::thSetupAnimation, this, ANIMATION_STAND)
+		);
 	}
 
 	virtual bool request(const std::string& object_name) override {
