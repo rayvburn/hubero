@@ -34,7 +34,7 @@ void StatusRos::initialize(
     // store name of the status topic
     std::string topic_status;
     std::string topic_status_param;
-	nh.searchParam("/hubero_ros/status_topic", topic_status_param);
+	nh.searchParam("/hubero_ros/" + actor_name + "/status_topic", topic_status_param);
 	nh.param(topic_status_param, topic_status, std::string("actor/status"));
 
     pub_status_ = node_ptr->getNodeHandlePtr()->advertise<hubero_ros_msgs::Person>(

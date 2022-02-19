@@ -1,8 +1,0 @@
-# NOTE: Params required as ROS node arguments are directly defined inside `actor.launch` file.
-# USAGE: branch nodes identifiers cannot be changed, they are used as a reference to search parameters.
-hubero_ros:
-  # name of the namespace that contains topics usable to request tasks from actors (shouldn't be empty)
-  task_namespace: "task"
-  # define topic names related to status - each simulated actor is connected to such a topic set
-  actor_status:
-    person_msg_topic: "status/person"
