@@ -20,6 +20,23 @@ HuBeRo is run from the source code point of view - it is necessary to have an ac
 
 The exemplary HuBeRo application provides interfaces to Gazebo and ROS so developers can incorporate mobile humans into their existing experiments.
 
+Further details on HuBeRo architecture can be found in the [article](https://www.jamris.org/index.php/JAMRIS/article/view/664). Please cite this article if HuBeRo proved to be helpful in your research:
+
+```bibtex
+@article{karwowski2021hubero,
+title={HuBeRo - a Framework to Simulate Human Behaviour in Robot Research},
+volume={15},
+url={https://www.jamris.org/index.php/JAMRIS/article/view/664},
+DOI={10.14313/JAMRIS/1-2021/4},
+number={1},
+journal={Journal of Automation, Mobile Robotics and Intelligent Systems},
+author={Karwowski, Jarosław and Dudek, Wojciech and Węgierek, Maciej and Winiarski, Tomasz},
+year={2021},
+month={Jul.},
+pages={31-38}
+}
+```
+
 ## Run instructions
 
 ### Dependencies
