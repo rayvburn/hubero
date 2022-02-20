@@ -1,4 +1,5 @@
 #include <hubero_ros/utils/misc.h>
+#include <math.h>
 
 namespace hubero {
 
