@@ -1,6 +1,0 @@
-geometry_msgs/Point point
-
----
-
-int16 cost
-string error_message
