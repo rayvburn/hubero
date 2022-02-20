@@ -47,6 +47,16 @@ pages={31-38}
 sudo apt install ros-$ROS_DISTRO-depthimage-to-laserscan
 ```
 
+### Clone
+
+Clone with HTTPS/SSH:
+
+```bash
+git clone https://github.com/rayvburn/hubero.git
+cd hubero
+git submodule update --init --recursive
+```
+
 ### Build
 
 **OPTIONAL**: Workspace preparation (additional flags allow easy debugging with Eclipse IDE):
