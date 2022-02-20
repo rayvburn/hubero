@@ -1,0 +1,8 @@
+# How map with its description were created?
+# `roslaunch pgm_map_creator request_publisher.launch map_name:=living_room_vid_friendly xmin:=-5.75 xmax:=+8.5 ymin:=-6.5 ymax:=+6.5 resolution:=0.02 <path>`
+image: living_room.pgm
+resolution: 0.020000
+origin: [-5.750000, -6.500000, 0.000000]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196

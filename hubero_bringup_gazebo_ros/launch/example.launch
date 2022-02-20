@@ -115,4 +115,31 @@
             <arg name="map_bounds" value="$(arg map_bounds)"/>
         </include>
     </group>
+
+    <group if="$(eval world == 'living_room')">
+        <arg name="map_bounds" default="[-5.04, 7.84, -5.83, 5.79]"/>
+        <include file="$(find hubero_ros)/launch/actor.launch">
+            <arg name="actor_name" value="actor1"/>
+            <arg name="main_ns" value="$(arg main_ns)"/>
+            <arg name="map_file" value="$(arg map_file)"/>
+            <arg name="use_shared_map" value="$(arg shared_map)"/>
+            <arg name="map_frame" value="$(arg map_frame)"/>
+            <arg name="simulator_global_frame" value="$(arg simulator_global_frame)"/>
+            <!-- passing 'tf_world_map' is excessive when 'shared_map' is set to true -->
+            <arg name="tf_world_map" value="$(arg tf_world_map)"/>
+            <arg name="map_bounds" value="$(arg map_bounds)"/>
+        </include>
+
+        <include file="$(find hubero_ros)/launch/actor.launch">
+            <arg name="actor_name" value="actor2"/>
+            <arg name="main_ns" value="$(arg main_ns)"/>
+            <arg name="map_file" value="$(arg map_file)"/>
+            <arg name="use_shared_map" value="$(arg shared_map)"/>
+            <arg name="map_frame" value="$(arg map_frame)"/>
+            <arg name="simulator_global_frame" value="$(arg simulator_global_frame)"/>
+            <!-- passing 'tf_world_map' is excessive when 'shared_map' is set to true -->
+            <arg name="tf_world_map" value="$(arg tf_world_map)"/>
+            <arg name="map_bounds" value="$(arg map_bounds)"/>
+        </include>
+    </group>
 </launch>
