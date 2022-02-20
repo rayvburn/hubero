@@ -65,7 +65,29 @@ git submodule update --init --recursive
 catkin config -G"Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER_ARG1=-std=c++14 -D__cplusplus=201402L -D__GXX_EXPERIMENTAL_CXX0X__=1
 ```
 
-Build HuBeRo packages:
+#### `ignition`
+
+One should tell catkin which version of `ignition` library is installed. This can be done each time, passing flag for compilation:
+
+```bash
+catkin build -DIGN_MATH_VER=<your_version_major>
+```
+
+or once, configuring `catkin` (note that this will erase your other flags - so if you have such, append them to the new config):
+
+```bash
+catkin config -DIGN_MATH_VER=<your_version_major>
+```
+
+Generally, Ubuntu 16 will have `ignition` in version `3`, Ubuntu 18 in version `4` etc. Version can be checked by running:
+
+```bash
+ls -l /usr/include/ignition
+```
+
+#### Build with `catkin`
+
+Build only HuBeRo packages (remember to configure `IGN_MATH_VER` before):
 
 ```bash
 catkin build hubero_bringup_gazebo_ros hubero_common hubero_core hubero_gazebo hubero_interfaces hubero_ros hubero_ros_msgs hubero_ros_scenarios

@@ -5,7 +5,10 @@ project(hubero_common
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++14)
-set(IGN_MATH_VER 3)
+if(NOT DEFINED IGN_MATH_VER)
+   # this version is valid for Ubuntu 16 with ROS Kinetic
+   set(IGN_MATH_VER 3)
+endif(NOT DEFINED IGN_MATH_VER)
 
 find_package(catkin REQUIRED COMPONENTS)
 find_package(ignition-math${IGN_MATH_VER} REQUIRED)
