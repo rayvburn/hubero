@@ -1,16 +1,13 @@
 <?xml version="1.0"?>
 <package>
   <name>hubero_bringup_gazebo_ros</name>
-  <version>0.5.0</version>
+  <version>0.6.0</version>
   <description>The hubero_bringup_gazebo_ros package</description>
 
   <author email="chromedivizer@gmail.com">Jarosław Karwowski</author>
   <maintainer email="chromedivizer@gmail.com">Jarosław Karwowski</maintainer>
-
-  <!-- One license tag required, multiple allowed, one license per tag -->
-  <!-- Commonly used license strings: -->
-  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
   <license>BSD-3</license>
+  <url type="website">https://github.com/rayvburn/hubero</url>
 
   <buildtool_depend>catkin</buildtool_depend>
   <run_depend>hubero_gazebo</run_depend>
