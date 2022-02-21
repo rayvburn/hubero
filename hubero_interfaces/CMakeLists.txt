@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(hubero_interfaces)
 
 # based on: https://github.com/ros-planning/navigation/blob/kinetic-devel/nav_core/CMakeLists.txt
