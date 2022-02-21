@@ -9,6 +9,7 @@ find_package(catkin REQUIRED
 		hubero_interfaces
 		hubero_ros_msgs
 		cmake_modules
+		map_server
 		nav_core
 		move_base
 		move_base_msgs
