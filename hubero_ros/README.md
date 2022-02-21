@@ -58,6 +58,8 @@ There is also a convenient GUI tool for manual commanding: [`actionlib axclient.
 
 Configurable parameters are settable via `actor.launch` file. See the file for a detailed description. For example how to override default parameters, see `example.launch` from `hubero_bringup_gazebo_ros`.
 
+Note that basic parameter setups for different planning algorithms were prepared (see `config/planning` directory), they just need to be selected via parameter. File suffixes can be used to assign a different parameter set to each actor.
+
 ## Usage notes
 
 - frame names in `actor.launch` must match the frame names defined in sensors attached to the actors in Gazebo (particularly, in Gazebo world definition)
