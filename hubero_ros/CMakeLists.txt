@@ -94,7 +94,7 @@ add_library(${HUBERO_ROS_STATUS}
 target_link_libraries(${HUBERO_ROS_STATUS}
 	${hubero_common_LIBRARIES}
 	${hubero_interfaces_LIBRARIES}
-	${hubero_ros_msgs_INCLUDE_DIRS}
+	${hubero_ros_msgs_LIBRARIES}
 	${HUBERO_NODE_ROS}
 	${HUBERO_ROS_TYPECONV}
 	${HUBERO_ROS_MISC}
