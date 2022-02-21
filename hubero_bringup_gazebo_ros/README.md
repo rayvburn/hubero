@@ -2,6 +2,8 @@
 
 Package contains `.launch` files, `.pgm` maps and `.world` files for evaluation of exemplary scenarios.
 
+[Video presentation](https://vimeo.com/397552304) of the first revision of the framework.
+
 ## Run
 
 `Parking` world, defined for Gazebo, with all necessary Actor interfaces (note that there are 4 actors in this `.world`), can be launched with:
