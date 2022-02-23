@@ -1,9 +1,6 @@
 <?xml version="1.0"?>
 
 <launch>
-    <!-- first, make HuBeRo actor control plugin visible for Gazebo -->
-    <env name="GAZEBO_PLUGIN_PATH" value="$(find hubero_gazebo)/lib:$(optenv GAZEBO_PLUGIN_PATH)"/>
-
     <!-- ====================== default values for parameters ================================== -->
     <arg name="world"       default="cafe_example"/>
     <arg name="world_file"  default="$(find hubero_bringup_gazebo_ros)/worlds/$(arg world).world"/>
