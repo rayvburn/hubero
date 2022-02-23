@@ -4,6 +4,10 @@ Package contains `.launch` files, `.pgm` maps and `.world` files for evaluation 
 
 [Video presentation](https://vimeo.com/397552304) of the first revision of the framework.
 
+## Prerequisites
+
+Before you try to run exemplary worlds, you need to setup Gazebo simulator with a required set of models (used in provided worlds). Visit [Gazebo setup wiki page](https://github.com/rayvburn/hubero/wiki/Gazebo-setup) and start with setup of `3DGems` model pack (this is required, rest may be optional depending on your system configuration).
+
 ## Run
 
 `Parking` world, defined for Gazebo, with all necessary Actor interfaces (note that there are 4 actors in this `.world`), can be launched with:
