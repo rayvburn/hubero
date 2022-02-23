@@ -3,6 +3,11 @@ project(hubero_gazebo)
 
 add_definitions(-std=c++14)
 
+# prevent some unrelated warnings
+cmake_policy(SET CMP0054 OLD)
+include(FindPackageHandleStandardArgs)
+set(FPHSA_NAME_MISMATCHED TRUE)
+
 find_package(catkin REQUIRED
     COMPONENTS
         hubero_core
