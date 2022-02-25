@@ -10,7 +10,14 @@ Before you try to run exemplary worlds, you need to setup Gazebo simulator with 
 
 ## Run
 
-`Parking` world, defined for Gazebo, with all necessary Actor interfaces (note that there are 4 actors in this `.world`), can be launched with:
+Before a launch of an exemplary world one must apply both ROS workspace and Gazebo configurations:
+
+```bash
+source <ROS_WS_DIRECTORY>/devel/setup.bash
+source /usr/share/<GAZEBO_VER_DIRECTORY>/setup.sh
+```
+
+Then, `parking` world, defined for Gazebo, with all necessary Actor interfaces (note that there are 4 actors in this `.world`), can be launched with:
 
 ```bash
 roslaunch hubero_bringup_gazebo_ros example.launch world:=parking rviz:=true
