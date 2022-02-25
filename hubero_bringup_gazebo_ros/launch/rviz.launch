@@ -1,4 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find hubero_bringup_gazebo_ros)/rviz/navigation.rviz"/>
+    <arg name="world" default="custom"/>
+
+    <group if="$(eval world == 'parking')">
+        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find hubero_bringup_gazebo_ros)/rviz/parking.rviz"/>
+    </group>
+    <group if="$(eval world == 'living_room')">
+        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find hubero_bringup_gazebo_ros)/rviz/living_room.rviz"/>
+    </group>
+    <!-- hack for a nested condition here -->
+    <group unless="$(eval world == 'parking')">
+        <group unless="$(eval world == 'living_room')">
+            <node name="rviz" pkg="rviz" type="rviz" args="-d $(find hubero_bringup_gazebo_ros)/rviz/navigation.rviz"/>
+        </group>
+    </group>
 </launch>
