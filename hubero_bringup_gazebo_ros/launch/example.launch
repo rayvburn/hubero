@@ -48,7 +48,9 @@
 
     <!-- =============================== start rViz ============================================ -->
     <group if="$(arg rviz)">
-        <include file="$(find hubero_bringup_gazebo_ros)/launch/rviz.launch"/>
+        <include file="$(find hubero_bringup_gazebo_ros)/launch/rviz.launch">
+            <arg name="world" value="$(arg world)"/>
+        </include>
     </group>
 
     <!-- ============================== load map & static TF ================================== -->
