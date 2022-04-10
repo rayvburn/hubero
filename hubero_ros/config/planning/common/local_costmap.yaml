@@ -7,7 +7,7 @@ local_costmap:
   # NOTE: 'robot_base_frame' overwritten by .launch file
   robot_base_frame: base_footprint
 
-  update_frequency: 5.0
+  update_frequency: 2.0
   publish_frequency: 1.0
 
   static_map: false
