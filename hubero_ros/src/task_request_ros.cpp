@@ -170,7 +170,7 @@ Pose3 TaskRequestRos::computeTransformToWorld(const Pose3& pose, const std::stri
 		tf_goal_to_world = msgTfToPose(tf_goal_world_msg.transform);
 	} catch (tf2::TransformException& ex) {
 		HUBERO_LOG(
-			"[%s].[TaskRequestRos] Could not transform '%s' to '%s' - exception: '%s'",
+			"[%s].[TaskRequestRos] Could not transform '%s' to '%s' - exception: '%s'\r\n",
 			actor_name_.c_str(),
 			world_frame_name_.c_str(),
 			frame_id.c_str(),
