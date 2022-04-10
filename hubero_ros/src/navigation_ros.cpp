@@ -581,7 +581,7 @@ std::tuple<bool, Pose3> NavigationRos::findTransform(const std::string& frame_so
 		success = true;
 	} catch (tf2::TransformException& ex) {
 		HUBERO_LOG(
-			"[%s].[NavigationRos] Could not transform '%s' to '%s' - exception: '%s'",
+			"[%s].[NavigationRos] Could not transform '%s' to '%s' - exception: '%s'\r\n",
 			actor_name_.c_str(),
 			getWorldFrame().c_str(),
 			getGlobalReferenceFrame().c_str(),
