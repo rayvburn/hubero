@@ -9,6 +9,10 @@ Additionally, given that simulator provides realistic 3D model of a person, fram
 
 HuBeRo aims to integrate a simulator (it's actually simulator-agnostic), robotic framework (like ROS) to provide realistic navigation behaviours of people.
 
+Click the thumbnail below for the link with a video presentation of the first revision of the framework (integrated with Gazebo and ROS).
+
+[<img src="https://i.vimeocdn.com/video/864800513-93efca8d48b9eea74b0c118257e833f101ce37b7050501bbfd7121f170868896-d_640">](https://vimeo.com/397552304)
+
 ## Overview
 
 HuBeRo architecture assumes that control of a single human (actor) is possible by extension of a simulator plugin. The plugin should provide:
