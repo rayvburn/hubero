@@ -385,6 +385,13 @@ public:
 	/** @} */ // end of talk group
 	/** @} */ // end of tasks group
 
+	/**
+	 * @brief Returns name of the actor that task request API was created for
+	 */
+	inline std::string getName() const {
+		return actor_name_;
+	}
+
 protected:
 	std::shared_ptr<Node> node_ptr_;
 
@@ -490,5 +497,10 @@ protected:
 		}
 		return action_client_ptr->getFeedbackText();
 	}
+
+private:
+	/// Name of the actor provided in the constructor
+	std::string actor_name_;
+
 }; // class TaskRequestRosApi
 } // namespace hubero
