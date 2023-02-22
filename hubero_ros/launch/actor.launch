@@ -6,9 +6,9 @@
 
     <!-- Planners -->
     <!-- NOTE: suffixes enable to differentiate planner parameters between actors -->
-    <arg name="global_planner" default="global_planner"/>
+    <arg name="global_planner" default="navfn"/>
     <arg name="global_planner_suffix" default=""/>
-    <arg name="local_planner" default="dwa"/>
+    <arg name="local_planner" default="teb"/>
     <arg name="local_planner_suffix" default=""/>
 
     <!-- allows running with gdb -->

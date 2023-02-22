@@ -4,7 +4,7 @@ TrajectoryPlannerROS:
   # Acceleration limits
   acc_lim_th: !degrees 60.0
   acc_lim_theta: !degrees 60.0
-  acc_lim_x: 0.8
+  acc_lim_x: 1.0
   acc_lim_y: 0.0
 
   # Velocity limits
