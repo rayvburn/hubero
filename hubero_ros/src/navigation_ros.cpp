@@ -619,7 +619,11 @@ nav_msgs::Path NavigationRos::computePlan(
 	Pose3 transform_goal;
 	std::tie(transform_goal_valid, transform_goal) = findTransform(goal_frame, getGlobalReferenceFrame());
 
-	if (!transform_start_valid || !transform_goal_valid) {
+	bool transform_world_valid = false;
+	Pose3 transform_world;
+	std::tie(transform_world_valid, transform_world) = findTransform(getGlobalReferenceFrame(), getWorldFrame());
+
+	if (!transform_start_valid || !transform_goal_valid || !transform_world_valid) {
 		HUBERO_LOG(
 			"[%s].[NavigationRos] Could not compute valid plan because of TF lookup failure\r\n",
 			actor_name_.c_str()
@@ -717,6 +721,16 @@ nav_msgs::Path NavigationRos::computePlan(
 		resp.plan.poses.end()[-2].pose.position.x,
 		resp.plan.poses.end()[-2].pose.position.y
 	);
+
+	// convert to the world frame, if needed
+	if (getGlobalReferenceFrame() != getWorldFrame()) {
+		for (auto& pose: resp.plan.poses) {
+			Pose3 posehubero = msgPoseToIgnPose(pose.pose);
+			posehubero = posehubero + transform_world;
+			pose.pose = ignPoseToMsgPose(posehubero);
+			pose.header.frame_id = getWorldFrame();
+		}
+	}
 	return resp.plan;
 }
 

@@ -172,6 +172,8 @@ protected:
 
 	/**
 	 * @brief Computes plan from start to goal using ROS service call
+	 *
+	 * Returns plan in the world frame
 	 */
 	nav_msgs::Path computePlan(
 		const Pose3& start_pose,
