@@ -117,6 +117,15 @@ void ActorPlugin::OnUpdate(const common::UpdateInfo& info) {
 	hubero::Time time(info.simTime.Double());
 	sim_localisation_ptr_->updateSimulator(actor_ptr_->WorldPose(), time);
 	hubero_actor_.update(time);
+	// makes actors know where each other is located
+	sim_world_geometry_ptr_->updateActor(
+		sim_localisation_ptr_->getPose(),
+		sim_localisation_ptr_->getVelocityAngular(),
+		sim_localisation_ptr_->getVelocityLinear(),
+		sim_localisation_ptr_->getAccelerationAngular(),
+		sim_localisation_ptr_->getAccelerationLinear(),
+		hubero::BBox() // FIXME
+	);
 
 	// TODO: parameterize animation factor, e.g. take from SDF
 	// update script time to set proper animation speed
