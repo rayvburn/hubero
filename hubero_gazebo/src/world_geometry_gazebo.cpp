@@ -48,7 +48,7 @@ ModelGeometry WorldGeometryGazebo::getModel(const std::string& name) const {
 
 ModelGeometry WorldGeometryGazebo::getModel(const gazebo::physics::ModelPtr& model_ptr) const {
     return ModelGeometry(
-        actor_name_,
+        model_ptr->GetName(),
         WorldGeometryBase::getFrame(),
         model_ptr->WorldPose(),
         model_ptr->WorldLinearVel(),
