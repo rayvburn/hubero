@@ -19,10 +19,10 @@ TebLocalPlannerROS:
   allow_init_with_backwards_motion: false
 
   # Robot
-  max_vel_x: 0.5
+  max_vel_x: 1.5
   max_vel_x_backwards: 0.15
   max_vel_theta: 0.6
-  acc_lim_x: 0.2
+  acc_lim_x: 1.0
   acc_lim_theta: !degrees 45.0
   is_footprint_dynamic: true
   footprint_model:
