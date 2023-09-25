@@ -4,11 +4,11 @@ Package contains `.launch` files, `.pgm` maps and `.world` files for evaluation 
 
 ## Prerequisites
 
-Before you try to run exemplary worlds, you need to setup Gazebo simulator with a required set of models (used in provided worlds). Visit [Gazebo setup wiki page](https://github.com/rayvburn/hubero/wiki/Gazebo-setup) and start with setup of `3DGems` model pack (this is required, rest may be optional depending on your system configuration).
+Before you try to run exemplary worlds, you need to set up the Gazebo simulator with a required set of models (used in provided worlds). Visit the [Gazebo setup wiki page](https://github.com/rayvburn/hubero/wiki/Gazebo-setup) and start setting up the `3DGems` model pack (this one is required, others may be optional depending on your system configuration).
 
 ## Run
 
-Before a launch of an exemplary world one must apply both ROS workspace and Gazebo configurations:
+Before the launch of an exemplary world, one must apply both ROS workspace and Gazebo configurations:
 
 ```bash
 source <ROS_WS_DIRECTORY>/devel/setup.bash
@@ -21,7 +21,7 @@ Then, `parking` world, defined for Gazebo, with all necessary Actor interfaces (
 roslaunch hubero_bringup_gazebo_ros example.launch world:=parking rviz:=true
 ```
 
-If all went OK, after few seconds after start you should see `move_base` log:
+If all went OK, after few seconds after the start you should see `move_base` log:
 
 ```console
 [ INFO] [1643660811.668211218, 8.331000000]: odom received!
@@ -65,11 +65,16 @@ Generally, one should use the exemplary worlds definitions as a reference to add
 
 ## ROS interface
 
-Actors will not have mobility skills without connection with ROS Navigation stack. Also, Actors will not be able to receive task requests without connection to ROS topics. Use `example.launch` parameter definitions to properly define new Actor interfaces.
+Actors will not have mobility skills without the connection with ROS Navigation stack. Also, Actors will not be able to receive task requests without connection to ROS topics. Use `example.launch` parameter definitions to properly define new Actor interfaces.
 
 ## Gazebo world map
 
-To create an ideal map of the Gazebo world one may use [`pgm_map_creator`](https://github.com/hyfan1116/pgm_map_creator) package. Examples of use are provided in `maps/*.yaml` files.
+To create an ideal map of the Gazebo world one may use `pgm_map_creator`:
+
+- [`hyfan1116/pgm_map_creator`](https://github.com/hyfan1116/pgm_map_creator) with ROS Kinetic and Ubuntu 16.04
+- [`rayvburn/pgm_map_creator`](https://github.com/rayvburn/pgm_map_creator.git) with ROS Melodic and Ubuntu 18.04
+
+Examples of use are provided in `maps/*.yaml` files.
 
 One must remember to place/uncomment `collision_map_creator` plugin definition in the `.world` file:
 
@@ -79,13 +84,13 @@ One must remember to place/uncomment `collision_map_creator` plugin definition i
 
 ## Debugging
 
-`example.launch` provides a possibility to debug Actor controller plugin. First, user should extend `GAZEBO_PLUGIN_PATH`:
+`example.launch` provides a possibility to debug the `Actor` controller plugin. First, the user should extend `GAZEBO_PLUGIN_PATH`:
 
 ```bash
-export GAZEBO_PLUGIN_PATH=<PATH_TO_hubero_gazebo_PACKAGE>/lib:$GAZEBO_PLUGIN_PATH
+export GAZEBO_PLUGIN_PATH=<PATH_TO_THE_ROS_WORKSPACE>/devel/.private/hubero_gazebo/lib:$GAZEBO_PLUGIN_PATH
 ```
 
-Then, run Gazebo world with the required plugins. ROS1 distro should be adjusted by user:
+Then, run the Gazebo world with the required plugins. ROS1 distro should be adjusted by the user:
 
 ```bash
 gazebo -s /opt/ros/kinetic/lib/libgazebo_ros_paths_plugin.so -s /opt/ros/kinetic/lib/libgazebo_ros_api_plugin.so <PATH_TO_WORLD_FILE_DIR>/parking.world
