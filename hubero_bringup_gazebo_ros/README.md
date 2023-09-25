@@ -27,20 +27,28 @@ If all went OK, after few seconds after start you should see `move_base` log:
 [ INFO] [1643660811.668211218, 8.331000000]: odom received!
 ```
 
-**NOTE**: actor names defined in Gazebo `.world` must match names given to `.launch` file.
-
-## Spawn
+## Spawning an actor
 
 The crucial question is: how to spawn an `Actor` with a `ActorPlugin` controller in a custom Gazebo world?
 
-Since Gazebo entities are defined in `.world` file, one must add Actor definition to the Gazebo world. Actor definition consists of:
+### Spawn with a `spawn_model` service
+
+A handy `spawn_actor.launch` was prepared to spawn an actor controlled with the `HuBeRo` plugin in the Gazebo. Once the simulation is running, type:
+
+```sh
+roslaunch hubero_bringup_gazebo_ros spawn_actor.launch actor_name:=<ACTOR_UNIQUE_NAME>
+```
+
+### Spawn directly in the `.world` file
+
+Typically, Gazebo entities are defined in a `.world` file, so one can also add the `Actor` definition directly to the Gazebo world. Actor definition consists of:
 
 - starting pose definition,
 - animation definitions,
 - attached sensor relative pose and definition,
-- plugin used to control Actor.
+- plugin used to control the `Actor`.
 
-Generally, one should use the exemplary worlds definitions as a reference to use actors in their custom worlds. Simply open `living_room.world` or `parking.world` and copy section that is related to a given actor:
+Generally, one should use the exemplary worlds definitions as a reference to add actors to their custom worlds. To accomplish that, simply open `living_room.world` or `parking.world` and copy a section that is related to a given actor:
 
 ```xml
 <actor name="actor1">
@@ -52,6 +60,8 @@ Generally, one should use the exemplary worlds definitions as a reference to use
   -->
 </actor>
 ```
+
+**NOTE**: actor names defined in Gazebo `.world` must match names given to the `.launch` file.
 
 ## ROS interface
 
