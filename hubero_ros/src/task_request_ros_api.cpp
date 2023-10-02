@@ -7,7 +7,9 @@
 namespace hubero {
 
 TaskRequestRosApi::TaskRequestRosApi(const std::string& actor_name):
-	node_ptr_(std::make_shared<Node>("task_request_ros_api_node"))
+	node_ptr_(std::make_shared<Node>("task_request_ros_api_node")),
+	callback_spinner_(std::thread(&TaskRequestRosApi::callbackProcessingThread, this)),
+	destructing_(false)
 {
 	// assignment - init list does not support string reference copying
 	actor_name_ = actor_name;
@@ -110,6 +112,13 @@ TaskRequestRosApi::TaskRequestRosApi(const std::string& actor_name):
 		hubero_ros_msgs::TeleopActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_TELEOP)
 	);
+}
+
+TaskRequestRosApi::~TaskRequestRosApi() {
+	destructing_ = true;
+	if (callback_spinner_.joinable()) {
+		callback_spinner_.join();
+	}
 }
 
 bool TaskRequestRosApi::followObject(const std::string& object_name) {
@@ -403,6 +412,19 @@ TaskFeedbackType TaskRequestRosApi::getTeleopState() const {
 
 std::string TaskRequestRosApi::getTeleopStateDescription() const {
 	return getActionStateDescription(ac_teleop_ptr_);
+}
+
+void TaskRequestRosApi::callbackProcessingThread() {
+	while (!destructing_) {
+		if (!ros::ok()) {
+			throw std::runtime_error(
+				"[HuBeRo] [TaskRequestRosApi].[callbackProcessingThread] ROS stopped working, "
+				"won't process any more callbacks"
+			);
+		}
+		ros::spinOnce();
+		std::this_thread::sleep_for(std::chrono::milliseconds(CALLBACK_SPINNING_SLEEP_TIME_MS));
+	}
 }
 
 } // namespace hubero

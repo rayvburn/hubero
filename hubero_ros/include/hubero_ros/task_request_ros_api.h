@@ -21,6 +21,7 @@
 #include <hubero_ros_msgs/TeleopAction.h>
 
 #include <memory>
+#include <thread>
 
 namespace hubero {
 
@@ -33,11 +34,19 @@ namespace hubero {
  */
 class TaskRequestRosApi {
 public:
+	/// Defines the duration of sleeps between subsequent processings of the callback queue
+	const int CALLBACK_SPINNING_SLEEP_TIME_MS = 10;
+
 	/**
 	 * @brief Constructor of @ref TaskRequestRosApi instance
 	 * @param actor_name actor identifier from simulation
 	 */
 	TaskRequestRosApi(const std::string& actor_name);
+
+	/**
+	 * @brief Destructor that kills all spawned threads
+	 */
+	virtual ~TaskRequestRosApi();
 
 	/**
 	 * @defgroup tasks Methods that allow to request specific task from controlled actor
@@ -63,8 +72,6 @@ public:
 
 	/**
 	 * @brief Returns most recent state of the task
-	 *
-	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
 	 */
 	TaskFeedbackType getFollowObjectState() const;
 
@@ -108,8 +115,6 @@ public:
 	/**
 	 * @brief Returns most recent state of the task
 	 *
-	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
-	 *
 	 * @note Currently: preempted -> finished
 	 */
 	TaskFeedbackType getLieDownState() const;
@@ -143,8 +148,6 @@ public:
 
 	/**
 	 * @brief Returns most recent state of the task
-	 *
-	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
 	 */
 	TaskFeedbackType getMoveAroundState() const;
 
@@ -186,8 +189,6 @@ public:
 
 	/**
 	 * @brief Returns most recent state of the task
-	 *
-	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
 	 */
 	TaskFeedbackType getMoveToGoalState() const;
 	TaskFeedbackType getMoveToObjectState() const;
@@ -220,8 +221,6 @@ public:
 
 	/**
 	 * @brief Returns most recent state of the task
-	 *
-	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
 	 */
 	TaskFeedbackType getRunState() const;
 
@@ -264,8 +263,6 @@ public:
 
 	/**
 	 * @brief Returns most recent state of the task
-	 *
-	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
 	 */
 	TaskFeedbackType getSitDownState() const;
 	TaskFeedbackType getSitDownObjectState() const;
@@ -294,8 +291,6 @@ public:
 
 	/**
 	 * @brief Returns most recent state of the task
-	 *
-	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
 	 */
 	TaskFeedbackType getStandState() const;
 
@@ -338,8 +333,6 @@ public:
 
 	/**
 	 * @brief Returns most recent state of the task
-	 *
-	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
 	 */
 	TaskFeedbackType getTalkState() const;
 	TaskFeedbackType getTalkObjectState() const;
@@ -372,8 +365,6 @@ public:
 
 	/**
 	 * @brief Returns most recent state of the task
-	 *
-	 * @details It will return TASK_FEEDBACK_UNDEFINED if @ref ros::spinOnce() is not used
 	 */
 	TaskFeedbackType getTeleopState() const;
 
@@ -498,9 +489,23 @@ protected:
 		return action_client_ptr->getFeedbackText();
 	}
 
+	/**
+	 * A method that is executed in a separate thread (@ref callback_spinner_); periodically calls `ros::spinOnce`
+	 *
+	 * This is necessary for ActionServers to receive messages (otherwise is must've been handled by the user in his
+	 * orchestrating node).
+	 */
+	virtual void callbackProcessingThread();
+
 private:
 	/// Name of the actor provided in the constructor
 	std::string actor_name_;
+
+	/// A separate thread for processing callbacks
+	std::thread callback_spinner_;
+
+	/// Flag set in the destructor to join threads
+	std::atomic<bool> destructing_;
 
 }; // class TaskRequestRosApi
 } // namespace hubero
