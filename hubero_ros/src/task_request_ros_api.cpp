@@ -7,8 +7,8 @@
 namespace hubero {
 
 TaskRequestRosApi::TaskRequestRosApi(const std::string& actor_name):
-	node_ptr_(std::make_shared<Node>("task_request_ros_api_node")
-) {
+	node_ptr_(std::make_shared<Node>("task_request_ros_api_node"))
+{
 	// assignment - init list does not support string reference copying
 	actor_name_ = actor_name;
 
