@@ -9,6 +9,7 @@
 
 #include <string>
 #include <cinttypes>
+#include <mutex>
 
 namespace hubero {
 
@@ -77,21 +78,25 @@ public:
 	 * @{
 	 */
 	inline TaskFeedbackType getFeedbackStatus() const {
+		std::lock_guard<std::mutex> lock(callback_mutex_);
 		return feedback_status_;
 	}
 
 	inline std::string getFeedbackText() const {
+		std::lock_guard<std::mutex> lock(callback_mutex_);
 		return feedback_txt_;
 	}
 	/// @}
 
 protected:
 	void callbackFeedback(const Tfeedback& msg) {
+		std::lock_guard<std::mutex> lock(callback_mutex_);
 		feedback_txt_ = std::string(msg->feedback.feedback.text);
 		feedback_status_ = static_cast<TaskFeedbackType>(msg->feedback.feedback.status);
 	}
 
 	void callbackResult(const Tresult& msg) {
+		std::lock_guard<std::mutex> lock(callback_mutex_);
 		feedback_txt_ = std::string(msg->result.result.text);
 		feedback_status_ = static_cast<TaskFeedbackType>(msg->result.result.status);
 	}
@@ -100,5 +105,6 @@ protected:
 	ros::Subscriber sub_result_;
 	TaskFeedbackType feedback_status_;
 	std::string feedback_txt_;
+	mutable std::mutex callback_mutex_;
 }; // class ActionClient
 } // namespace hubero
