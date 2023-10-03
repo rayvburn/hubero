@@ -43,6 +43,12 @@ public:
 	static const int QUATERNION_RANDOM_RETRY_NUM;
 
 	/**
+	 * @detail Defines for how long (since the last action result callback) any feedback of the action won't override
+	 * @ref feedback_
+	 */
+	static const double ACTION_RESULT_FREEZE_TIME_SEC;
+
+	/**
 	 * @brief Constructor
 	 */
 	NavigationRos();
@@ -200,6 +206,8 @@ protected:
 	ros::Subscriber sub_feedback_;
 	/// @brief Subscriber of the move_base simple action server's result topic
 	ros::Subscriber sub_result_;
+	/// @brief Stores a timestamp of the last result message
+	ros::Time cb_result_timestamp_;
 
 	/// Helper typedefs
 	typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseActionClient;

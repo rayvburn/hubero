@@ -15,6 +15,7 @@ namespace hubero {
 const int NavigationRos::SUBSCRIBER_QUEUE_SIZE = 10;
 const int NavigationRos::PUBLISHER_QUEUE_SIZE = 15;
 const int NavigationRos::QUATERNION_RANDOM_RETRY_NUM = 10;
+const double NavigationRos::ACTION_RESULT_FREEZE_TIME_SEC = 2.0;
 
 NavigationRos::NavigationRos():
 	NavigationBase::NavigationBase(),
@@ -560,6 +561,20 @@ void NavigationRos::callbackFeedback(const move_base_msgs::MoveBaseActionFeedbac
 	if (fb_type == TASK_FEEDBACK_UNDEFINED) {
 		return;
 	}
+	// The aim is to prevent a late action feedback overriding the result (stored in @ref feedback_)
+	if (
+		(ros::Time::now() - cb_result_timestamp_).toSec() <= NavigationRos::ACTION_RESULT_FREEZE_TIME_SEC
+		&& fb_type == TASK_FEEDBACK_ACTIVE
+	) {
+		HUBERO_LOG(
+			"[%s].[NavigationRos] Action feedback won't be overwritten because the action result has recently been updated (to %d). "
+			"Ignored feedback status is %d\r\n",
+			actor_name_.c_str(),
+			feedback_,
+			fb_type
+		);
+		return;
+	}
 	feedback_ = fb_type;
 }
 
@@ -570,6 +585,8 @@ void NavigationRos::callbackResult(const move_base_msgs::MoveBaseActionResult::C
 		return;
 	}
 	feedback_ = fb_type;
+	// save for later use in @ref callbackFeedback
+	cb_result_timestamp_ = ros::Time::now();
 }
 
 std::tuple<bool, Pose3> NavigationRos::findTransform(const std::string& frame_source, const std::string& frame_target) const {
