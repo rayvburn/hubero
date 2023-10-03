@@ -9,6 +9,8 @@ namespace hubero {
 TaskRequestRosApi::TaskRequestRosApi(const std::string& actor_name):
 	node_ptr_(std::make_shared<Node>("task_request_ros_api_node")),
 	callback_spinner_(std::thread(&TaskRequestRosApi::callbackProcessingThread, this)),
+	threaded_task_execution_requested_(false),
+	threaded_task_execution_done_(false),
 	destructing_(false)
 {
 	// assignment - init list does not support string reference copying
@@ -116,6 +118,9 @@ TaskRequestRosApi::TaskRequestRosApi(const std::string& actor_name):
 
 TaskRequestRosApi::~TaskRequestRosApi() {
 	destructing_ = true;
+	if (task_executor_.joinable()) {
+		task_executor_.join();
+	}
 	if (callback_spinner_.joinable()) {
 		callback_spinner_.join();
 	}
@@ -414,6 +419,32 @@ std::string TaskRequestRosApi::getTeleopStateDescription() const {
 	return getActionStateDescription(ac_teleop_ptr_);
 }
 
+void TaskRequestRosApi::startThreadedExecution(
+	const std::function<TaskFeedbackType()>& state_checker_fun,
+	const std::string& logging_task_name,
+	const ros::Duration& timeout,
+	TaskFeedbackType state_executing
+) {
+	threaded_task_execution_requested_ = true;
+	threaded_task_execution_done_ = false;
+	task_executor_ = std::thread(
+		&TaskRequestRosApi::threadedExecutor,
+		this,
+		std::ref(state_checker_fun),
+		logging_task_name,
+		timeout,
+		state_executing
+	);
+}
+
+void TaskRequestRosApi::join() {
+	if (task_executor_.joinable()) {
+		task_executor_.join();
+	}
+	threaded_task_execution_done_ = true;
+	threaded_task_execution_requested_ = false;
+}
+
 // static
 void TaskRequestRosApi::wait(const std::chrono::milliseconds& ms) {
 	std::this_thread::sleep_for(ms);
@@ -445,6 +476,79 @@ void TaskRequestRosApi::callbackProcessingThread() {
 		ros::spinOnce();
 		std::this_thread::sleep_for(std::chrono::milliseconds(CALLBACK_SPINNING_SLEEP_TIME_MS));
 	}
+}
+
+void TaskRequestRosApi::threadedExecutor(
+	const std::function<TaskFeedbackType()>& state_checker_fun,
+	const std::string& logging_task_name,
+	const ros::Duration& timeout,
+	TaskFeedbackType state_executing
+) {
+	auto timeout_start = ros::Time::now();
+
+	// we will be waiting for actor tasks finishes, so we must also know if the task request was processed
+	while (!destructing_ && state_checker_fun() != state_executing) {
+		if (!ros::ok()) {
+			throw std::runtime_error(
+				"[HuBeRo] [TaskRequestRosApi].[threadedExecutor] ROS stopped working during "
+				+ logging_task_name
+				+ " preparation by the "
+				+ getName()
+			);
+		}
+		if (!timeout.isZero() && (ros::Time::now() - timeout_start) >= timeout) {
+			throw std::runtime_error(
+				"[HuBeRo] [TaskRequestRosApi].[threadedExecutor] Timeout of "
+				+ logging_task_name
+				+ " (preparation) for "
+				+ getName()
+				+ " has elapsed!"
+			);
+		}
+		HUBERO_LOG(
+			"[%s].[TaskRequestRosApi] Waiting for the `%s` task to become active. Current state %d...\r\n",
+			getName().c_str(),
+			logging_task_name.c_str(),
+			state_checker_fun()
+		);
+		std::this_thread::sleep_for(std::chrono::milliseconds(THREADED_EXECUTOR_SLEEP_TIME_MS));
+	}
+
+	HUBERO_LOG(
+		"[%s].[TaskRequestRosApi] `%s` task properly activated (state %d), starting the execution...\r\n",
+		getName().c_str(),
+		logging_task_name.c_str(),
+		state_checker_fun()
+	);
+
+	while (!destructing_ && state_checker_fun() == state_executing) {
+		if (!ros::ok()) {
+			throw std::runtime_error(
+				"[HuBeRo] [TaskRequestRosApi].[threadedExecutor] ROS stopped working during "
+				+ logging_task_name
+				+ " execution by the "
+				+ getName()
+			);
+		}
+		if (!timeout.isZero() && (ros::Time::now() - timeout_start) >= timeout) {
+			throw std::runtime_error(
+				"[HuBeRo] [TaskRequestRosApi].[threadedExecutor] Timeout of "
+				+ logging_task_name
+				+ " (execution) for "
+				+ getName()
+				+ " has elapsed!"
+			);
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(THREADED_EXECUTOR_SLEEP_TIME_MS));
+	}
+
+	HUBERO_LOG(
+		"[%s].[TaskRequestRosApi] Execution of `%s` task ended with the state %d\r\n",
+		getName().c_str(),
+		logging_task_name.c_str(),
+		state_checker_fun()
+	);
+	threaded_task_execution_done_ = true;
 }
 
 } // namespace hubero

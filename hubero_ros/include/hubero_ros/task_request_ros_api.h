@@ -37,6 +37,9 @@ public:
 	/// Defines the duration of sleeps between subsequent processings of the callback queue
 	const int CALLBACK_SPINNING_SLEEP_TIME_MS = 10;
 
+	/// Defines the duration of sleeps between subsequent evaluations of task conditions
+	const int THREADED_EXECUTOR_SLEEP_TIME_MS = 100;
+
 	/**
 	 * @brief Constructor of @ref TaskRequestRosApi instance
 	 * @param actor_name actor identifier from simulation
@@ -384,6 +387,46 @@ public:
 	}
 
 	/**
+	 * @defgroup execution Methods related to a task execution in a separate thread
+	 */
+	/**
+	 * @brief Starts the execution of a single task defined by the arguments in a separate thread
+	 *
+	 * This method does not stop previously started task in any way.
+	 *
+	 * @param state_checker_fun a reference to a function that allows checking the state of task execution,
+	 * e.g., @ref getTeleopState; reference is a must here - inline lambda won't work
+	 * @param logging_task_name task name used in logs
+	 * @param timeout timeout for task execution (by default - no limit)
+	 * @param state_executing a state in which the task is assumed to be executing
+	 */
+	void startThreadedExecution(
+		const std::function<TaskFeedbackType()>& state_checker_fun,
+		const std::string& logging_task_name,
+		const ros::Duration& timeout = ros::Duration(0.0),
+		TaskFeedbackType state_executing = TaskFeedbackType::TASK_FEEDBACK_ACTIVE
+	);
+
+	/// Evaluates whether the thread that executes the newest task does still perform computations
+	inline bool isThreadExecuting() const {
+		return threaded_task_execution_requested_ && !threaded_task_execution_done_;
+	}
+
+	/**
+	 * @brief Joins the thread that executes the newest task
+	 *
+	 * Can be also treated as a method that executes a task started with @ref startThreadedExecution in a blocking way
+	 */
+	void join();
+
+	/// @brief Calls @ref std::thread::joinable method on the @ref task_executor_ thread
+	inline bool joinable() const {
+		return task_executor_.joinable();
+	}
+
+	/** @} */ // end of execution group
+
+	/**
 	 * @defgroup utils Static functions that may be handy when designing a custom scenario
 	 */
 	/// Sleeps the current thread for the @ref ms milliseconds
@@ -511,12 +554,36 @@ protected:
 	 */
 	virtual void callbackProcessingThread();
 
+	/**
+	 * Takes care of the execution of a task defined by the arguments.
+	 *
+	 * This should be called immediately after sending a task request.
+	 *
+	 * @param state_checker_fun a function that allows checking the state of task execution, e.g., @ref getTeleopState
+	 * @param logging_task_name task name used in logs
+	 * @param timeout timeout for task execution (by default no limit)
+	 * @param state_executing a state in which the task is assumed to be executing
+	 */
+	void threadedExecutor(
+		const std::function<TaskFeedbackType()>& state_checker_fun,
+		const std::string& logging_task_name,
+		const ros::Duration& timeout,
+		TaskFeedbackType state_executing
+	);
+
 private:
 	/// Name of the actor provided in the constructor
 	std::string actor_name_;
 
 	/// A separate thread for processing callbacks
 	std::thread callback_spinner_;
+
+	/// A thread for executing a task
+	std::thread task_executor_;
+	/// Atomic flag indicating the request of a threaded execution of a task
+	std::atomic<bool> threaded_task_execution_requested_;
+	/// Atomic flag indicating the finish of computations for @ref task_executor_ thread
+	std::atomic<bool> threaded_task_execution_done_;
 
 	/// Flag set in the destructor to join threads
 	std::atomic<bool> destructing_;
