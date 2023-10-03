@@ -37,5 +37,4 @@ In the second terminal, run scenario execution:
 rosrun hubero_ros_scenarios living_room_node 3
 ```
 
-## Notes
-If one is creating his custom scenario, just remember to  `ros::spinOnce` while waiting for specific task feedback.
+The `living room` scenario is implemented relying on manual evaluating of the task states (threaded executor is not used, in contrary to the `parking` scenario).
