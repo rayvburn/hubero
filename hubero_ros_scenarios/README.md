@@ -24,6 +24,8 @@ In the second terminal, run scenario execution:
 rosrun hubero_ros_scenarios parking_node 3
 ```
 
+The `parking` scenario is implemented relying on tasks execution in separate threads.
+
 ### `living room` scenario
 
 
