@@ -383,6 +383,20 @@ public:
 		return actor_name_;
 	}
 
+	/**
+	 * @defgroup utils Static functions that may be handy when designing a custom scenario
+	 */
+	/// Sleeps the current thread for the @ref ms milliseconds
+	static void wait(const std::chrono::milliseconds& ms = std::chrono::milliseconds(500));
+
+	/// Sleeps the current thread for the @ref seconds regarding the ROS time
+	static void waitRosTime(double seconds);
+
+	/// Sleeps the current thread for the @ref duration regarding the ROS time
+	static void waitRosTime(const ros::Duration& duration);
+
+	/** @} */ // end of utils group
+
 protected:
 	std::shared_ptr<Node> node_ptr_;
 

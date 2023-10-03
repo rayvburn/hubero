@@ -414,6 +414,26 @@ std::string TaskRequestRosApi::getTeleopStateDescription() const {
 	return getActionStateDescription(ac_teleop_ptr_);
 }
 
+// static
+void TaskRequestRosApi::wait(const std::chrono::milliseconds& ms) {
+	std::this_thread::sleep_for(ms);
+}
+
+// static
+void TaskRequestRosApi::waitRosTime(double seconds) {
+	waitRosTime(ros::Duration(seconds));
+}
+
+// static
+void TaskRequestRosApi::waitRosTime(const ros::Duration& duration) {
+	auto time_start_delay = ros::Time::now();
+	auto duration_delay = ros::Time::now() - time_start_delay;
+	while (duration_delay <= duration) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		duration_delay = ros::Time::now() - time_start_delay;
+	}
+}
+
 void TaskRequestRosApi::callbackProcessingThread() {
 	while (!destructing_) {
 		if (!ros::ok()) {
