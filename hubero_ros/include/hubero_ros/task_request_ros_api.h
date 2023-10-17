@@ -20,6 +20,8 @@
 #include <hubero_ros_msgs/TalkObjectAction.h>
 #include <hubero_ros_msgs/TeleopAction.h>
 
+#include <tf2_ros/transform_listener.h>
+
 #include <memory>
 #include <thread>
 
@@ -387,6 +389,11 @@ public:
 	}
 
 	/**
+	 * @brief Obtains a pose of the actor in a frame given by @ref frame_reference
+	 */
+	Pose3 getPose(const std::string& frame_reference) const;
+
+	/**
 	 * @defgroup execution Methods related to a task execution in a separate thread
 	 */
 	/**
@@ -588,5 +595,11 @@ private:
 	/// Flag set in the destructor to join threads
 	std::atomic<bool> destructing_;
 
+	/// Buffer for obtaining ROS transforms (i.a. self pose)
+	tf2_ros::Buffer tf_buffer_;
+	/// Listener for obtaining ROS transforms (i.a. self pose)
+	tf2_ros::TransformListener tf_listener_;
+	/// Name of the TF frame related to the actor
+	std::string actor_tf_frame_;
 }; // class TaskRequestRosApi
 } // namespace hubero

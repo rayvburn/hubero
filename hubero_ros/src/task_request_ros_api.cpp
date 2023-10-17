@@ -11,7 +11,8 @@ TaskRequestRosApi::TaskRequestRosApi(const std::string& actor_name):
 	callback_spinner_(std::thread(&TaskRequestRosApi::callbackProcessingThread, this)),
 	threaded_task_execution_requested_(false),
 	threaded_task_execution_done_(false),
-	destructing_(false)
+	destructing_(false),
+	tf_listener_(tf_buffer_)
 {
 	// assignment - init list does not support string reference copying
 	actor_name_ = actor_name;
@@ -113,6 +114,14 @@ TaskRequestRosApi::TaskRequestRosApi(const std::string& actor_name):
 		hubero_ros_msgs::TeleopActionFeedbackConstPtr,
 		hubero_ros_msgs::TeleopActionResultConstPtr>
 		>(node_ptr_, actor_task_ns + TaskRequestBase::getTaskName(TASK_TELEOP)
+	);
+
+	// "path" to obtain the parameter, see the `actor_base_frame` param in the .launch file
+	std::string param_frame = "/hubero_ros/" + actor_name + "/actor_frames/base";
+	node_ptr_->getNodeHandlePtr()->param<std::string>(
+		param_frame,
+		actor_tf_frame_,
+		std::string(actor_name + "base_footprint")
 	);
 }
 
@@ -417,6 +426,23 @@ TaskFeedbackType TaskRequestRosApi::getTeleopState() const {
 
 std::string TaskRequestRosApi::getTeleopStateDescription() const {
 	return getActionStateDescription(ac_teleop_ptr_);
+}
+
+Pose3 TaskRequestRosApi::getPose(const std::string& frame_reference) const {
+	Pose3 transform;
+	try {
+		auto tf_msg = tf_buffer_.lookupTransform(frame_reference, actor_tf_frame_, ros::Time(0));
+		transform = msgTfToPose(tf_msg.transform);
+	} catch (tf2::TransformException& ex) {
+		HUBERO_LOG(
+			"[%s].[TaskRequestRosApi] Could not transform '%s' to '%s' - exception: '%s'\r\n",
+			getName().c_str(),
+			frame_reference.c_str(),
+			actor_tf_frame_.c_str(),
+			ex.what()
+		);
+	}
+	return transform;
 }
 
 void TaskRequestRosApi::startThreadedExecution(
