@@ -16,6 +16,7 @@ const int NavigationRos::SUBSCRIBER_QUEUE_SIZE = 10;
 const int NavigationRos::PUBLISHER_QUEUE_SIZE = 15;
 const int NavigationRos::QUATERNION_RANDOM_RETRY_NUM = 10;
 const double NavigationRos::ACTION_RESULT_FREEZE_TIME_SEC = 2.0;
+const double NavigationRos::CMD_VEL_KEEP_DURATION = 1.0;
 
 NavigationRos::NavigationRos():
 	NavigationBase::NavigationBase(),
@@ -25,7 +26,9 @@ NavigationRos::NavigationRos():
 	map_x_max_(0.0),
 	map_y_min_(0.0),
 	map_y_max_(0.0),
-	tf_listener_(tf_buffer_) {}
+	tf_listener_(tf_buffer_),
+	cmd_vel_timestamp_(ros::Time(0)),
+	cmd_vel_timeout_log_timestamp_(ros::Time(0)) {}
 
 bool NavigationRos::initialize(
 	std::shared_ptr<Node> node_ptr,
@@ -501,6 +504,21 @@ Vector3 NavigationRos::getVelocityCmd() const {
 		return Vector3();
 	}
 
+	// evaluate the age of the command
+	double command_age = (ros::Time::now() - cmd_vel_timestamp_).toSec();
+	if (command_age > NavigationRos::CMD_VEL_KEEP_DURATION) {
+		if ((ros::Time::now() - cmd_vel_timeout_log_timestamp_).toSec() >= 1.0) {
+			cmd_vel_timeout_log_timestamp_ = ros::Time::now();
+			HUBERO_LOG(
+				"[%s].[NavigationRos] Publishing zero velocity as the latest command is outdated - it's %.1fs old, "
+				"while the timeout is %.1fs\r\n",
+				actor_name_.c_str(),
+				command_age,
+				NavigationRos::CMD_VEL_KEEP_DURATION
+			);
+		}
+		return Vector3();
+	}
 	return cmd_vel_;
 }
 
@@ -547,6 +565,7 @@ void NavigationRos::callbackCmdVel(const geometry_msgs::Twist::ConstPtr& msg) {
 	cmd_vel_local.Y(msg->linear.y);
 	cmd_vel_local.Z(msg->angular.z);
 	cmd_vel_ = NavigationBase::convertCommandToGlobalCs(current_pose_.Rot().Yaw(), cmd_vel_local);
+	cmd_vel_timestamp_ = ros::Time::now();
 }
 
 void NavigationRos::callbackFeedback(const move_base_msgs::MoveBaseActionFeedback::ConstPtr& msg) {

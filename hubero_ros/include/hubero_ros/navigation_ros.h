@@ -49,6 +49,11 @@ public:
 	static const double ACTION_RESULT_FREEZE_TIME_SEC;
 
 	/**
+	 * Maximum duration to keep the same velocity command as a valid one; will publish zero velocity after
+	 */
+	static const double CMD_VEL_KEEP_DURATION;
+
+	/**
 	 * @brief Constructor
 	 */
 	NavigationRos();
@@ -261,7 +266,9 @@ protected:
 	 * @{
 	 */
 	Vector3 cmd_vel_;
+	ros::Time cmd_vel_timestamp_;
 	std::mutex mutex_callback_;
+	mutable ros::Time cmd_vel_timeout_log_timestamp_;
 	/// @}
 
 	/// @brief Initial pose of the actor - used for 'odometry' calculations
