@@ -272,6 +272,58 @@ std::string TaskRequestRosApi::getMoveToObjectStateDescription() const {
 	return getActionStateDescription(ac_move_to_object_ptr_);
 }
 
+std::thread TaskRequestRosApi::moveThroughWaypoints(
+	const std::vector<std::pair<Vector3, double>>& poses2d,
+	const std::string& frame,
+	const ros::Duration& timeout
+) {
+	if (isThreadExecuting()) {
+		HUBERO_LOG(
+			"[%s].[TaskRequestRosApi] Could not start 'moveThroughWaypoints' executor as another task is currently "
+			"executed. Returning a thread that will finish immediately.\r\n",
+			getName().c_str()
+		);
+		return std::move(std::thread([]() { ; }));
+	}
+
+	HUBERO_LOG(
+		"[%s].[TaskRequestRosApi].[moveThroughWaypoints] Requested %lu waypoints\r\n",
+		getName().c_str(),
+		poses2d.size()
+	);
+
+	std::thread t(
+		[&, poses2d, frame, timeout]() -> void {
+			std::function<TaskFeedbackType()> feedback_checker = [&]() -> hubero::TaskFeedbackType {
+				return getMoveToGoalState();
+			};
+
+			size_t waypoint_num = 1;
+			for (const auto& waypoint: poses2d) {
+				auto pos = waypoint.first;
+				auto yaw = waypoint.second;
+				HUBERO_LOG(
+					"[%s].[TaskRequestRosApi].[moveThroughWaypoints] Requesting the %lu/%lu waypoint {x: %5.2f, y: %5.2f, theta: %5.2f}\r\n",
+					getName().c_str(),
+					waypoint_num,
+					poses2d.size(),
+					pos.X(),
+					pos.Y(),
+					yaw
+				);
+
+				moveToGoal(pos, yaw, frame);
+				startThreadedExecution(feedback_checker, "moveToGoal", timeout);
+				// waiting for the execution to finish
+				join();
+
+				waypoint_num++;
+			}
+		}
+	);
+	return std::move(t);
+}
+
 bool TaskRequestRosApi::run(const Vector3& pos, const double& yaw, const std::string& frame_id) {
 	hubero_ros_msgs::RunGoal action_goal;
 	action_goal.pos = ignVectorToMsgPoint(pos);

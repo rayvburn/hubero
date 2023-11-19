@@ -204,6 +204,21 @@ public:
 	std::string getMoveToGoalStateDescription() const;
 	std::string getMoveToObjectStateDescription() const;
 
+	/**
+	 * @brief Implements a typical use case where an actor is intended to travel through a given set of waypoints
+	 *
+	 * Execution state can be checked with @ref isThreadExecuting
+	 * This method mustn't be used once another task has been started with the @ref startThreadedExecution
+	 *
+	 * The user must provide that the returned thread object won't go out of scope until the thread is finished.
+	 * Additionally, they should call the std::thread.join() at the end of the scenario executable.
+	 */
+	std::thread moveThroughWaypoints(
+		const std::vector<std::pair<Vector3, double>>& poses2d,
+		const std::string& frame,
+		const ros::Duration& timeout = ros::Duration(0.0)
+	);
+
 	/** @} */ // end of movetogoal group
 
 	/**
